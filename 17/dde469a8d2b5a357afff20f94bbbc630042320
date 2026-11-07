@@ -1,0 +1,14 @@
+ai-vision/aivision-py-be/apps/core/tests/test_trace_query_memory.py
+  h_1c39a7acc7d677 146,170,194
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "17dde469a8d2b5a357afff20f94bbbc630042320",
+  "prompts": {},
+  "humans": {
+    "h_1c39a7acc7d677": {
+      "author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
