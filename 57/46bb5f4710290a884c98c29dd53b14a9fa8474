@@ -1,0 +1,1036 @@
+ai-vision/vfe/src/labs/mcp/mcpDisplay.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 58
+ai-vision/vfe/tests/modelConnectionNavigationDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 403-409,413-414,607-709
+  s_ecdc0692ab40f8::t_2fe543790fe52f 710
+ai-vision/vfe/src/components/traces-otel/spanModelContext.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-120
+ai-vision/agent-plugins/tests/diagnostics_e2e/test_docker_platform.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 17,888-914,973-975,982,997-998,1000-1024
+ai-vision/vfe/tests/nativeQueryApi.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-272
+docs/deployment/assets/sandbox-input-transport-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-932
+ai-vision/vfe/src/labs/memory/MemoryTraceSummary.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-2,13,38,70-72,75-80,84,93-98,115-117,126-128,130-136,141-143,226-230,300,315-323,405-411,413-418,421,487,498,503,508-516
+docs/testing/screenshots/powercontext/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-17
+docs/deployment/zh-CN/dev-image-release.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5-7,13-17,19,21,23,25,27,29-35,37,39,41,43,45-48,50,53-54,56-57,61-77,81,101,109,111,113,115,117,119,121
+agentlens/docs/adr/diagnosis-record/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 46
+ai-vision/vfe/src/agents/registry/index.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 19-22
+ai-vision/vfe/tests/specialistDiagnosisDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3,10,27-28,255-257,630-641,643,695-1172,2142-2703
+ai-vision/agent-plugins/tests/framework_e2e/browser_manifest.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 118,129,135,146-147,339-340
+ai-vision/vfe/src/pages/LangfuseOnboardingPage.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 78,226,260,276,336
+ai-vision/agent-plugins/kimi/kimihooks/src/hooks/stop.rs
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 9-10,129-134,140,197,439-442,462-471,479
+aivision-cli/internal/sandboxplugin/image_pull_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-145
+agentlens/src/agentlens/diagnoser/executors/rule/custom/executor.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 4,9,16,22,26,28,34-37,39,45,49-57,63,66,68-74,76-90,99,101-104,108,112-114,117-120,125-133
+ai-vision/vfe/src/components/diagnose/diagnoser/CreateRuleDiagnoserForm.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 10,16-17,53-73,160-161,186-220,268-287,324,332-343,346,371,385-404,406-426,428-432,434-468,470-473,475-484,487-491,498-499,501-502,504-507,549-552,560,563,567,570,691-756,759-766,778-793,810,847-851,864-888
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 10,21-23,80,114-115,119,124,623,625,704,709,763-766,831,927-928,946-954,959-960,963-965,1001,1006
+ai-vision/vfe/tests/traceProcessDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 31-35,50-52,352-512,731-831
+ai-vision/agent-plugins/pi/observ-pi/package.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 55-59
+ai-vision/aivision-py-be/apps/core/models/__init__.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 15
+ai-vision/vfe/src/features/plugins/OpenShellBootstrap.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-989
+scripts/ci/test_native_workflow_scope.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-219
+agentlens/tests/unit/service/test_sandbox_snapshot.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-187
+agentlens/docs/adr/sandbox-execution/lifecycle.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-208
+agentlens/tests/unit/kernel/master/test_rescue_loop.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 44-47
+ai-vision/vfe/src/features/sandbox-connections/RuleSandboxSelector.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-272
+ai-vision/vfe/src/labs/memory/memoryApi.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 14,30,125,151
+aivision-cli/internal/sandboxbootstrap/gateway.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-206
+agentlens/src/agentlens/service/quick_runs.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 43,45,407-409,551,567-569
+ai-vision/aivision-py-be/apps/core/views/sandbox_proxy.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-358
+agentlens/docker/requirements-rule-runtime.in
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-8
+ai-vision/agent-plugins/tests/native_agent_e2e/test_process_assertions.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-121
+ai-vision/vfe/src/components/traces-otel/ObservationDetailPanel/ObservationDetailPanel.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 6
+ai-vision/vfe/src/labs/memory/memoryMcpPresentation.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 4-39,53-54,56-60,62,64,81-96
+ai-vision/vfe/src/components/diagnose/diagnoser/enhancedRuleExamples.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-452
+ai-vision/vfe/src/components/diagnose/diagnoser/RuleTrialEvidence.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-125
+ai-vision/vfe/tests/e2e/traceLabs.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 149
+docs/assets/plugins/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-17
+ai-vision/vfe/tests/sandboxConnections.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-143
+agentlens/docker/requirements-rule-runtime.txt
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-487
+ai-vision/aivision-py-be/apps/core/services/sandbox_installation.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-477
+agentlens/src/agentlens/diagnoser/executors/rule/custom/enhanced_worker.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-288
+agentlens/tests/unit/infra/ob/test_sandbox_table.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-275
+ai-vision/vfe/src/components/diagnose/diagnoser/EnhancedRuleBudgetAction.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-148
+ai-vision/aivision-py-be/apps/core/tests/test_framework_onboarding_guides.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 6,13-45
+ai-vision/vfe/tests/enhancedRules.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-256
+aivision-cli/internal/sandboxbootstrap/setup.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-314
+agentlens/docker/rule-runtime-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-13
+ai-vision/vfe/src/components/diagnose/diagnoser/RuleInputBudget.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-90
+ai-vision/vfe/src/features/plugins/installationTypes.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-143
+ai-vision/vfe/src/pages/onboarding/HermesRelayPrivacySettings.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-119
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 45-47,77-96,115-153,174-175,195-196,199
+docs/deployment/en/sandbox-plugins.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-474
+ai-vision/aivision-py-be/apps/core/urls/api/sandbox.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-62
+ai-vision/vfe/src/labs/context-compaction/contextCompaction.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-116
+agentlens/tests/integration/sandbox_plugin/test_server.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-78
+ai-vision/vfe/src/components/labs/shared/observabilityViewDocs.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 10-11
+aivision-cli/internal/sandboxplugin/image_pull.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-123
+deploy/tests/test_deploy_smoke.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 33-61
+ai-vision/agent-plugins/kimi/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 20-21
+README.en.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 49
+aivision-cli/internal/cli/plugin_progress_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-144
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 95,108-109,304-305,364,438,522,537,753-758,838-843,1401,1597,1612,1692-1699,1722-1725
+ai-vision/aivision-py-be/apps/core/views/agentlens_proxy.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 84-85,1712,1714-1733
+agentlens/src/agentlens/domain/sandbox.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-166
+ai-vision/docs/native-memory-observability.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-43
+ai-vision/vfe/src/features/plugins/OpenShellInstallation.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-774
+ai-vision/vfe/playwright.config.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 20-22
+ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionsSection.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-529
+ai-vision/aivision-py-be/apps/core/trace_query/service.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 283-298
+agentlens/src/agentlens/web/routes/diagnoser.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 25-28,54-55,57,61,75-77,80,97,204-217,277,342-348,384,509,1232-1235,1237-1240,1243-1295,1297-1354
+scripts/ci/README.md
+  s_ecdc0692ab40f8::t_a1259a220266b4 196-199,295-297,353
+  s_ecdc0692ab40f8::t_f2b2727a01b0a5 354-365,373-392
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 31,33,35-37,39-43,49-53,57-61,67,69,71,73,75,77,79,81-184
+  s_ecdc0692ab40f8::t_e9727a3e1883e0 393
+ai-vision/vfe/src/components/traces-otel/SpanTimeline.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 17,21-22,29-30,381-395,397,439-441,470-471,479,521-523,525,539,558-565
+ai-vision/agent-plugins/tests/native_agent_e2e/test_kimi_driver.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 18,248
+CONTRIBUTING.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 70
+ai-vision/vfe/src/index.css
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 97-99,209-211
+ai-vision/agent-plugins/hermes/docs/RELAY_INTEGRATION.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-205
+agentlens/src/agentlens/sandbox_plugin/config.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-220
+ai-vision/aivision-py-be/apps/core/views/__init__.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 168,242
+ai-vision/vfe/src/labs/memory/MemoryServerCard.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 6,25,29,35-39
+agentlens/tests/unit/diagnoser/test_core_execution_policy.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 57
+ai-vision/vfe/docker/nginx.conf.template
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 35-47
+ai-vision/vfe/src/labs/mcp/types.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 77-78,88-89,121-123
+scripts/ci/test_plan.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11-14,17,28,44,55,61,72,83,97,112,128,133-134,139,142,147,153,166,171,180,190,195,202,205,208,231-409
+  s_ecdc0692ab40f8::t_9d0336841b767b 410-411
+ai-vision/vfe/src/labs/skill/SkillImportLinkPanel.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 10-14,129-156,159-160,176,183-228,231-234,236-237,239-273,275-276,278
+scripts/ci/test_rule_runtime_manifest.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-48
+agentlens/native/custom_rule_worker.c
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 57-62
+agentlens/obschema/migrations/versions/012_sandbox_integrations.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-80
+ai-vision/vfe/src/labs/memory/powerContextSpanIcons.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-38
+ai-vision/aivision-py-be/apps/core/migrations/0035_sandbox_installation_session.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-76
+agentlens/tests/integration/sandbox_plugin/test_sdk_cleanup_deadline.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-102
+agentlens/docs/adr/task/execution-snapshot.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 192-193,292-504
+ai-vision/vfe/tests/traceCompareTimelineLayout.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 13,20-50
+  s_ecdc0692ab40f8::t_2359b3e390d120 51
+ai-vision/aivision-py-be/apps/core/urls/api/v2.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 16-17,76-85
+ai-vision/vfe/src/labs/memory/powerContextRun.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-114
+agentlens/docs/diagnoser/sandbox.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-264
+ai-vision/aivision-py-be/apps/core/services/sandbox_bootstrap.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-392
+ai-vision/aivision-py-be/apps/core/urls/api/diagnose.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 33,51-55
+ai-vision/vfe/src/components/traces/shared/TraceUserInputSummary.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3,16,77-78,80-83,100-102,128-165,168-188,190-193
+deploy/native-packaging/Dockerfile.ci-builder
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-13
+agentlens/src/agentlens/sandbox_plugin/environment.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-78
+agentlens/tests/unit/diagnoser/test_rule_identity_v3.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 171
+ai-vision/agent-plugins/tests/framework_e2e/test_docker_platform.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 2-3,7,9,69-74,281,293-294,304-319,425-807
+  s_ecdc0692ab40f8::t_2c1503c6d6ac48 808-809
+ai-vision/vfe/src/features/plugins/navigation.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-21
+ai-vision/aivision-py-be/apps/core/views/agent.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 56,61-71
+agentlens/src/agentlens/infra/ob/judge_request_ledger.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 14,54-57
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/mod.rs
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 77-78
+agentlens/tests/unit/kernel/master/test_sandbox_schedule_isolation.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-131
+ai-vision/vfe/src/labs/mcp/McpServerCard.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 151-155
+ai-vision/vfe/tests/e2e/traceUserInput.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 183,187-188,203,205,238,240,276-289,359,362
+agentlens/src/agentlens/service/execution_snapshot.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 28-33,36,86-88,194-250,259,298-326,466-474,480-499,503,532,541-563,573
+ai-vision/vfe/src/labs/mcp/mcpSpanInfo.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-36
+ai-vision/agent-plugins/hermes/tests/relay_redaction_e2e.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-319
+agentlens/src/agentlens/web/schemas/diagnoser.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 67,72-82
+  s_ecdc0692ab40f8::t_c4b2d3a85fb990 83-84
+aivision-cli/internal/cli/plugin_socket_gid_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-45
+ai-vision/aivision-py-be/apps/core/tests/test_native_memory.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-321
+ai-vision/vfe/src/components/diagnose/executionMessage.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-33
+agentlens/docs/adr/task/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 17,36,41-45,58,63
+ai-vision/vfe/tests/e2e/mcpImportUx.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 2,41-46
+aivision-cli/internal/sandboxbootstrap/host_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-123
+aivision-cli/internal/sandboxbootstrap/environment_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-73
+ai-vision/agent-plugins/hermes/Makefile
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 63-84
+ai-vision/vfe/tests/privacyEvidence.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-48
+ai-vision/vfe/tests/hermesDashboardIdentity.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-59
+agentlens/src/agentlens/main.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 29,104
+ai-vision/agent-plugins/tests/native_agent_e2e/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 109-116
+ai-vision/vfe/src/components/traces-otel/SpanAvailableTools.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-178
+ai-vision/agent-plugins/hermes/docs/RELAY_PRIVACY.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-158
+ai-vision/vfe/tests/e2e-platform/platform.fixture.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 8,12,35-36,110-112,148-198,209,235-239,260,316,338
+ai-vision/vfe/src/contexts/SpaceContext.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 14,52-53,163-164,166-168,180-183,185
+ai-vision/agent-plugins/tests/framework_e2e/test_verify_rag.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 722-723,729-732,789,798,809-843
+  s_ecdc0692ab40f8::t_26851aece5d1d2 844
+aivision-cli/internal/sandboxbootstrap/plan_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-48
+agentlens/src/agentlens/kernel/worker/runner.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 48,64,88,398-400,531-535,590-646
+ai-vision/aivision-py-be/apps/core/tests/test_native_trace_pagination.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 8,85-223,331,352-357
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 246,2423,2553,2719-2755,3052,3068,3354-3511,3513-3526,3961-3962,3967,4063,4069,4520,5026-5659
+ai-vision/vfe/src/labs/memory/types.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 4,48,65,69,83-84
+deploy/tests/test_seekdb_smoke.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 2,69-326
+docs/deployment/assets/openshell-install-diagnostics-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-297
+ai-vision/vfe/tests/jsonDetailInteractionDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11-12,320-535
+  s_ecdc0692ab40f8::t_98bedb479d3737 536
+ai-vision/aivision-py-be/apps/core/tests/test_url_auth_boundaries.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 10-14,18-28,72-73,84-85,110-112
+agentlens/pyproject.toml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 27-32
+.github/workflows/native-agent-e2e.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 10-13,29-32,54-55,108,113,119,125,131,174-176,178-179,197,223-225,299
+ai-vision/agent-plugins/tests/framework_e2e/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 139-142,157-159,162-168,239-246
+aivision-cli/internal/sandboxplugin/progress.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-120
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5-8,227-231,248,449-453
+aivision-cli/internal/sandboxbootstrap/gateway_integration_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-53
+ai-vision/agent-plugins/tests/native_agent_e2e/_process_test_helpers.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-66
+ai-vision/vfe/tests/agentIntegrations.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 37,40,51-68,70,74,89-114
+  s_ecdc0692ab40f8::t_dc56de2792f60c 115-116
+agentlens/docs/adr/executor/sandbox-backend.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-135
+ai-vision/vfe/tests/ruleInputBudgetDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-234
+ai-vision/vfe/tests/enhancedCallEvidenceDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 14-15,47-48,406-420,422-427,430-432,460-534,537
+  s_ecdc0692ab40f8::t_a18521ce688708 535-536,538-539
+agentlens/docs/adr/executor/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 22,71-76,85-86,118,123
+ai-vision/vfe/docker/test_proxy_timeouts.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-111
+agentlens/docs/adr/sandbox-execution/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-32
+ai-vision/vfe/src/components/traces-otel/SpanDetailPanel.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 2,11-12,41-43,45-47,76,97,103-119,139-146,198-203,205-210,212,243-245,293,319-332,357,360-366,390-392,472-479,481-496,553-557,560-562,582,676-679,682,684-689
+ai-vision/vfe/src/components/traces/shared/traceJson.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-54
+ai-vision/vfe/tests/spanContent.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 8-9,144-233
+  s_ecdc0692ab40f8::t_e2b190498202c0 234
+.gitignore
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 70-72
+ai-vision/aivision-py-be/apps/core/trace_query/types.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 39-41
+ai-vision/vfe/tests/e2e/traceCompareEvidence.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 94,154-168,210-293
+  s_ecdc0692ab40f8::t_8b46c886e3029c 294-295
+ai-vision/vfe/tests/e2e/sandboxConnections.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-1240
+ai-vision/vfe/src/components/traces-otel/api.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 2-3,15-51
+  s_ecdc0692ab40f8::t_b1251ed6b65978 52
+ai-vision/vfe/tests/onboardingPagesDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 27-33,124-126,219,254-255,258-273,275,302,308-309,348-361,378-381,505-519,540-600,604-607,609-612,615-619,632,636-639,641,655-780,1003-1040,1636-1674
+deploy/blueprints/aivision-source.yaml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 51,55-58,63
+deploy/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 30-39
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/tests.rs
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 381-408
+aivision-cli/internal/deploy/runtime/lifecycle_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 44,54-56,96-124,288-290,299,356,359,364-365
+  s_ecdc0692ab40f8::t_bb516de1b43dde 366
+aivision-cli/internal/cli/source_coordinates_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-47
+agentlens/tests/unit/diagnoser/rule_custom/test_enhanced_worker.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-536
+agentlens/docs/adr/sandbox-execution/input-budget.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-86
+aivision-cli/internal/sandboxplugin/manager_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-532
+ai-vision/vfe/tests/traceUserInputDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 126-137,176,372-375,408-411,416-417,419,463-466,474,721-851
+aivision-cli/internal/cli/plugin_progress.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-80
+ai-vision/vfe/src/components/traces/shared/traceUserInput.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 52-78,122-147,153-161,165-176,190-208,216-227,346-348
+ai-vision/vfe/src/features/sandbox-connections/useSandboxConnectionPermissions.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-25
+agentlens/tests/unit/test_selfhost_entrypoint.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 17-19,21,44-47,55
+ai-vision/aivision-py-be/apps/core/tests/test_health.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 7,14-21,23-24
+aivision-cli/internal/sandboxbootstrap/environment_other.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-5
+ai-vision/agent-plugins/tests/diagnostics_e2e/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 119-120,507-508
+ai-vision/vfe/tests/e2e/nativeEnvironmentFilter.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 186-189,194-197,236
+ai-vision/agent-plugins/tests/native_agent_e2e/install_runtimes.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 163-172
+deploy/AGENTS.md
+  s_ecdc0692ab40f8::t_f2b2727a01b0a5 97-101
+  s_ecdc0692ab40f8::t_a1259a220266b4 21-24,89-91
+  s_ecdc0692ab40f8::t_b6119940d7f494 93-94
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 8-20,29,42,73,118
+  s_ecdc0692ab40f8::t_8db22080c75742 95-96
+  s_ecdc0692ab40f8::t_d5863c4307132d 92
+agentlens/src/agentlens/sandbox_plugin/runtime.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-617
+aivision-cli/internal/sandboxbootstrap/setup_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-272
+deploy/native-packaging/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 37-47
+ai-vision/aivision-py-be/apps/core/tests/test_agentlens_proxy_scope.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 146-149
+ai-vision/vfe/src/components/traces-otel/nativeQueryScheduler.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-54
+ai-vision/vfe/tests/spanModelContext.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-129
+scripts/ci/test_workflow_contracts.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 37-52,84-88,166-167,195-249,271,291-339,464,479-480,485-488,496,499,542-552,562-566,599-601,612-630,636,639-642,654-656,663-809
+  s_ecdc0692ab40f8::t_9af30c00822f93 810-811
+ai-vision/vfe/src/components/diagnose/diagnoser/enhancedRuleModel.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-138
+ai-vision/vfe/src/components/traces-otel/spanSearch.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 4,13-23
+  s_ecdc0692ab40f8::t_8d74bd23b7c968 24-25
+aivision-cli/internal/cli/plugin.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-242
+ai-vision/vfe/tests/nativeQueryTransport.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-271
+agentlens/src/agentlens/config.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 49-62,145-146,210-212
+agentlens/docs/scheduling.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 366,445-461
+docs/deployment/en/dev-image-release.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5-7,13-17,19,21,23,25,27,29-35,37,39,41,43,45-48,50,53-54,56-57,61-77,81,101,109,111,113,115,117,119,121
+agentlens/src/agentlens/web/routes/sandbox.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-253
+scripts/ci/plan.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11,23,45,50-67,82-84,87-90,92-97,115,287-292,295-298,340,342-367,387,389,393-394,399-402,410-411,419-420,424,427-435
+ai-vision/vfe/src/pages/onboarding/useOnboarding.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 7,79,89-96,101-103,108,295
+.github/workflows/release-plugins.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 21-25,27-31,46-56,65-66,134-135,172,185-186,190-194
+agentlens/tests/unit/infra/ob/test_judge_request_ledger.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 200-216
+aivision-cli/internal/sandboxplugin/lock_unix.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-50
+ai-vision/vfe/src/router.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 17-21,177-192
+ai-vision/aivision-py-be/apps/core/tests/test_dashboard_metrics_projection.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5-6,9,11,17,114-164,323-428
+docs/deployment/assets/sandbox-input-budget-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-723
+agentlens/docs/api.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 375-389,392,1460,1687-1790
+agentlens/src/agentlens/diagnoser/executors/rule/custom/worker_main.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 154-170,193-195
+  s_ecdc0692ab40f8::t_ec259c736386d5 196-197
+agentlens/src/agentlens/sandbox_plugin/main.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-190
+agentlens/docs/adr/sandbox-connection/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-26
+ai-vision/aivision-py-be/apps/core/views/native_memory.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-215
+ai-vision/vfe/tests/nativeTraceSummaryDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 546,592
+ai-vision/vfe/src/components/traces-otel/powerContextContent.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-217
+agentlens/docker/check-worker-input-budget.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-89
+ai-vision/vfe/tests/e2e/labsImportDialogs.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-692
+ai-vision/aivision-py-be/apps/core/urls/api/__init__.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 7,14
+docs/deployment/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 37
+agentlens/docs/adr/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 46-47
+.github/workflows/integration-ci.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-15
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/turn_builder.rs
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1163-1164
+ai-vision/vfe/tests/browserIOAssertions.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 2,7-9,13-27,97,99-102,112-223,229-230,233-248,257-258,261-262,264-266
+ai-vision/vfe/tests/openShellInstallationDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-706
+ai-vision/agent-plugins/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11,42
+ai-vision/aivision-py-be/apps/core/trace_query/langfuse/provider.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 335-337
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 445,475-476,483-487
+ai-vision/vfe/src/labs/privacy/ReportedFieldOmissions.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-75
+ai-vision/aivision-py-be/apps/core/tests/test_projection_memory_lifetime.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 17,222-250
+deploy/tests/seekdb_deploy_smoke.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 18-20,24-25,37,193,329,331,338,348,389,395,433-454,467-469,475-805,874-875,903,960,1008-1010,1054-1075
+ai-vision/vfe/src/components/diagnose/diagnoser/useRuleInputBudget.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-42
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 228,2405,2569,2735-2771,3071,3087,3373-3530,3532-3545,3980-3981,3986,4082,4088,4539,5045-5678
+ai-vision/agent-plugins/hermes/tests/relay_native_e2e.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-350
+ai-vision/vfe/src/components/traces-otel/graph/AgentGraphNode.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 18-21,48-52,54,69-77,135-144,185-189
+agentlens/src/agentlens/service/rule_runtime.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-60
+aivision-cli/internal/sandboxbootstrap/plan.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-114
+ai-vision/agent-plugins/agents.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 73-80
+ai-vision/vfe/src/components/traces-otel/spanContent.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 58-66,152,173-185,222-224,263-268
+ai-vision/aivision-py-be/apps/core/management/commands/configure_third_party_agents.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 104-106,108,110-116
+aivision-cli/internal/cli/plugin_setup.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-52
+ai-vision/agent-plugins/pi/pireplay/package.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 54-58
+agentlens/tests/unit/service/test_enhanced_rule_runtime.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-209
+.github/workflows/framework-e2e.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 34-37,69-72,120-149,153,155,158,385-386,405-407,453,456,480-482,550,552,577-579,641,649
+ai-vision/vfe/tests/contextCompaction.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-181
+ai-vision/agent-plugins/tests/diagnostics_e2e/docker_platform.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 123-124,132-135,145-147
+aivision-cli/internal/sandboxbootstrap/policy_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-63
+ai-vision/vfe/src/components/traces-otel/traceProcess.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 6-13,15,22-23,27-28,46-47,52,123,174-180,300-322,325-326,334-336,361,369-370,380-420,428,432-436,602-603,617,622,643-657,664-665,682-683,688-689,733-735,737-738,793-799,806-807
+ai-vision/vfe/src/agents/registry/dashboardRuntime.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-46
+aivision-cli/internal/installprogress/reporting.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-352
+ai-vision/vfe/src/labs/privacy/relayPrivacyPolicy.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-67
+ai-vision/agent-plugins/tests/framework_e2e/requirements-common.txt
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11
+ai-vision/vfe/src/labs/privacy/PrivacyMarkdown.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-49
+ai-vision/vfe/tests/e2e/sdkValueContract.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 4-16,27-57,132-134
+ai-vision/vfe/src/components/layout/AppShell.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 22,85,124,451-452,660-664,676-678
+scripts/ci/test_candidate_workflow.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-135
+ai-vision/vfe/src/pages/PluginsPage.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-13
+aivision-cli/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 234-314,728-730,732-735,771-773,776-783,787,807-810,813-819
+agentlens/src/agentlens/infra/ob/tables/sandbox_table.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-425
+agentlens/tests/unit/sandbox_plugin/test_wire_contract.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-95
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/semantics.rs
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1207-1208
+ai-vision/vfe/tests/nativeMemory.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-223
+aivision-cli/internal/installprogress/reporting_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-488
+ai-vision/vfe/tests/openShellBootstrapDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-1227
+ai-vision/aivision-py-be/apps/core/tests/test_sandbox_proxy.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-361
+agentlens/docker/requirements-sandbox-plugin.txt
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-6
+ai-vision/aivision-py-be/apps/core/tests/test_diagnosis_trial_timeout.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 188,197-222
+agentlens/tests/unit/diagnoser/test_rule_sandbox_routing.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-104
+ai-vision/agent-plugins/hermes/CAPABILITIES.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 25
+ai-vision/agent-plugins/tests/framework_e2e/verify_rag.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1150-1153
+ai-vision/aivision-py-be/apps/core/trace_query/metrics_projection.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 26-51,82,84
+aivision-cli/internal/cli/help_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 43-44
+ai-vision/vfe/tests/hermesOnboarding.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-225
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model_projection.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 15,195-199
+docs/deployment/zh-CN/sandbox-plugins.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-395
+ai-vision/vfe/src/components/traces-otel/TraceProcessView.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 8-12,23-26,37-43,45,193-196,198-209,235-239,315,353-355,362,420-421,465-472,479-489
+.github/workflows/ci.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11,13-19,25-27,34,44,59-60,121,182-183,195-211
+agentlens/tests/unit/sandbox_plugin/test_input_preflight.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-77
+ai-vision/vfe/src/labs/mcp/McpSpanCard.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 370,428
+aivision-cli/blueprints/aivision-source.yaml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 51,55-58,63
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/tool_normalization.rs
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 83-102
+aivision-cli/internal/sandboxplugin/network_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-58
+ai-vision/vfe/tests/e2e/contextCompaction.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-72
+ai-vision/agent-plugins/hermes/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3-14,158,160-164
+ai-vision/agent-plugins/kimi/kimihooks/src/hooks/kimi_code.rs
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 6-164
+scripts/ci/release_publish.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11,13,46,49-53,59-69,153-154,182,276-323,328-331,333-344,348-349,354-355,384,391,394-400,414,432-438,441,461,532-543
+  s_ecdc0692ab40f8::t_2a5c51daa354dd 544
+ai-vision/vfe/src/labs/mcp/mcpRegistryImport.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-132
+scripts/ci/test_native_candidate.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-365
+ai-vision/vfe/src/labs/memory/nativeMemory.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-151
+agentlens/src/agentlens/kernel/master/schedule_scanner.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 8,65-84
+ai-vision/vfe/src/components/traces-otel/PowerContextMemoryContent.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-112
+ai-vision/vfe/src/components/traces-otel/SpanTree.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 58-59,61-65,192-199,202-204,216-217,377,394,707-712,721,749-755,757,770,878-881,894-898
+ai-vision/vfe/src/features/plugins/installationApi.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-74
+ai-vision/vfe/package.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 13,16,22,24,32,39,42,44,48-49
+ai-vision/vfe/src/components/diagnose/diagnoser/ruleApi.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 12-40
+agentlens/src/agentlens/service/sandbox_execution.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-325
+ai-vision/vfe/src/labs/context-compaction/ContextCompactionCard.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-425
+ai-vision/vfe/src/components/labs/shared/importDialogStyles.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-43
+docs/deployment/assets/enhanced-rule-examples-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-149
+agentlens/docs/adr/sandbox-connection/resource-contract.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-171
+agentlens/docs/adr/sandbox-execution/input-transport.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-82
+ai-vision/vfe/src/components/agents/guidance/types.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 43-49
+ai-vision/vfe/tests/onboardingVerification.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 127-130
+docs/deployment/assets/openshell-install-simplification-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-47
+ai-vision/vfe/src/components/traces-otel/graph/graph-utils.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11-14,30,70,72-75,105
+aivision-cli/internal/sandboxbootstrap/host.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-221
+agentlens/tests/unit/sandbox_plugin/test_input_budget.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-132
+ai-vision/vfe/src/components/diagnose/diagnoser/useRuleRuntime.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-106
+agentlens/tests/unit/kernel/worker/test_runner.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 810-814,2527-2529,2540-2542
+agentlens/src/agentlens/service/sandbox.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-62
+agentlens/tests/integration/sandbox_plugin/test_sdk_input_transport.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-147
+aivision-cli/internal/sandboxbootstrap/environment_linux.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-27
+.github/workflows/promote-release.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-74
+docs/deployment/assets/enhanced-rule-runtime-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-243
+agentlens/tests/unit/sandbox_plugin/test_runtime.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-481
+agentlens/tests/unit/service/test_trace_store.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 116-118
+agentlens/docker/Dockerfile.rule-worker
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-44
+scripts/ci/test_plugin_build_scope.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-210
+ai-vision/vfe/src/pages/onboarding/OnboardingPageTemplate.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 58,131,194-198
+agentlens/docker/Dockerfile.sandbox-plugin.selfhost
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-51
+ai-vision/vfe/docker/smoke.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 99
+.github/workflows/release-openshell.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-203
+ai-vision/aivision-py-be/apps/core/tests/test_signoz_trace_provider.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 86-125,393-404
+  s_ecdc0692ab40f8::t_709d6b7c1dc8c0 84-85
+ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionForm.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-163
+scripts/ci/delivery_local.py
+  s_ecdc0692ab40f8::t_ef94fb7650d813 186-188
+  s_ecdc0692ab40f8::t_6dae2cf1def15c 17-20,73-132,152,155-181,254,266
+ai-vision/agent-plugins/hermes/tests/relay_redaction_policy.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-186
+aivision-cli/internal/sandboxbootstrap/state.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-220
+agentlens/tests/unit/web/routes/test_rule_trial.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 77-102,222-239
+ai-vision/agent-plugins/tests/native_agent_e2e/test_codex_driver.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 18,220,252
+agentlens/src/agentlens/infra/ob/models.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 157-207
+ai-vision/vfe/tests/sandboxConnectionsDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-1314
+scripts/ci/release_assets.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 14,20-25,35-47,67-68,107-108,116-120
+agentlens/src/agentlens/sandbox_plugin/openshell_exec.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-106
+ai-vision/agent-plugins/tests/diagnostics_e2e/test_docker_database.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 7,11,37-71
+agentlens/src/agentlens/sandbox_plugin/__init__.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1
+ai-vision/agent-plugins/deepseek/package.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 11-13
+ai-vision/agent-plugins/tests/framework_e2e/test_browser_manifest.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 38-48
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/pagination.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 86-92
+ai-vision/vfe/tests/privacyEvidenceDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-216
+ai-vision/vfe/src/labs/memory/powerContextSpans.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-122
+ai-vision/vfe/tests/e2e/contextCompaction.fixtures.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-56
+scripts/ci/test_release.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5,300,320,332,334,336,343,352,355,357,370,381,384-491,597,640-645,755-757,793-841,924-929,935-956
+  s_ecdc0692ab40f8::t_c6b9c53ebe549e 957
+agentlens/docs/adr/task-runner/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 42,44-45,66
+ai-vision/vfe/src/pages/RelayOnboardingPage.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 39,254,276,309,360,394
+ai-vision/vfe/src/components/labs/shared/ImportRegistrySearch.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-96
+agentlens/docker/build-sandbox-worker.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-111
+agentlens/docker/README.sandbox-plugin.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-127
+ai-vision/agent-plugins/deepseek/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 22-25
+ai-vision/agent-plugins/pi/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 21-24
+ai-vision/vfe/src/components/diagnose/diagnoser/EnhancedRuleMaterials.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-222
+ai-vision/vfe/src/labs/privacy/PrivacyMarkedText.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-54
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 245,2431,2569,2735-2771,3071,3087,3373-3530,3532-3545,3980-3981,3986,4082,4088,4539,5045-5678
+docs/deployment/assets/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-17
+agentlens/tests/unit/sandbox_plugin/conftest.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-131
+.github/workflows/native-candidate.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-132
+aivision-cli/internal/sandboxplugin/progress_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-148
+ai-vision/vfe/src/components/traces-otel/ModelCallRoleBadge.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-31
+ai-vision/vfe/tests/powerContextSpans.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-644
+agentlens/tests/unit/test_sandbox_integrations.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-1554
+ai-vision/vfe/tests/spanModelContextDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-445
+ai-vision/vfe/src/labs/memory/MemoryActivity.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 233
+scripts/ci/test_prepare_platform_disk.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-215
+ai-vision/vfe/src/labs/skill/SkillConfigImportDialog.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 21,118-121,126,134,136-137,140,143,148,166,202,208,259,268,279-284,289
+aivision-cli/internal/sandboxbootstrap/client.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-118
+agentlens/tests/unit/infra/ob/test_native_migrations.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 20,42
+ai-vision/aivision-py-be/apps/core/tests/test_sandbox_bootstrap.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-529
+docs/testing/trace-window-page-first-20261104.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-185
+ai-vision/aivision-py-be/apps/core/permissions/constants.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 13-14,33,44
+ai-vision/vfe/tests/mcpRegistryImport.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-208
+agentlens/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 206-211
+ai-vision/agent-plugins/tests/diagnostics_e2e/test_validate_local.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 52-53,364-365,414-415
+agentlens/tests/unit/infra/ob/test_models.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 19-21
+ai-vision/vfe/tests/e2e/mcpRegistryImport.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-846
+ai-vision/vfe/src/agents/dashboards/DashboardEntry.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 38-39,142-149,158,214,223,296,308
+ai-vision/aivision-py-be/apps/core/views/sandbox_installation.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-249
+ai-vision/vfe/tests/hermesDashboardIdentityDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-153
+ai-vision/vfe/tests/powerContextContent.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-263
+ai-vision/vfe/src/pages/onboarding/hermesRelayConfiguration.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-88
+ai-vision/vfe/src/components/diagnose/diagnoser/EnhancedRuleEnvironment.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-151
+ai-vision/vfe/tests/mcpDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 617-622,626,1093-1497,1521-1526,1536-1543,2117-2118,2186-2191,2351-2356,2418-2421,2476-2477,2491-2494,4161-4535
+ai-vision/vfe/tests/e2e/hermesOnboarding.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-378
+ai-vision/vfe/tests/spanTreeDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1173-1465
+ai-vision/vfe/tests/openShellInstallation.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-436
+agentlens/tests/unit/sandbox_plugin/test_enhanced_runtime.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-212
+ai-vision/vfe/src/pages/traces-otel/traceCompareTimelineLayout.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 29-30
+docs/version-info.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3,23-29,50,56,71,73,75
+ai-vision/vfe/src/labs/mcp/mcpApi.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 217-277
+ai-vision/agent-plugins/COMPATIBILITY.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 16
+agentlens/tests/unit/kernel/worker/test_runner_sandbox.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-95
+agentlens/docs/configuration.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 162-165
+ai-vision/vfe/src/pages/onboarding/HermesRelayGuide.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-308
+aivision-cli/internal/sandboxbootstrap/state_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-58
+ai-vision/vfe/src/labs/mcp/McpConfigImportDialog.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 7,17-18,24,59-60,62-63,78-86,97,135,172-175,180,185-255,257-306,308-310,313-323,325-332,334-347,349-371,373-385,387,391,400,405-418
+ai-vision/vfe/tests/traceUserInput.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 212-315,441-504,694-856
+ai-vision/vfe/src/components/traces-otel/spanMessageProjection.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-256
+ai-vision/vfe/src/features/sandbox-connections/api.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-94
+agentlens/src/agentlens/sandbox_plugin/provider.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-400
+agentlens/docs/diagnoser/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 371,557-562
+scripts/ci/prepare_platform_disk.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-97
+ai-vision/vfe/src/labs/mcp/McpServerDrawer.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 378-382,419-423,427,540,545,559,604-612,620-624,636-640,660-667,1004-1016
+agentlens/src/agentlens/service/sandbox_enrollment.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-97
+ai-vision/vfe/tests/spanContentDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 7,71-79,82-491,873-943
+  s_ecdc0692ab40f8::t_2ce4c769ce6d81 944
+ai-vision/vfe/tests/e2e/privacyEvidence.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-200
+agentlens/src/agentlens/domain/execution_revision.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5-6
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 93-112,487-492,494-504,510-512,674-686
+  s_ecdc0692ab40f8::t_0de0bb34c152f1 687
+ai-vision/vfe/src/pages/onboarding/integrations.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 175-179,183-185
+ai-vision/aivision-py-be/apps/core/views/labs_mcp_registry.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-577
+ai-vision/vfe/tests/e2e-platform/collection.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 2,9,16,18,64,90-95,105-109,114-118,140,193-210,222-233,235-237,282-290,317-334,336,394,409
+ai-vision/vfe/src/components/diagnose/badcase-detail/TraceTranscriptDrawer.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 33,633,707
+agentlens/src/agentlens/infra/sandbox.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-245
+ai-vision/aivision-py-be/apps/core/tests/test_labs_memory.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 20,206-250,476-525,1307,1327-1328,1353,1360,1424-1497,1526
+ai-vision/agent-plugins/tests/diagnostics_e2e/docker_database.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 9-10,72,77,80-123
+ai-vision/agent-plugins/tests/native_agent_e2e/test_install_runtimes.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 39-60
+ai-vision/agent-plugins/tests/native_agent_e2e/test_opencode_driver.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 19,32,34,73,280-285,455-478,504,530-536
+  s_ecdc0692ab40f8::t_7c2f21cec910a3 537
+agentlens/docs/adr/diagnoser/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 40,59
+aivision-cli/internal/sandboxplugin/manager.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-757
+ai-vision/agent-plugins/tests/framework_e2e/docker_platform.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 18-19,24,110-125,130-132,138-139,242-384,570-571,576-577,638-644
+ai-vision/aivision-py-be/apps/core/tests/test_sandbox_installation.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-440
+ai-vision/vfe/src/labs/privacy/privacyMarkers.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-39
+agentlens/src/agentlens/diagnoser/executors/rule/custom/enhanced_context.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-371
+ai-vision/aivision-py-be/apps/core/trace_query/memory_budget.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 27-28,46-47,92,97
+aivision-cli/internal/sandboxbootstrap/environment.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-204
+ai-vision/aivision-py-be/apps/core/tests/test_trace_query_memory.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 39-57,165,189,213
+agentlens/native/enhanced_rule_worker.c
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-65
+ai-vision/vfe/src/labs/memory/PowerContextRunCard.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-194
+.github/workflows/diagnostics-e2e.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 204-206,219,250-273,280-281,285-288
+ai-vision/vfe/src/pages/onboarding/hermesRelayPrivacy.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-179
+.github/workflows/release-images.yml
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3-4,6-7,13-17,145-147,150,357-367,370,389-392,455-460,463-490,495,552-553
+docs/deployment/assets/openshell-bootstrap-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-178
+ai-vision/vfe/src/components/traces-otel/shared/JsonDetailWidgets.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5-7,107-112,115,117,152-154,168-170,190-196,207,212-215,265,286-292,389,407-409,437,441-449,453,468,478-480,495-497,544-546,560-564,566
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 49-50,145-146,788-797,799,830,835-837,878,897,928,931,939-951,968,974-985,1026-1045,1065,1075-1077,1079,1131
+ai-vision/vfe/src/components/traces-otel/SpanTypedContent.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3-4,9,88,97,104,110-113,125,130,150,157-159,165,220,244-255,261,274,280-284,294
+scripts/ci/test_release_candidate.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-215
+README.ja.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 49
+scripts/ci/native_candidate.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-473
+ai-vision/vfe/src/labs/skill/SkillImportRegistryPanel.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3,8-11,106-121,123-128,130-138,140-144,146,152-153,169-185,187-192,199-200,222-233
+ai-vision/aivision-py-be/aivision_backend/settings.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 439-440
+ai-vision/vfe/tests/trialResult.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 34-35,261-292
+  s_ecdc0692ab40f8::t_0abe2b784060f4 293
+ai-vision/aivision-py-be/apps/core/tests/test_hermes_agent_lifecycle.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-67
+ai-vision/vfe/src/labs/memory/MemoryOverview.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 7,17,54-58,60-64,69-73
+ai-vision/vfe/src/components/traces-otel/format.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 25-39
+ai-vision/aivision-py-be/apps/core/views/labs_memory.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3,35-40,171-177,486-487,509-510,524-530,554,572-574,675-679,710,717-719,734,752,813,877-879,885,926,978
+ai-vision/vfe/tests/fixtures/contextCompaction.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-85
+VERSION
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1
+aivision-cli/internal/sandboxbootstrap/client_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-106
+agentlens/docs/adr/security/README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 42-45
+ai-vision/vfe/src/components/traces-otel/SpanContentEnhancement.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1,10-12,26,30-33,66-70,80-97,290,296,299,301-314,324-326,328,330,350
+scripts/ci/test_delivery_local.py
+  s_ecdc0692ab40f8::t_fd6e4fa71a4695 21-26,53,55-56,58,77-86,108-109,121-139,153-182
+  s_ecdc0692ab40f8::t_881167db271096 338-436
+  s_ecdc0692ab40f8::t_d17563ce7ab42d 437-466
+  s_ecdc0692ab40f8::t_9c19cd03b01b9b 183
+agentlens/obschema/ddl.sql
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 157-219
+ai-vision/vfe/tests/frameworkMetricsApi.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 19-37,39-48,94-98
+ai-vision/vfe/src/features/plugins/installation.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-186
+ai-vision/vfe/src/components/diagnose/diagnoser/TrialResultView.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 3-4,10,14,21,23-25,86-97,135
+agentlens/src/agentlens/kernel/runtime.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 92-94,105-117
+  s_ecdc0692ab40f8::t_f093349b1089ff 118
+agentlens/tests/unit/diagnoser/rule_custom/test_enhanced_contract.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-231
+ai-vision/aivision-py-be/apps/core/migrations/0036_sandbox_bootstrap_capabilities.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-53
+ai-vision/vfe/src/labs/mcp/McpImportRegistryPanel.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-589
+aivision-cli/internal/cli/commands.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 74-75,809
+ai-vision/vfe/tests/powerContextRun.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-108
+scripts/ci/release_candidate.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-155
+agentlens/docs/architecture.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 298,324-328
+agentlens/tests/unit/sandbox_plugin/test_environment.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-67
+aivision-cli/deploy/assets-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5
+aivision-cli/internal/cli/plugin_reporting_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-177
+ai-vision/vfe/src/features/plugins/PluginWorkspace.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-441
+agentlens/src/agentlens/diagnoser/executors/rule/custom/enhanced_contract.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-222
+ai-vision/vfe/src/pages/SandboxConnectionsPage.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-13
+scripts/ci/test_openshell_catalog.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-89
+ai-vision/vfe/src/components/traces/shared/TraceTextContent.tsx
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 7,166
+ai-vision/vfe/tests/traceEvidence.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 18,58-71
+  s_ecdc0692ab40f8::t_f41347b4c87e86 72-73
+README.md
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 50
+aivision-cli/internal/sandboxplugin/socket_gid_test.go
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-125
+ai-vision/vfe/tests/traceProcess.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 5-9,129-217,1082-1686
+agentlens/docker/Dockerfile.sandbox-plugin
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-32
+ai-vision/aivision-py-be/apps/core/tests/test_labs_mcp_registry.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-436
+ai-vision/aivision-py-be/apps/core/models/sandbox_installation.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-46
+deploy/native-packaging/release-contract.md
+  s_ecdc0692ab40f8::t_f2b2727a01b0a5 123-127,130-139
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 24-35,45
+  s_ecdc0692ab40f8::t_a1259a220266b4 18,36-38,111-113,118
+  s_ecdc0692ab40f8::t_b6119940d7f494 119-122
+  s_ecdc0692ab40f8::t_3dfea259250f53 128-129
+agentlens/tests/unit/sandbox_plugin/test_provider.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-261
+ai-vision/vfe/src/features/sandbox-connections/types.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-98
+ai-vision/agent-plugins/tests/native_agent_e2e/drivers/opencode.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 344-347,349-351,353-377,379-406,408,411,415
+ai-vision/vfe/tests/e2e/relayTraceProcess.spec.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-487
+scripts/ci/openshell_catalog.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-153
+agentlens/src/agentlens/web/schemas/sandbox.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-131
+docs/testing/screenshots/powercontext/source-manifest.json
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-67
+agentlens/docker/rule_runtime_manifest.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-51
+ai-vision/aivision-py-be/apps/core/tests/test_third_party_onboarding.py
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 209-210
+ai-vision/vfe/tests/contextCompactionDom.test.ts
+  s_ecdc0692ab40f8::t_76a3bac1f7c92f 1-464
+agentlens/uv.lock
+  s_ecdc0692ab40f8::t_d04c3902bceeff 40-45,50,53,56,67,75,239-247,422-452,645-659
+docs/superpowers/plans/2026-11-03-cross-repo-public-daily.md
+  s_ecdc0692ab40f8::t_9d1fe018d8fa77 1-83
+docs/superpowers/plans/2026-11-03-public-native-candidate-ci.md
+  s_ecdc0692ab40f8::t_f5352640f22631 1-63
+docs/superpowers/specs/2026-11-03-cross-repo-public-daily.md
+  s_ecdc0692ab40f8::t_458e96a107cb0a 1-61
+docs/superpowers/specs/2026-11-03-public-native-candidate-ci.md
+  s_ecdc0692ab40f8::t_03f16984e04099 1-54
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5746bb5f4710290a884c98c29dd53b14a9fa8474",
+  "prompts": {},
+  "sessions": {
+    "s_ecdc0692ab40f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a181b8-d240-7e53-a5f3-51f48e363871",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
