@@ -1,0 +1,48 @@
+ai-vision/vfe/package.json
+  s_2f5254e8b447ea::t_73bda415ec1188 63
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2f5254e8b447ea::t_f7a87fb4642823 408
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  s_2f5254e8b447ea::t_2aac5add63e0e7 64-65,104-106,117-123,127-130,141-145,157-160,170-173,176-179
+  s_2f5254e8b447ea::t_2defd892f02afa 163-164,166-167,174-175
+  s_2f5254e8b447ea::t_0ecf15495009f1 18-22,63,66-68,87-93,96-97,107-116,124-126,131-140,146-156,161-162,165,169,182-185
+ai-vision/vfe/src/agents/lib/dashboardQueryError.ts
+  s_2f5254e8b447ea::t_a88ad7a224746a 4
+ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx
+  s_2f5254e8b447ea::t_779f783506f11a 555,557,805-806,811,829-830
+  s_2f5254e8b447ea::t_2aac5add63e0e7 815-817
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2f5254e8b447ea::t_779f783506f11a 391
+ai-vision/docs/v2/encrypted-query-protocol.md
+  s_2f5254e8b447ea::t_8a8cc2d3848274 77,93,95,101
+  s_2f5254e8b447ea::t_2a66e26c89281b 8,12,18,20,55-56,75,80,83,88-91,94,103-105,184-187
+  s_2f5254e8b447ea::t_f26364d2ba7d72 92
+ai-vision/vfe/src/agents/lib/dashboardQueryAdapter.ts
+  s_2f5254e8b447ea::t_a88ad7a224746a 22,194
+ai-vision/vfe/src/agents/lib/agentQueryCrypto.ts
+  s_2f5254e8b447ea::t_a88ad7a224746a 7-8,55-58,61,68-79,82-91,99-101,105,109-120,125-130,143,148,151-152,157,177-178,181,185,187,200-202
+  s_2f5254e8b447ea::t_5f0c413d7be7eb 32,132-136
+  s_2f5254e8b447ea::t_2aac5add63e0e7 92-98,102-104,106-108,137-142
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2f5254e8b447ea::t_779f783506f11a 409
+ai-vision/vfe/tests/frameworkModuleLoading.test.ts
+  s_2f5254e8b447ea::t_779f783506f11a 262,278
+ai-vision/vfe/pnpm-lock.yaml
+  s_2f5254e8b447ea::t_28e8b8a0bcf900 41-43,938-941,6275-6276
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e4114e59ea36bcb93ba7f23fce8b5ec4ed040739",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
