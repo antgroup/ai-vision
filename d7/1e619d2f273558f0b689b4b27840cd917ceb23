@@ -1,0 +1,60 @@
+ai-vision/vfe/tests/onboardingPagesDom.test.ts
+  s_2f5254e8b447ea::t_e6105ac7fa3268 548,550
+ai-vision/vfe/tests/e2e/hermesOnboarding.spec.ts
+  s_2f5254e8b447ea::t_e6105ac7fa3268 203-204,211
+  s_2f5254e8b447ea::t_21a08de2a666bc 320-325,363-365
+  s_2f5254e8b447ea::t_7c4cc39e6a7c70 13,136,141-147,164-183
+  s_2f5254e8b447ea::t_723dea594195d5 184
+ai-vision/vfe/src/pages/settings/SettingsPage.tsx
+  s_2f5254e8b447ea::t_89178f63fd4e41 313-315,331-333
+  s_2f5254e8b447ea::t_38ca13e38a0aee 14,123,137,139-140,142-147,151-152,300,309-312,316-330,334-340
+ai-vision/vfe/src/components/agents/AgentCard.tsx
+  s_2f5254e8b447ea::t_e72be469c65998 79,85
+ai-vision/vfe/tests/e2e/langfuseCosts.spec.ts
+  s_2f5254e8b447ea::t_44dc8040addade 83-85,92-101
+  s_2f5254e8b447ea::t_73ed0f0e2d4798 4,11,13-26,55-56,58-62,106
+  s_2f5254e8b447ea::t_104ae500827e7c 5,7-10,12,27-54,63-71,86-87,102-105,107-113
+  s_2f5254e8b447ea::t_4e52c2736d4b47 72-82
+  s_2f5254e8b447ea::t_5db637ba63b098 6,88-91
+  s_2f5254e8b447ea::t_8dba33733fa9da 57
+ai-vision/vfe/src/components/layout/AppShell.tsx
+  s_2f5254e8b447ea::t_4cbf9dd09599a8 136-138,529-533,551-555,573-579,670-674
+  s_2f5254e8b447ea::t_2fdae3782f419e 147
+  s_2f5254e8b447ea::t_652ec7e9548340 134-135,145,151,497,509-511,519,541,563,603,619-621,640,677-679,694,700-702
+ai-vision/vfe/src/components/diagnose/diagnoser/DiagnoserDetailDrawer.tsx
+  s_2f5254e8b447ea::t_ef4729962ec48d 103-108
+  s_2f5254e8b447ea::t_38ca13e38a0aee 95,98-100,144
+ai-vision/vfe/src/pages/traces-lf/TracePage.tsx
+  s_2f5254e8b447ea::t_e58ca4666897cc 1186,1188-1192
+  s_2f5254e8b447ea::t_44dc8040addade 1244,1312,1354,1418
+  s_2f5254e8b447ea::t_5e4d1af4eedc54 1187,1193,1311
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_2f5254e8b447ea::t_e72be469c65998 1,35-42,449,668-691,768,773,937-947,951-952,958-959,973,979,986-988,1274-1275,1363,1449-1452,1462
+  s_2f5254e8b447ea::t_21a08de2a666bc 932-936,953-956,974-976,980-985
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  s_2f5254e8b447ea::t_e58ca4666897cc 1150,1152-1156
+  s_2f5254e8b447ea::t_ce0c6b3bffc0f5 1151,1157
+ai-vision/vfe/src/agents/traces/TraceEntry.tsx
+  s_2f5254e8b447ea::t_e58ca4666897cc 19,232,472-480,486-494
+  s_2f5254e8b447ea::t_73ed0f0e2d4798 210-211,365-373
+ai-vision/vfe/src/components/diagnose/job/ExecutionHistoryDrawer.tsx
+  s_2f5254e8b447ea::t_38ca13e38a0aee 87,89-90,97,109,111
+ai-vision/vfe/src/components/diagnose/job/JobDrawer.tsx
+  s_2f5254e8b447ea::t_38ca13e38a0aee 554-557,560-561,566,579,707,724,833,866,986
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d71e619d2f273558f0b689b4b27840cd917ceb23",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
