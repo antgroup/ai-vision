@@ -1,0 +1,97 @@
+ai-vision/vfe/src/components/diagnose/badcase-detail/FeedbackBar.tsx
+  s_2f5254e8b447ea::t_50fbe65fc25ac9 107,111-112,114,116-117,119-123,126-127,129-131,134-135,137-138,140-141,143,167-171
+ai-vision/vfe/src/components/layout/AuthStatusScreen.tsx
+  s_2f5254e8b447ea::t_c4bdb35f4d7695 37-39
+ai-vision/vfe/src/components/traces/shared/TraceLinkShell.tsx
+  s_2f5254e8b447ea::t_4526d88c2b3bfd 1-26
+ai-vision/vfe/src/pages/about/AboutPage.tsx
+  s_2f5254e8b447ea::t_98744f93c4d02c 167
+ai-vision/vfe/tests/e2e/memoryObservability.spec.ts
+  s_2f5254e8b447ea::t_66681c8075ac17 538-543
+ai-vision/vfe/src/pages/traces-lf/TracePage.tsx
+  s_2f5254e8b447ea::t_42b68ad54cdcdf 1245
+  s_2f5254e8b447ea::t_3deb83eefafe71 39,1062-1064,1202,1243-1244,1246-1249,1258,1268,1275
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  s_2f5254e8b447ea::t_42b68ad54cdcdf 1180
+  s_2f5254e8b447ea::t_3deb83eefafe71 21,1065-1067,1166,1178-1179,1181-1184,1193,1203,1210
+ai-vision/vfe/src/pages/LocalAuthPage.tsx
+  s_2f5254e8b447ea::t_c4bdb35f4d7695 620
+ai-vision/vfe/src/components/diagnose/diagnoser/CreateDiagnoserModal.tsx
+  s_2f5254e8b447ea::t_b462ad7774ca14 5,60-63,65-69
+ai-vision/vfe/src/components/agents/AgentCard.tsx
+  s_2f5254e8b447ea::t_9a4ffc228cd13b 104,161
+  s_2f5254e8b447ea::t_6fda5e39f47270 155
+  s_2f5254e8b447ea::t_c4bdb35f4d7695 61,156-157
+ai-vision/vfe/src/components/diagnose/badcase-detail/TraceTranscriptDrawer.tsx
+  s_2f5254e8b447ea::t_b462ad7774ca14 538,540
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_2f5254e8b447ea::t_3deb83eefafe71 126-129
+  s_2f5254e8b447ea::t_07623eceaa61bf 466
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2f5254e8b447ea::t_58addc35f9034f 583,1613,1986,4128,5050,5153
+  s_2f5254e8b447ea::t_73654b0cc8de3b 2467,2520
+ai-vision/vfe/src/pages/DownloadPage.tsx
+  s_2f5254e8b447ea::t_c4bdb35f4d7695 319-323,630
+ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionsSection.tsx
+  s_2f5254e8b447ea::t_98744f93c4d02c 153
+ai-vision/vfe/src/pages/onboarding/OnboardingPageTemplate.tsx
+  s_2f5254e8b447ea::t_c4bdb35f4d7695 455-462
+  s_2f5254e8b447ea::t_fe636091ea5c53 3,217-219,240,242-247
+  s_2f5254e8b447ea::t_9a4ffc228cd13b 468
+ai-vision/vfe/src/components/labs/shared/LabsIntroBanner.tsx
+  s_2f5254e8b447ea::t_b3c847759bdcda 1,39-40,42,52-55,62-65,74,84-85,110-111
+ai-vision/vfe/src/features/model-pricing/PricingModelResolver.tsx
+  s_2f5254e8b447ea::t_98744f93c4d02c 90,96
+  s_2f5254e8b447ea::t_6ad2c1598dcad2 7
+ai-vision/vfe/src/pages/settings/AddMemberSheet.tsx
+  s_2f5254e8b447ea::t_fe636091ea5c53 130,136
+ai-vision/vfe/src/components/diagnose/diagnoser/RawTraceVariablePicker.tsx
+  s_2f5254e8b447ea::t_b462ad7774ca14 1672-1674,1848-1850,1883
+ai-vision/vfe/src/features/model-pricing/PricingSettingsDialog.tsx
+  s_2f5254e8b447ea::t_98744f93c4d02c 54,60
+  s_2f5254e8b447ea::t_5471fbecb91af2 6
+ai-vision/vfe/src/pages/receipt/Receipt.tsx
+  s_2f5254e8b447ea::t_4f0b0081060eb4 326-332
+ai-vision/vfe/src/pages/diagnose/JobPage.tsx
+  s_2f5254e8b447ea::t_b462ad7774ca14 394-398
+ai-vision/vfe/src/pages/SharePage.tsx
+  s_2f5254e8b447ea::t_ab3002327e959b 1,16,52,74,288,363
+ai-vision/vfe/src/components/diagnose/diagnoser/DiagnoserDetailDrawer.tsx
+  s_2f5254e8b447ea::t_b462ad7774ca14 150,152,154
+ai-vision/vfe/tests/i18n.test.ts
+  s_2f5254e8b447ea::t_78a07362947a9e 253-254,257-261
+ai-vision/vfe/src/pages/ObservationLinkPage.tsx
+  s_2f5254e8b447ea::t_ab3002327e959b 2,9,36,43,117,126
+ai-vision/vfe/src/pages/TraceLinkPage.tsx
+  s_2f5254e8b447ea::t_ab3002327e959b 2,12,50,69,166,197
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2f5254e8b447ea::t_58addc35f9034f 600,1630,2003,4128,5050,5153
+  s_2f5254e8b447ea::t_73654b0cc8de3b 2484,2537
+ai-vision/vfe/src/pages/diagnose/DiagnoserPage.tsx
+  s_2f5254e8b447ea::t_b462ad7774ca14 23,639-642
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_2f5254e8b447ea::t_9a4ffc228cd13b 634,661
+  s_2f5254e8b447ea::t_c4bdb35f4d7695 593-597,651-655,705-707
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2f5254e8b447ea::t_58addc35f9034f 579,1622,1995,4117,5039,5142
+  s_2f5254e8b447ea::t_73654b0cc8de3b 2476,2529
+ai-vision/vfe/src/components/diagnose/diagnoser/SpecialistConfigurationForm.tsx
+  s_2f5254e8b447ea::t_0696e1d810743a 362-367
+  s_2f5254e8b447ea::t_b462ad7774ca14 357-358,371
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e8213ec8e6dd200b89294e02c66663ca66be2709",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
