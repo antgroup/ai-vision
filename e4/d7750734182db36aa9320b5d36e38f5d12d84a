@@ -1,0 +1,25 @@
+ai-vision/vfe/tests/e2e/sdkValueContract.spec.ts
+  s_2f5254e8b447ea::t_681d7e7c5ab78d 1,4-12,20-25,31,40-44,49-61,65-74,76-80,209
+  s_2f5254e8b447ea::t_8e8708b8e409af 81-125,127-144,146,150-208,210-220,223-225
+docs/testing/sdk-value-contract-20261112.md
+  s_2f5254e8b447ea::t_094382a16aaa20 1-55,57-89
+  s_2f5254e8b447ea::t_29958793783d9b 56
+docs/testing/images/sdk-contract-20261112/evidence.json
+  s_2f5254e8b447ea::t_43180c7778ade5 1-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e4d7750734182db36aa9320b5d36e38f5d12d84a",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
