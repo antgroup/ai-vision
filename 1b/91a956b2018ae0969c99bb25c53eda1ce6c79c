@@ -1,0 +1,29 @@
+docs/testing/pr174-review-20261112.md
+  s_2f5254e8b447ea::t_0c66a2355f5024 1-117
+ai-vision/vfe/tests/e2e/mcpRegistryImport.spec.ts
+  s_2f5254e8b447ea::t_775013cdd7a2b7 484
+ai-vision/vfe/src/components/diagnose/job/TaskDetailDialog.tsx
+  s_2f5254e8b447ea::t_775013cdd7a2b7 214
+docs/testing/images/pr174-review-20261112/evidence.json
+  s_2f5254e8b447ea::t_756ef5b0fcc286 1-710
+ai-vision/vfe/tests/e2e/taskDialogLayout.spec.ts
+  s_2f5254e8b447ea::t_6901d783a33c67 47
+  s_2f5254e8b447ea::t_cd2e1b61677e90 57-64
+  s_2f5254e8b447ea::t_01516e57de89f9 1-46,48-56,65-147
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1b91a956b2018ae0969c99bb25c53eda1ce6c79c",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
