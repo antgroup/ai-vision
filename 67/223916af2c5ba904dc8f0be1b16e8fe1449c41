@@ -1,0 +1,57 @@
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing_sync_sources.py
+  s_2f5254e8b447ea::t_31071f90df1b48 4-6,33-41,115-116,131-141,143,147-148
+  s_2f5254e8b447ea::t_9b848fd8d6347e 2,112-114,117-130,142,144-146,149-153
+  s_2f5254e8b447ea::t_489fe0c7503c71 154
+deploy/native-packaging/build.py
+  s_2f5254e8b447ea::t_0c494382e2af54 175-176
+ai-vision/vfe/tests/e2e/modelPricing.spec.ts
+  s_2f5254e8b447ea::t_5ef1273f02db4c 1153-1171,1173
+ai-vision/aivision-py-be/apps/core/tests/test_serve_with_projector.py
+  s_2f5254e8b447ea::t_04984c79e84b15 68,151-153
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2f5254e8b447ea::t_5ef1273f02db4c 4623,4635
+ai-vision/aivision-py-be/apps/core/services/model_pricing.py
+  s_2f5254e8b447ea::t_8b8a74b8f05e2a 11-12,36,299-311,314
+  s_2f5254e8b447ea::t_39682af6f1a635 13,16-17,172,178-179,193,264,286-298,312-313,315-323
+  s_2f5254e8b447ea::t_a4e4b73be44a7a 324-325
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2f5254e8b447ea::t_5ef1273f02db4c 4612,4624
+ai-vision/docs/observability/model-pricing.md
+  s_2f5254e8b447ea::t_7eff9da9258fbe 48-54,310-315,319,325-340
+deploy/native-packaging/test_build.py
+  s_2f5254e8b447ea::t_0c494382e2af54 127,133-134,137-147
+ai-vision/aivision-py-be/apps/core/data/models-dev-LICENSE
+  s_2f5254e8b447ea::t_dc1a4e79c121b5 1-21
+ai-vision/aivision-py-be/apps/core/management/commands/sync_model_pricing.py
+  s_2f5254e8b447ea::t_e4f4e242b91d74 4-6,16,19,23-24,27-30
+ai-vision/aivision-py-be/apps/core/management/commands/serve_with_projector.py
+  s_2f5254e8b447ea::t_26d8ea12d480c9 60,63,75
+ai-vision/scripts/docker/supervisord.d/model-pricing.ini
+  s_2f5254e8b447ea::t_1aeea0c9e441a6 2
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2f5254e8b447ea::t_5ef1273f02db4c 4623,4635
+ai-vision/aivision-py-be/scripts/native_build.py
+  s_2f5254e8b447ea::t_0c494382e2af54 15-17
+ai-vision/vfe/src/features/model-pricing/types.ts
+  s_2f5254e8b447ea::t_5ef1273f02db4c 35
+ai-vision/scripts/README.md
+  s_2f5254e8b447ea::t_0c494382e2af54 34-37,94
+ai-vision/aivision-py-be/apps/core/data/models-dev-NOTICE.txt
+  s_2f5254e8b447ea::t_69fc3823768af7 1-10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "67223916af2c5ba904dc8f0be1b16e8fe1449c41",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
