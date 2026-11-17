@@ -1,0 +1,300 @@
+ai-vision/aivision-py-be/apps/core/trace_query/service.py
+  s_0ba4aa59e34a4f::t_b7de74d2f43209 115
+  s_0ba4aa59e34a4f::t_96658ec9355bcc 116
+  s_0ba4aa59e34a4f::t_ae114bbc506658 19,112-114,150-151
+ai-vision/agent-plugins/shared/media-content.test.mjs
+  s_0ba4aa59e34a4f::t_384335dd1da274 51-71
+ai-vision/vfe/tests/traceProcessNavigation.test.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 1-85
+ai-vision/vfe/src/components/traces-otel/api.ts
+  s_0ba4aa59e34a4f::t_4158ef77ab70be 127
+ai-vision/vfe/src/contexts/TimeFilterContext.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 11,13,18-24,52-53,70-73,138-142,160-164,172-173,177-178,181-182,187,190,193,197,202-219,262,275,331
+ai-vision/agent-plugins/deepseek/observ-dsh/tests/media-transport.test.mjs
+  s_0ba4aa59e34a4f::t_384335dd1da274 52,65,70-94
+  s_0ba4aa59e34a4f::t_80ac8365981bb0 1-51,53-64,66-69,95-138
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py
+  s_0ba4aa59e34a4f::t_0b804e916a4887 8,26-27,920-922,925-938
+ai-vision/vfe/src/components/traces/shared/TraceUserInputSummary.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 19,109-110,115-116,184-186,233,239-243,246-250,290
+  s_0ba4aa59e34a4f::t_91889b73161831 274-289
+  s_0ba4aa59e34a4f::t_f5e30afaffe19c 256
+  s_0ba4aa59e34a4f::t_1abf793ac03e5a 266-273
+ai-vision/vfe/src/features/model-pricing/ModelPricingContent.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 1,4,18-19,42-43,45-47,56,66-80,88-99,106,108,111-126,233-239,259,261-265,276,284,290-291,293-300,352,370-376,447,590,733,740-744
+ai-vision/vfe/tests/e2e/traceCompareEvidence.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 1229-1230
+ai-vision/agent-plugins/hermes/hermes-core/aivision_hermes_core/media.py
+  s_0ba4aa59e34a4f::t_22a27d488022aa 18-19,37-40
+ai-vision/vfe/tests/traceCompareData.test.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 109-176
+ai-vision/vfe/src/components/traces/shared/TraceMediaSummary.tsx
+  s_0ba4aa59e34a4f::t_1abf793ac03e5a 75
+  s_0ba4aa59e34a4f::t_8f1b05005f3438 100-101
+  s_0ba4aa59e34a4f::t_2bc98a13705728 59-72,85,89,92,96,105-110,112
+  s_0ba4aa59e34a4f::t_f5e30afaffe19c 52
+  s_0ba4aa59e34a4f::t_9e7f880c3ff760 53-58,73-74
+  s_0ba4aa59e34a4f::t_9b15d0ad7e04f2 97-99,102-104,111
+ai-vision/vfe/tests/modelConnectionNavigationDom.test.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 252
+ai-vision/aivision-py-be/apps/core/tests/test_url_auth_boundaries.py
+  s_0ba4aa59e34a4f::t_9c4f2e1fb1e36b 65-72
+ai-vision/vfe/tests/e2e/traceMediaCollections.spec.ts
+  s_0ba4aa59e34a4f::t_e873f705398a2b 76-80,96-97,100,141,177,200-202
+  s_0ba4aa59e34a4f::t_d40171b7558f56 135,335-344,346-358,413,435,456,524,531-534
+  s_0ba4aa59e34a4f::t_15669d69bd28c0 205
+  s_0ba4aa59e34a4f::t_a998bfb6642f99 9-69,74-75,81-95,98-99,101-102,125,127,140,176,183-186,198,215,217-269,272-275,282-315,317,326-334,363-379,399-404,446,498,501,503,509,519
+  s_0ba4aa59e34a4f::t_f510ecc3e97609 3,104-117,151,154-173,270-271,276-281,316,318-325,359-362,407,517
+  s_0ba4aa59e34a4f::t_e276ee69d427c9 124,216,386-398,457
+  s_0ba4aa59e34a4f::t_7d12814b826ca7 72
+  s_0ba4aa59e34a4f::t_4cbbe85b3cbb81 1-2,4-8,70-71,73,103,118-123,126,128-134,136-139,142-150,152-153,174-175,178-182,187-197,199,203-204,206-214,345,380-385,405-406,408-412,414-434,436-445,447-455,458-497,499-500,502,504-508,510-516,518,520-523,525-530,535
+ai-vision/vfe/tests/nativeQueryTransport.test.ts
+  s_0ba4aa59e34a4f::t_d833461e0706f4 397-399,404-415,420-433
+  s_0ba4aa59e34a4f::t_3ceed235adb5ea 11-13,400-403,416-419
+ai-vision/vfe/src/components/header/AutoRefreshControl.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 21-25,45-46,48-52
+antcollector/exporter/boundedotlphttpexporter/exporter_test.go
+  s_0ba4aa59e34a4f::t_45af9d4dca66f2 4-22,29-33,38-53,57-70,74-106,110-121,125-138,142-154,158-165,177,182,189-190,196,205,208-209,211-212,220,223,225-226,228-229,235,239-240
+  s_0ba4aa59e34a4f::t_28ce6cf8db9cf3 1-3,26-28,34-37,54-56,71-73,107-109,122-124,139-141,155-157,166,242
+  s_0ba4aa59e34a4f::t_b31d577d92609b 23-25,167-176,178-181,183-188,191-195,197-204,206-207,210,213-219,221-222,224,227,230-234,236-238,241
+ai-vision/aivision-py-be/apps/core/tests/test_native_read_model.py
+  s_0ba4aa59e34a4f::t_e5208e2f0967c9 415-425
+  s_0ba4aa59e34a4f::t_1dcd5cc376d930 328-368
+  s_0ba4aa59e34a4f::t_9eb556f6629ed4 369-414
+ai-vision/aivision-py-be/apps/core/tests/test_native_trace_previews.py
+  s_0ba4aa59e34a4f::t_e5208e2f0967c9 180-199
+  s_0ba4aa59e34a4f::t_9eb556f6629ed4 211-216,226-267
+  s_0ba4aa59e34a4f::t_1dcd5cc376d930 114-163,165-179
+  s_0ba4aa59e34a4f::t_0b804e916a4887 12,352-357
+  s_0ba4aa59e34a4f::t_220c0c03de7d6a 275,300-301
+  s_0ba4aa59e34a4f::t_7d6a0c1b126faf 200-210,217-225,268-269
+  s_0ba4aa59e34a4f::t_90a3c5b9f15a7d 3,8,16,112-113,270-274,276-299,302-313,323-351,358-374
+  s_0ba4aa59e34a4f::t_8d266dcf2beb1f 164
+  s_0ba4aa59e34a4f::t_4bca3317d8ceb1 314-322
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 11,41,52,102-106,173,180-186,964-978,1035,1054,1067-1069,1233,1244,1441
+ai-vision/vfe/src/components/traces-otel/TraceOverviewExcerpt.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 1-60
+ai-vision/vfe/tests/e2e/modelPricing.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 45-46,308-309,316-326,432,435-461,463-493,496,501-618,621-622,626,628-637,644-734,777-803,940,942,1222,1230-1234,1237-1239,1477-1482,1506,1508
+ai-vision/vfe/src/components/traces-otel/TraceOverviewValue.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 1-8,11-31,33-99,105-109
+  s_0ba4aa59e34a4f::t_c53daf96abe28d 9-10,32,100-104
+antcollector/conf/antcollectorsignoz/gateway.yaml
+  s_0ba4aa59e34a4f::t_c258e279f94f60 38,43
+antcollector/README.md
+  s_0ba4aa59e34a4f::t_51189481e1fcb0 18-26
+ai-vision/aivision-py-be/apps/core/tests/test_managed_queries.py
+  s_0ba4aa59e34a4f::t_237a74fc84adc5 311-329
+  s_0ba4aa59e34a4f::t_9eb556f6629ed4 330-347
+ai-vision/aivision-py-be/apps/core/trace_query/NATIVE_QUERY.md
+  s_0ba4aa59e34a4f::t_237a74fc84adc5 232-237
+  s_0ba4aa59e34a4f::t_14f6c912726f72 225-231,238-239
+ai-vision/vfe/src/lib/timeFilter.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 9-14,84-85,90-96,112-115,119,140-141,149-153,189-190
+antcollector/cmd/app/main.go
+  s_0ba4aa59e34a4f::t_09a7c0a3f69209 23,65
+ai-vision/vfe/tests/traceUserInputDom.test.ts
+  s_0ba4aa59e34a4f::t_92e8c25f4ff0fc 894-902
+  s_0ba4aa59e34a4f::t_7f38edac1bd0b8 893
+  s_0ba4aa59e34a4f::t_cad01dda8d0dd5 931-977,1031,1034-1035,1037-1038,1111
+  s_0ba4aa59e34a4f::t_1651e7da8222f9 983-1029
+  s_0ba4aa59e34a4f::t_8f1b05005f3438 1030,1039-1108
+  s_0ba4aa59e34a4f::t_4fb992e24bc4bc 930,978-982,1032-1033,1036,1109-1110
+ai-vision/agent-plugins/deepseek/observ-dsh/src/telemetry.ts
+  s_0ba4aa59e34a4f::t_d3188388da2596 29,144,148
+ai-vision/vfe/tests/traceProcessDom.test.ts
+  s_0ba4aa59e34a4f::t_8ed9656419be8f 19-23,47-49,672-674
+  s_0ba4aa59e34a4f::t_514890072c4071 38-44,961
+  s_0ba4aa59e34a4f::t_9733534c264659 7-8,12-18,37,45-46,50-52,70,100-115,156-157,159-161,163-164,166,239,375,433-434,440,458,670-671,675-677,736-737,838-841,875-959
+  s_0ba4aa59e34a4f::t_5778c0efb399b5 960
+ai-vision/vfe/tests/e2e/traceMediaRegression.spec.ts
+  s_0ba4aa59e34a4f::t_a5bb212402ebfe 1-4,11,15-16,22,64,66-67,69-70,72-73,77,99-102,107,110,120,146,148,164,171-172,176,180,213,218-222,226,243,250-254
+  s_0ba4aa59e34a4f::t_ba844e7539110b 68,71,161
+  s_0ba4aa59e34a4f::t_241627f29cca23 205
+  s_0ba4aa59e34a4f::t_9e7f880c3ff760 5-10,12-14,17-21,23-63,65,74-76,78-98,103-106,108-109,111-119,121-145,147,149-160,162-163,165-170,173-175,177-179,181-204,206-212,223-225,227-242,244-249
+  s_0ba4aa59e34a4f::t_4fec700a42da8b 214-217
+ai-vision/vfe/src/features/model-pricing/timeRange.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 1-21
+ai-vision/vfe/src/components/traces/shared/TraceMedia.tsx
+  s_0ba4aa59e34a4f::t_6e9de0e2fb8be5 208,221,244
+  s_0ba4aa59e34a4f::t_92e8c25f4ff0fc 4-13,60-64,165-166,169,175-193,204-207,215-220,237-241,258-262,274-275,277-280,284-288,306-309,316-320,360,509-513,524-528
+  s_0ba4aa59e34a4f::t_f5e30afaffe19c 28,31-38,65-68,70-72,164,170-174,229-231,249-251,281,289,498-508,514-515,519-523,529,547-548,553
+  s_0ba4aa59e34a4f::t_1abf793ac03e5a 290,292-293
+  s_0ba4aa59e34a4f::t_abbd32a0b6c42d 167-168,276
+  s_0ba4aa59e34a4f::t_527d15bf31197c 539-543
+  s_0ba4aa59e34a4f::t_3555a489baf934 14,106,200,202-203,222,225,227-228,242,245,247-248,263,282,325,333,363-364,366-367,371,373,375-376,380-381,383-384,391,394,439,447,451
+  s_0ba4aa59e34a4f::t_75aa57544b52cf 299,516,530-538,544-546
+  s_0ba4aa59e34a4f::t_5cb3d4ebe45544 73-75,194-196,291
+ai-vision/vfe/src/components/traces-otel/TraceRootIO.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 1-78
+ai-vision/vfe/src/components/traces-otel/SpanDetailPanel.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 22,76-77,102-103,337-365,367-369,375,588
+ai-vision/vfe/tests/e2e/qualityTimeRange.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 11,26-31,40,125-128,130,142-145,152,210-242
+  s_0ba4aa59e34a4f::t_1b17cea38a4e34 243-244
+ai-vision/aivision-py-be/apps/core/tests/test_trace_media_permissions.py
+  s_0ba4aa59e34a4f::t_f9c55be9f50e50 117,142-181
+  s_0ba4aa59e34a4f::t_ccca807fe80ad9 1-101,105-114,116
+  s_0ba4aa59e34a4f::t_fa9ac4f40d325d 102-104
+  s_0ba4aa59e34a4f::t_0dec45a1b2e7b2 133-141
+  s_0ba4aa59e34a4f::t_b2baaf14ec9d43 115
+  s_0ba4aa59e34a4f::t_ca319733362b4a 118-128,130-132
+  s_0ba4aa59e34a4f::t_09a2d513404333 129
+ai-vision/agent-plugins/deepseek/observ-dsh/tests/engine.test.mjs
+  s_0ba4aa59e34a4f::t_d50203df92eecd 887-888
+  s_0ba4aa59e34a4f::t_b0de0f6051a691 869-886,889-892
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_0ba4aa59e34a4f::t_8ed9656419be8f 267-269
+  s_0ba4aa59e34a4f::t_9733534c264659 90-96
+ai-vision/aivision-py-be/apps/core/tests/test_trace_attachment.py
+  s_0ba4aa59e34a4f::t_d26e03376eeae8 66-145
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_0ba4aa59e34a4f::t_6e9de0e2fb8be5 3
+  s_0ba4aa59e34a4f::t_3555a489baf934 11-12
+  s_0ba4aa59e34a4f::t_9733534c264659 110-111,1000-1002,1018-1020,1027-1029,1054-1056,4373-4376,4610-4621,4719-4720,5043
+ai-vision/vfe/src/components/traces-otel/SpanContentEnhancement.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 1-8,13,23,34-132,137-146,156-169,171-235,238-275,308,312,336,340,353-357,497,504,528-582
+ai-vision/vfe/tests/e2e/traceUserInput.spec.ts
+  s_0ba4aa59e34a4f::t_dbd1ae80c254d4 709,1088
+  s_0ba4aa59e34a4f::t_9733534c264659 192-196,213-225,235-254,256,266-274,277,375,381,406,408-412,416-417,419-426,431,442-451,457-461,463
+  s_0ba4aa59e34a4f::t_a9f2680cb39f23 817,1268
+  s_0ba4aa59e34a4f::t_6f46fd84a4ef7c 711-728,1090-1107
+  s_0ba4aa59e34a4f::t_241627f29cca23 806-811,1265-1267,1269-1272
+  s_0ba4aa59e34a4f::t_92e8c25f4ff0fc 968-973
+  s_0ba4aa59e34a4f::t_4d4697f2fb3587 1076-1079,1083,1085
+  s_0ba4aa59e34a4f::t_570e342b23ac5d 710,1089
+  s_0ba4aa59e34a4f::t_5d05e787387da3 729
+ai-vision/vfe/tests/modelPricing.test.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 16,23-64,144,147-148,259
+ai-vision/vfe/src/features/model-pricing/pricingQueryInvalidation.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 3-4,9
+docs/testing/screenshots/trace-conversation-process/source-manifest.json
+  s_0ba4aa59e34a4f::t_9733534c264659 1-47
+ai-vision/vfe/tests/nativeTraceSummaryDom.test.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 712-713,719-720,1041-1045,1085,1107
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_0ba4aa59e34a4f::t_3555a489baf934 11
+  s_0ba4aa59e34a4f::t_9733534c264659 109-110,4376-4379,4613-4624,4722-4723,5046
+  s_0ba4aa59e34a4f::t_6e9de0e2fb8be5 3
+ai-vision/vfe/tests/e2e/traceConversationComplex.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 1-777
+ai-vision/vfe/src/components/header/TimeFilterControl.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 19,148-156,226-227,285-288
+ai-vision/vfe/tests/e2e/relayTraceProcess.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 172-179,380-381,385-392,411-419,481-484
+ai-vision/vfe/src/components/traces-otel/SpanTypedContent.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 72-74,82-84,108-109,111,123,134,150,152-153,155-186,188-195,197-213,215,217-236,241-244,251-256,262-267,306-321
+  s_0ba4aa59e34a4f::t_9e7f880c3ff760 1-8
+  s_0ba4aa59e34a4f::t_e168e420e96985 248,250
+ai-vision/aivision-py-be/apps/core/trace_query/media_visibility.py
+  s_0ba4aa59e34a4f::t_5fcc01358fc77e 27,34
+  s_0ba4aa59e34a4f::t_e04c4b88c25dc7 20-21,26,30-32,38-39,71-73,89-96
+  s_0ba4aa59e34a4f::t_ae114bbc506658 1-19,22-25,28-29,40-70,74-88,97
+  s_0ba4aa59e34a4f::t_e821714ef0121c 33,35-37
+ai-vision/agent-plugins/hermes/tests/test_privacy.py
+  s_0ba4aa59e34a4f::t_6825e70cd35040 149-162
+ai-vision/agent-plugins/deepseek/observ-dsh/src/core.ts
+  s_0ba4aa59e34a4f::t_d50203df92eecd 101,264,275
+ai-vision/vfe/src/components/traces-otel/TraceProcessView.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 1,3-9,12-13,15-17,31-39,41-64,66-71,79,85,92-95,98,236,279,285,294-385,389,397-398,400-401,410,449-458,460,477,484,487-530,541-578,642,648,685-689,700-701
+ai-vision/vfe/tests/e2e/traceRootProcess.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 1-492
+ai-vision/agent-plugins/hermes/tests/test_normalize.py
+  s_0ba4aa59e34a4f::t_6825e70cd35040 36-52
+  s_0ba4aa59e34a4f::t_384335dd1da274 14-35
+ai-vision/vfe/tests/nativeTraceFilters.test.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 4,10-28
+ai-vision/vfe/src/components/traces/shared/traceUserInput.ts
+  s_0ba4aa59e34a4f::t_9e7f880c3ff760 50-57,60-62
+  s_0ba4aa59e34a4f::t_353e7699571a1f 39-49,58-59,63-64
+antcollector/exporter/boundedotlphttpexporter/exporter.go
+  s_0ba4aa59e34a4f::t_c2b40836156354 15,31,42,91-93
+  s_0ba4aa59e34a4f::t_d9aba42ab7c4dc 1-14,16-30,32-41,43-90,94-150
+ai-vision/vfe/tests/nativeTracePreviewDom.test.ts
+  s_0ba4aa59e34a4f::t_d833461e0706f4 401
+ai-vision/vfe/src/pages/traces-otel/traceCompareData.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 4,20-26,63-68,84-85,368-386
+  s_0ba4aa59e34a4f::t_a477e4a2ae16f8 387-388
+ai-vision/vfe/src/components/traces/shared/traceMediaOutput.ts
+  s_0ba4aa59e34a4f::t_1bd278bfacd698 16-36
+ai-vision/vfe/package.json
+  s_0ba4aa59e34a4f::t_9733534c264659 49
+ai-vision/agent-plugins/deepseek/observ-dsh/src/media.ts
+  s_0ba4aa59e34a4f::t_d50203df92eecd 8-12,49,54-62,76,84,91
+ai-vision/vfe/src/components/layout/AppShell.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 35-36,96-101,261-264,462-470,476,480,482,484,495-499,741-743,849-851,861-867,869-876,880-882
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  s_0ba4aa59e34a4f::t_cc03afe240a516 2170,2190
+  s_0ba4aa59e34a4f::t_4158ef77ab70be 869,882
+ai-vision/vfe/src/components/traces/shared/TracePdfPreview.tsx
+  s_0ba4aa59e34a4f::t_9e7f880c3ff760 51-52
+  s_0ba4aa59e34a4f::t_3555a489baf934 3,8,22-30,35-50,53,74-75,79,81-82,84,87-88,91,93-94,96,99
+ai-vision/vfe/src/components/traces-otel/traceProcessNavigation.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 1-35
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_0ba4aa59e34a4f::t_2bc98a13705728 1895
+  s_0ba4aa59e34a4f::t_9733534c264659 87,90-95,308-314,367-370,535,551-553,558,722-763,771-772,804-827,829,846-847,850,878-884,918-925,933-977,988,1774-1776,1793-1795,1838-1847,1852-1853,1862-1865,1888-1889,1906-1955
+ai-vision/vfe/tests/e2e/traceConversation.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 1-217
+ai-vision/aivision-py-be/apps/core/views/trace_unified.py
+  s_0ba4aa59e34a4f::t_0b804e916a4887 195
+ai-vision/vfe/tests/e2e/traceRootProcessReview.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 1-267
+ai-vision/aivision-py-be/apps/core/trace_query/native_projection.py
+  s_0ba4aa59e34a4f::t_0bfa4eb7c526c7 34-35,38-45,47-64,78,80,82,84,94,96,109-110
+  s_0ba4aa59e34a4f::t_931a5e9d14ad54 101-105
+  s_0ba4aa59e34a4f::t_8d266dcf2beb1f 36-37,79,83,95
+  s_0ba4aa59e34a4f::t_5f500f44814735 46
+ai-vision/vfe/src/features/model-pricing/PricingCurrency.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 2,140,144-149,153,155,158,160-163,167-169,173-175,179-181,188
+ai-vision/agent-plugins/deepseek/observ-dsh/src/trace-exporter.ts
+  s_0ba4aa59e34a4f::t_77f7c8ef0aca05 17,20-21
+  s_0ba4aa59e34a4f::t_d3188388da2596 1-16,18-19,22-38,40-43,45-62,89,93,99-111
+  s_0ba4aa59e34a4f::t_1fe2db82abf0b1 39,44,63-88,90-92,94-98
+ai-vision/vfe/tests/e2e/traceCompareDecisions.spec.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 282
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_0ba4aa59e34a4f::t_9733534c264659 66-72,75-77,113,117,136,158-159,165-166,181-182,194-198,202-285,297,352-353,359-360,435-436,439-445,447,449-473
+docs/testing/trace-conversation-process-review-20261117.md
+  s_0ba4aa59e34a4f::t_9733534c264659 1-46
+ai-vision/agent-plugins/codex/cdxhooks/src/common/payload_budget.rs
+  s_0ba4aa59e34a4f::t_c41ccbb9dad949 1104-1127
+  s_0ba4aa59e34a4f::t_d3188388da2596 30
+  s_0ba4aa59e34a4f::t_8fb6bc34dd4ec1 1102-1103,1128-1170
+  s_0ba4aa59e34a4f::t_2c8e487a475d1d 24,35-39,43,48-60,73-79,86-93,257,266,268,270-271,284
+  s_0ba4aa59e34a4f::t_cc12af734656f7 40-42,44-47,61-72,80-85,252-256,258-265
+ai-vision/agent-plugins/deepseek/observ-dsh/package.json
+  s_0ba4aa59e34a4f::t_d3188388da2596 35
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model.py
+  s_0ba4aa59e34a4f::t_931a5e9d14ad54 28
+ai-vision/vfe/tests/spanContentDom.test.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 86-193,500-506,510,1011-1017,1406-1424,1458
+ai-vision/vfe/tests/traceUserInput.test.ts
+  s_0ba4aa59e34a4f::t_a5bb212402ebfe 857-874,881,886,891,899
+  s_0ba4aa59e34a4f::t_9e7f880c3ff760 875-880,882-885,887-890,892-898
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_0ba4aa59e34a4f::t_3555a489baf934 11-12
+  s_0ba4aa59e34a4f::t_6e9de0e2fb8be5 3
+  s_0ba4aa59e34a4f::t_9733534c264659 109-110,4376-4379,4613-4624,4722-4723,5046
+ai-vision/vfe/tests/traceEvidence.test.ts
+  s_0ba4aa59e34a4f::t_9733534c264659 814,818-831
+ai-vision/vfe/src/components/traces-lf/TraceDetailPanel/TraceDetailPanel.tsx
+  s_0ba4aa59e34a4f::t_b87c507b69bf84 433
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "576bca9d6081a96354dde831b8611ace3798bfe8",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
