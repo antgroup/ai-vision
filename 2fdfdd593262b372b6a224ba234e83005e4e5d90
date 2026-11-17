@@ -1,0 +1,45 @@
+docs/adr/trace-data-flow/reviews/layered-capacity-isolation-research-20261107.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-26
+docs/adr/trace-data-flow/layered-capacity-isolation-20261107-1540.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-289
+docs/adr/trace-data-flow/layered-capacity-isolation-20261107-2148.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-316
+docs/adr/trace-data-flow/research/oceanbase-execution-profile-20261107.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-81
+docs/adr/trace-data-flow/reviews/layered-capacity-isolation-20261107.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-28
+docs/adr/trace-data-flow/reviews/layered-capacity-isolation-oceanbase-20261107.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-26
+docs/adr/trace-data-flow/research/langfuse-langsmith-large-traces-20261107.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-83
+docs/adr/trace-data-flow/layered-capacity-isolation.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-345
+ai-vision/docs/traces/query-performance-contract.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 38-41
+docs/adr/trace-data-flow/reviews/implementation-gap-and-risk-20261107.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-76
+docs/adr/trace-data-flow/README.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-31
+docs/README.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 18
+docs/adr/trace-data-flow/reviews/langfuse-langsmith-gap-20261107.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-75
+docs/adr/README.md
+  s_a4750bbd0b03d9::t_6e49e881e3408e 1-11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2fdfdd593262b372b6a224ba234e83005e4e5d90",
+  "prompts": {},
+  "sessions": {
+    "s_a4750bbd0b03d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1b0ca-3147-7952-9d66-907afe0a5268",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

@@ -1,0 +1,46 @@
+ai-vision/scripts/README.md
+  s_2f5254e8b447ea::t_7289273b3571d3 34-36,93
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2f5254e8b447ea::t_c740120f4fc92a 4634
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2f5254e8b447ea::t_c740120f4fc92a 4623
+ai-vision/scripts/docker/supervisord.d/model-pricing.ini
+  s_2f5254e8b447ea::t_7289273b3571d3 1-14
+ai-vision/aivision-py-be/apps/core/tests/test_serve_with_projector.py
+  s_2f5254e8b447ea::t_e84f7a4bb44e7f 124,127,143,158-159
+  s_2f5254e8b447ea::t_2404f73e0dd9e5 46-47,64,67-68,73,83,105,107,135,151,160-185,258,260
+ai-vision/aivision-py-be/apps/core/management/commands/serve_with_projector.py
+  s_2f5254e8b447ea::t_66cb606740f077 15,35,58-63,68-75,79-80
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2f5254e8b447ea::t_c740120f4fc92a 4634
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing_sync_sources.py
+  s_2f5254e8b447ea::t_e0a8b4a2da06d4 2,62-71,81-96,98
+  s_2f5254e8b447ea::t_4a6c5510615325 72-80,97
+  s_2f5254e8b447ea::t_770493631c65d3 99
+ai-vision/docs/observability/model-pricing.md
+  s_2f5254e8b447ea::t_7289273b3571d3 48-52,308-313,316-318
+ai-vision/aivision-py-be/apps/core/management/commands/sync_model_pricing.py
+  s_2f5254e8b447ea::t_233ec1c46f396f 16,22-23,36-37,40-43
+ai-vision/aivision-py-be/apps/core/services/model_pricing.py
+  s_2f5254e8b447ea::t_15180e9edddb13 158,186-189,245-256,258-259,263,271,275-277
+ai-vision/vfe/src/features/model-pricing/PricingSettingsDialog.tsx
+  s_2f5254e8b447ea::t_c740120f4fc92a 128-132
+ai-vision/vfe/tests/e2e/modelPricing.spec.ts
+  s_2f5254e8b447ea::t_b822d3acef25b2 1172-1197
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c2487055cd779b2e1a4ec5f7e28a9d67e453db48",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

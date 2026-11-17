@@ -1,0 +1,29 @@
+deploy/native-packaging/test_build.py
+  s_ecdc0692ab40f8::t_ecde587e5457b7 127-139
+agentlens/native/README.md
+  s_ecdc0692ab40f8::t_ecde587e5457b7 16-18
+agentlens/tests/unit/infra/ob/test_native_builder.py
+  s_ecdc0692ab40f8::t_ecde587e5457b7 36-37,47-52,57-59,63-67
+deploy/native-packaging/README.md
+  s_ecdc0692ab40f8::t_ecde587e5457b7 176-179,181
+agentlens/native/build.py
+  s_ecdc0692ab40f8::t_ecde587e5457b7 50-67
+deploy/native-packaging/build.py
+  s_ecdc0692ab40f8::t_ecde587e5457b7 125-139,322
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ec2759c2bd59748909a62f0408768fe63a11bbfd",
+  "prompts": {},
+  "sessions": {
+    "s_ecdc0692ab40f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a181b8-d240-7e53-a5f3-51f48e363871",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

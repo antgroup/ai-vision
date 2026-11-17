@@ -1,0 +1,43 @@
+ai-vision/vfe/src/components/diagnose/quickDiagnosis.ts
+  s_9361ee133c7fcb::t_e682a0359b3be7 9-28,64,80,82,86-87
+ai-vision/vfe/tests/quickDiagnosis.test.ts
+  s_9361ee133c7fcb::t_6b435a0bb5b93c 256-312,317-351
+  s_9361ee133c7fcb::t_3a702e919ce10e 313-316
+ai-vision/vfe/tests/quickDiagnosisDom.test.ts
+  s_9361ee133c7fcb::t_2ea86d96c20dc9 1974-1978
+  s_9361ee133c7fcb::t_b4582af7d19a42 1239-1306,1309-1370
+  s_9361ee133c7fcb::t_3a702e919ce10e 1307-1308
+  s_9361ee133c7fcb::t_e785651bdfe6e7 1371-1451
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_9361ee133c7fcb::t_aba46f697f405c 1605-1606,1903
+ai-vision/docs/diagnose/validation/diagnosis-http-recovery-2026-11-09.md
+  s_9361ee133c7fcb::t_2757a053b55190 75
+  s_9361ee133c7fcb::t_ce91815f449a5b 1-74
+ai-vision/docs/diagnose/validation/diagnosis-http-recovery-2026-11-09.json
+  s_9361ee133c7fcb::t_a80e4bae1e130b 1-2,4-881
+  s_9361ee133c7fcb::t_42d1fa8fc484d5 3
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_9361ee133c7fcb::t_aba46f697f405c 1622-1623,1920
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx
+  s_9361ee133c7fcb::t_ec80a566df64a5 34-36,39,41-44
+  s_9361ee133c7fcb::t_18393bdb77842e 613-617
+  s_9361ee133c7fcb::t_e682a0359b3be7 364,366-372,601-603
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_9361ee133c7fcb::t_aba46f697f405c 1614-1615,1912
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f41b87a8b3b0eb675705ca637e354b10ac9378b3",
+  "prompts": {},
+  "sessions": {
+    "s_9361ee133c7fcb": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a159eb-19a3-7531-9323-040e814a9f3a",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

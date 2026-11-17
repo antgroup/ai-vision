@@ -1,0 +1,63 @@
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_a4750bbd0b03d9::t_ac86f566cd6701 4625-4626,4629-4631
+  s_a4750bbd0b03d9::t_259ed90914c79c 4594,4596,4617,4620-4624
+  s_a4750bbd0b03d9::t_5b005125717e0a 4598,4618-4619,4627-4628
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  s_a4750bbd0b03d9::t_35515faa0c61f6 53,2262
+docs/testing/session-status-validation-20261109.md
+  s_a4750bbd0b03d9::t_255919ea7915ae 1-70
+ai-vision/aivision-py-be/apps/core/tests/test_canonical_sessions.py
+  s_a4750bbd0b03d9::t_2a95040fca28be 8,42,51-78,225-245
+  s_a4750bbd0b03d9::t_46aaa1a534f1fe 246
+ai-vision/vfe/tests/nativeTracePreviewDom.test.ts
+  s_a4750bbd0b03d9::t_1fe875e4443bb2 633-639,654-663,670-671,673
+  s_a4750bbd0b03d9::t_420638b27357ff 680-683,705-716
+  s_a4750bbd0b03d9::t_dfed154fafd2ed 608-618,621-622,624-632,640-641,643-653,664-669,674-679
+  s_a4750bbd0b03d9::t_a355388a4db195 619-620,623,684-704
+  s_a4750bbd0b03d9::t_a12c52aff26c15 642,672
+ai-vision/vfe/src/components/traces-otel/SessionStatusLabel.tsx
+  s_a4750bbd0b03d9::t_89409eb3ef61f8 34
+  s_a4750bbd0b03d9::t_ac86f566cd6701 35,44-46,60-62
+  s_a4750bbd0b03d9::t_35e57d90ed9de9 48,53,58,79
+  s_a4750bbd0b03d9::t_b0affd7d5ee462 38
+  s_a4750bbd0b03d9::t_5b005125717e0a 42-43,47,49-52,54-57
+  s_a4750bbd0b03d9::t_35515faa0c61f6 1-12,15-18,21,24-27,33,41,59,72-73,80-82
+  s_a4750bbd0b03d9::t_1fe875e4443bb2 13-14,19-20,22-23,28-32,39-40,63-71,74-78
+  s_a4750bbd0b03d9::t_c12f0491580811 36-37
+ai-vision/vfe/tests/traceListFiltersDom.test.ts
+  s_a4750bbd0b03d9::t_89409eb3ef61f8 502
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_a4750bbd0b03d9::t_5b005125717e0a 4613,4617,4637-4638,4646-4647
+  s_a4750bbd0b03d9::t_259ed90914c79c 4615,4636,4639-4643
+  s_a4750bbd0b03d9::t_ac86f566cd6701 4644-4645,4648-4650
+ai-vision/docs/traces/query-performance-contract.md
+  s_a4750bbd0b03d9::t_f1d02bbdb01892 9-14
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_a4750bbd0b03d9::t_ac86f566cd6701 4644-4645,4648-4650
+  s_a4750bbd0b03d9::t_5b005125717e0a 4613,4615,4617,4637-4638,4646-4647
+  s_a4750bbd0b03d9::t_259ed90914c79c 4636,4639-4643
+docs/testing/evidence/session-status-20261109.json
+  s_a4750bbd0b03d9::t_89f8c334692649 1-164
+ai-vision/vfe/src/components/traces-otel/types.ts
+  s_a4750bbd0b03d9::t_35515faa0c61f6 180-181
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_a4750bbd0b03d9::t_35515faa0c61f6 204-205
+ai-vision/aivision-py-be/apps/core/trace_query/canonical_sessions.py
+  s_a4750bbd0b03d9::t_c56d1a3ffc728e 153,171
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ff489671f348af77648a6a7df3ecc7f86303985c",
+  "prompts": {},
+  "sessions": {
+    "s_a4750bbd0b03d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1b0ca-3147-7952-9d66-907afe0a5268",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

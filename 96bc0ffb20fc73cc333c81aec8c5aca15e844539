@@ -1,0 +1,70 @@
+ai-vision/vfe/src/components/bizcharts/charts/ChartPanel.tsx
+  s_2f5254e8b447ea::t_5288bd8235aa36 969
+  s_2f5254e8b447ea::t_52c53158bd6c26 116,808,1018
+  s_2f5254e8b447ea::t_96fe427709e6ad 78,864,870,965-968,970-972
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  s_2f5254e8b447ea::t_17627bfad94783 92-105
+  s_2f5254e8b447ea::t_afda59854ace23 110-113,117-122,151-154
+  s_2f5254e8b447ea::t_e7440faa988d05 2-3,6,13,17-91,106-109,114-116,123-150,155-169
+ai-vision/vfe/src/components/bizcharts/QueryStateNotice.tsx
+  s_2f5254e8b447ea::t_52c53158bd6c26 8,16,34-42,51
+ai-vision/vfe/tests/frameworkDashboard.test.ts
+  s_2f5254e8b447ea::t_b14226cb146ea6 439-441,445-449
+  s_2f5254e8b447ea::t_bb16c4baee1e34 442-444
+  s_2f5254e8b447ea::t_680f986a6d01e9 422-425
+  s_2f5254e8b447ea::t_f2e1392d16586e 384-421,426-438,450-457
+ai-vision/vfe/src/agents/dashboards/framework/frameworkMetrics.ts
+  s_2f5254e8b447ea::t_a92a9e65eb0fec 33-37
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2f5254e8b447ea::t_6d28b3c48b8366 409
+  s_2f5254e8b447ea::t_b14226cb146ea6 425
+ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx
+  s_2f5254e8b447ea::t_46b6caca7f1675 504,506,509,517,520-521,541,786
+  s_2f5254e8b447ea::t_0d6d5b67c8ee81 497,500-503,505,507-508,510-516,518,522-523,526-527,532-533,535-536,539,542,547,553-554,788-790,796,805-809,826-830
+  s_2f5254e8b447ea::t_5288bd8235aa36 519,528,531,555-558,814-816
+  s_2f5254e8b447ea::t_a92a9e65eb0fec 529-530
+  s_2f5254e8b447ea::t_481637417c897e 540
+  s_2f5254e8b447ea::t_b14226cb146ea6 791-795
+  s_2f5254e8b447ea::t_52c53158bd6c26 811,831
+ai-vision/vfe/tests/dashboardQueryStateDom.test.ts
+  s_2f5254e8b447ea::t_17627bfad94783 10,35
+ai-vision/vfe/src/agents/shared/hooks/useSectionQuery.ts
+  s_2f5254e8b447ea::t_20098dbd443273 14,28,76,90-92,134-137,139,202
+ai-vision/vfe/src/agents/lib/dashboardQueryAdapter.ts
+  s_2f5254e8b447ea::t_20098dbd443273 22,194
+ai-vision/vfe/tests/frameworkMetrics.test.ts
+  s_2f5254e8b447ea::t_46b6caca7f1675 112-117
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2f5254e8b447ea::t_6d28b3c48b8366 408
+  s_2f5254e8b447ea::t_b14226cb146ea6 424
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2f5254e8b447ea::t_b14226cb146ea6 407
+  s_2f5254e8b447ea::t_6d28b3c48b8366 391
+ai-vision/vfe/tests/frameworkModuleLoading.test.ts
+  s_2f5254e8b447ea::t_afda59854ace23 288-291
+  s_2f5254e8b447ea::t_291386ae7bf5e5 262-278,292-296
+  s_2f5254e8b447ea::t_20098dbd443273 10,53
+  s_2f5254e8b447ea::t_d624508d8e4481 282
+  s_2f5254e8b447ea::t_7a4b011dfd00ad 73-74,279-281,283-287
+ai-vision/vfe/src/agents/lib/agentQueryCrypto.ts
+  s_2f5254e8b447ea::t_7a4b011dfd00ad 60
+  s_2f5254e8b447ea::t_20098dbd443273 15,54-59,61-67,84,148,177
+ai-vision/vfe/src/agents/lib/dashboardQueryError.ts
+  s_2f5254e8b447ea::t_20098dbd443273 1-8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "96bc0ffb20fc73cc333c81aec8c5aca15e844539",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": null
+    }
+  }
+}

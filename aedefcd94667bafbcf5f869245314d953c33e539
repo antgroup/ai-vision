@@ -1,0 +1,24 @@
+deploy/all-in-one/README.md
+  s_ecdc0692ab40f8::t_a6feb5473897c4 18
+  s_ecdc0692ab40f8::t_c0dcd2a556877c 1,7,22
+  s_ecdc0692ab40f8::t_8099590df9137e 23
+deploy/all-in-one/build.py
+  s_ecdc0692ab40f8::t_c0dcd2a556877c 2,15,39-44,48-81,114,116-117,121-125,144,146-149,159-162,168-169,171-172,175,178-179,182-183,188-189,193-194,196-203,210,213,215-217,226,229,236,238,260-261,265,267,269,276,278,285-289,313-322,326,328,335-336,339-341,343,348-349,355,357,364-367,373,378,389
+  s_ecdc0692ab40f8::t_a6feb5473897c4 45-47,359-360
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "aedefcd94667bafbcf5f869245314d953c33e539",
+  "prompts": {},
+  "sessions": {
+    "s_ecdc0692ab40f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a181b8-d240-7e53-a5f3-51f48e363871",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
