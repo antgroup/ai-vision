@@ -1,0 +1,21 @@
+ai-vision/agent-plugins/scripts/hook_runtime.py
+  s_6eed30fd231f9b::t_fe50c610c8639c 113-115
+ai-vision/agent-plugins/scripts/tests/test_onboarding_http.py
+  s_6eed30fd231f9b::t_3c1ca9dafcdbd7 162-166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c83b477afe0c701f64a049be9aeb9d0633e3eb7a",
+  "prompts": {},
+  "sessions": {
+    "s_6eed30fd231f9b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e8db-f00b-79c3-9361-e4ce90d5577f",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
