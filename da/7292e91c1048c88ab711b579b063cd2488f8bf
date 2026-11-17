@@ -44,5 +44,15 @@ docs/deployment/zh-CN/docker.md
     "h_300a4f369432d5": {
       "author": "laochou.sc <laochou.sc@digital-engine.com>"
     }
+  },
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
   }
 }
