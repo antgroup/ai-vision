@@ -1,0 +1,52 @@
+ai-vision/aivision-py-be/apps/core/migrations/0038_project_onboarding_credentials.py
+  h_300a4f369432d5 1-26
+ai-vision/aivision-py-be/apps/core/models/space_keys.py
+  h_300a4f369432d5 25-33
+ai-vision/aivision-py-be/apps/core/tests/test_langfuse_onboarding.py
+  h_300a4f369432d5 92-204,385-396,406
+ai-vision/aivision-py-be/apps/core/urls/api/biz.py
+  h_300a4f369432d5 20,281-285
+ai-vision/aivision-py-be/apps/core/views/__init__.py
+  h_300a4f369432d5 43
+ai-vision/aivision-py-be/apps/core/views/agent.py
+  h_300a4f369432d5 5,15,18-24,30,33-35,389-457
+ai-vision/vfe/src/components/agents/AgentCard.tsx
+  h_300a4f369432d5 4,43,58,116,119-124,162-175,179-195
+ai-vision/vfe/src/i18n/locales/en-US.json
+  h_300a4f369432d5 2440-2449
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  h_300a4f369432d5 2414-2423
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  h_300a4f369432d5 2432-2441
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  h_300a4f369432d5 195,343-345,351-355,368-386
+ai-vision/vfe/src/pages/LangfuseOnboardingPage.tsx
+  h_300a4f369432d5 3,11,25,71-73,84,96,98,104,125-142,144-147,149-159,166-168,172-176,180-181,184-185,188-191,218,238-255,257-258,296,376-378,424,427,453,464-465,479-486,491,494-495,506-509,515,518,526-536,554-558,560
+ai-vision/vfe/src/pages/RelayOnboardingPage.tsx
+  h_300a4f369432d5 3-7,10,25,35-36,47,55,58,60,66,75-84,86,88,101,105,107-110,112,116,135-171,178-180,211,222-226,230-237,244,259-262,281-291,318,320,379,466-468
+ai-vision/vfe/src/pages/onboarding/OnboardingPageTemplate.tsx
+  h_300a4f369432d5 33,53-54,67,83-88,156,158-159,166-170,198-202,212-323,440-442,477-493,505-508,542-631,643,645-647
+ai-vision/vfe/src/pages/onboarding/frameworkGuides.ts
+  h_300a4f369432d5 54-67
+ai-vision/vfe/src/pages/onboarding/useOnboarding.ts
+  h_300a4f369432d5 2-9,74,199-273,277,281,284-285,302,309,315,336,416,420,434-441,498-503
+ai-vision/vfe/tests/agentIntegrationsDom.test.ts
+  h_300a4f369432d5 22,76-80,246-247,261-268
+ai-vision/vfe/tests/e2e/agentSetupEditing.spec.ts
+  h_300a4f369432d5 1-159
+ai-vision/vfe/tests/e2e/productGuide.fixtures.ts
+  h_300a4f369432d5 369-372
+ai-vision/vfe/tests/onboardingPagesDom.test.ts
+  h_300a4f369432d5 126-127,222-230,296-301,353-357,959-1060
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "edabf6b07f84a62d99395883cd7fb7b4ef8d2a8f",
+  "prompts": {},
+  "humans": {
+    "h_300a4f369432d5": {
+      "author": "laochou.sc <laochou.sc@digital-engine.com>"
+    }
+  }
+}
