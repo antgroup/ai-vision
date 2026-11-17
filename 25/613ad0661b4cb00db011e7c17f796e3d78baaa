@@ -1,0 +1,160 @@
+ai-vision/agent-plugins/tests/framework_e2e/execute_rag.py
+  h_300a4f369432d5 250-251,294-295
+ai-vision/agent-plugins/tests/framework_e2e/generate_onboarding_demo.py
+  h_300a4f369432d5 1,7,13,18-19,21,38-67,69-109,118-120,128-138,140,142-153,156,158-168,186,189-193,195-204,215-231,244-255,257,262,270-291,304,308,311-315,320,322,324-339,342-344,349-365,410-412,418-602,614,616-635,638-640,642-646,651,658-663,675-954,970-971,973-976,978-987,992-994,1003-1008,1012,1021,1027-1031,1034-1037,1047-1085
+ai-vision/aivision-py-be/apps/core/migrations/0038_project_onboarding_credentials.py
+  h_300a4f369432d5 1-26
+ai-vision/aivision-py-be/apps/core/models/space_keys.py
+  h_300a4f369432d5 25-33
+ai-vision/aivision-py-be/apps/core/services/credential_service.py
+  h_300a4f369432d5 13,22-32,76-93
+ai-vision/aivision-py-be/apps/core/services/model_pricing.py
+  h_300a4f369432d5 484,522-525,527,529-543
+ai-vision/aivision-py-be/apps/core/services/onboarding_demo.py
+  h_300a4f369432d5 6,23-26,41-43,85-101,117,175-215,217,235,245-275,285-289,298-304
+ai-vision/aivision-py-be/apps/core/services/space_key_policy.py
+  h_300a4f369432d5 7-11,15,23-43,45-54
+ai-vision/aivision-py-be/apps/core/tests/test_agent_scoped_shares.py
+  h_300a4f369432d5 9,121-151
+ai-vision/aivision-py-be/apps/core/tests/test_langfuse_onboarding.py
+  h_300a4f369432d5 3,22,33,95-287,401,469-480,490
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing.py
+  h_300a4f369432d5 7,10,14-15,188,197,215,223-289
+ai-vision/aivision-py-be/apps/core/tests/test_onboarding_demo.py
+  h_300a4f369432d5 10,58-114,209-211,300-302,305-306,314-315,323-324,328-355,391-397,403-405,410,413-415,417-432,435,437-439,461-503
+ai-vision/aivision-py-be/apps/core/tests/test_pricing_inventory_snapshot.py
+  h_300a4f369432d5 1-326
+ai-vision/aivision-py-be/apps/core/tests/test_pricing_inventory_transport.py
+  h_300a4f369432d5 1-70
+ai-vision/aivision-py-be/apps/core/tests/test_space_key_quota.py
+  h_300a4f369432d5 1-107
+ai-vision/aivision-py-be/apps/core/trace_query/metrics_projection.py
+  h_300a4f369432d5 7,11,26-45,135-142,148-156
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py
+  h_300a4f369432d5 104,132-135
+ai-vision/aivision-py-be/apps/core/urls/api/biz.py
+  h_300a4f369432d5 20,285-289
+ai-vision/aivision-py-be/apps/core/views/__init__.py
+  h_300a4f369432d5 43
+ai-vision/aivision-py-be/apps/core/views/agent.py
+  h_300a4f369432d5 5,15,18-24,30,33-39,393-471
+ai-vision/aivision-py-be/apps/core/views/model_pricing.py
+  h_300a4f369432d5 4,6,90-97
+ai-vision/aivision-py-be/apps/core/views/onboarding_demo.py
+  h_300a4f369432d5 119,127-129,140,147-148,167-172
+ai-vision/aivision-py-be/apps/core/views/share.py
+  h_300a4f369432d5 13,386-395
+ai-vision/aivision-py-be/apps/core/views/space_keys.py
+  h_300a4f369432d5 14-18,54,63
+ai-vision/docs/observability/model-pricing.md
+  h_300a4f369432d5 125-137
+ai-vision/vfe/src/agents/dashboards/DashboardEntry.tsx
+  h_300a4f369432d5 45-48,392-394
+ai-vision/vfe/src/agents/lib/agent-display.ts
+  h_300a4f369432d5 1-13,17,20
+ai-vision/vfe/src/agents/traces/TraceEntry.tsx
+  h_300a4f369432d5 36-39,63-69,77,524
+ai-vision/vfe/src/components/agents/AgentCard.tsx
+  h_300a4f369432d5 4,43,58,116,119-124,162-175,179-195
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx
+  h_300a4f369432d5 8,37,94,96-101
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx
+  h_300a4f369432d5 114-115,747-758
+ai-vision/vfe/src/components/header/agentselector/AgentSelector.tsx
+  h_300a4f369432d5 180,182,187-188,194,197,202-205
+ai-vision/vfe/src/components/layout/AppShell.tsx
+  h_300a4f369432d5 21,40-43,83,176,211-224,414,462-466,804,806-811,814,816-842,846-852
+ai-vision/vfe/src/components/layout/SpaceSelect.tsx
+  h_300a4f369432d5 43,132-133,150
+ai-vision/vfe/src/components/product-guide/DemoConsentDialog.tsx
+  h_300a4f369432d5 1-9,11-14,36-42,45-75,81,87,98-166,171,176,178-182,185,187,218-219,222-239,241-258,261,265-268,283-287,291-295,298-365
+ai-vision/vfe/src/components/product-guide/DemoControls.tsx
+  h_300a4f369432d5 1-38
+ai-vision/vfe/src/components/product-guide/ProductGuide.tsx
+  h_300a4f369432d5 19,21-26,101,153,163-184,277-281,284-288,290-294,329-362,364,367,482-486,894,899,972,1007-1017,1069-1070,1086-1087,1094,1099,1105,1202,1316-1320
+ai-vision/vfe/src/components/product-guide/useProductGuide.ts
+  h_300a4f369432d5 6,11
+ai-vision/vfe/src/components/traces-otel/DetailDrawer/NativeDetailDrawer.tsx
+  h_300a4f369432d5 27,46,72,119
+ai-vision/vfe/src/components/traces-otel/NativeSessionDetailPanel.tsx
+  h_300a4f369432d5 2-5,349,382,799-804,810,813,961,973-977,980-992
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  h_300a4f369432d5 3-6,182,281,756,844,1034-1046,1071,1648,1664,1880
+ai-vision/vfe/src/components/traces-otel/SpanDetailPanel.tsx
+  h_300a4f369432d5 68,92,408
+ai-vision/vfe/src/features/model-pricing/CostSummary.tsx
+  h_300a4f369432d5 29,37,248,250,500,513-517,554-562
+ai-vision/vfe/src/i18n/locales/en-US.json
+  h_300a4f369432d5 2473-2483,4775-4776,5746-5748,5750-5779,5867
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  h_300a4f369432d5 2447-2457,4775-4776,5746-5748,5750-5779,5867
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  h_300a4f369432d5 2465-2475,4764-4765,5735-5737,5739-5768,5856
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  h_300a4f369432d5 195,343-345,351-355,368-386
+ai-vision/vfe/src/pages/LangfuseOnboardingPage.tsx
+  h_300a4f369432d5 3,11,25,71-73,84,96,98,104-108,129-147,149-152,154-164,171-173,177-181,185-186,189-190,193-196,232-243,247-254,259-264,302,382-384,430,433,459,470-471,485-495,500,503-504,515-518,524,527,535-545,563-567,569
+ai-vision/vfe/src/pages/RelayOnboardingPage.tsx
+  h_300a4f369432d5 3-7,10,25,35-36,47,55,58,60,66-70,79-88,90,92,105-106,110,129-177,184-186,217,228-232,236-243,250,265-268,287-297,324,326,385,472-474
+ai-vision/vfe/src/pages/SharePage.tsx
+  h_300a4f369432d5 42,195,254,309,341
+ai-vision/vfe/src/pages/onboarding/OnboardingPageTemplate.tsx
+  h_300a4f369432d5 33,53-54,67,83-88,156,158-159,166-170,198-207,217-328,445-447,482-498,510-513,547-636,648,650-652
+ai-vision/vfe/src/pages/onboarding/frameworkGuides.ts
+  h_300a4f369432d5 54-67
+ai-vision/vfe/src/pages/onboarding/useOnboarding.ts
+  h_300a4f369432d5 2-15,19,80,205-317,321,325,328-329,346,354,360,381,461,465,469,479-503,505-512,530,559-562,568-572,578,597
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  h_300a4f369432d5 168,185,192,1022-1033,1052-1058,1933,2031
+ai-vision/vfe/tests/agentIntegrationsDom.test.ts
+  h_300a4f369432d5 22,76-80,246-247,261-268
+ai-vision/vfe/tests/e2e-platform/onboardingDemo.spec.ts
+  h_300a4f369432d5 197,270,321,331-337
+ai-vision/vfe/tests/e2e-platform/onboardingShowcase.spec.ts
+  h_300a4f369432d5 1-282
+ai-vision/vfe/tests/e2e/agentSetupEditing.spec.ts
+  h_300a4f369432d5 1-160
+ai-vision/vfe/tests/e2e/agentSetupSaveOrder.spec.ts
+  h_300a4f369432d5 1-99
+ai-vision/vfe/tests/e2e/productGuide.fixtures.ts
+  h_300a4f369432d5 6-10,23,163-214,342-344,427-458,461-464,693-703,705,709-710,721-726,729,736-740,770-782,784-786,790-796,798-799
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  h_300a4f369432d5 6-9,12,108-286,1046,1059,1076-1078,1082-1084,1240-1246,1323-1380
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  h_300a4f369432d5 703-706
+ai-vision/vfe/tests/hermesDashboardIdentityDom.test.ts
+  h_300a4f369432d5 113-116
+ai-vision/vfe/tests/modelPricing.test.ts
+  h_300a4f369432d5 692-727
+ai-vision/vfe/tests/onboardingPagesDom.test.ts
+  h_300a4f369432d5 121-131,137-141,211,237-245,311-316,340-343,351,372-377,392-395,532-534,985-1155,1885-1981
+ai-vision/vfe/tests/traceSourceSwitchDom.test.ts
+  h_300a4f369432d5 93-96
+deploy/all-in-one/README.md
+  h_300a4f369432d5 20-65
+deploy/all-in-one/build.py
+  h_300a4f369432d5 14-15,263-265,282,296,358-359,428-429
+deploy/all-in-one/elf_strip.py
+  h_300a4f369432d5 1-273
+deploy/all-in-one/repack.py
+  h_300a4f369432d5 1-124
+deploy/all-in-one/slim.py
+  h_300a4f369432d5 1-132
+deploy/all-in-one/test_elf_strip.py
+  h_300a4f369432d5 1-107
+deploy/all-in-one/test_repack.py
+  h_300a4f369432d5 1-103
+deploy/all-in-one/test_slim.py
+  h_300a4f369432d5 1-68
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "25613ad0661b4cb00db011e7c17f796e3d78baaa",
+  "prompts": {},
+  "humans": {
+    "h_300a4f369432d5": {
+      "author": "laochou.sc <laochou.sc@digital-engine.com>"
+    }
+  }
+}
