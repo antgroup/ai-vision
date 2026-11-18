@@ -360,7 +360,11 @@ func run(ctx context.Context) (result error) {
 	if err := waitReady(stackCtx, "Django", func() bool { return httpReady(readiness[2]) }); err != nil {
 		return err
 	}
-	if err := s.once("integration bootstrap", backend, backendEnv, backend+"/backend-bootstrap"); err != nil {
+	bootstrap := []string{backend + "/backend-bootstrap"}
+	if _, err := os.Stat(bootstrap[0]); errors.Is(err, os.ErrNotExist) {
+		bootstrap = []string{backend + "/.venv/bin/python", backend + "/backend-bootstrap.py"}
+	}
+	if err := s.once("integration bootstrap", backend, backendEnv, bootstrap...); err != nil {
 		return err
 	}
 

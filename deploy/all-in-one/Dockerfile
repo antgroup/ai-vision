@@ -13,11 +13,19 @@ RUN apt-get update \
 COPY --from=seekdb-dependencies /opt/aio-db-deps/ /usr/local/lib/python3.11/site-packages/
 COPY rootfs/ /
 RUN install -d /run/aivision /data/seekdb /data/signoz /var/log/aivision /var/log/agentlens \
-    && ln -s /opt/aivision/backend/manage /app/manage \
+    && if [ -f /opt/aivision/backend/manage.py ]; then \
+       for app in /opt/aivision/backend /app; do \
+         for alias in python python3 python3.11; do \
+           test -e "$app/.venv/bin/$alias" || ln -s /usr/local/bin/python3.11 "$app/.venv/bin/$alias" || exit; \
+         done; \
+       done; \
+    else ln -s /opt/aivision/backend/manage /app/manage; fi \
     && ln -s /opt/aivision/signoz/templates /root/templates \
     && ln -s /data/signoz /var/lib/signoz
 
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ARG AIVISION_RELEASE_MANIFEST_BASE64
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    AIVISION_RELEASE_MANIFEST_BASE64=${AIVISION_RELEASE_MANIFEST_BASE64}
 WORKDIR /
 EXPOSE 5174 4317 4318
 HEALTHCHECK --interval=5s --timeout=15s --start-period=180s --retries=3 \
