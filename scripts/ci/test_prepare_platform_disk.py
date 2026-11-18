@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -18,6 +19,10 @@ class PreparePlatformDiskTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='aiv-sdk-disk-')
         self.addCleanup(self.temporary.cleanup)
+        disk_usage = patch.object(disk.shutil, 'disk_usage',
+                                  return_value=SimpleNamespace(free=64 * 1024**3 - 1))
+        self.disk_usage = disk_usage.start()
+        self.addCleanup(disk_usage.stop)
         self.root = Path(self.temporary.name).resolve()
         self.sdk = self.root / 'android' / 'sdk'
         self.sdk.mkdir(parents=True)
@@ -69,6 +74,21 @@ if mode == 'remove_then_fail':
         self.assertGreaterEqual(result['reclaimed_bytes'], 0)
         self.assertEqual(len(self.calls.read_text().splitlines()), 1)
         self.assertNotIn(str(self.sdk), json.dumps(result))
+
+    def test_runner_with_disk_reserve_does_not_traverse_or_remove_existing_sdk(self):
+        reserve = 64 * 1024**3
+        for free_bytes in (reserve, 94_754_873_344):
+            with self.subTest(free_bytes=free_bytes):
+                self.disk_usage.return_value = SimpleNamespace(free=free_bytes)
+                with patch.object(disk.subprocess, 'run') as subprocess_run:
+                    result = self.prepare()
+                subprocess_run.assert_not_called()
+                self.assertTrue((self.sdk / 'unused-ndk').is_file())
+                self.assertEqual(result, {
+                    'status': 'retained', 'reason': 'sufficient_disk_space',
+                    'free_bytes_before': free_bytes, 'free_bytes_after': free_bytes,
+                    'sdk_bytes_removed': 0, 'reclaimed_bytes': 0,
+                })
 
     def test_non_hosted_or_wrong_platform_never_invokes_sudo(self):
         for key, value in [('GITHUB_ACTIONS', ''), ('GITHUB_ACTIONS', 'false'),

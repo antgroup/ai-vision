@@ -40,7 +40,7 @@ The public manifest pins five service images under `ghcr.io/antgroup/ai-vision/`
 
 Artifact deployment acceptance covers **Linux amd64** with both databases. It does not cover upgrades, Kubernetes, every real model/provider or unexecuted platforms. Native compilation and image/CLI platform availability have separate evidence.
 
-On disposable GitHub-hosted Linux x64 runners, artifact smoke reclaims disk space by removing only the unused preinstalled Android SDK. Public smoke uses a fresh Docker configuration when it reaches the same daemon, and otherwise keeps the runner's configured Docker context. The separate registry job verifies anonymous access to the candidate digests in either case.
+On disposable GitHub-hosted Linux x64 runners with less than 64 GiB free on the SDK filesystem, artifact smoke reclaims disk space by removing only the unused preinstalled Android SDK. Public smoke uses a fresh Docker configuration when it reaches the same daemon, and otherwise keeps the runner's configured Docker context. The separate registry job verifies anonymous access to the candidate digests in either case.
 
 ## Repository setup and candidate triggering
 

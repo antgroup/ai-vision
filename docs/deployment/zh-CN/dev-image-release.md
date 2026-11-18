@@ -40,7 +40,7 @@ PR 按改动路径选择 Linux 基础检查，包括版本和 release PR。集�
 
 制品部署验收覆盖 **Linux amd64** 和两个数据库，不覆盖升级、Kubernetes、所有真实模型服务或未执行的平台。native 编译、镜像／CLI 平台可用性分别保留实际证据。
 
-制品 smoke 在临时 GitHub 托管 Linux x64 runner 上仅清理未使用的预装 Android SDK，以释放磁盘空间。公开 smoke 会尝试使用新的 Docker 配置。如果该配置连接到原来的 Docker daemon，就用它执行部署，否则沿用 runner 的 Docker context。两种情况下，镜像仓库任务均独立验证候选镜像 digest 可匿名访问。
+当临时 GitHub 托管 Linux x64 runner 的 SDK 所在文件系统可用空间少于 64 GiB 时，制品 smoke 仅清理未使用的预装 Android SDK，以释放磁盘空间。公开 smoke 会尝试使用新的 Docker 配置。如果该配置连接到原来的 Docker daemon，就用它执行部署，否则沿用 runner 的 Docker context。两种情况下，镜像仓库任务均独立验证候选镜像 digest 可匿名访问。
 
 ## 仓库配置与候选触发
 

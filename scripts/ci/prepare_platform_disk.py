@@ -14,6 +14,8 @@ import sys
 
 
 SDK_ROOT = Path('/usr/local/lib/android/sdk')
+# Reserve room for image pulls, temporary builds and database startup.
+FREE_DISK_RESERVE_BYTES = 64 * 1024**3
 
 
 def prepare():
@@ -52,6 +54,11 @@ def prepare():
             return failed('unsafe_sdk_path')
     except OSError:
         return failed('filesystem_inspection_failed')
+    if result['free_bytes_before'] >= FREE_DISK_RESERVE_BYTES:
+        result.update(status='retained', reason='sufficient_disk_space',
+                      free_bytes_after=result['free_bytes_before'],
+                      sdk_bytes_removed=0, reclaimed_bytes=0)
+        return result
     try:
         measured = subprocess.run(['du', '-sk', str(SDK_ROOT)], text=True,
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=120, check=False)
