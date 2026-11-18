@@ -488,12 +488,12 @@
   "sources": {
     "policyTree": {
       "fileCount": 60,
-      "sha256": "3e946cd22fd043457cbf5faa2b0c813574d13ea1878d67fb2a1e578ad48282c9"
+      "sha256": "586bb2259189db3432df88585df55032b1a61109a1e7ead7af9cfc4add588ca9"
     },
     "semconv": [
       {
         "path": "docs/semconv/attribute_groups.yaml",
-        "sha256": "dc93cab8b006748cb6cd50be22221f81b245d79c3f0c8362b790b523501e6f9e"
+        "sha256": "6ea070077d5baf9825949f25e3dad90bf0380c54ea43268028acb079af887455"
       },
       {
         "path": "docs/semconv/entities.yaml",
@@ -509,7 +509,7 @@
       },
       {
         "path": "docs/semconv/spans.yaml",
-        "sha256": "10f73f98a7b69d2a5a7a764d536170653685314a05f67fe4050a990942632e15"
+        "sha256": "cc22bb76ad5b08419b00a6300d83eb0b07d2efb774fb9d159237de41b90943bd"
       }
     ]
   }
