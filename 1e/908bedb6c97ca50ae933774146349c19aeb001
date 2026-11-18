@@ -1,0 +1,349 @@
+ai-vision/agent-plugins/deepseek/observ-dsh/tests/engine.test.mjs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 779-892
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/tests.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2480,2486
+ai-vision/agent-plugins/hermes/hermes-core/aivision_hermes_core/privacy.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 17-18,182-184
+ai-vision/agent-plugins/deepseek/README.md
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 47-63,165-175
+ai-vision/agent-plugins/codex/cdxhooks/src/hooks/langfuse/langfuse_handler.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 5952,6007,6011
+ai-vision/vfe/tests/e2e/traceMediaCollections.spec.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-535
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 28
+deploy/bootstrap/seekdb.sh
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 125-126
+ai-vision/agent-plugins/claudecode/cchooks/src/common/transcript/turns.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 33,54,103,222,242,332
+ai-vision/agent-plugins/openclaw/observ-openclaw/src/hooks/model-call-content.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 4,156,169-170
+ai-vision/agent-plugins/pi/observ-pi/src/semantic.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1,42,411-412
+ai-vision/agent-plugins/agentic-otel-common/src/lib.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 12,610-616
+ai-vision/vfe/tests/traceMediaText.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-62
+antcollector/exporter/boundedotlphttpexporter/exporter.go
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-150
+ai-vision/vfe/tests/nativeTraceSummaryDom.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1025-1026,1233-1234
+ai-vision/agent-plugins/opencode/observ-opencode/src/hooks/index.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1,200,202,206-207,210,212,286-287
+ai-vision/agent-plugins/hermes/hermes-core/aivision_hermes_core/media.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-63
+antcollector/README.md
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 18-26
+ai-vision/vfe/src/components/traces-lf/shared/MetadataTree.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 3-6,28,626,650-652,739-741,747,760-761,809-810
+docs/testing/multimedia-review-20261117.md
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-51
+ai-vision/vfe/src/components/traces-otel/NativeSessionDetailPanel.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 39
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/types.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 173,214
+ai-vision/aivision-py-be/apps/core/tests/test_native_read_model.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 328-425
+ai-vision/agent-plugins/codex/cdxhooks/src/hooks/langfuse/realtime.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 215-216,368,571,576,591
+ai-vision/vfe/package.json
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 24,78
+ai-vision/aivision-py-be/aivision_backend/wsgi.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 14-15,18
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2,83,238,410,419,701,704-715,836,1038-1050,1893-1902
+  s_6eed30fd231f9b::t_e259fe71f20e6a 1903-1905
+ai-vision/agent-plugins/pi/observ-pi/test/core.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 731-749
+ai-vision/vfe/src/components/traces-otel/SpanContentEnhancement.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 15,19,453-455
+ai-vision/vfe/tests/e2e/traceMediaRegression.spec.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-254
+ai-vision/agent-plugins/langfuse/trace_attachments.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-57
+ai-vision/agent-plugins/codex/cdxhooks/src/common/message_format.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 21,44,60,108,116,140,157,181,201,264,268,311,316,326,383,387,435,467,472,482,533,537,576,581,591,601,661,666,676,686,812-840
+  s_6eed30fd231f9b::t_8aaeb91f94cbac 841-842
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 3-4,790,814-816,913-915,1071-1072
+ai-vision/vfe/tests/spanContentDom.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 28,78,946
+ai-vision/aivision-py-be/apps/core/trace_query/NATIVE_QUERY.md
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 225-239
+ai-vision/vfe/tests/e2e/traceLabs.fixtures.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 101-107
+ai-vision/vfe/tests/observationTraceProcess.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 275
+ai-vision/vfe/src/components/traces/shared/traceEnhancedVisibility.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-4
+ai-vision/agent-plugins/cursor/cursorhooks/src/exporter.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 144-151,156-161,297-301,721-728
+  s_6eed30fd231f9b::t_f57317f0ee05f2 729
+ai-vision/vfe/tests/jsonDetailInteractionDom.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 26,645-652
+  s_6eed30fd231f9b::t_416eb34ecd9b8b 653-656
+antcollector/cmd/app/main.go
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 23,65
+ai-vision/vfe/src/components/traces-otel/SpanDetailPanel.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 68,94,136-138,144-145
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2-35
+ai-vision/vfe/src/components/traces/shared/TraceMediaSummary.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-129
+ai-vision/agent-plugins/openclaw/observ-openclaw/src/hooks/truncate.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1,29,55-56,84-86
+  s_6eed30fd231f9b::t_f6c4343e8f4343 87
+ai-vision/agent-plugins/claudecode/cchooks/src/bin/cchooks-replay.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 743,748,773,778
+ai-vision/vfe/src/components/traces-lf/shared/JsonDetailWidgets.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 3,127,129
+ai-vision/vfe/playwright.config.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 3-4,15,21-30
+ai-vision/aivision-py-be/apps/core/tests/test_trace_attachment.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-145
+ai-vision/vfe/src/components/traces-otel/shared/TraceEnhancedContent.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2
+ai-vision/vfe/src/components/traces-otel/spanContent.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 60-61,64-74
+ai-vision/agent-plugins/shared/media-content.d.mts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-3
+ai-vision/vfe/tests/frameworkLifecycleDom.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 25-36,99-101,104-105,123-126,139-143
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 232-233,280-291,294-296,308,310-311
+ai-vision/aivision-py-be/apps/core/trace_query/native_projection.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 34-64,78-80,82-84,94-96,101-105,109-110
+ai-vision/agent-plugins/deepseek/observ-dsh/package.json
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 35
+ai-vision/agent-plugins/deepseek/observ-dsh/src/media.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-130
+ai-vision/vfe/docker/smoke.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 10,41,46,49,53-69,105-113,171
+ai-vision/vfe/src/components/traces-lf/SessionDetailPanel/SessionDetailPanel.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 27
+ai-vision/agent-plugins/codex/cdxhooks/src/cli/worker.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 9625,9630,9645,9704,10215,10236,10311,10332,12546,12566
+ai-vision/agent-plugins/shared/media-content.test.mjs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-71
+ai-vision/agent-plugins/codex/cdxhooks/src/common/payload_budget.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 24-94,145,167-169,190,252-266,268,270-271,284,306,309,320,335,352,367,380,384,397,730,740-741,744,1097-1191
+ai-vision/aivision-py-be/aivision_backend/settings.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 443-445
+ai-vision/vfe/tests/longJsonString.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-15
+ai-vision/aivision-py-be/.env.example
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 45-48
+ai-vision/agent-plugins/claudecode/cchooks/src/common/otel.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 4988,4993,5619,5913,5918
+ai-vision/agent-plugins/codex/cdxhooks/src/bin/cdxhooks-replay.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1205,1209
+ai-vision/aivision-py-be/apps/core/views/trace_unified.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 195
+ai-vision/vfe/src/components/traces/shared/TraceMedia.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-567
+docs/testing/screenshots/trace-multimedia/source-manifest.json
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-57
+ai-vision/vfe/tests/spanContent.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 210-238
+ai-vision/vfe/tests/traceUserInputDom.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 201-202,425-428,852-1111
+ai-vision/vfe/src/components/traces-otel/SessionDetailPanel/SessionDetailPanel.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 23
+ai-vision/agent-plugins/agentic-otel-common/src/message.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 8,23,27,34-129,155,168,181,194,211,224,426-435,688-705
+ai-vision/agent-plugins/codefuse/cfusehooks/src/common/transcript.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 80,95,203,231,236,255,440,617,621,703,715,831
+ai-vision/agent-plugins/deepseek/observ-dsh/src/trace-exporter.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-111
+ai-vision/agent-plugins/deepseek/observ-dsh/tests/usage.test.mjs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 190-203
+ai-vision/agent-plugins/shared/media-content.mjs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-78
+ai-vision/agent-plugins/pi/observ-pi/src/normalize.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1,43,126-137,150-151,153-160,180
+ai-vision/vfe/src/components/traces/shared/TraceUserInputSummary.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 11-13,25,29,36-48,126-140,169,254-273,319
+ai-vision/aivision-py-be/apps/core/tests/test_url_auth_boundaries.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 65-72
+ai-vision/agent-plugins/openclaw/observ-openclaw/scripts/media-content.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-23
+ai-vision/agent-plugins/agentic-otel-common/src/media.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-239
+ai-vision/vfe/src/components/traces/shared/traceUserInput.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-2,35,39-64
+ai-vision/vfe/src/components/traces/shared/traceMediaText.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-31
+ai-vision/agent-plugins/codex/cdxhooks/src/hooks/langfuse/turn_topology.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 702,706
+ai-vision/aivision-py-be/apps/core/trace_query/service.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 19,112-116,150-151
+ai-vision/aivision-py-be/apps/core/tests/test_managed_queries.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 311-347
+ai-vision/agent-plugins/deepseek/observ-dsh/tests/plugin-load.test.mjs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 50-108
+ai-vision/vfe/src/components/traces/shared/traceMediaProjection.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-226
+ai-vision/agent-plugins/deepseek/observ-dsh/src/telemetry.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 29,144,148
+ai-vision/agent-plugins/claudecode/cchooks/src/common/transcript/types.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 136,160
+ai-vision/agent-plugins/deepseek/observ-dsh/src/core.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 101,106-107,152,219,227,240,263-264,271-275,297,308-313,564,598,714,732,735,742,987,1127-1130
+ai-vision/agent-plugins/openclaw/observ-openclaw/src/hooks/session.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 24,853,872
+ai-vision/agent-plugins/pi/observ-pi/test/media.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-25
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2-35
+ai-vision/vfe/tests/traceMediaProjection.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-124
+docs/deployment/zh-CN/docker.md
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 81-84
+ai-vision/agent-plugins/claudecode/cchooks/src/hooks/langfuse/realtime_generation.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 929,959,1347,1443
+ai-vision/agent-plugins/langfuse/examples/langchain.yaml
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 25
+ai-vision/agent-plugins/kimi/kimihooks/src/common/otel.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2157,2179,2223-2224,2236,2239,2328,3043-3047
+  s_6eed30fd231f9b::t_21a5ad4f275aa7 3048-3049
+ai-vision/aivision-py-be/apps/core/tests/test_native_trace_previews.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 3,8,12,16,112-374
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/turn_builder.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 27,323,676,830-833,1117,1224
+  s_6eed30fd231f9b::t_4232d285276069 1385
+ai-vision/agent-plugins/langfuse/tests/test_onboarding_examples.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 31-60
+ai-vision/vfe/tests/skillUiCompliance.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 287
+ai-vision/agent-plugins/kimi/kimihooks/src/hooks/stop.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 746,791,879,926,929,1291-1304
+  s_6eed30fd231f9b::t_fb3946245ea069 1305-1306
+ai-vision/agent-plugins/opencode/observ-opencode/src/hooks/message.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 22,74,150,501,709,714-716,727,729
+ai-vision/agent-plugins/claudecode/cchooks/src/common/message_format.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 23,43,59,75,92,158,199,204,242,249,267,326,331,369,394,399,434,441,459,477,617,622,647-669
+  s_6eed30fd231f9b::t_e526da00f397ad 670-671
+ai-vision/vfe/src/components/traces-otel/shared/JsonDetailWidgets.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 3,141,143
+antcollector/conf/antcollectorsignoz/gateway.yaml
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 38,43
+ai-vision/vfe/tests/nativeQueryTransport.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 11-13,394-430
+.gitattributes
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2-3
+ai-vision/vfe/tests/traceUserInput.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 857-899
+ai-vision/agent-plugins/codex/cdxhooks/src/common/otel.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 4923,4928,4938,4983,5025,5034,5073,5088-5090,6659,7686,7690,8337
+aivision-cli/deploy/assets-manifest.json
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 30
+ai-vision/vfe/tests/e2e/traceUserInput.spec.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1,604-813,816-820,823,825-1018,1020-1197,1200-1320
+ai-vision/aivision-py-be/apps/core/tests/test_otlp_chunked_wsgi.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-41
+antcollector/exporter/boundedotlphttpexporter/exporter_test.go
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-242
+ai-vision/vfe/src/components/traces/shared/MarkdownMedia.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-280
+ai-vision/agent-plugins/hermes/tests/test_normalize.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 14-52
+ai-vision/agent-plugins/hermes/tests/__init__.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1
+ai-vision/agent-plugins/opencode/observ-opencode/scripts/test-llm-input-delta.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 215-242
+ai-vision/vfe/src/components/traces-otel/TraceOverviewValue.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 9-10,32,100-104
+ai-vision/agent-plugins/claudecode/cchooks/src/common/transcript/terminal.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 247
+ai-vision/agent-plugins/opencode/observ-opencode/src/hooks/state.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1,12-24,198,366,419,422,451,481
+ai-vision/aivision-py-be/apps/core/trace_query/media_visibility.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-97
+ai-vision/vfe/src/components/traces-otel/SpanTypedContent.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-8,17,20-22,104-107,141,248,250,259-261
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 869,882,2170,2190
+ai-vision/vfe/src/components/traces/shared/TracePdfPreview.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-104
+ai-vision/vfe/tests/traceProcessDom.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 19-23,38-44,47-49,672-674
+ai-vision/vfe/src/components/traces-otel/api.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 127,161,174,341-342,352-353
+ai-vision/agent-plugins/claudecode/cchooks/src/common/transcript/fields.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 667
+ai-vision/agent-plugins/opencode/observ-opencode/src/hooks/types.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 104-106
+ai-vision/agent-plugins/deepseek/observ-dsh/tests/media-transport.test.mjs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-138
+ai-vision/agent-plugins/langfuse/README.md
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 12-25
+ai-vision/vfe/src/lib/api.ts
+  s_6eed30fd231f9b::t_7d803de12376f3 185
+ai-vision/agent-plugins/deepseek/observ-dsh/src/state.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 10,16
+ai-vision/aivision-py-be/apps/core/tests/test_trace_media_permissions.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-181
+ai-vision/agent-plugins/deepseek/observ-dsh/src/index.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 27,78-84
+ai-vision/vfe/src/components/traces-lf/TraceDetailPanel/TraceDetailPanel.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 38,189,197,218,221-233,341-354,418-447,473
+ai-vision/aivision-py-be/apps/core/urls/api/biz.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 83,86-88
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2-35
+ai-vision/vfe/docker/nginx.conf.template
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 48-60,98-103
+ai-vision/vfe/tests/enhancedCallEvidenceDom.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 120
+ai-vision/vfe/tests/nativeTracePreviewDom.test.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 401
+ai-vision/agent-plugins/openclaw/observ-openclaw/package.json
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 44
+aivision-cli/internal/deploy/assets/bootstrap/seekdb.sh
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 125-126
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/tool_normalization.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 185
+ai-vision/vfe/src/components/traces/shared/longJsonString.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-25
+ai-vision/vfe/src/components/traces/shared/traceMediaOutput.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-58
+ai-vision/aivision-py-be/apps/core/views/trace_attachment.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-132
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/semantics.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 174,527,1206-1220
+ai-vision/agent-plugins/hermes/tests/test_privacy.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 147-177
+ai-vision/agent-plugins/codefuse/cfusehooks/src/common/message_format.rs
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 8,11,18-19,27,41-42,77,79,98,143,174,221-243
+  s_6eed30fd231f9b::t_7d1af7332e2527 244-245
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 8,26-27,579-580,920-922,925-938
+ai-vision/aivision-py-be/apps/core/views/langfuse_ingest.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 8,786-793,796-797,897-905,908
+ai-vision/vfe/tests/e2e/traceMediaPdf.spec.ts
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-81
+ai-vision/vfe/src/components/traces-otel/shared/MarkdownMedia.tsx
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 2-4,6,8,11
+ai-vision/aivision-py-be/aivision_backend/otlp_wsgi.py
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 1-26
+docs/deployment/en/docker.md
+  s_6eed30fd231f9b::t_2b6f7a3a2bc153 102-105
+ai-vision/vfe/pnpm-lock.yaml
+  s_6eed30fd231f9b::t_35c94e80c03c58 86-88,934-1008,3286,4353-4356,6351-6398,10177-10180
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1e908bedb6c97ca50ae933774146349c19aeb001",
+  "prompts": {},
+  "sessions": {
+    "s_6eed30fd231f9b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e8db-f00b-79c3-9361-e4ce90d5577f",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
