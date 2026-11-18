@@ -38,9 +38,13 @@ class RuntimeBudgetTests(unittest.TestCase):
         producer, browser = jobs['frontend'], jobs['frontend-browser']
         self.assertEqual(browser.get('needs'), 'frontend')
         builds = [step for step in producer['steps']
-                  if 'pnpm build -- --mode development' in step.get('run', '')]
+                  if step.get('run') == 'pnpm run build:fixture']
         self.assertEqual(len(builds), 1)
         self.assertEqual(builds[0]['if'], "matrix.os == 'ubuntu-24.04'")
+        self.assertTrue(any(step.get('run') == 'pnpm build' for step in producer['steps']))
+        frontend_scripts = json.loads((ROOT / 'ai-vision/vfe/package.json').read_text())['scripts']
+        self.assertEqual(frontend_scripts['build:fixture'].split(' && ')[-1], 'vite build --mode development')
+        self.assertIn('npm run build:fixture && playwright test', frontend_scripts['test:e2e'])
         uploads = [step for step in producer['steps']
                    if step.get('with', {}).get('name', '').startswith('frontend-fixture-')]
         downloads = [step for step in browser['steps']

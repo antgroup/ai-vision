@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:fixture": "tsc -b && vite build --mode development",
     "lint": "eslint .",
     "lint:ci": "eslint . --max-warnings 0",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,html}\"",
@@ -39,7 +40,7 @@
     "test:mcp": "node --experimental-strip-types --test tests/mcpConfigImport.test.ts tests/mcpRegistryImport.test.ts tests/mcpDom.test.ts tests/memoryDisplay.test.ts && node --experimental-strip-types --test tests/nativeMemory.test.ts",
     "test:skill": "node --experimental-strip-types --test tests/skillDisplay.test.ts tests/skillConfigImport.test.ts tests/skillImportDom.test.ts tests/skillUiCompliance.test.ts tests/skillApi.test.ts tests/skillTopic.test.ts tests/skillDefinitionDom.test.ts",
     "test:platform-contract": "node --experimental-strip-types --test tests/platformAssertions.test.ts",
-    "test:e2e": "npm run build -- --mode development && playwright test",
+    "test:e2e": "npm run build:fixture && playwright test",
     "test:e2e:platform": "playwright test --config playwright.platform.config.ts",
     "test:onboarding": "node --experimental-strip-types --test tests/agentIntegrations.test.ts tests/agentIntegrationsDom.test.ts tests/hermesOnboarding.test.ts tests/hermesDashboardIdentity.test.ts tests/hermesDashboardIdentityDom.test.ts tests/onboardingVerification.test.ts tests/onboardingPagesDom.test.ts tests/highlightedCode.test.ts tests/onboardingTraceReport.test.ts tests/productGuide.test.ts",
     "test:build-info": "node --experimental-strip-types --test tests/buildInfoConfig.test.ts",

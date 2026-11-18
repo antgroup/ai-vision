@@ -63,15 +63,13 @@ for (const language of ["zh-CN", "en-US", "ja-JP"]) {
         const userInput = page
           .getByTestId("trace-user-input")
           .filter({ visible: true })
+        const currentMessage = userInput
+          .getByTestId("trace-user-input-content")
+          .getByText("Contact [REDACTED_EMAIL]", { exact: true })
+        await expect(currentMessage).toBeVisible()
         await expect(
-          userInput.locator("mark[data-privacy-marker]").first()
+          currentMessage.locator("mark[data-privacy-marker]")
         ).toHaveText("[REDACTED_EMAIL]")
-        await expect(
-          userInput
-            .getByTestId("trace-user-input-content")
-            .locator(":scope > span")
-            .last()
-        ).toHaveText("Contact [REDACTED_EMAIL]")
         const help = userInput.locator("[data-user-input-privacy-help]")
         await expect(help).toHaveCount(1)
         await expect(page.getByTestId("user-input-privacy-note")).toHaveCount(0)

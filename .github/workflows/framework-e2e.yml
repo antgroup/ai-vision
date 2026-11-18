@@ -127,7 +127,7 @@ jobs:
         run: pnpm build
       - name: Build shared browser fixture assets
         if: matrix.os == 'ubuntu-24.04'
-        run: pnpm build -- --mode development
+        run: pnpm run build:fixture
       - uses: actions/upload-artifact@v4
         if: matrix.os == 'ubuntu-24.04'
         with:
