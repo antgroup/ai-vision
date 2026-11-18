@@ -130,6 +130,56 @@ async function assertEnhancedIO(
 ) {
   const page = scope.page()
   if ((await scope.getAttribute("data-testid")) !== "native-span-detail") {
+    const overview = scope.locator("[data-trace-overview-output]")
+    if (field === "output" && (await overview.count())) {
+      await expect(overview).toBeVisible()
+      await expect(
+        overview.getByRole("heading", {
+          name: uiText("en-US", "nativeSpanUsage.output"),
+          exact: true,
+        })
+      ).toBeVisible()
+      if (value === null) {
+        await expect(overview).toContainText(
+          new RegExp(
+            `null|${uiText("en-US", "traceProcess.unreportedContent")}`
+          )
+        )
+        return
+      }
+      // The overview intentionally shows an excerpt. Check a visible source
+      // field or short text, then copy and compare the complete value.
+      const first =
+        typeof value === "object" && !Array.isArray(value)
+          ? Object.entries(value)[0]
+          : undefined
+      if (first) await expect(overview).toContainText(first[0])
+      const sample = first ? first[1] : value
+      if (
+        sample === null ||
+        typeof sample === "number" ||
+        typeof sample === "boolean" ||
+        (typeof sample === "string" &&
+          sample.trim().length > 0 &&
+          sample.length <= 220 &&
+          !sample.includes("```"))
+      ) {
+        await expect(overview).toContainText(String(sample))
+      }
+      await page.evaluate(() => navigator.clipboard.writeText(""))
+      await overview
+        .getByRole("button", {
+          name: uiText("en-US", "spanContent.copyContent"),
+          exact: true,
+        })
+        .click()
+      await expect
+        .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+        .toBe(
+          typeof value === "string" ? value : JSON.stringify(value, null, 2)
+        )
+      return
+    }
     if (field === "input")
       await expandDetailSection(
         scope,
@@ -150,22 +200,25 @@ async function assertEnhancedIO(
   await expect(enhancement).toBeVisible()
   const conversation =
     (await enhancement.getAttribute("data-content-kind")) === "conversation"
-  const section = enhancement.locator("section").filter({
-    has: page.getByRole("heading", {
-      name: uiText(
-        "en-US",
-        conversation
-          ? field === "output"
-            ? "spanContent.latestOutput"
-            : "spanContent.lastUser"
-          : field === "input"
-            ? "spanContent.arguments"
-            : "spanContent.result"
-      ),
-      exact: true,
-    }),
-  })
+  const section = conversation
+    ? enhancement.locator(`section[data-conversation-io="${field}"]`)
+    : enhancement.locator("section").filter({
+        has: page.getByRole("heading", {
+          name: uiText(
+            "en-US",
+            field === "input" ? "spanContent.arguments" : "spanContent.result"
+          ),
+          exact: true,
+        }),
+      })
   await expect(section).toBeVisible()
+  if (conversation) {
+    const disclosure = section.locator("[data-message-disclosure]")
+    await expect(disclosure).toBeVisible()
+    if ((await disclosure.getAttribute("aria-expanded")) === "false")
+      await disclosure.click()
+    await expect(disclosure).toHaveAttribute("aria-expanded", "true")
+  }
   const excerpt = section.locator("[data-content-excerpt]")
   await expect(excerpt).toHaveCount(1)
   const semantic =
@@ -254,12 +307,23 @@ export async function assertRenderedIO(
   await revealOriginal?.()
   await expect(section).toBeVisible()
   const content = section.getByTestId("trace-io-content")
+  // Original formats render structured values in the JSON tree, including
+  // object/array strings. Copy still returns the received string verbatim.
+  const renderedValue =
+    typeof originalValue === "string" &&
+    value !== null &&
+    typeof value === "object"
+      ? value
+      : originalValue
   for (const mode of [uiText("en-US", "traceView.tree"), "JSON"]) {
-    await modes.getByRole("button", { name: mode, exact: true }).click()
+    const toggle = modes.getByRole("button", { name: mode, exact: true })
+    await toggle.click()
+    await expect(toggle).toHaveAttribute("aria-pressed", "true")
     await revealOriginal?.()
     await expandPreview(section)
-    if (mode === "JSON") await assertJsonRendered(content, originalValue)
-    else await assertFormattedRendered(content, originalValue)
+    if (mode !== "JSON" && typeof renderedValue === "string")
+      await expect(content).toHaveText(renderedValue)
+    else await assertJsonRendered(content, renderedValue)
     const copy =
       typeof originalValue === "string"
         ? originalValue

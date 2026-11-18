@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test"
-import { prepare, publicTrace, trace, uiText } from "./traceLabs.fixtures"
+import {
+  mcpPage,
+  prepare,
+  publicTrace,
+  trace,
+  uiText,
+} from "./traceLabs.fixtures"
 
 // Synthetic nested trace: source steps start below the visible tree viewport.
 const detail = {
@@ -25,6 +31,58 @@ const detail = {
     })),
   ],
 }
+
+test("switching from Enhanced to Original keeps the selected span after the trace reloads", async ({
+  page,
+}, testInfo) => {
+  await prepare(page)
+  await mcpPage(page, { traceDetail: true, navigate: false })
+  const modes: string[] = []
+  await page.route(/\/signoz\/trace\/labs-trace\/detail(?:\?|$)/, (route) => {
+    const enhanced = new URL(route.request().url()).searchParams.has(
+      "media_view"
+    )
+    modes.push(enhanced ? "enhanced" : "original")
+    return route.fulfill({
+      json: {
+        code: 0,
+        data: {
+          ...trace,
+          spans: trace.spans.map((span) =>
+            span.span_id === "plain"
+              ? {
+                  ...span,
+                  attributes: {
+                    ...span.attributes,
+                    "output.value": enhanced
+                      ? "Enhanced fixture output"
+                      : "Original fixture output",
+                  },
+                }
+              : span
+          ),
+        },
+      },
+    })
+  })
+  await page.goto("/trace?spaceId=space-a&agent=Codex&traceId=labs-trace")
+  await page
+    .locator('[data-testid="native-chain-span"][data-span-id="plain"]')
+    .click()
+  const panel = page.getByTestId("native-span-detail")
+  await expect(panel).toHaveAttribute("data-span-id", "plain")
+  const original = page.getByRole("button", {
+    name: uiText("en-US", "traceView.raw"),
+    exact: true,
+  })
+  await original.click()
+  await expect.poll(() => modes).toEqual(["enhanced", "original"])
+  await expect(panel).toHaveAttribute("data-span-id", "plain")
+  await expect(panel.getByTestId("trace-io-output")).toContainText(
+    "Original fixture output"
+  )
+  await panel.screenshot({ path: testInfo.outputPath("span-original.png") })
+})
 
 test("nanosecond trace keeps its duration and reveals only the selected collapsed branch", async ({
   page,

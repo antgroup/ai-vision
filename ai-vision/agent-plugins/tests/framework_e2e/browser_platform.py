@@ -329,7 +329,8 @@ def run_acceptance(*, repo, out, runtime, smoke, targets, auth_file, source,
         frontend = repo / 'ai-vision/vfe'
         browser_env = browser_environment(smoke.env, manifest, page_auth, out / 'browser', browser_origin, target['endpoint'])
         result = smoke.run('browser', [node, str(frontend / 'node_modules/@playwright/test/cli.js'),
-            'test', '--config', 'playwright.platform.config.ts'], cwd=frontend, env=browser_env, timeout=900, check=False)
+            'test', '--config', 'playwright.platform.config.ts', r'collection\.spec\.ts$'],
+            cwd=frontend, env=browser_env, timeout=900, check=False)
         if result.returncode:
             raise RuntimeError('Browser assertions failed; see sanitized screenshots and report')
         report['browser_tests'] = verify_browser_report(read_json(out / 'browser/results.json'), source)

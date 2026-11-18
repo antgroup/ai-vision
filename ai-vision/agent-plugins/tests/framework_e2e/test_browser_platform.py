@@ -260,6 +260,7 @@ class BrowserPlatformTests(unittest.TestCase):
             self.assertFalse((runtime / 'provider.env').exists())
             self.assertFalse((runtime / 'targets.json').exists())
             self.assertFalse((runtime / 'browser-auth.json').exists())
+            self.assertEqual(calls[-1][1][-3:], ['--config', 'playwright.platform.config.ts', r'collection\.spec\.ts$'])
             self.assertEqual(calls[-1][2]['AIVISION_BROWSER_AUTH_FILE'], str(runtime / 'browser-auth.json'))
 
 

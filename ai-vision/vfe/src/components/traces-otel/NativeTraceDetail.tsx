@@ -300,7 +300,9 @@ export function NativeTraceDetail({
   const pricingCurrency = usePricingCurrency()
   const sheetRef = useRef<HTMLDivElement>(null)
   const [viewMode, setViewMode] = useState<ViewMode>("tree")
-  const [selectedSpanId, setSelectedSpanId] = useState<string | null>(null)
+  const [requestedSpanId, setSelectedSpanId] = useState<string | null>(
+    focusSpanId ?? null
+  )
   const [selectedEventSource, setSelectedEventSource] =
     useState<ContextCompactionSource | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -456,6 +458,8 @@ export function NativeTraceDetail({
     () => new Map(spans.map((s) => [s.span_id, s])),
     [spans]
   )
+  const selectedSpanId =
+    requestedSpanId && spanById.has(requestedSpanId) ? requestedSpanId : null
   const scopeSpanIds = useMemo(
     () => (branchSpanId ? getSpanSubtreeIds(tree, branchSpanId) : undefined),
     [tree, branchSpanId]
@@ -640,16 +644,21 @@ export function NativeTraceDetail({
     [spans, selectedSpanId]
   )
 
-  /* eslint-disable react-hooks/set-state-in-effect -- reset to Preview when trace changes */
+  /* eslint-disable react-hooks/set-state-in-effect -- selection belongs to the current trace and route focus */
   useEffect(() => {
-    // Only focus a source span that exists in the loaded Trace.
+    // Content views reload the same trace. The requested span remains selected
+    // once it is available in the new projection.
     if (focusSpanId) setCallListOpen(false)
-    setSelectedSpanId(
-      focusSpanId && spans.some((span) => span.span_id === focusSpanId)
-        ? focusSpanId
-        : null
-    )
-  }, [traceId, focusSpanId, spans])
+    setSelectedSpanId(focusSpanId ?? null)
+  }, [
+    spaceId,
+    userUuid,
+    agentUuid,
+    agentProduct,
+    sourceSystem,
+    traceId,
+    focusSpanId,
+  ])
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const totalDuration = useMemo(() => {
