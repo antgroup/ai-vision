@@ -1,0 +1,22 @@
+README.md
+  s_d47cba2fff0854::t_627b2234b486d0 58,75,96,112
+  s_d47cba2fff0854::t_93b6bd9c170fc5 18,50,59-60,62,67,85,87,95,99,114,125
+  s_d47cba2fff0854::t_31a0174bcdb2ef 104,139
+  s_d47cba2fff0854::t_f4e9b4b2b69c94 113
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e6e9b36aec40748cddde18fa72dc44ed6494fcc2",
+  "prompts": {},
+  "sessions": {
+    "s_d47cba2fff0854": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ed83-8bc3-7652-856b-9e3b75235765",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
