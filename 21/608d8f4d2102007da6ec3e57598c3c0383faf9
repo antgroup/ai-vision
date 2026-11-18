@@ -1,0 +1,27 @@
+docs/deployment/zh-CN/dev-image-release.md
+  s_7ddb4c6ac82aba::t_31f6b25ed69a14 5,21-23
+  s_7ddb4c6ac82aba::t_a3dfe475fa649e 7
+docs/deployment/en/dev-image-release.md
+  s_7ddb4c6ac82aba::t_31f6b25ed69a14 5,21-23
+  s_7ddb4c6ac82aba::t_a3dfe475fa649e 7
+docs/version-info.md
+  s_7ddb4c6ac82aba::t_31f6b25ed69a14 3,73,75-77
+VERSION
+  s_7ddb4c6ac82aba::t_31f6b25ed69a14 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "21608d8f4d2102007da6ec3e57598c3c0383faf9",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
