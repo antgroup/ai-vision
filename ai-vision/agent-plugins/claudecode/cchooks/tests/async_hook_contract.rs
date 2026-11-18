@@ -1092,6 +1092,8 @@ fn transcript_ingest_barrier_timeout_fails_open_without_late_ack_file() {
     let transcript = dir.path().join("session.jsonl");
     std::fs::write(&transcript, "").expect("write transcript");
 
+    let wait_ms = 50;
+    let worker_delay = Duration::from_secs(1);
     let started = Instant::now();
     let output = run_cchooks_with_env(
         dir.path(),
@@ -1102,20 +1104,49 @@ fn transcript_ingest_barrier_timeout_fails_open_without_late_ack_file() {
         }),
         [
             ("CCHOOKS_WAIT_FOR_TRANSCRIPT_INGEST", "true".to_string()),
-            ("CCHOOKS_TRANSCRIPT_INGEST_WAIT_MS", "50".to_string()),
-            ("CCHOOKS_TEST_WORKER_START_DELAY_MS", "200".to_string()),
+            ("CCHOOKS_TRANSCRIPT_INGEST_WAIT_MS", wait_ms.to_string()),
+            (
+                "CCHOOKS_TEST_WORKER_START_DELAY_MS",
+                worker_delay.as_millis().to_string(),
+            ),
             ("CCHOOKS_STOP_TRANSCRIPT_SETTLE_MS", "1".to_string()),
             ("CCHOOKS_DEBUG", "true".to_string()),
         ],
     );
     let elapsed = started.elapsed();
 
-    assert!(output.status.success());
     assert!(
-        elapsed < Duration::from_millis(180),
-        "timeout must fail open; elapsed={elapsed:?}"
+        output.status.success(),
+        "hook must succeed after timeout: {}",
+        String::from_utf8_lossy(&output.stderr)
     );
-    thread::sleep(Duration::from_millis(300));
+    assert!(
+        elapsed < worker_delay,
+        "hook must return before the delayed worker; elapsed={elapsed:?}"
+    );
+    let log = std::fs::read_to_string(
+        dir.path()
+            .join("logs")
+            .join(format!("cchooks_{session_id}.log")),
+    )
+    .expect("read session log");
+    let outcome = log
+        .lines()
+        .find_map(|line| line.split_once("transcript ingest barrier: "))
+        .expect("transcript ingest barrier log")
+        .1;
+    // Measure the hook's wait separately from process startup and teardown.
+    let waited_ms = outcome
+        .strip_prefix("result=timeout elapsed_ms=")
+        .and_then(|value| value.strip_suffix("; fail-open"))
+        .unwrap_or_else(|| panic!("expected timeout and fail-open, got {outcome}"))
+        .parse::<u64>()
+        .expect("barrier wait in milliseconds");
+    assert!(
+        (wait_ms..180).contains(&waited_ms),
+        "barrier must honor its wait budget; waited={waited_ms}ms"
+    );
+    wait_for_worker_idle(dir.path(), session_id);
     let receipt_files = std::fs::read_dir(dir.path().join("state"))
         .into_iter()
         .flatten()
@@ -1133,7 +1164,6 @@ fn transcript_ingest_barrier_timeout_fails_open_without_late_ack_file() {
         receipt_files.is_empty(),
         "timed-out receipt must not be recreated: {receipt_files:?}"
     );
-    wait_for_worker_idle(dir.path(), session_id);
 }
 
 #[test]
@@ -2023,6 +2053,9 @@ fn stop_family_live_exports_preserve_prompt_traceparent() {
             prompt_output.status,
             String::from_utf8_lossy(&prompt_output.stderr)
         );
+        // Finish the prompt worker's state transaction before exercising the
+        // trace binding. A contended turn lock has a separate fail-open test.
+        wait_for_worker_idle(dir.path(), &session_id);
 
         let (endpoint, body_rx) = capturing_http_endpoint();
         let stop_output = run_cchooks_with_env(
