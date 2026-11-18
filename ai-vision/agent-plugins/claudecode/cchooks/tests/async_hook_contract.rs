@@ -865,7 +865,6 @@ fn non_true_structured_settings_do_not_enable_the_session_end_barrier() {
             "hook_event_name": "SessionEnd",
             "session_id": session_id
         });
-        let started = Instant::now();
         let output = match setting {
             Some(value) => run_cchooks_with_env(
                 dir.path(),
@@ -887,21 +886,22 @@ fn non_true_structured_settings_do_not_enable_the_session_end_barrier() {
                 ],
             ),
         };
-        let elapsed = started.elapsed();
-        assert!(output.status.success());
         assert!(
-            elapsed < Duration::from_millis(200),
-            "setting {setting:?} unexpectedly enabled the SessionEnd barrier: {elapsed:?}"
+            output.status.success(),
+            "SessionEnd with setting {setting:?} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
         );
-        let log = std::fs::read_to_string(
-            dir.path()
-                .join("logs")
-                .join(format!("cchooks_{session_id}.log")),
-        )
-        .expect("read unstructured SessionEnd log");
+        let log_path = dir
+            .path()
+            .join("logs")
+            .join(format!("cchooks_{session_id}.log"));
+        // Require the parent to complete, then inspect whether it entered the
+        // barrier. Child launch and reaping times do not identify that branch.
+        let parent_elapsed = parent_total_from_log(&log_path, "SessionEnd");
+        let log = std::fs::read_to_string(&log_path).expect("read unstructured SessionEnd log");
         assert!(
             !log.contains("structured SessionEnd queue barrier"),
-            "setting {setting:?} must not enter the structured barrier"
+            "setting {setting:?} must not enter the structured barrier: parent={parent_elapsed:?}\n{log}"
         );
     }
 
