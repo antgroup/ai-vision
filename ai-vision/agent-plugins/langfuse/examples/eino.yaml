@@ -4,7 +4,7 @@ label: Eino
 logo: /assets/frameworks/eino.png
 logoLayout: wide
 language: go
-runtime: Go 1.23+
+runtime: Go 1.25+
 marketLabel: Go / Eino
 marketSort: 9
 marketPreview: true
@@ -13,7 +13,10 @@ requiresModel: true
 install: |-
   # Run in your Go module, or initialize a new example directory once.
   test -f go.mod || go mod init example.com/eino-onboarding
-  go get github.com/cloudwego/eino@v0.9.22 github.com/cloudwego/eino-ext/callbacks/langfuse/v2@v2.0.2 github.com/cloudwego/eino-ext/components/model/openai@v0.1.13 go.opentelemetry.io/otel/trace@v1.38.0
+  go get github.com/cloudwego/eino@v0.9.22 \
+    github.com/cloudwego/eino-ext/callbacks/langfuse/v2@v2.0.2 \
+    github.com/cloudwego/eino-ext/components/model/openai@v0.1.13 \
+    go.opentelemetry.io/otel/trace@v1.44.0 google.golang.org/grpc@v1.83.1
 exampleFilename: main.go
 runCommand: go run main.go
 envShell:
