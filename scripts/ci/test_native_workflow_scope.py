@@ -232,6 +232,7 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                     self.assertEqual(command[command.index('--features') + 1], 'common')
                     self.assertIn('--bins', command)
                     self.assertNotIn('--all-targets', command)
+                    self.assertNotIn('--release', command)
                     if operation == 'test':
                         self.assertIn('--lib', command)
         self.assertIn(['make', '-C', 'ai-vision/agent-plugins', 'test-onboarding',
@@ -244,10 +245,12 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                 manifest = 'ai-vision/agent-plugins/' + source + '/Cargo.toml'
                 with self.subTest(units=units, source=source):
                     matching = [command for command in commands
-                                if command[:2] == ['cargo', 'test'] and manifest in command]
-                    self.assertEqual(len(matching), 1)
-                    self.assertIn('--all-targets', matching[0])
-                    self.assertNotIn('--lib', matching[0])
+                                if command[0] == 'cargo' and manifest in command]
+                    self.assertEqual([command[1] for command in matching], ['build', 'test'])
+                    self.assertIn('--all-targets', matching[1])
+                    self.assertNotIn('--lib', matching[1])
+                    for command in matching:
+                        self.assertEqual('--release' in command, source == 'claudecode/cchooks')
 
     def test_source_only_and_combined_keep_native_execution_with_one_unit_pass(self):
         for units in (False, True):
