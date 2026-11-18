@@ -171,6 +171,25 @@ class NativeWorkflowTests(unittest.TestCase):
             with self.subTest(changed=changed), self.assertRaises(ValueError):
                 builder.check_runtime({**valid, **changed}, "linux/arm64", "fixture")
 
+    def test_build_requirements_satisfy_compiler_and_resolver_guards(self):
+        source = Path(__file__).resolve().parents[2]
+        requirements = source / "deploy/native-packaging/requirements-build.txt"
+        versions = dict(line.split("==", 1) for line in requirements.read_text().splitlines())
+        args = self.arguments(source_root=source, tool_python=self.root / "compiler/bin/python")
+        probe = {"python": [3, 11, 14], "system": "Linux", "machine": "aarch64", "versions": versions}
+
+        def create_frozen_environment(command, *, cwd, env, log):
+            self.assertEqual(command[1:5], ["sync", "--frozen", "--no-dev", "--no-install-project"])
+            self.write(Path(env["UV_PROJECT_ENVIRONMENT"]), "bin/python", "fixture interpreter")
+
+        with patch.object(builder, "probe_python", return_value=probe), \
+             patch.object(builder, "run", side_effect=create_frozen_environment):
+            tools = builder.prepare_tools(args, args.work_dir, ("backend", "agentlens", "onboarding"))
+            dependencies = builder.prepare_dependencies(args, source, args.work_dir, tools, ("backend", "agentlens"))
+
+        self.assertEqual(dependencies["backend"]["lock_sha256"], builder.digest(source / "ai-vision/aivision-py-be/uv.lock"))
+        self.assertEqual(dependencies["agentlens"]["lock_sha256"], builder.digest(source / "agentlens/uv.lock"))
+
     def test_prepared_dependencies_reject_wrong_lock_or_abi(self):
         dependency = self.root / "dependencies"
         self.write(dependency, "bin/python", "fixture interpreter")
