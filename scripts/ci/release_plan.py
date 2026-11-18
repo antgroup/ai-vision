@@ -168,6 +168,27 @@ def require_platforms(manifest):
         )
 
 
+def native_build_digest(manifest, pushed_digest, arch):
+    if not isinstance(pushed_digest, str) or not re.fullmatch(r"sha256:[a-f0-9]{64}", pushed_digest):
+        raise ValueError("pushed image digest must be a SHA256 digest")
+    if manifest.get("digest") != pushed_digest:
+        raise ValueError("pushed image digest differs from the registry descriptor")
+    image_types = {"application/vnd.oci.image.manifest.v1+json",
+                   "application/vnd.docker.distribution.manifest.v2+json"}
+    if manifest.get("mediaType") in image_types:
+        # The caller verifies the platform from the inspected image config.
+        return pushed_digest
+    children = [item for item in manifest.get("manifests", [])
+                if item.get("platform", {}).get("os") != "unknown"
+                or item.get("platform", {}).get("architecture") != "unknown"]
+    if (len(children) != 1 or children[0]["platform"].get("os") != "linux"
+            or children[0]["platform"].get("architecture") != arch
+            or children[0].get("mediaType") not in image_types
+            or not re.fullmatch(r"sha256:[a-f0-9]{64}", children[0].get("digest", ""))):
+        raise ValueError(f"pushed image index must contain exactly one linux/{arch} image manifest")
+    return children[0]["digest"]
+
+
 def require_native_digests(manifest, expected):
     require_platforms(manifest)
     actual = {item["platform"]["architecture"]: item.get("digest")
@@ -183,10 +204,12 @@ def require_native_digests(manifest, expected):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "command", choices=("plan", "environment", "notes", "platforms", "digest")
+        "command", choices=("plan", "environment", "notes", "platforms", "digest", "native-digest")
     )
     parser.add_argument("--file", type=Path)
     parser.add_argument("--digests-directory", type=Path)
+    parser.add_argument("--digest")
+    parser.add_argument("--arch", choices=("amd64", "arm64"))
     args = parser.parse_args()
     try:
         if args.command == "plan":
@@ -216,6 +239,10 @@ def main():
                 require_release_environment(data)
             elif args.command == "notes":
                 print(require_draft_notes(data))
+            elif args.command == "native-digest":
+                if args.arch is None:
+                    parser.error("native-digest requires --arch")
+                print(native_build_digest(data, args.digest, args.arch))
             else:
                 if args.digests_directory:
                     expected = {}

@@ -306,22 +306,33 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
           cache-to: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }},mode=max
       - name: Read identity back from the native candidate image
+        id: native
         if: steps.identity.outputs.reuse == ''
         env:
-          DIGEST: ${{ steps.build.outputs.digest }}
+          PUSH_DIGEST: ${{ steps.build.outputs.digest }}
           IDENTITY: ${{ steps.identity.outputs.base64 }}
           ARCH: ${{ matrix.arch }}
-        run: python3 scripts/ci/release_image.py --ref "$IMAGE_REPOSITORY@$DIGEST" --arch "$ARCH" --identity "$IDENTITY"
-      - name: Export verified native digest and actual build identity
+        run: |
+          set -euo pipefail
+          [[ "$PUSH_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          docker buildx imagetools inspect "$IMAGE_REPOSITORY@$PUSH_DIGEST" --format '{{json .Manifest}}' > "$RUNNER_TEMP/pushed-manifest.json"
+          digest=$(python3 scripts/ci/release_plan.py native-digest --file "$RUNNER_TEMP/pushed-manifest.json" --digest "$PUSH_DIGEST" --arch "$ARCH")
+          python3 scripts/ci/release_image.py --ref "$IMAGE_REPOSITORY@$digest" --arch "$ARCH" --identity "$IDENTITY"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - name: Export pushed digest, verified native digest and actual build identity
         env:
-          DIGEST: ${{ steps.build.outputs.digest || steps.reuse.outputs.digest }}
+          PUSH_DIGEST: ${{ steps.build.outputs.digest }}
+          NATIVE_DIGEST: ${{ steps.native.outputs.digest || steps.reuse.outputs.digest }}
           IDENTITY: ${{ steps.identity.outputs.base64 }}
           IMAGE: ${{ matrix.image }}
         run: |
           set -euo pipefail
-          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          [[ "$NATIVE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
           mkdir -p "$RUNNER_TEMP/digests"
-          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+          touch "$RUNNER_TEMP/digests/${NATIVE_DIGEST#sha256:}"
+          if [[ -n "$PUSH_DIGEST" ]]; then
+            printf '%s\n' "$PUSH_DIGEST" > "$RUNNER_TEMP/digests/push-digest.txt"
+          fi
           printf '%s' "$IDENTITY" | base64 -d > "$RUNNER_TEMP/digests/$IMAGE.build-info.json"
       - uses: actions/upload-artifact@v4
         with:
@@ -376,12 +387,12 @@ jobs:
           if [[ -n "$reuse" ]]; then
             ref="$reuse"
           else
-            mapfile -t digests < <(find "$RUNNER_TEMP/digests" -regextype posix-extended -type f -regex '.*/[a-f0-9]{64}' | sort)
-            test "${#digests[@]}" -eq 2
+            # Merge the original pushed refs so BuildKit attestation manifests stay in the index.
             args=()
-            for file in "${digests[@]}"; do
-              digest="${file##*/}"
-              args+=("$IMAGE_REPOSITORY@sha256:$digest")
+            for arch in amd64 arm64; do
+              digest=$(cat "$RUNNER_TEMP/digests/digests-$GITHUB_RUN_ATTEMPT-$IMAGE-$arch/push-digest.txt")
+              [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+              args+=("$IMAGE_REPOSITORY@$digest")
             done
             docker buildx imagetools create --tag "$IMAGE_REPOSITORY:$CANDIDATE_TAG" "${args[@]}"
             ref="$IMAGE_REPOSITORY:$CANDIDATE_TAG"

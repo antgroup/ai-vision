@@ -221,6 +221,7 @@ class PlanningTests(unittest.TestCase):
             for arch, value in (("amd64", "b"), ("arm64", "c")):
                 artifact = root / "digests" / f"digests-1-aivision-be-{arch}"
                 artifact.mkdir(parents=True)
+                (artifact / "push-digest.txt").write_text("sha256:" + "a" * 64 + "\n")
                 (artifact / (value * 64)).touch()
                 descriptors.append(dict(digest="sha256:" + value * 64,
                     platform=dict(os="linux", architecture=arch)))
@@ -237,6 +238,39 @@ class PlanningTests(unittest.TestCase):
             bad = subprocess.run(command, capture_output=True, text=True)
             self.assertNotEqual(bad.returncode, 0)
             self.assertIn("verified native", bad.stderr)
+
+    def test_native_digest_resolves_attested_push_to_its_exact_linux_child(self):
+        push = "sha256:" + "a" * 64
+        native = {"mediaType": "application/vnd.oci.image.manifest.v1+json",
+                  "digest": DIGEST, "platform": {"os": "linux", "architecture": "arm64", "variant": "v8"}}
+        attestation = {"mediaType": native["mediaType"], "digest": "sha256:" + "c" * 64,
+                       "platform": {"os": "unknown", "architecture": "unknown"},
+                       "annotations": {"vnd.docker.reference.type": "attestation-manifest",
+                                       "vnd.docker.reference.digest": DIGEST}}
+        manifest = {"mediaType": "application/vnd.oci.image.index.v1+json",
+                    "digest": push, "manifests": [native, attestation]}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "manifest.json"
+            command = [sys.executable, str(Path(__file__).with_name("release_plan.py")),
+                       "native-digest", "--file", str(path), "--digest", push, "--arch", "arm64"]
+            for data, expected in (
+                (manifest, DIGEST),
+                ({"mediaType": native["mediaType"], "digest": push}, push),
+                ({**manifest, "digest": DIGEST}, None),
+                ({**manifest, "manifests": [attestation]}, None),
+                ({**manifest, "manifests": [native, native, attestation]}, None),
+                ({**manifest, "manifests": [native, {**native, "platform": {"os": "linux", "architecture": "amd64"}}]}, None),
+                ({**manifest, "manifests": [{**native, "mediaType": manifest["mediaType"]}, attestation]}, None),
+            ):
+                with self.subTest(data=data):
+                    path.write_text(json.dumps(data))
+                    result = subprocess.run(command, capture_output=True, text=True)
+                    if expected:
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertEqual(result.stdout.strip(), expected)
+                    else:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertIn("pushed image", result.stderr)
 
     def test_environment_requires_real_reviewers_and_no_self_review(self):
         rule = {
