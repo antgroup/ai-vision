@@ -1,0 +1,58 @@
+ai-vision/vfe/src/components/traces/shared/traceHtmlLinks.ts
+  s_0ba4aa59e34a4f::t_4f3e5567ea8e78 63-64,121-127
+ai-vision/vfe/src/components/traces/shared/TraceTextContent.tsx
+  s_0ba4aa59e34a4f::t_e90fd212f4f172 3-4,10,13,24,85-95,102-105,107-110
+  s_0ba4aa59e34a4f::t_5ef02176c58ad4 20-23,96-101,106,111-115
+  s_0ba4aa59e34a4f::t_af7e909511a6e3 72-84,116-117
+ai-vision/vfe/tests/e2e/traceDocuments.spec.ts
+  s_0ba4aa59e34a4f::t_9af7ddad5c1b4e 982-1006,1008-1027,1031-1107
+  s_0ba4aa59e34a4f::t_40bab8b200c67e 270-280,282,901-903,1028-1030
+  s_0ba4aa59e34a4f::t_97c1c8d3866c82 186-191,229-230,281,283-285,834-847,884,896-900,904-910,1007
+  s_0ba4aa59e34a4f::t_29e5a6333ae7c5 269
+ai-vision/vfe/src/components/traces/shared/TraceDocumentPreviews.tsx
+  s_0ba4aa59e34a4f::t_e90fd212f4f172 30,47
+  s_0ba4aa59e34a4f::t_62af7cb534581b 17,22,25,29,31-32,35-45
+  s_0ba4aa59e34a4f::t_af7e909511a6e3 1-6,18,23,26-28,34,46,48-51
+ai-vision/vfe/src/components/traces-otel/SpanTypedContent.tsx
+  s_0ba4aa59e34a4f::t_4d1fffa3ec24f1 8,21,322
+  s_0ba4aa59e34a4f::t_a3f5a1d5105bb5 19-20,22,48-49,404-405,407-408,416,420
+  s_0ba4aa59e34a4f::t_5ef02176c58ad4 42-47
+  s_0ba4aa59e34a4f::t_62af7cb534581b 398-403
+  s_0ba4aa59e34a4f::t_57553f65a57332 406
+ai-vision/vfe/src/components/traces-lf/shared/MetadataTree.tsx
+  s_0ba4aa59e34a4f::t_66910b387cbd2b 6,577,664,804-807,867
+  s_0ba4aa59e34a4f::t_e22fe68795ca68 629-630,808-830,832-866
+ai-vision/vfe/src/components/traces/shared/TraceDocumentPreviewContent.tsx
+  s_0ba4aa59e34a4f::t_af7e909511a6e3 1,16,21,145,193,197,199-202,206-208,210,212,214-216,218-219
+  s_0ba4aa59e34a4f::t_cb9fec3b219619 209,217
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_0ba4aa59e34a4f::t_5ef02176c58ad4 783-786,871-874,1092-1094,1096-1139,1141-1174,1176-1179
+  s_0ba4aa59e34a4f::t_4d1fffa3ec24f1 4,139,1180
+ai-vision/vfe/src/components/traces/shared/traceEnhancedVisibility.ts
+  s_0ba4aa59e34a4f::t_af7e909511a6e3 5,10-14
+  s_0ba4aa59e34a4f::t_5ef02176c58ad4 7-9
+  s_0ba4aa59e34a4f::t_e90fd212f4f172 6
+ai-vision/vfe/src/components/traces-otel/SpanContentEnhancement.tsx
+  s_0ba4aa59e34a4f::t_a3f5a1d5105bb5 125-130
+ai-vision/vfe/tests/traceHtmlLinks.test.ts
+  s_0ba4aa59e34a4f::t_1814be9bc5a372 26-60
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_0ba4aa59e34a4f::t_a3f5a1d5105bb5 85-88,94-95
+  s_0ba4aa59e34a4f::t_4d1fffa3ec24f1 202
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2825ceb07fc62a626845ca0595ed987094d27686",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
