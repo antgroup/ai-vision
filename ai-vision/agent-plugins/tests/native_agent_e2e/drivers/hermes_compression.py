@@ -8,6 +8,7 @@ import subprocess
 import threading
 import time
 
+from ._process import PIPE_DRAIN_SECONDS, _join_readers, _kill_tree, _launch as _launch_owned
 from .hermes import _launch, _prepare, _raw_callbacks
 
 try:
@@ -19,7 +20,7 @@ except ImportError:
 class ACP:
     def __init__(self, ctx, env, deadline, messages):
         self.deadline, self.messages = deadline, messages
-        self.process = subprocess.Popen([*ctx.runtime, 'acp'], cwd=ctx.workspace, env=env,
+        self.process, self.job = _launch_owned([*ctx.runtime, 'acp'], cwd=ctx.workspace, env=env,
             text=True, encoding='utf-8', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         self.pending = queue.Queue()
         self.output = []
@@ -30,13 +31,16 @@ class ACP:
             reader.start()
 
     def _read(self, stream, protocol):
-        for line in stream:
+        try:
+            for line in stream:
+                if protocol:
+                    self.pending.put(line)
+                else:
+                    self.output.append(line)
+        finally:
+            stream.close()
             if protocol:
-                self.pending.put(line)
-            else:
-                self.output.append(line)
-        if protocol:
-            self.pending.put(None)
+                self.pending.put(None)
 
     def request(self, method, params):
         self.identity += 1
@@ -73,18 +77,25 @@ class ACP:
         return output
 
     def close(self):
-        if not self.process.stdin.closed:
-            self.process.stdin.close()
         try:
-            code = self.process.wait(timeout=min(10, max(.1, self.deadline - time.monotonic())))
-        except subprocess.TimeoutExpired:
-            self.process.kill()
-            self.process.wait(timeout=5)
-            code = 124
-        for reader in self.readers:
-            reader.join(timeout=2)
-        self.process.stdout.close()
-        self.process.stderr.close()
+            if not self.process.stdin.closed:
+                try:
+                    self.process.stdin.close()
+                except BrokenPipeError:
+                    pass  # The native host can exit before the test closes stdin.
+            try:
+                code = self.process.wait(timeout=max(0, min(10, self.deadline - time.monotonic())))
+                _join_readers(self.readers, min(PIPE_DRAIN_SECONDS, max(0, self.deadline - time.monotonic())))
+                if any(reader.is_alive() for reader in self.readers):
+                    code = 124
+            except subprocess.TimeoutExpired:
+                code = 124
+        finally:
+            try:
+                _kill_tree(self.process, self.job)
+            finally:
+                # Readers own their streams; closing from here can block on a read lock.
+                _join_readers(self.readers)
         return code
 
 

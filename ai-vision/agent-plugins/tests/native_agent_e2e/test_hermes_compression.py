@@ -2,11 +2,16 @@
 from copy import deepcopy
 import hashlib
 import json
+import os
 from pathlib import Path
+import signal
 import sys
 import tempfile
+import threading
+import time
 import unittest
 
+from _process_test_helpers import assert_posix_process_stopped
 from test_hermes_turn_numbering import proof as numbering_proof, complete_call_facts
 
 
@@ -262,6 +267,49 @@ for line in sys.stdin:
             ['First prompt', 'Second prompt', '/context', 'Third prompt'])
         self.assertIn('10 messages', result.details['compression']['context_before'])
         self.assertEqual(result.details['compression']['config']['threshold_tokens'], 3000)
+
+    @unittest.skipUnless(os.name == 'posix', 'POSIX inherited output pipe fixture')
+    def test_exited_acp_host_cannot_leave_inherited_output_pipes_open(self):
+        from drivers.hermes_compression import ACP
+
+        receipt = self.root / 'child.pid'
+        self.ctx.workspace.mkdir()
+        self.cli.write_text('import subprocess, sys\nfrom pathlib import Path\n'
+            "child = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(12)'])\n"
+            f'Path({str(receipt)!r}).write_text(str(child.pid))\n'
+            "print('ACP host output', file=sys.stderr, flush=True)\n")
+        client = ACP(self.ctx, dict(os.environ), time.monotonic() + .4, [])
+        outcomes = []
+        child_stopped = False
+
+        def close():
+            try:
+                outcomes.append(client.close())
+            except BaseException as error:
+                outcomes.append(error)
+
+        closer = threading.Thread(target=close, daemon=True)
+        try:
+            self.assertEqual(client.process.wait(timeout=3), 0)
+            child = int(receipt.read_text())
+            closer.start()
+            closer.join(timeout=2)
+            self.assertFalse(closer.is_alive(), 'ACP close exceeded its bounded output drain')
+            self.assertEqual(outcomes, [124])
+            self.assertIn('ACP host output\n', client.output)
+            assert_posix_process_stopped(child, timeout=.5)
+            child_stopped = True
+        finally:
+            if not child_stopped and receipt.exists():
+                try:
+                    os.kill(int(receipt.read_text()), signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            if client.process.poll() is None:
+                client.process.kill()
+                client.process.wait(timeout=3)
+            if closer.ident is not None:
+                closer.join(timeout=3)
 
     def test_missing_native_context_prevents_unverifiable_compression(self):
         self.cli.write_text(self.cli.read_text().replace('Conversation: 10 messages', 'Conversation unavailable'))
