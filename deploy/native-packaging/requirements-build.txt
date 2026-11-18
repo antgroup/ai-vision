@@ -1,5 +1,5 @@
 Cython==3.2.4
-setuptools==79.0.1
+setuptools==84.1.0
 Nuitka==4.3.1
 ordered-set==4.1.0
 patchelf==0.17.2.4
