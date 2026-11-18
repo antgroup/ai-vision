@@ -1,0 +1,150 @@
+ai-vision/vfe/src/labs/memory/MemoryPage.tsx
+  s_6eed30fd231f9b::t_0c1c754f5bc11e 229,244,258
+ai-vision/vfe/src/labs/skill/SkillPage.tsx
+  s_6eed30fd231f9b::t_7ce143c1f3df9e 410,417
+  s_6eed30fd231f9b::t_f551c5584119aa 549-551,561-565
+  s_6eed30fd231f9b::t_12f132f721a869 559-560,566-567
+  s_6eed30fd231f9b::t_74a316804a58a2 50,157-163
+  s_6eed30fd231f9b::t_0c1c754f5bc11e 363,366
+  s_6eed30fd231f9b::t_be2b713120ef47 382-392,424,444-448,452,457,491-497
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_6eed30fd231f9b::t_6d84c664198707 107-108
+  s_6eed30fd231f9b::t_804fd78729b7f9 106
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_6eed30fd231f9b::t_fbf4a2b06272a0 3269,3271,3281,3296-3299
+  s_6eed30fd231f9b::t_47f99d3936e75f 3277
+  s_6eed30fd231f9b::t_0bff1a59a9dd6b 2917,3010,3263-3265,3302
+ai-vision/vfe/src/labs/skill/types.ts
+  s_6eed30fd231f9b::t_74a316804a58a2 97
+ai-vision/vfe/src/agents/shared/hooks/useEmptyDataCheck.ts
+  s_6eed30fd231f9b::t_cf1aea6b08da39 20-22,32
+ai-vision/vfe/src/agents/dashboards/common/sections/OverviewSection.tsx
+  s_6eed30fd231f9b::t_88bf415344faa7 43,105,134,141,143
+ai-vision/vfe/src/agents/dashboards/common/scopes/SpaceDashboard.tsx
+  s_6eed30fd231f9b::t_fa3f4607560688 7-8,47-66,72,95-96
+ai-vision/vfe/tests/dashboardQueryStateDom.test.ts
+  s_6eed30fd231f9b::t_ed7e2ae443512d 97,99
+ai-vision/aivision-py-be/README.md
+  s_6eed30fd231f9b::t_adc3f4b13cd8b3 68
+  s_6eed30fd231f9b::t_489912f11018d5 70-71
+ai-vision/vfe/src/agents/shared/hooks/useSectionQuery.ts
+  s_6eed30fd231f9b::t_825220370cfd85 76
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_6eed30fd231f9b::t_0bff1a59a9dd6b 2917,3010,3263-3265,3302
+  s_6eed30fd231f9b::t_47f99d3936e75f 3277
+  s_6eed30fd231f9b::t_fbf4a2b06272a0 3269,3271,3281,3296-3299
+ai-vision/vfe/src/labs/skill/SkillImportLinkPanel.tsx
+  s_6eed30fd231f9b::t_e4d4e66c21d928 233,235-237
+  s_6eed30fd231f9b::t_6d84c664198707 138
+  s_6eed30fd231f9b::t_47f99d3936e75f 234
+ai-vision/vfe/src/labs/skill/SkillDrawer.tsx
+  s_6eed30fd231f9b::t_77ad93db160332 29,147-159,244-252,255,278,281-305,309-321,336,374-379,966
+  s_6eed30fd231f9b::t_12f132f721a869 146,306-308,322-326
+  s_6eed30fd231f9b::t_74a316804a58a2 38,48
+ai-vision/vfe/tests/e2e/memoryObservability.spec.ts
+  s_6eed30fd231f9b::t_6d84c664198707 460
+ai-vision/vfe/src/components/labs/shared/ImportRegistrySearch.tsx
+  s_6eed30fd231f9b::t_e4d4e66c21d928 13-15,68,70,73,81
+  s_6eed30fd231f9b::t_47f99d3936e75f 42,52,54,87
+ai-vision/vfe/src/labs/skill/SkillConfigImportDialog.tsx
+  s_6eed30fd231f9b::t_e4d4e66c21d928 194-202
+  s_6eed30fd231f9b::t_a88436146d2d66 152
+ai-vision/vfe/tests/skillUiCompliance.test.ts
+  s_6eed30fd231f9b::t_804fd78729b7f9 1089-1091
+  s_6eed30fd231f9b::t_4bf5acbc306f75 998-1002,1009-1012
+  s_6eed30fd231f9b::t_fa88b77da8f6c5 933-997,1003-1008,1013-1015
+ai-vision/vfe/src/labs/mcp/McpServerDrawer.tsx
+  s_6eed30fd231f9b::t_aa91b18b55e9b9 172-175,344-361,450-480,883,897,969-971,975-980,1011,1019
+  s_6eed30fd231f9b::t_ef0e4d62f348e6 917-920,972-974
+ai-vision/vfe/src/labs/skill/SkillOverview.tsx
+  s_6eed30fd231f9b::t_0c1c754f5bc11e 26
+ai-vision/vfe/src/labs/mcp/McpPage.tsx
+  s_6eed30fd231f9b::t_54749354b07355 22,146-149,179,186,269
+  s_6eed30fd231f9b::t_7ce143c1f3df9e 382,419
+ai-vision/vfe/src/agents/shared/SpaceDashboardLayout.tsx
+  s_6eed30fd231f9b::t_6e4a6e0988d24d 26-27,37
+ai-vision/vfe/tests/e2e/traceLabs.spec.ts
+  s_6eed30fd231f9b::t_d0e4062317ca3d 19-22,70-73,235-238
+ai-vision/aivision-py-be/apps/core/views/labs_skill_registry.py
+  s_6eed30fd231f9b::t_96c4925b9c0062 517,559,568-572
+  s_6eed30fd231f9b::t_8743253e8c0c30 7,82-83,438,453,465-467,469,471-473,475-481,513,515,519-537,541,544-545,547,554-558,560-567
+  s_6eed30fd231f9b::t_4929e8b6cddff3 542-543
+  s_6eed30fd231f9b::t_0e41642f25e5a4 474,482-485
+ai-vision/vfe/src/components/labs/shared/LabsInventoryCounts.tsx
+  s_6eed30fd231f9b::t_a88436146d2d66 18
+  s_6eed30fd231f9b::t_f992e7ebe3280d 12-13
+ai-vision/vfe/src/components/labs/shared/LabsStatStrip.tsx
+  s_6eed30fd231f9b::t_a88436146d2d66 61
+  s_6eed30fd231f9b::t_907d514b15f9f4 14-15,20-21,23-44,46,48
+ai-vision/vfe/src/labs/skill/SkillCard.tsx
+  s_6eed30fd231f9b::t_74a316804a58a2 20-23,25,28,30,81
+  s_6eed30fd231f9b::t_533db71940a81d 24
+ai-vision/aivision-py-be/apps/core/tests/test_labs_skill_registry.py
+  s_6eed30fd231f9b::t_dd0cad37f860fb 317-325
+  s_6eed30fd231f9b::t_8bce5b599c4036 370-383,423-438
+  s_6eed30fd231f9b::t_b06e4e70e1ab1f 385-399
+  s_6eed30fd231f9b::t_63c28b7752372a 286-289,291,297,303-316,326-341,400-401,403-422
+  s_a4750bbd0b03d9::t_e290bfc946ea4e 342
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_6eed30fd231f9b::t_47f99d3936e75f 3274
+  s_6eed30fd231f9b::t_fbf4a2b06272a0 3266,3268,3278,3293-3296
+  s_6eed30fd231f9b::t_0bff1a59a9dd6b 2917,3009,3260-3262,3299
+ai-vision/vfe/tests/e2e/labsCatalogueLoading.spec.ts
+  s_6eed30fd231f9b::t_622e00f3bd6f8c 1,140-152,303-330,334-335,339-341,355-365
+  s_6eed30fd231f9b::t_af8f4718d2b439 346-349
+  s_6eed30fd231f9b::t_f992e7ebe3280d 133-134
+  s_6eed30fd231f9b::t_fc1ba7500aeca8 153-162,166-171,173-180,184-186,191-194,196-199,203-210,215-216,220,227-229,233-234,242-243,248-249,251-256,258-267,274,278-279,283-289,293-294,301-302,354
+  s_6eed30fd231f9b::t_ae09b3ec6d4b05 336-338
+  s_6eed30fd231f9b::t_54749354b07355 172,235,239-241,250,257,268-273
+  s_6eed30fd231f9b::t_8e231f53958d6a 189,344
+  s_6eed30fd231f9b::t_7ce143c1f3df9e 195,353
+  s_6eed30fd231f9b::t_6b1f756697dbf2 163-165,181-183,187-188,190,200-202,211-214,217-219,221-226,230-232,236-238,244-247,275-277,280-282,290-292,295-300,331-333,342-343,345,350-352
+ai-vision/vfe/tests/e2e/labsImportDialogs.spec.ts
+  s_6eed30fd231f9b::t_3d6a5db80017fa 414-415,422,520,639
+ai-vision/vfe/src/components/labs/shared/LabsAgentQueryNotice.tsx
+  s_6eed30fd231f9b::t_907d514b15f9f4 1,14-15,17,19,25
+ai-vision/vfe/tests/mcpDom.test.ts
+  s_6eed30fd231f9b::t_ef0e4d62f348e6 3033-3035,3037-3040,3131-3134
+  s_6eed30fd231f9b::t_d1d85403a6860e 2987-3014,3018-3032,3036,3041-3046,3097-3126,3135-3161
+  s_6eed30fd231f9b::t_9323b80733f0a3 3127-3130
+  s_6eed30fd231f9b::t_f81cb680a9eb2b 3015-3017,3047-3096
+ai-vision/vfe/src/components/labs/shared/importDialogStyles.ts
+  s_6eed30fd231f9b::t_e4d4e66c21d928 10
+ai-vision/vfe/src/labs/skill/SkillImportRegistryPanel.tsx
+  s_6eed30fd231f9b::t_a88436146d2d66 158-161
+  s_6eed30fd231f9b::t_e4d4e66c21d928 162,165,168
+ai-vision/vfe/src/components/labs/shared/LabsCatalogueLayout.tsx
+  s_6eed30fd231f9b::t_6d84c664198707 137-138
+  s_6eed30fd231f9b::t_907d514b15f9f4 2,7,20-21,75,125,129,134-136,139-141
+ai-vision/vfe/tests/spaceDashboardLayout.test.ts
+  s_6eed30fd231f9b::t_593664b5a16e35 21-22,43,46,64-67,72-74,77-81,85-86,99-105,111-112,133,165-169,234-236,257-258,260-261,272-276,279-286
+  s_6eed30fd231f9b::t_a340b90a253512 82-84,87-98,113-116,130,262-271,294-302
+  s_6eed30fd231f9b::t_17a9b9ae182a90 6,44,75-76,117-119,147,150,156,237-239,288-291,293,303,307-313,315-316,330,339
+ai-vision/vfe/src/components/labs/shared/LabsServerCatalogueToolbar.tsx
+  s_6eed30fd231f9b::t_7ce143c1f3df9e 32,47,104,110
+  s_6eed30fd231f9b::t_0c1c754f5bc11e 2,60-61,95
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9372b1459edef15493b93a63de29eeabc6867cb4",
+  "prompts": {},
+  "sessions": {
+    "s_6eed30fd231f9b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e8db-f00b-79c3-9361-e4ce90d5577f",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_a4750bbd0b03d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1b0ca-3147-7952-9d66-907afe0a5268",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
