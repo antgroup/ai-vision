@@ -22,7 +22,8 @@ PYTHON_VERSION = (3, 11, 14)
 TARGETS = {"linux/arm64": ("arm64", 183, "linux-gnu-arm64"),
            "linux/amd64": ("amd64", 62, "linux-gnu-x64")}
 COMPONENTS = ("backend", "agentlens", "onboarding")
-SERVICE_TOOLS = {"Cython": "3.2.4", "setuptools": "79.0.1"}
+RESOLVER_VERSION = "0.13.4"
+SERVICE_TOOLS = {"Cython": "3.2.4", "setuptools": "84.1.0"}
 ONBOARDING_TOOLS = {"Nuitka": "4.3.1", "ordered-set": "4.1.0", "patchelf": "0.17.2.4", "zstandard": "0.25.0"}
 
 
@@ -226,8 +227,8 @@ def prepare_dependencies(args, source, work, tools, components):
             raise ValueError("prepared " + component + " dependencies require both venv and lock")
         if venv is None:
             resolver = Path(tools["resolver_python"]).with_name("uv")
-            if probe_python(tools["resolver_python"])["versions"].get("uv") != "0.9.30":
-                raise ValueError("dependency preparation requires uv==0.9.30 in the compiler environment")
+            if probe_python(tools["resolver_python"])["versions"].get("uv") != RESOLVER_VERSION:
+                raise ValueError(f"dependency preparation requires uv=={RESOLVER_VERSION} in the compiler environment")
             directory = work / "dependencies" / component
             manifests = directory / "project"
             manifests.mkdir(parents=True)
