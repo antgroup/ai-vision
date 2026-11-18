@@ -23,6 +23,14 @@ fn run_cchooks_with_env<const N: usize>(
     payload: Value,
     extra_env: [(&str, String); N],
 ) -> std::process::Output {
+    run_cchooks_with_wire_payload(home, payload.to_string().as_bytes(), extra_env)
+}
+
+fn run_cchooks_with_wire_payload<const N: usize>(
+    home: &std::path::Path,
+    payload: &[u8],
+    extra_env: [(&str, String); N],
+) -> std::process::Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_cchooks"));
     command
         .env_clear()
@@ -47,9 +55,7 @@ fn run_cchooks_with_env<const N: usize>(
 
     {
         let stdin = child.stdin.as_mut().expect("stdin pipe");
-        stdin
-            .write_all(payload.to_string().as_bytes())
-            .expect("write hook payload");
+        stdin.write_all(payload).expect("write hook payload");
     }
 
     child.wait_with_output().expect("wait for cchooks")
@@ -144,13 +150,14 @@ fn exported_spans(body: &Value) -> Vec<&Value> {
         .collect()
 }
 
-fn parent_total_from_log(path: &std::path::Path) -> Duration {
+fn parent_total_from_log(path: &std::path::Path, event: &str) -> Duration {
     const MARKER: &str = "\"component\":\"parent\",\"phase\":\"total\",\"elapsed_ms\":";
     let contents = std::fs::read_to_string(path).expect("read per-session hook log");
+    let event_tag = format!(" [{event}] ");
     let line = contents
         .lines()
         .rev()
-        .find(|line| line.contains(MARKER))
+        .find(|line| line.contains(&event_tag) && line.contains(MARKER))
         .expect("parent total timing log");
     let millis = line
         .split_once(MARKER)
@@ -976,6 +983,7 @@ fn structured_session_end_timeout_is_bounded_and_leaves_work_recoverable() {
         &dir.path()
             .join("logs")
             .join("cchooks_session-structured-barrier-timeout.log"),
+        "SessionEnd",
     );
     assert!(
         parent_total >= Duration::from_millis(100)
@@ -1555,6 +1563,7 @@ fn delayed_worker_start_does_not_delay_parent_or_strand_queue() {
             .path()
             .join("logs")
             .join("cchooks_delayed-worker-start.log"),
+        "PreCompact",
     );
     assert!(
         parent_total < Duration::from_millis(50) && wall < Duration::from_millis(100),
@@ -1936,7 +1945,7 @@ fn segmented_timing_contract_covers_parent_and_worker_boundaries() {
 fn posttooluse_parent_returns_before_one_second_fake_collector() {
     let _guard = performance_test_lock()
         .lock()
-        .expect("performance test lock");
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let dir = tempfile::tempdir().expect("tempdir");
     // Warm the just-linked test binary once. The first execution on managed macOS
     // can include code-signing/security inspection and is not hook work.
@@ -2106,7 +2115,7 @@ fn stop_family_live_exports_preserve_prompt_traceparent() {
 fn pretooluse_parent_latency_stays_under_fifty_milliseconds() {
     let _guard = performance_test_lock()
         .lock()
-        .expect("performance test lock");
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let dir = tempfile::tempdir().expect("tempdir");
     let mut internal_samples = Vec::new();
     let mut wall_samples = Vec::new();
@@ -2136,6 +2145,7 @@ fn pretooluse_parent_latency_stays_under_fifty_milliseconds() {
                 &dir.path()
                     .join("logs")
                     .join("cchooks_session-parent-latency.log"),
+                "PreToolUse",
             ));
         }
     }
@@ -2153,10 +2163,10 @@ fn pretooluse_parent_latency_stays_under_fifty_milliseconds() {
 }
 
 #[test]
-fn large_posttool_payload_handoff_stays_below_parent_p99_budget() {
+fn large_posttool_payload_handoff_stays_below_parent_budget() {
     let _guard = performance_test_lock()
         .lock()
-        .expect("performance test lock");
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let dir = tempfile::tempdir().expect("tempdir");
     let _ = run_cchooks_with_payload(
         dir.path(),
@@ -2177,6 +2187,8 @@ fn large_posttool_payload_handoff_stays_below_parent_p99_budget() {
     });
     assert!(run_cchooks_with_payload(dir.path(), pre).status.success());
     thread::sleep(Duration::from_millis(50));
+    // Prepare the 1 MiB wire message before launching the process. Otherwise
+    // the hook's stdin read includes serialization in the test process.
     let payload = json!({
         "hook_event_name": "PostToolUse",
         "session_id": "large-payload-session",
@@ -2184,13 +2196,33 @@ fn large_posttool_payload_handoff_stays_below_parent_p99_budget() {
         "tool_use_id": "large-payload-tool",
         "tool_input": {},
         "tool_response": {"content": "x".repeat(1024 * 1024)}
-    });
+    })
+    .to_string();
     let started = Instant::now();
-    let output = run_cchooks_with_payload(dir.path(), payload);
-    let elapsed = started.elapsed();
+    let output = run_cchooks_with_wire_payload(
+        dir.path(),
+        payload.as_bytes(),
+        [("CCHOOKS_DEBUG", "true".to_string())],
+    );
+    let wall = started.elapsed();
     assert!(output.status.success());
+    let log = dir.path().join("logs/cchooks_large-payload-session.log");
+    let contents = std::fs::read_to_string(&log).expect("read large payload handoff log");
+    let envelope = format!("envelope_bytes={}", payload.len());
     assert!(
-        elapsed < Duration::from_millis(100),
-        "large payload handoff exceeded parent p99 budget: {elapsed:?}"
+        contents.lines().any(|line| {
+            line.contains(" [PostToolUse] ")
+                && line.contains("worker queue handoff accepted:")
+                && line.ends_with(&envelope)
+        }),
+        "large PostToolUse payload was not accepted by the worker queue"
+    );
+    // The parent total covers stdin read, parsing and durable handoff. Keep
+    // process launch and exit wall time as diagnostics for hosted-runner stalls.
+    let parent = parent_total_from_log(&log, "PostToolUse");
+    eprintln!("large PostToolUse parent={parent:?} wall={wall:?}");
+    assert!(
+        parent < Duration::from_millis(100),
+        "large payload handoff exceeded parent budget: parent={parent:?} wall={wall:?}"
     );
 }
