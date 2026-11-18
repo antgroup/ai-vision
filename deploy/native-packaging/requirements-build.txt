@@ -4,5 +4,5 @@ Nuitka==4.3.1
 ordered-set==4.1.0
 patchelf==0.17.2.4
 zstandard==0.25.0
-uv==0.9.30
+uv==0.13.4
 wheel==0.45.1
