@@ -620,7 +620,7 @@ jobs:
           Path('artifacts/docker-resources.json').write_text(json.dumps(resources, indent=2))
           print(json.dumps(resources))
           PYMEM
-      # SDK wheels run in the existing Linux backend image, including on Colima.
+      # SDK wheels run in a dedicated pinned Linux Python image, including on Colima.
       - name: Install host deployment and SQL clients
         run: python -m pip install httpx==0.28.1 PyYAML==6.0.3 mysql-connector-python==9.6.0
       - name: Deploy candidate platform and verify actual ingestion and reads

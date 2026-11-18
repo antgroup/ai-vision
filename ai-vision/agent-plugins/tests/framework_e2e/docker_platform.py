@@ -53,6 +53,9 @@ SECRET_VARS = ('OB_TENANT_PASSWORD', 'OB_SYS_PASSWORD', 'SIGNOZ_INGEST_INTERNAL_
                'AIVISION_INGEST_SECRET', 'SECRET_KEY', 'AGENTLENS_TOKEN', 'SIGNOZ_USER_ROOT_PASSWORD')
 PORT_VARS = ('OB_PORT', 'SIGNOZ_PORT', 'GATEWAY_GRPC_PORT', 'GATEWAY_HTTP_PORT',
              'GATEWAY_HEALTH_PORT', 'BE_PORT', 'AGENTLENS_PORT', 'FE_PORT')
+# Linux amd64 child of astral-sh/uv:0.9.30-python3.12-bookworm-slim.
+SDK_RUNNER_IMAGE = ('ghcr.io/astral-sh/uv@sha256:'
+                    '5d275ca5f0da33c3368ac8fbb85fafabad023b3b8a7cff39a94ac0baecfd9a50')
 
 
 def deployment_passwords():
@@ -206,13 +209,13 @@ def suite_passed(summary, sdk=None):
                     for case in cases))
 
 
-def sdk_suite_command(repo, out, namespace, image, sdk='lf4'):
-    """Run current SDK acceptance in the already pinned Linux backend image."""
+def sdk_suite_command(repo, out, namespace, sdk='lf4'):
+    """Run current SDK acceptance in a pinned Linux Python toolchain."""
     if sdk not in ('lf3', 'lf4', 'lf5'):
         raise ValueError('Choose the pinned lf3, lf4 or lf5 SDK environment')
     script = '''command -v uv >/dev/null 2>&1 || { echo "SDK acceptance image requires uv" >&2; exit 127; }
 export AIVISION_E2E_DATA_BACKEND=oceanbase PYTHONDONTWRITEBYTECODE=1
-export NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost UV_PYTHON_DOWNLOADS=automatic
+export NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost UV_PYTHON_DOWNLOADS=never
 uv venv --python 3.12 /tmp/aivision-framework-e2e
 uv pip install --python /tmp/aivision-framework-e2e/bin/python -r /workspace/ai-vision/agent-plugins/tests/framework_e2e/requirements-lf4.txt
 exec /tmp/aivision-framework-e2e/bin/python /workspace/ai-vision/agent-plugins/tests/framework_e2e/suite.py --mode ci --repo /workspace --out /artifacts/cases --workers 1'''
@@ -225,7 +228,7 @@ exec /tmp/aivision-framework-e2e/bin/python /workspace/ai-vision/agent-plugins/t
             '--env', 'AIVISION_E2E_TARGETS_JSON',
             '--mount', f'type=bind,source={repo},target=/workspace,readonly',
             '--mount', f'type=bind,source={out},target=/artifacts',
-            '--entrypoint', '/bin/sh', image, '-ec', script]
+            '--entrypoint', '/bin/sh', SDK_RUNNER_IMAGE, '-ec', script]
 
 
 def clean_environment(source):
@@ -406,14 +409,14 @@ class Smoke:
     def write(self, filename, value):
         (self.out/filename).write_text(self.sanitize(value), encoding='utf-8')
 
-    def sdk_suite(self, repo, namespace, image, targets, sdk='lf4'):
+    def sdk_suite(self, repo, namespace, targets, sdk='lf4'):
         out = self.out/'sdk'/sdk
         out.mkdir(parents=True)
         # Docker resolves --env NAME from this child environment. Neither the
         # command line nor a mounted file contains the generated SpaceKey.
         env = dict(self.env, AIVISION_E2E_TARGETS_JSON=json.dumps(targets))
-        return self.run('api-suite-' + sdk, sdk_suite_command(repo, out, namespace, image, sdk=sdk),
-                        env=env, timeout=1800, check=False)
+        return self.run('api-suite-' + sdk, sdk_suite_command(repo, out, namespace, sdk=sdk),
+                        env=env, timeout=1800)
 
     def run(self, label, command, *, cwd=None, env=None, timeout=120, check=True):
         process = subprocess.Popen(command, cwd=cwd, env=env or self.env, text=True,
@@ -627,11 +630,12 @@ def main(argv=None, *, acceptance=None, target_factory=None, expected_cases=110,
                                           private=private,plan=plan,smoke=smoke))
                 result['checks']['public_auth_onboarding'] = True
                 if acceptance is None:
+                    result['sdk_runner_image'] = SDK_RUNNER_IMAGE
                     result['sdk_suites'] = {}
                     for sdk in ('lf3', 'lf4', 'lf5'):
-                        execution = smoke.sdk_suite(args.repo, namespace, images['backend'], targets, sdk=sdk)
+                        smoke.sdk_suite(args.repo, namespace, targets, sdk=sdk)
                         summary = json.loads((args.out/'sdk'/sdk/'cases/summary.json').read_text(encoding='utf-8'))
-                        if execution.returncode or not suite_passed(summary, sdk=sdk):
+                        if not suite_passed(summary, sdk=sdk):
                             raise AssertionError('Full selected SDK profile source and runner-local API reconciliation failed for ' + sdk)
                         result['sdk_suites'][sdk] = {'status': summary['status'], 'cases': summary['executed_cases'],
                                                      'langfuse_version': summary['langfuse_version']}

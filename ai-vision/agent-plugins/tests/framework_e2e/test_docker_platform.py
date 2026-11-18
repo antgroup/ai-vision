@@ -116,7 +116,7 @@ class DockerPlatformContractTests(unittest.TestCase):
                 (root/'uv').chmod(0o755)
                 (root/'python').write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$SDK_TEST_LOG"\n')
                 (root/'python').chmod(0o755)
-                command = platform.sdk_suite_command(ROOT, Path('/artifacts'), 'aiv-e2e-test', IMAGES['backend'], sdk=sdk)
+                command = platform.sdk_suite_command(ROOT, Path('/artifacts'), 'aiv-e2e-test', sdk=sdk)
                 script = command[-1].replace('/tmp/aivision-framework-e2e', str(root/'venv'))
                 env = {'PATH': str(root), 'SDK_TEST_LOG': str(root/'commands'), 'SDK_TEST_PYTHON': str(root/'python')}
                 execution = subprocess.run(['/bin/sh', '-ec', script], env=env, text=True, capture_output=True)
@@ -159,14 +159,15 @@ class DockerPlatformContractTests(unittest.TestCase):
             smoke = platform.Smoke(out, {'PATH': '/tools', 'DOCKER_HOST': 'unix:///docker.sock'},
                                    {'synthetic-private-key'})
             with patch.object(smoke, 'run', return_value=subprocess.CompletedProcess([], 0, '', '')) as run:
-                execution = smoke.sdk_suite(ROOT, 'aiv-e2e-test', IMAGES['backend'], targets)
+                execution = smoke.sdk_suite(ROOT, 'aiv-e2e-test', targets)
             command = run.call_args.args[1]
             self.assertEqual(command[:2], ['docker', 'run'])
             self.assertEqual(command[command.index('--name') + 1], 'aiv-e2e-test-sdk-lf4')
             self.assertEqual(command[command.index('--platform') + 1], 'linux/amd64')
             self.assertEqual(command[command.index('--network') + 1], 'host')
             self.assertEqual(command[command.index('--entrypoint') + 1], '/bin/sh')
-            self.assertIn(IMAGES['backend'], command)
+            self.assertRegex(command[-3], r'^ghcr\.io/astral-sh/uv@sha256:[0-9a-f]{64}$')
+            self.assertNotIn(IMAGES['backend'], command)
             self.assertIn('aivision.framework-e2e.namespace=aiv-e2e-test', command)
             mounts = [command[i + 1] for i, flag in enumerate(command) if flag == '--mount']
             self.assertEqual(mounts, [f'type=bind,source={ROOT},target=/workspace,readonly',
@@ -181,9 +182,22 @@ class DockerPlatformContractTests(unittest.TestCase):
             self.assertTrue((out/'sdk'/'lf4').is_dir())
 
     @unittest.skipIf(os.name == 'nt', 'Windows Docker is excluded; POSIX shell contract only')
+    def test_sdk_launch_failure_reports_its_exit_and_preserves_sanitized_log(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            docker = root / 'docker'
+            docker.write_text('#!/bin/sh\nprintf \"missing uv with synthetic-private-key\\n\" >&2\nexit 127\n')
+            docker.chmod(0o755)
+            smoke = platform.Smoke(root, {'PATH': str(root)}, {'synthetic-private-key'})
+            with self.assertRaisesRegex(RuntimeError, r'api-suite-lf3 failed \(exit 127\)'):
+                smoke.sdk_suite(ROOT, 'aiv-e2e-test', {}, sdk='lf3')
+            self.assertFalse((root / 'sdk/lf3/cases/summary.json').exists())
+            self.assertEqual((root / 'api-suite-lf3.log').read_text(), 'missing uv with [REDACTED]\n')
+
+    @unittest.skipIf(os.name == 'nt', 'Windows Docker is excluded; POSIX shell contract only')
     def test_sdk_container_fails_before_installation_without_uv(self):
         self.assertTrue(hasattr(platform, 'sdk_suite_command'), 'SDK command requires a runtime uv precheck')
-        command = platform.sdk_suite_command(ROOT, Path('/artifacts'), 'aiv-e2e-test', IMAGES['backend'])
+        command = platform.sdk_suite_command(ROOT, Path('/artifacts'), 'aiv-e2e-test')
         script = command[-1]
         process = subprocess.run(['/bin/sh', '-ec', script], env={'PATH': '/unavailable'},
                                  text=True, capture_output=True)
@@ -193,7 +207,7 @@ class DockerPlatformContractTests(unittest.TestCase):
     @unittest.skipIf(os.name == 'nt', 'Windows Docker is excluded; POSIX shell contract only')
     def test_sdk_container_selects_python312_and_executes_current_suite(self):
         self.assertTrue(hasattr(platform, 'sdk_suite_command'), 'SDK runner must select Python 3.12')
-        command = platform.sdk_suite_command(ROOT, Path('/artifacts'), 'aiv-e2e-test', IMAGES['backend'])
+        command = platform.sdk_suite_command(ROOT, Path('/artifacts'), 'aiv-e2e-test')
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root/'uv').write_text('#!/bin/sh\nprintf "%s\\n" "$*" >> "$SDK_TEST_LOG"\n'
