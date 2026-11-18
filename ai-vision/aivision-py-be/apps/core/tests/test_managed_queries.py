@@ -4,7 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from django.test import SimpleTestCase, TestCase, override_settings
+from django.test import SimpleTestCase, TransactionTestCase, override_settings
 
 from apps.core.tests import test_native_read_model as read_model_tests
 from apps.core.trace_query.signoz.provider import SignozTraceProvider
@@ -296,7 +296,9 @@ class ManagedProjectorTests(SimpleTestCase):
         self.assertEqual(target.client.post.call_args.kwargs['headers'], {'X-Signoz-Ingest-Key': 'fixture-operator-key'})
 
 
-class ProjectionDiscoveryTests(TestCase):
+class ProjectionDiscoveryTests(TransactionTestCase):
+    # The worker refreshes database connections between iterations. TestCase's
+    # enclosing transaction makes Django close the still-needed connection.
     def setUp(self):
         from apps.core.models import AgentTypeConfig, DataSource, Space
         from apps.core.tests.helpers import create_local_user, create_test_agent
