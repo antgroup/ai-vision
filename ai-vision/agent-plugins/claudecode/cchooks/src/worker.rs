@@ -727,13 +727,8 @@ fn pending_stop_count_in_legacy_file(path: &Path) -> usize {
 }
 
 fn pending_count_in_dir(session_dir: &Path) -> Result<usize, String> {
-    let offset_path = session_dir.join("worker.queue.offset.json");
-    let offset = match std::fs::read(&offset_path) {
-        Ok(bytes) => serde_json::from_slice::<u64>(&bytes)
-            .map_err(|error| format!("{}: {error}", offset_path.display()))?,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => 0,
-        Err(error) => return Err(format!("{}: {error}", offset_path.display())),
-    };
+    // Status does not take QueueLock and may observe a checkpoint mid-write.
+    let offset = read_offset_file(&session_dir.join("worker.queue.offset.json"))?;
     let queue_path = session_dir.join("worker.queue.jsonl");
     let mut file = match File::open(&queue_path) {
         Ok(file) => file,
@@ -3387,8 +3382,11 @@ fn repair_partial_tail_locked(session_id: &str) -> Result<(), String> {
 }
 
 fn read_offset(session_id: &str) -> Result<u64, String> {
-    let path = offset_path(session_id)?;
-    match std::fs::read(&path) {
+    read_offset_file(&offset_path(session_id)?)
+}
+
+fn read_offset_file(path: &Path) -> Result<u64, String> {
+    match std::fs::read(path) {
         // A crash during the lock-protected truncate/write sequence can leave
         // an empty, invalid, or decimal-prefix checkpoint. Empty/invalid data
         // falls back to zero; a numeric prefix is no greater than the intended
@@ -4409,6 +4407,43 @@ mod tests {
         assert_eq!(filtered.sessions, 1);
         assert_eq!(filtered.pending_queue_items, 1);
         assert_eq!(filtered.workers_active, 0);
+        restore_state_dir(previous_state);
+    }
+
+    #[test]
+    fn worker_status_keeps_queue_visible_with_an_incomplete_offset() {
+        let _guard = crate::test_sync::env_lock();
+        let dir = tempfile::tempdir().unwrap();
+        let previous_state = set_state_dir(&dir.path().join("state"));
+        let session_id = "session-worker-status-incomplete-offset";
+        append_queue(
+            session_id,
+            &json!({
+                "hook_event_name": "UserPromptSubmit",
+                "session_id": session_id,
+                "uuid": "event-status-incomplete-offset"
+            }),
+        )
+        .unwrap();
+
+        let _queue_lock = QueueLock::acquire(session_id).unwrap();
+        let offset = std::fs::metadata(queue_path(session_id).unwrap())
+            .unwrap()
+            .len();
+        write_offset(session_id, offset).unwrap();
+        assert_eq!(
+            worker_status(Some(session_id)).unwrap().pending_queue_items,
+            0
+        );
+
+        // A diagnostic read can arrive between truncating and writing the offset.
+        let path = offset_path(session_id).unwrap();
+        std::fs::write(&path, []).unwrap();
+        assert_eq!(
+            worker_status(Some(session_id)).unwrap().pending_queue_items,
+            1
+        );
+        assert!(std::fs::read(&path).unwrap().is_empty());
         restore_state_dir(previous_state);
     }
 
