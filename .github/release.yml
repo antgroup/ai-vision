@@ -1,0 +1,16 @@
+# Used by GitHub's Generate release notes action. This does not publish a release.
+# Keep automation-authored changes; maintainers curate human contributor credits.
+changelog:
+  categories:
+    - title: Features / 新增功能
+      labels:
+        - enhancement
+    - title: Fixes / 问题修复
+      labels:
+        - bug
+    - title: Documentation / 文档更新
+      labels:
+        - documentation
+    - title: Other Changes / 其他更新
+      labels:
+        - '*'

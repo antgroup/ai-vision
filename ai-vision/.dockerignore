@@ -1,0 +1,83 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+.venv
+*.egg-info
+.eggs
+*.egg
+
+# Node.js
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build artifacts
+build
+dist
+*.local
+
+# Logs
+*.log
+logs
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Test files
+.pytest_cache
+.coverage
+htmlcov
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# Documentation
+*.md
+docs/
+prompts/
+
+# Misc
+.DS_Store
+*.bak
+*.tmp
+.opencode
+
+# --- self-hosted be image (aivision-py-be/Dockerfile, context = this dir) ---
+# Host-only trees anywhere in the context. The frontend has its own image
+# (vfe/Dockerfile with vfe/ as context) and the legacy frontend is unused.
+**/.venv
+**/node_modules
+**/__pycache__
+**/.ruff_cache
+**/.mypy_cache
+**/.pytest_cache
+**/*.sqlite3
+vfe/
+aivision-fe/
+aivision-py-be/logs
+# Host-side image checks are not needed by the backend service.
+aivision-py-be/docker/
+# Agent-market plugins are compiled by CI; only agent-plugins/dist (pre-built
+# artifacts) and a handful of scripts are copied into the be image.
+agent-plugins/**/target
+agent-plugins/**/node_modules
+agent-plugins/**/transcripts
+agent-plugins/**/replays
+agent-plugins/**/golden
+agent-plugins/research
+agent-plugins/demos
+agent-plugins/docs

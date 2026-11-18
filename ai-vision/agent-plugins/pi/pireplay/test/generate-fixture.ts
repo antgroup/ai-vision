@@ -1,0 +1,25 @@
+import { mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { CanonicalNormalizer } from '@observ/pi';
+import { TranscriptWriter } from '../src/transcript-writer.js';
+
+const dir = resolve(process.argv[2] ?? 'tmp-fixture');
+mkdirSync(dir, { recursive: true });
+const ctx = { sessionManager: { getSessionId: () => 'fixture-session' } };
+const normalizer = new CanonicalNormalizer();
+const writer = new TranscriptWriter(dir, 'fixture');
+const emit = (hook: Parameters<CanonicalNormalizer['normalize']>[0], payload: unknown) => writer.write(normalizer.normalize(hook, payload, ctx));
+emit('session_start', { reason: 'startup' });
+emit('model_select', { model: { id: 'fixture-model', provider: 'theta' }, source: 'set' });
+emit('before_agent_start', { prompt: 'read README', systemPrompt: 'You are helpful.' });
+emit('turn_start', { turnIndex: 0, timestamp: Date.now() });
+emit('before_provider_request', { payload: { model: 'fixture-model' } });
+emit('after_provider_response', { status: 200, headers: {} });
+emit('message_end', { message: { role: 'assistant', model: 'fixture-model', usage: { input: 10, output: 5 }, stopReason: 'toolUse' } });
+emit('tool_execution_start', { toolCallId: 'fixture-tool', toolName: 'read', args: { path: 'README.md' } });
+emit('tool_execution_end', { toolCallId: 'fixture-tool', toolName: 'read', result: 'content', isError: false });
+emit('agent_settled', {});
+emit('session_shutdown', { reason: 'quit' });
+await writer.close();
+if (!writer.integrity.complete || !writer.path()) throw new Error(writer.integrity.errors.join('; ') || 'fixture transcript missing');
+console.log(writer.path());

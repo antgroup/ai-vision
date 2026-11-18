@@ -1,0 +1,222 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aivision.example.com/schemas/observ-plugin-config.json",
+  "title": "AiVision Observability Plugin Configuration",
+  "description": "Unified production configuration schema for observ-openclaw, observ-opencode, observ-pi, and observ-hermes. Transcript capture, offline replay, and local replay artifact paths are outside this production configuration schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "enableTelemetry": {
+      "type": "boolean",
+      "default": false,
+      "description": "Master switch for telemetry collection. When false, no traces/metrics/events are exported.",
+      "x-env": "AGENT_ENABLE_TELEMETRY"
+    },
+    "serviceName": {
+      "type": "string",
+      "description": "OpenTelemetry service.name resource attribute. Plugin defaults are openclaw, opencode, and pi respectively.",
+      "x-env": "OTEL_SERVICE_NAME"
+    },
+    "collectionMode": {
+      "type": "string",
+      "enum": ["full", "privacy"],
+      "default": "full",
+      "description": "Content collection mode. 'full' records configured telemetry content (prompts, outputs, tool I/O). 'privacy' redacts content-bearing production telemetry.",
+      "x-env": ["AIVISION_COLLECTION_MODE", "OBSERV_{PLUGIN}_COLLECTION_MODE"]
+    },
+    "debug": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable verbose plugin diagnostic logging. This does not enable transcript capture or offline replay.",
+      "x-env": "OBSERV_{PLUGIN}_DEBUG"
+    },
+    "dynamicUsername": {
+      "type": "boolean",
+      "default": false,
+      "description": "When enabled, resolve ant.username from AIVISION_ANT_USERNAME whenever a span, event/log, or metric is recorded. Falls back to otelExporter.attributes.ant.username when the environment variable is empty."
+    },
+    "dynamicUid": {
+      "type": "boolean",
+      "default": false,
+      "description": "When enabled, resolve ant.uid from AIVISION_ANT_UID whenever a span, event/log, or metric is recorded. Falls back to otelExporter.attributes.ant.uid when the environment variable is empty."
+    },
+    "otelExporter": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "OTel exporter configuration. Controls the global OTLP export settings.",
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "description": "Base OTLP endpoint URL. Falls back into per-signal configs when signal-specific endpoints are not set.",
+          "x-env": "OTEL_EXPORTER_OTLP_ENDPOINT",
+          "examples": ["http://127.0.0.1:4319", "https://otel-collector.example.com:4318"]
+        },
+        "protocol": {
+          "type": "string",
+          "default": "http/json",
+          "description": "OTLP transport protocol.",
+          "enum": ["http/json", "http/protobuf"],
+          "x-env": "OTEL_EXPORTER_OTLP_PROTOCOL"
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {},
+          "description": "Global OTLP request headers. Merged with per-signal headers (per-signal takes precedence).",
+          "x-env": "OTEL_EXPORTER_OTLP_HEADERS",
+          "x-env-format": "key1=value1,key2=value2"
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "default": {},
+          "description": "Common attributes injected into every span, event/log, and metric. Configure ant.username and signal-scoped ant.uid here.",
+          "x-env": "OBSERV_{PLUGIN}_OTEL_ATTRIBUTES",
+          "x-env-format": "key1=value1,key2=value2"
+        },
+        "resourceAttributes": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "properties": {
+            "ant.meta.trigger": {
+              "type": "string",
+              "enum": ["automation", "interactive", "unknown"],
+              "description": "External task attribution for the process Resource. This value is supplied by deployment configuration and is not inferred from transcripts. AIVISION_META_TRIGGER overrides all resource attribute layers; absent input emits an empty Resource value, while explicit empty or invalid runtime values normalize to unknown.",
+              "x-env": "AIVISION_META_TRIGGER"
+            }
+          },
+          "default": {},
+          "description": "Resource attributes, including ant.agent.* metadata and optional ant.meta.trigger task attribution. ant.uid is signal-only and is removed from Resource.",
+          "x-env": ["OTEL_RESOURCE_ATTRIBUTES", "AIVISION_OTEL_RESOURCE_ATTRIBUTES", "OBSERV_{PLUGIN}_OTEL_RESOURCE_ATTRIBUTES"],
+          "x-env-format": "key1=value1,key2=value2",
+          "x-env-merge-order": "config < OTEL_RESOURCE_ATTRIBUTES < AIVISION_OTEL_RESOURCE_ATTRIBUTES < OBSERV_{PLUGIN}_OTEL_RESOURCE_ATTRIBUTES < AIVISION_META_TRIGGER (ant.meta.trigger only)"
+        },
+        "metricsTemporalityPreference": {
+          "type": "string",
+          "default": "delta",
+          "description": "Metrics temporality preference for the OTLP exporter.",
+          "enum": ["delta", "cumulative"],
+          "x-env": "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE"
+        }
+      }
+    },
+    "tracesConfig": {
+      "$ref": "#/$defs/SignalEndpointConfig",
+      "description": "Trace-specific OTLP endpoint and header overrides.",
+      "x-env-endpoint": "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+      "x-env-headers": "OTEL_EXPORTER_OTLP_TRACES_HEADERS"
+    },
+    "metricsConfig": {
+      "$ref": "#/$defs/SignalEndpointConfig",
+      "description": "Metrics-specific OTLP endpoint and header overrides.",
+      "x-env-endpoint": "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+      "x-env-headers": "OTEL_EXPORTER_OTLP_METRICS_HEADERS"
+    },
+    "eventsConfig": {
+      "$ref": "#/$defs/SignalEndpointConfig",
+      "description": "Events/Logs-specific OTLP endpoint and header overrides.",
+      "x-env-endpoint": "OTEL_EXPORTER_OTLP_LOGS_ENDPOINT",
+      "x-env-headers": "OTEL_EXPORTER_OTLP_LOGS_HEADERS"
+    },
+    "metricExportInterval": {
+      "type": "integer",
+      "default": 60000,
+      "minimum": 1,
+      "description": "Metrics export interval in milliseconds.",
+      "x-env": "OTEL_METRIC_EXPORT_INTERVAL"
+    },
+    "logsExportInterval": {
+      "type": "integer",
+      "default": 5000,
+      "minimum": 1,
+      "description": "Logs/Events export interval in milliseconds.",
+      "x-env": "OTEL_LOGS_EXPORT_INTERVAL"
+    },
+    "logDir": {
+      "type": "string",
+      "description": "Directory for the plugin-owned diagnostic log file. If omitted, common editions use their runtime log directory and AIVision editions use ~/.aivision/ocw, ~/.aivision/ocd, ~/.aivision/pi, or ~/.aivision/hermes as the product-specific root. Diagnostic logging never enables replay capture.",
+      "x-env": ["AIVISION_LOG_DIR", "OBSERV_{PLUGIN}_LOG_DIR"]
+    }
+  },
+  "$defs": {
+    "SignalEndpointConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-signal OTLP endpoint configuration. Overrides the global otelExporter settings for a specific signal (traces/metrics/events).",
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "description": "Signal-specific OTLP endpoint URL. When not set, falls back to otelExporter.endpoint."
+        },
+        "headers": {
+          "type": "object",
+          "additionalProperties": { "type": "string" },
+          "description": "Signal-specific request headers. Merged on top of global otelExporter.headers."
+        },
+        "enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable or disable this signal."
+        }
+      }
+    },
+    "ContentLoggingConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Internal content logging switches derived from collectionMode. Not a public configuration surface — controlled entirely by collectionMode.",
+      "x-derived-from": "collectionMode",
+      "properties": {
+        "events": { "$ref": "#/$defs/ContentLoggingSwitches" },
+        "spans": { "$ref": "#/$defs/ContentLoggingSwitches" }
+      }
+    },
+    "ContentLoggingSwitches": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Per-signal-type content logging switches. All switches are derived from collectionMode: full=all true, privacy=all false.",
+      "properties": {
+        "userPrompts": { "type": "boolean", "description": "Record user prompt text." },
+        "systemPrompts": { "type": "boolean", "description": "Record system prompt / system instructions." },
+        "modelOutputs": { "type": "boolean", "description": "Record model output text." },
+        "toolDetails": { "type": "boolean", "description": "Record tool call parameters and MCP/Skill names." },
+        "toolOutputs": { "type": "boolean", "description": "Record tool execution result text." }
+      }
+    }
+  },
+  "x-env-var-pattern": {
+    "description": "Environment variable naming convention",
+    "shared": "AIVISION_* — shared across all plugins",
+    "standard": "OTEL_* — standard OpenTelemetry env vars",
+    "plugin-specific": "OBSERV_{PLUGIN}_* — plugin-specific overrides (OBSERV_OPENCLAW_*, OBSERV_OPENCODE_*, OBSERV_PI_*, OBSERV_HERMES_*)",
+    "priority": "plugin-specific > standard > shared > config > edition > default"
+  },
+  "x-local-replay-tooling": {
+    "description": "Local transcript, replay artifact paths, offline replay, and report configuration is owned by the separate replay plugin.",
+    "opencode": {
+      "plugin": "opencode-replay",
+      "schema": "opencode-replay.schema.json"
+    },
+    "openclaw": "openclaw-replay",
+    "pi": {
+      "plugin": "pireplay",
+      "configuration": "PIREPLAY_*",
+      "note": "pireplay independently owns explicit developer raw capture and offline replay; observ-pi production configuration cannot enable or redirect it."
+    },
+    "hermes": {
+      "plugin": "hermes-replay",
+      "schema": "hermes-replay.schema.json",
+      "configuration": "HERMES_REPLAY_*",
+      "note": "hermes-replay independently owns explicit developer raw capture, offline replay, and loopback-only reporting; observ-hermes production configuration cannot enable or redirect it."
+    }
+  },
+  "x-resolution-priority": {
+    "description": "Config value resolution order (highest wins)",
+    "order": [
+      "1. Environment variable (plugin-specific OBSERV_{PLUGIN}_*)",
+      "2. Environment variable (shared AIVISION_* or standard OTEL_*)",
+      "3. Plugin config file (programmatic config object)",
+      "4. Edition config (build-time embedded defaults)",
+      "5. Hardcoded default"
+    ]
+  }
+}

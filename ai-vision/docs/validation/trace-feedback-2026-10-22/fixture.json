@@ -1,0 +1,117 @@
+{
+  "code": 0,
+  "data": {
+    "trace": {
+      "traceId": "review-controlled-trace",
+      "spans": [
+        {
+          "trace_id": "review-controlled-trace",
+          "status": {
+            "code": "OK",
+            "message": ""
+          },
+          "span_id": "root",
+          "name": "Parallel review",
+          "start_time_unix_nano": "2026-10-16T00:00:00.000Z",
+          "end_time_unix_nano": "2026-10-16T00:00:06.000Z",
+          "attributes": {
+            "langfuse.environment": "local"
+          },
+          "resource": {
+            "attributes": {
+              "ant.agent.env": "stale-prod"
+            }
+          }
+        },
+        {
+          "trace_id": "review-controlled-trace",
+          "status": {
+            "code": "OK",
+            "message": ""
+          },
+          "span_id": "model-0",
+          "parent_span_id": "root",
+          "name": "Custom reviewer 1",
+          "start_time_unix_nano": "2026-10-16T00:00:00.100Z",
+          "end_time_unix_nano": "2026-10-16T00:00:02.000Z",
+          "attributes": {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": "custom-reviewer-with-a-long-provider-model-id",
+            "gen_ai.usage.total_tokens": 60
+          }
+        },
+        {
+          "trace_id": "review-controlled-trace",
+          "status": {
+            "code": "OK",
+            "message": ""
+          },
+          "span_id": "model-1",
+          "parent_span_id": "root",
+          "name": "Custom reviewer 2",
+          "start_time_unix_nano": "2026-10-16T00:00:00.100Z",
+          "end_time_unix_nano": "2026-10-16T00:00:02.000Z",
+          "attributes": {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": "custom-reviewer-with-a-long-provider-model-id",
+            "gen_ai.usage.total_tokens": 60
+          }
+        },
+        {
+          "trace_id": "review-controlled-trace",
+          "status": {
+            "code": "OK",
+            "message": ""
+          },
+          "span_id": "model-2",
+          "parent_span_id": "root",
+          "name": "Custom reviewer 3",
+          "start_time_unix_nano": "2026-10-16T00:00:00.100Z",
+          "end_time_unix_nano": "2026-10-16T00:00:02.000Z",
+          "attributes": {
+            "gen_ai.operation.name": "chat",
+            "gen_ai.request.model": "custom-reviewer-with-a-long-provider-model-id"
+          }
+        }
+      ],
+      "semantics": {
+        "rootObservationId": "root",
+        "rootSelectionReason": "trace_root:explicit",
+        "missingParentIds": [],
+        "input": "Review the same proposal in parallel.",
+        "output": "Review complete.",
+        "outputState": "available",
+        "environment": "local",
+        "usage": {
+          "total": null,
+          "input": null,
+          "output": null,
+          "observationCount": 3,
+          "unknownReason": "usage_missing"
+        },
+        "reportedUsage": {
+          "input": {
+            "value": null,
+            "reportedCalls": 0
+          },
+          "output": {
+            "value": null,
+            "reportedCalls": 0
+          },
+          "total": {
+            "value": 120,
+            "reportedCalls": 2
+          }
+        },
+        "coverage": {
+          "billableCalls": 3,
+          "knownUsageCalls": 2,
+          "knownTokens": 120,
+          "knownCostCalls": 0
+        }
+      }
+    },
+    "space_id": "review-space",
+    "agent_product": "Codex"
+  }
+}

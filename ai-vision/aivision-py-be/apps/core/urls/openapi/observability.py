@@ -1,0 +1,147 @@
+"""Observability queries and scoped Agent installation/ingestion routes."""
+
+from django.urls import path
+from apps.core.views.agent_installation import AgentInstallationExchangeView
+
+from apps.core.views.openapi_events import (
+    OpenAPIEventFacetsView,
+    OpenAPIEventListView,
+    OpenAPIEventQueryView,
+    OpenAPIEventsMetadataView,
+    OpenAPIGrafanaQueryView,
+    OpenAPIMetadataView,
+    OpenAPITracesMetadataView,
+)
+from apps.core.views.openapi_trace import (
+    OpenAPISessionDetailView,
+    OpenAPISessionIOBatchView,
+    OpenAPISessionIOView,
+    OpenAPISessionListView,
+    OpenAPISessionShareLinkView,
+    OpenAPISessionUsageBatchView,
+    OpenAPISpaceAgentsListView,
+    OpenAPISpanDetailView,
+    OpenAPISpanListView,
+    OpenAPITraceDetailView,
+    OpenAPITraceListView,
+    OpenAPITraceMetricsView,
+    OpenAPITraceShareLinkView,
+)
+from apps.core.views.ingest_tokens import (
+    SpaceKeyAgentInstallationView,
+    SpaceKeyMintTokenView,
+)
+
+urlpatterns = [
+    path("v1/spaces/<str:space_id>/agents/<str:agent_product>/traces/metrics", OpenAPITraceMetricsView.as_view(), name="openapi_trace_metrics"),
+    path(
+        "v1/agent-installations/exchange",
+        AgentInstallationExchangeView.as_view(),
+        name="openapi_agent_installation_exchange",
+    ),
+    path(
+        "v1/agents/<uuid:agent_uuid>/installation-complete",
+        SpaceKeyAgentInstallationView.as_view(),
+        name="openapi_agent_installation_complete",
+    ),
+    path(
+        "v1/ingest-tokens",
+        SpaceKeyMintTokenView.as_view(),
+        name="openapi_ingest_tokens",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents",
+        OpenAPISpaceAgentsListView.as_view(),
+        name="openapi_space_agents",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/traces/list",
+        OpenAPITraceListView.as_view(),
+        name="openapi_trace_list",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/trace/<str:trace_id>/detail",
+        OpenAPITraceDetailView.as_view(),
+        name="openapi_trace_detail",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/sessions/list",
+        OpenAPISessionListView.as_view(),
+        name="openapi_session_list",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/session-share-links",
+        OpenAPISessionShareLinkView.as_view(),
+        name="openapi_session_share_link",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/trace-share-links",
+        OpenAPITraceShareLinkView.as_view(),
+        name="openapi_trace_share_link",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/sessions/io",
+        OpenAPISessionIOBatchView.as_view(),
+        name="openapi_session_io_batch",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/sessions/usage",
+        OpenAPISessionUsageBatchView.as_view(),
+        name="openapi_session_usage_batch",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/session/<str:session_id>/detail",
+        OpenAPISessionDetailView.as_view(),
+        name="openapi_session_detail",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/session/<str:session_id>/io",
+        OpenAPISessionIOView.as_view(),
+        name="openapi_session_io",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/trace/<str:trace_id>/spans",
+        OpenAPISpanListView.as_view(),
+        name="openapi_span_list",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/trace/<str:trace_id>/span/<str:span_id>",
+        OpenAPISpanDetailView.as_view(),
+        name="openapi_span_detail",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/metadata/events",
+        OpenAPIEventsMetadataView.as_view(),
+        name="openapi_agent_events_metadata",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/metadata/traces",
+        OpenAPITracesMetadataView.as_view(),
+        name="openapi_agent_traces_metadata",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/metadata",
+        OpenAPIMetadataView.as_view(),
+        name="openapi_agent_metadata",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/events/list",
+        OpenAPIEventListView.as_view(),
+        name="openapi_event_list",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/events/facets",
+        OpenAPIEventFacetsView.as_view(),
+        name="openapi_event_facets",
+    ),
+    path(
+        "v1/spaces/<str:space_id>/agents/<str:agent_product>/events/query",
+        OpenAPIEventQueryView.as_view(),
+        name="openapi_event_query",
+    ),
+    path(
+        "v1/grafana/spaces/<str:space_id>/agents/<str:agent_product>/query",
+        OpenAPIGrafanaQueryView.as_view(),
+        name="openapi_grafana_event_query",
+    ),
+]

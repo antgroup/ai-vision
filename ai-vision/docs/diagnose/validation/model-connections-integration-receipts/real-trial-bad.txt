@@ -1,0 +1,61 @@
+新建诊断器
+
+定义诊断逻辑，并可用真实轨迹验证效果。
+
+LLM 诊断器
+规则诊断器
+专项检查
+基础信息
+名称
+*
+描述
+0/200
+维度
+*
+结果质量
+业务场景
+*
+通用
+诊断逻辑
+Markdown
+1
+2
+3
+⌄
+Check whether the final answer exactly equals RESULT: 4.
+Final answer: {{agent_output}}
+For quality, return good only for the exact required answer; otherwise return bad and explain the mismatch.
+查看轨迹结构
+诊断指标
+指标名称	指标说明
+
+运行模型
+E2E baidu saved-key check
+(qianfan-code-latest)
+已连接
+诊断验证 · 已通过
+管理连接
+
+基础诊断 · 已通过
+
+基础文本诊断 · 测试配置 · 2026/10/23 12:33:45
+
+此预检不代表当前诊断器的提示词和参数已验证。请继续使用真实 Trace 试运行检查实际场景。
+
+调试验证
+已验证
+运行诊断
+
+诊断结果
+
+The final answer is RESULT: 5, but the required exact answer is RESULT: 4; the numeric value does not match.
+quality
+异常 · 将生成异常案例
+
+诊断原因
+
+The final answer is RESULT: 5, but the required exact answer is RESULT: 4; the numeric value does not match.
+
+取消
+创建诊断器
+Close

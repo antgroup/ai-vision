@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/ob-labs/ai-vision-ob",
+  "source_base_revision": "historical-source-revision-redacted",
+  "source_worktree_dirty": true,
+  "source_revision_boundary": "Captured against the implementation worktree over source_base_revision; that base commit alone does not contain the feature. The frontend source inventory identifies the captured bytes. The containing product commit and externally pinned PR/documentation links identify the delivered source.",
+  "frontend_source_aggregate_sha256": "038ef089ff5d86ae3f240323783f9ed0aa2e8914ed0bfbe6878b946f20ee1345",
+  "source_inventory": [
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/CreateRuleDiagnoserForm.tsx",
+      "sha256": "b609b9144d91f037c6c09dd4cdd2878a6ce38402a3526cd8af1aae340c8fcf9c"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/EnhancedRuleBudgetAction.tsx",
+      "sha256": "5483a1675d4acff6e8be501ef9978de2dcfb7eda3ac7c3d34799c769e3a207e8"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/EnhancedRuleEnvironment.tsx",
+      "sha256": "bbac6ab709d994eeaf1fcf307db05524717295cdc7fa151e0c66457c0fb347dd"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/EnhancedRuleMaterials.tsx",
+      "sha256": "ba46197be74b26033a246e380ba15b5e1089e1e8dd44ea535f9c2af1ed3cce9d"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/RuleTrialEvidence.tsx",
+      "sha256": "338575dad678a4b18963b1bc8d48975fd1f585aac796fd8819c367ec4f5496cd"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/TrialResultView.tsx",
+      "sha256": "feb0316d88838a77b7efa62db638d2d95d691705b09c3d3ddcf2572cc1957ccb"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/enhancedRuleModel.ts",
+      "sha256": "87196cd23d0355d5e0354c6642646645f134c787e2afe81eda3f48020c27f776"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/useRuleRuntime.ts",
+      "sha256": "ba453de662a8fae86a65ac365cfe7a4b0634d21c7f1a2fcb5326f7393d15d985"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/sandbox-connections/api.ts",
+      "sha256": "475be0bc75929fcf2d3eb18834d1a7275055804afe19b920e20531f8a8868542"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/sandbox-connections/types.ts",
+      "sha256": "bb67c1dc19b0fd7f64525d4429e5d6a14eef1ca8857d6c3f989054f5d6c393ea"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/en-US.json",
+      "sha256": "bc4d6c0ec10644c8c33cf11b6e37ad76c625f582777884e31abc1f738fa12070"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/ja-JP.json",
+      "sha256": "d0f1953014ff5ef0663e30926519f50145ba5dc1014aadae159b0db944c42ead"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/zh-CN.json",
+      "sha256": "9b1b8f444f08a0dabd74805ae7fd880b83970b5427ef38823508c9d9379819ba"
+    }
+  ],
+  "capture_date": "2026-11-03",
+  "capture_method": "Original natural built-in browser JPEG captures supplied by the root acceptance worker, copied byte-for-byte without editing.",
+  "real_backend": true,
+  "real_provider_execution": true,
+  "pixel_redrawing": false,
+  "cropping": false,
+  "overlays": false,
+  "reencoding": false,
+  "encoding": "Original image/jpeg; source and both copied assets have identical SHA256 bytes.",
+  "sensitive_data_review": "Reviewed all eight originals. No installation command, command capability, service token, private key or customer Trace is visible. The Space/connection names and code/data are explicit local QA examples.",
+  "observed_runtime": {
+    "id": "python-eval-v1",
+    "manifest_sha256": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+    "python_version": "3.11.14",
+    "packages": {
+      "pytest": "9.2.0",
+      "numpy": "2.4.6",
+      "pandas": "3.1.0",
+      "pydantic": "2.14.2",
+      "jsonschema": "4.26.0",
+      "openpyxl": "3.1.5"
+    },
+    "images": {
+      "worker": "127.0.0.1:55074/qa/enhanced-worker@sha256:caccd324cf7a1321d3000b8b6f2d20e03f645984ac874aef81434aab1e0ca845",
+      "plugin": "127.0.0.1:55074/qa/enhanced-plugin@sha256:7c650447ddbf6f90879dab1e76f9433a38172c142a773cf5d7629eee236adc4f"
+    },
+    "cpu": 1,
+    "memory": "1Gi",
+    "effective_timeout_seconds": 30,
+    "final_config_revision": 3
+  },
+  "acceptance": {
+    "source_report_sha256": "ae77c93d3a8dbd3ca47a6076fd0ac42918f68c5c192bb49cc176e0728c4c4757",
+    "planned_http_trials_passed": 17,
+    "persisted_runner_tasks_passed": 4,
+    "additional_browser_trials_passed": 5,
+    "retained_prior_successful_trials": 2,
+    "retained_failed_private_fixture_task_before_admission": 1,
+    "independent_final_readback": {
+      "sha256": "e49d9657bcc70b531eea2e9c39258e16d837b6148334e0c7d245dd09c1b538fc",
+      "agentlens_sql_leases": 28,
+      "journal_leases": 28,
+      "all_closed": true,
+      "all_cleanup_verified": true,
+      "same_daemon_matching_workload_containers": 0,
+      "same_daemon_matching_workload_volumes": 0,
+      "gateway_sandboxes": 0,
+      "gateway_templates": 0,
+      "gateway_authenticated_mtls": true,
+      "plugin_ready": true,
+      "plugin_active_leases": 0,
+      "same_daemon_verified": true
+    },
+    "browser_roundtrip": {
+      "sha256": "0d2c01026633177065a2bb15130b2606a9f213cd29197ae38f34530adf788ac9",
+      "saved_diagnoser": "dg-j45humlr",
+      "reopened_expected_json_raw_preserved": true,
+      "large_integer_text": "9007199254740993"
+    },
+    "source_report": ".superpowers/sdd/plan/task-5-real-acceptance-report.md"
+  },
+  "verification_boundary": "Actual source QA on macOS ARM64 with OrbStack Linux ARM64, prepared image caches and loopback QA registry. Trial inputs are explicit synthetic raw spans; formal Runner Tasks use a synthetic Trace-reader adapter and privately captured Record DTOs. No SigNoz ingestion/query or Record transport acceptance, fully cold install, Linux/amd64, published artifact or native-private delivery qualification is inferred.",
+  "localized_view_boundary": "English and Japanese environment captures reopen the same saved rule and final qualified profile at revision 3 / 30 seconds; changing the UI language is not another host installation or workload execution.",
+  "excluded_stale_captures": [
+    "02-install-command.jpg",
+    "03-install-running.jpg"
+  ],
+  "images": [
+    {
+      "view": "environment",
+      "locale": "zh-CN",
+      "ui_locale": "zh-CN",
+      "theme": "dark",
+      "original_file": "<local-capture>/07-enhanced-environment.jpg",
+      "original_sha256": "301d26d9e62804fd2ce392563b14975ad6db2e8da7b2e8848b9e54b5c25126e8",
+      "path": "docs/deployment/assets/enhanced-rule-environment.zh-CN.dark.jpg",
+      "sha256": "301d26d9e62804fd2ce392563b14975ad6db2e8da7b2e8848b9e54b5c25126e8",
+      "bytes": 35586,
+      "width": 572,
+      "height": 848,
+      "reencoded": false
+    },
+    {
+      "view": "python-good",
+      "locale": "zh-CN",
+      "ui_locale": "zh-CN",
+      "theme": "dark",
+      "original_file": "<local-capture>/09-python-good.jpg",
+      "original_sha256": "be1d52415eb45957090498aa77eb677fa4516bbd5fd3ab6551966e0f4f41e3e8",
+      "path": "docs/deployment/assets/enhanced-rule-python-good.zh-CN.dark.jpg",
+      "sha256": "be1d52415eb45957090498aa77eb677fa4516bbd5fd3ab6551966e0f4f41e3e8",
+      "bytes": 34517,
+      "width": 572,
+      "height": 848,
+      "reencoded": false
+    },
+    {
+      "view": "python-bad",
+      "locale": "zh-CN",
+      "ui_locale": "zh-CN",
+      "theme": "dark",
+      "original_file": "<local-capture>/10-python-bad.jpg",
+      "original_sha256": "d4aac342f61134ce77a395d8a081f9dd2f73404b6ac5905060bec0cc57ed2f7f",
+      "path": "docs/deployment/assets/enhanced-rule-python-bad.zh-CN.dark.jpg",
+      "sha256": "d4aac342f61134ce77a395d8a081f9dd2f73404b6ac5905060bec0cc57ed2f7f",
+      "bytes": 50702,
+      "width": 572,
+      "height": 848,
+      "reencoded": false
+    },
+    {
+      "view": "json",
+      "locale": "zh-CN",
+      "ui_locale": "zh-CN",
+      "theme": "dark",
+      "original_file": "<local-capture>/11-json-validation.jpg",
+      "original_sha256": "d5580ccf4e5658e9f3b64b75151628b5e47f2da612f83567e293ab3d91ffffc2",
+      "path": "docs/deployment/assets/enhanced-rule-json.zh-CN.dark.jpg",
+      "sha256": "d5580ccf4e5658e9f3b64b75151628b5e47f2da612f83567e293ab3d91ffffc2",
+      "bytes": 32237,
+      "width": 572,
+      "height": 848,
+      "reencoded": false
+    },
+    {
+      "view": "csv",
+      "locale": "zh-CN",
+      "ui_locale": "zh-CN",
+      "theme": "dark",
+      "original_file": "<local-capture>/12-csv-total.jpg",
+      "original_sha256": "4d5f42d9f2e40f40571d7d1be6ad946a1283d34801de975ee6c27416f16c1665",
+      "path": "docs/deployment/assets/enhanced-rule-csv.zh-CN.dark.jpg",
+      "sha256": "4d5f42d9f2e40f40571d7d1be6ad946a1283d34801de975ee6c27416f16c1665",
+      "bytes": 30062,
+      "width": 572,
+      "height": 848,
+      "reencoded": false
+    },
+    {
+      "view": "xlsx",
+      "locale": "zh-CN",
+      "ui_locale": "zh-CN",
+      "theme": "dark",
+      "original_file": "<local-capture>/13-xlsx-comparison.jpg",
+      "original_sha256": "f8cfc2fb3facf983b1432659d272ce0fb6dcef3948fbf8679d7481e9e0f748e9",
+      "path": "docs/deployment/assets/enhanced-rule-xlsx.zh-CN.dark.jpg",
+      "sha256": "f8cfc2fb3facf983b1432659d272ce0fb6dcef3948fbf8679d7481e9e0f748e9",
+      "bytes": 30716,
+      "width": 572,
+      "height": 848,
+      "reencoded": false
+    },
+    {
+      "view": "environment",
+      "locale": "en",
+      "ui_locale": "en-US",
+      "theme": "dark",
+      "original_file": "<local-capture>/17-environment.en.dark.jpg",
+      "original_sha256": "a66d340ddc406546f06208dd6fc8f10420d6e0fc64787ea6f8a099a57cf23c17",
+      "path": "docs/deployment/assets/enhanced-rule-environment.en.dark.jpg",
+      "sha256": "a66d340ddc406546f06208dd6fc8f10420d6e0fc64787ea6f8a099a57cf23c17",
+      "bytes": 38856,
+      "width": 572,
+      "height": 848,
+      "reencoded": false
+    },
+    {
+      "view": "environment",
+      "locale": "ja",
+      "ui_locale": "ja-JP",
+      "theme": "dark",
+      "original_file": "<local-capture>/18-environment.ja.dark.jpg",
+      "original_sha256": "d7a189c29d94dd59d209e68b91c380effc73c1e3604eaaf1458564de61020040",
+      "path": "docs/deployment/assets/enhanced-rule-environment.ja.dark.jpg",
+      "sha256": "d7a189c29d94dd59d209e68b91c380effc73c1e3604eaaf1458564de61020040",
+      "bytes": 39378,
+      "width": 572,
+      "height": 848,
+      "reencoded": false
+    }
+  ]
+}

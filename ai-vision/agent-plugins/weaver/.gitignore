@@ -1,0 +1,4 @@
+# Local VictoriaMetrics/VictoriaLogs + Jaeger binaries, data, logs, pids.
+.victoria/
+.jaeger/
+live/

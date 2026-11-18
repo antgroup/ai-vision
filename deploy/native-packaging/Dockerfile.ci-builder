@@ -1,0 +1,13 @@
+# Local compiler image only. Runtime images use the pristine PYTHON_IMAGE bytes.
+# The caller validates the exact public CPython version and digest before build.
+ARG PYTHON_IMAGE
+FROM ${PYTHON_IMAGE}
+# A tag prefix with @digest does not prove the selected digest has that version.
+RUN python -c "import sys; assert sys.version_info[:3] == (3, 11, 14), sys.version" \
+    && . /etc/os-release && test "$VERSION_CODENAME" = bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ make binutils git pkg-config libmariadb-dev libpq-dev \
+    patchelf libc6-dev libffi-dev libssl-dev zlib1g-dev ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONDONTWRITEBYTECODE=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+WORKDIR /work

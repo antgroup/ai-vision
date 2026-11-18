@@ -1,0 +1,13 @@
+{
+  "name": "opencode-observability-workspace",
+  "private": true,
+  "workspaces": [
+    "observ-opencode",
+    "opencode-replay"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace observ-opencode && npm run build --workspace opencode-replay",
+    "test": "npm test --workspace observ-opencode && npm test --workspace opencode-replay && npm run test:integration --workspace opencode-replay",
+    "clean": "npm run clean --workspace observ-opencode && npm run clean --workspace opencode-replay"
+  }
+}

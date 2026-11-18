@@ -1,0 +1,210 @@
+name: Release agent plugins
+
+# Pre-builds every Agent-market plugin for every platform a coding agent may
+# run on, so the deployment host never needs a Rust/Node toolchain and users on
+# any OS/arch find a matching download in dist/<key>/latest.json.
+#
+# Rust hooks (claude-code / codex / kimi) are compiled natively per architecture;
+# Linux builds and checks run in manylinux_2_28 to cap the glibc requirement.
+# Node plugins are platform-independent tarballs. The
+# fragments are merged into one dist/ tree (merge_plugin_dist.py), published as
+# the `plugin-dist` artifact (consumed by release-images.yml). The separate
+# `plugin-release` archive is attached to the Release by release-images.yml
+# only after all images pass verification.
+#
+# On a `v*` tag this workflow is invoked by release-images.yml (workflow_call)
+# so the be image is built from the very same artifacts; run it on its own via
+# workflow_dispatch to rebuild plugins without publishing images.
+
+on:
+  workflow_dispatch:
+    inputs:
+      linux_amd64_only:
+        description: Build only Linux amd64 Rust hooks plus portable Node plugins
+        type: boolean
+        default: false
+  workflow_call:
+    inputs:
+      linux_amd64_only:
+        description: Build only Linux amd64 Rust hooks plus portable Node plugins
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  PLUGINS_DIR: ai-vision/agent-plugins
+
+jobs:
+  rust-hooks:
+    name: hooks ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        # Linux runners only host Docker; their newer libc must not enter artifacts.
+        # Keep all four default rows for existing release callers.
+        include: >-
+          ${{ fromJSON(inputs.linux_amd64_only && '[
+            {"runner":"ubuntu-22.04","target":"x86_64-unknown-linux-gnu","platform":"linux-gnu/x64","container":"quay.io/pypa/manylinux_2_28_x86_64","glibc":"2.28"}
+          ]' || '[
+            {"runner":"ubuntu-22.04","target":"x86_64-unknown-linux-gnu","platform":"linux-gnu/x64","container":"quay.io/pypa/manylinux_2_28_x86_64","glibc":"2.28"},
+            {"runner":"ubuntu-22.04-arm","target":"aarch64-unknown-linux-gnu","platform":"linux-gnu/arm64","container":"quay.io/pypa/manylinux_2_28_aarch64","glibc":"2.28"},
+            {"runner":"macos-15","target":"aarch64-apple-darwin","platform":"darwin/arm64","container":"","glibc":""},
+            {"runner":"macos-15-intel","target":"x86_64-apple-darwin","platform":"darwin/x64","container":"","glibc":""}
+          ]') }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    container: ${{ matrix.container }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Select Python and check Linux build baseline
+        if: runner.os == 'Linux'
+        run: |
+          test "$(getconf GNU_LIBC_VERSION)" = "glibc ${{ matrix.glibc }}"
+          manylinux-interpreters ensure cp312-cp312
+          echo '/opt/python/cp312-cp312/bin' >> "$GITHUB_PATH"
+
+      - uses: actions/setup-python@v5
+        if: runner.os != 'Linux'
+        with:
+          python-version: '3.12'
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            ${{ env.PLUGINS_DIR }}/claudecode/cchooks
+            ${{ env.PLUGINS_DIR }}/codex/cdxhooks
+            ${{ env.PLUGINS_DIR }}/kimi/kimihooks
+          key: ${{ matrix.target }}-${{ matrix.glibc || 'native' }}
+
+      - name: Test installer checks
+        working-directory: ${{ env.PLUGINS_DIR }}
+        run: make test-onboarding
+
+      - name: Test metrics runtime authorization
+        if: matrix.target == 'x86_64-unknown-linux-gnu'
+        working-directory: ${{ env.PLUGINS_DIR }}
+        run: make test-metrics-auth
+
+      - name: Build Rust hooks
+        working-directory: ${{ env.PLUGINS_DIR }}
+        run: |
+          set -euo pipefail
+          for agent in claude-code codex kimi; do
+            python3 scripts/build_plugins.py --agent "$agent" --target "${{ matrix.target }}" --output dist
+          done
+
+      - name: Verify production hook authorization and Full/Privacy exports
+        working-directory: ${{ env.PLUGINS_DIR }}
+        run: make test-privacy-hooks
+
+      - name: Verify hook runtime compatibility
+        working-directory: ${{ env.PLUGINS_DIR }}
+        run: make verify-hook-dist PLATFORM='${{ matrix.platform }}' MAX_GLIBC='${{ matrix.glibc }}'
+
+      - name: Verify replay modes and statistics
+        working-directory: ${{ env.PLUGINS_DIR }}
+        run: make test-privacy-replay
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-dist-${{ github.run_attempt }}-${{ matrix.target }}
+          path: ${{ env.PLUGINS_DIR }}/dist
+          if-no-files-found: error
+          retention-days: 14
+
+  node-plugins:
+    name: node plugins
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build Node plugins
+        working-directory: ${{ env.PLUGINS_DIR }}
+        run: |
+          set -euo pipefail
+          for agent in opencode openclaw pi dsh; do
+            python3 scripts/build_plugins.py --agent "$agent" --install-deps --output dist
+          done
+
+      - name: Verify Full and Privacy exports
+        working-directory: ${{ env.PLUGINS_DIR }}
+        run: make test-privacy-node
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-dist-${{ github.run_attempt }}-node
+          path: ${{ env.PLUGINS_DIR }}/dist
+          if-no-files-found: error
+          retention-days: 14
+
+  merge:
+    name: merge dist
+    needs: [rust-hooks, node-plugins]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: ${{ env.PLUGINS_DIR }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: plugin-dist-${{ github.run_attempt }}-*
+          path: fragments
+
+      - name: Merge fragments
+        env:
+          LINUX_AMD64_ONLY: ${{ inputs.linux_amd64_only }}
+        run: |
+          set -euo pipefail
+          python3 "$PLUGINS_DIR/scripts/merge_plugin_dist.py" --output dist fragments/*/
+          verify_args=(--dist dist --require-privacy --max-glibc 2.28)
+          if [[ "$LINUX_AMD64_ONLY" == "true" ]]; then
+            verify_args+=(--platform linux-gnu/x64)
+          fi
+          python3 "$PLUGINS_DIR/scripts/verify_plugin_dist.py" "${verify_args[@]}"
+          find dist -type f | sort
+          tar -C dist -czf plugin-dist.tar.gz .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-dist-${{ github.run_attempt }}
+          path: dist
+          if-no-files-found: error
+          retention-days: 14
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-release-${{ github.run_attempt }}
+          path: plugin-dist.tar.gz
+          if-no-files-found: error
+          retention-days: 14

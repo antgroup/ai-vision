@@ -1,0 +1,6 @@
+{"type":"user","message":{"role":"user","content":"What is 2+2?"},"timestamp":"2026-03-27T10:00:00.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"2+2 equals 4."}],"id":"msg_001","model":"claude-sonnet-4-20250514","usage":{"input_tokens":5,"output_tokens":3}},"timestamp":"2026-03-27T10:00:01.000Z"}
+{"type":"user","message":{"role":"user","content":"Read the file config.json"},"timestamp":"2026-03-27T10:01:00.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Reading config.json."},{"type":"tool_use","id":"toolu_001","name":"Read","input":{"path":"config.json"}}],"id":"msg_002","model":"claude-sonnet-4-20250514","usage":{"input_tokens":8,"output_tokens":4}},"timestamp":"2026-03-27T10:01:01.000Z"}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_001","content":"{\"name\":\"demo\"}"}]},"timestamp":"2026-03-27T10:01:02.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"config.json contains a demo name."}],"id":"msg_003","model":"claude-sonnet-4-20250514","usage":{"input_tokens":12,"output_tokens":7}},"timestamp":"2026-03-27T10:01:03.000Z"}

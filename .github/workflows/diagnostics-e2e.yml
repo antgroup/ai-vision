@@ -1,0 +1,356 @@
+name: Diagnostic orchestration contracts
+
+on:
+  workflow_call:
+    inputs:
+      public_platform_images:
+        description: Pinned public candidate images from the current release attempt
+        type: string
+        default: ''
+      tier:
+        description: Test tier (pr, daily or release)
+        required: true
+        type: string
+      portable:
+        description: Portable diagnostic harness contracts
+        type: boolean
+        default: false
+      application:
+        description: Database-free backend diagnosis fixtures
+        type: boolean
+        default: false
+      database:
+        description: OceanBase and seekdb AgentLens and diagnosis tests
+        type: boolean
+        default: false
+      platform:
+        description: Owned fake34 and Quick Rule API
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Test tier
+        type: choice
+        options: [pr, daily, release]
+        default: release
+      portable:
+        description: Portable diagnostic harness contracts
+        type: boolean
+        default: true
+      application:
+        description: Database-free backend diagnosis fixtures
+        type: boolean
+        default: true
+      database:
+        description: OceanBase and seekdb AgentLens and diagnosis tests
+        type: boolean
+        default: true
+      platform:
+        description: Owned fake34 and Quick Rule API
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diagnostics-e2e-${{ github.workflow }}-${{ github.ref }}-${{ inputs.tier }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  portable-contracts:
+    if: inputs.portable
+    name: Portable contracts (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ai-vision/agent-plugins/tests/diagnostics_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned offline harness dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Native loopback transport contracts
+        working-directory: ai-vision/agent-plugins/tests/native_agent_e2e
+        run: python -m unittest test_docker_loopback -v
+      - name: Portable intent, cleanup and lifecycle contracts
+        run: python -m unittest test_quick test_ci_quick_acceptance test_docker_database test_validate_local test_docker_judge -v
+
+  application-contracts:
+    if: inputs.application
+    name: Backend diagnosis fixtures (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: '3.12'
+      - name: Verify backend authorization and database-free Trial fixtures
+        working-directory: ai-vision/aivision-py-be
+        env:
+          AIVISION_LOG_DIR: ${{ runner.temp }}/backend-fixture-logs
+          OTEL_SDK_DISABLED: 'true'
+        run: |
+          uv sync --frozen --python 3.12
+          .venv/bin/python -m unittest apps.core.tests.test_diagnosis_quick_offline apps.core.tests.test_diagnosis_trial_timeout -v
+
+  owned-database:
+    if: inputs.database
+    name: Owned database (${{ matrix.os }}, ${{ matrix.backend }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: >-
+          ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","ubuntu-24.04-arm","macos-15-intel"]'
+          || inputs.tier == 'daily' && '["ubuntu-24.04","ubuntu-24.04-arm"]'
+          || '["ubuntu-24.04"]') }}
+        backend: [oceanbase, seekdb]
+    runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
+    timeout-minutes: 60
+    env:
+      DATABASE_PLATFORM: ${{ matrix.os == 'ubuntu-24.04-arm' && 'linux/arm64' || 'linux/amd64' }}
+      OCEANBASE_IMAGE: oceanbase/oceanbase-ce@sha256:eaa2c3b3513fa21e4a658f197c1deb93c9d6b6eb742cfa5ef0f085f82b9cec54
+      SEEKDB_IMAGE: oceanbase/seekdb@sha256:4db4961869d554313520d6081fca29265ba6da6db7313311bd8acbed771a956b
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: agentlens/uv.lock
+      - name: Start local Docker on macOS
+        if: runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/aivision-colima
+        run: |
+          brew install colima docker
+          python - <<'PYCOLIMA'
+          import os
+          from pathlib import Path
+          config = Path(os.environ['COLIMA_HOME']) / 'default/colima.yaml'
+          config.parent.mkdir(parents=True, exist_ok=True)
+          config.write_text('docker:\n  default-ulimits:\n    nofile:\n      Name: nofile\n      Soft: 65536\n      Hard: 65536\n', encoding='utf-8')
+          PYCOLIMA
+          colima start --runtime docker --cpu 3 --memory 10 --disk 30
+          docker info
+      - name: Install locked AgentLens and SQL client
+        run: |
+          cd agentlens
+          uv sync --frozen --extra dev --python 3.12
+          cd ../ai-vision/aivision-py-be
+          uv sync --frozen --python 3.12
+          cd ../..
+          python -m pip install mysql-connector-python==9.6.0
+      - name: Run real migrations, transaction and AgentLens unit contracts
+        shell: bash
+        run: |
+          if [ '${{ matrix.backend }}' = oceanbase ]; then image="$OCEANBASE_IMAGE"; else image="$SEEKDB_IMAGE"; fi
+          python ai-vision/agent-plugins/tests/diagnostics_e2e/docker_database.py \
+            --platform "$DATABASE_PLATFORM" --backend '${{ matrix.backend }}' --image "$image" --repo . \
+            --python agentlens/.venv/bin/python \
+            --django-python ai-vision/aivision-py-be/.venv/bin/python \
+            --out '${{ runner.temp }}/diagnostics-db'
+      - name: Preserve safe runner summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-db-${{ matrix.os }}-${{ matrix.backend }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/diagnostics-db/summary.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Stop Colima
+        if: always() && runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/aivision-colima
+        run: colima delete --data --force
+
+  owned-platform-quick:
+    if: inputs.platform && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    name: Owned fake platform 34 + Quick API (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15-intel"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: read
+    env:
+      AIVISION_E2E_PLATFORM_IMAGES_JSON: ${{ inputs.public_platform_images || vars.AIVISION_E2E_PLATFORM_IMAGES_JSON }}
+    steps:
+      - name: Require pinned platform fixtures
+        if: env.AIVISION_E2E_PLATFORM_IMAGES_JSON == ''
+        run: |
+          echo '::error::Supply pinned candidate images or configure AIVISION_E2E_PLATFORM_IMAGES_JSON.'
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reclaim unused Android SDK on the disposable hosted VM
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux' && runner.arch == 'X64'
+        run: python scripts/ci/prepare_platform_disk.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '12.6.0'
+          run_install: false
+      - name: Start local Docker on macOS Intel
+        if: runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/aivision-colima
+        run: |
+          brew install colima docker docker-buildx
+          python - <<'PYCOLIMA'
+          import os
+          from pathlib import Path
+          config = Path(os.environ['COLIMA_HOME']) / 'default/colima.yaml'
+          config.parent.mkdir(parents=True, exist_ok=True)
+          config.write_text('docker:\n  default-ulimits:\n    nofile:\n      Name: nofile\n      Soft: 65536\n      Hard: 65536\n', encoding='utf-8')
+          PYCOLIMA
+          colima start --runtime docker --cpu 3 --memory 10 --disk 30
+          docker info
+          colima ssh-config > "$RUNNER_TEMP/aivision-colima-ssh.conf"
+          chmod 600 "$RUNNER_TEMP/aivision-colima-ssh.conf"
+          echo "AIVISION_E2E_DOCKER_SSH_CONFIG=$RUNNER_TEMP/aivision-colima-ssh.conf" >> "$GITHUB_ENV"
+      - name: Install pinned harness and build current frontend and DSH plugin
+        run: |
+          python -m pip install -r ai-vision/agent-plugins/tests/diagnostics_e2e/requirements.txt
+          python -m pip install mysql-connector-python==9.6.0 PyYAML==6.0.3
+          pnpm --dir ai-vision/vfe install --frozen-lockfile
+          pnpm --dir ai-vision/vfe build
+          test -f ai-vision/dist/index.html
+          npm install --prefix ai-vision/agent-plugins/deepseek --package-lock=false
+          npm --prefix ai-vision/agent-plugins/deepseek run build --workspace observ-dsh
+          python ai-vision/agent-plugins/tests/native_agent_e2e/install_runtimes.py \
+            --repo . --out '${{ runner.temp }}/diagnostics-runtimes' --apps dsh02
+      - name: Build owned Codex and deployment CLI images
+        run: |
+          set -euo pipefail
+          docker buildx version
+          builder="aiv-diagnostics-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${RANDOM}-${RANDOM}"
+          builder_created=false
+          container=
+          cleanup() {
+            code=$?
+            trap - EXIT
+            if [ -n "$container" ] && ! docker rm --force "$container" >/dev/null; then
+              echo '::error::Failed to remove the job-owned export container' >&2
+              if [ "$code" -eq 0 ]; then code=1; fi
+            fi
+            if [ "$builder_created" = true ] && ! docker buildx rm --force "$builder" >/dev/null; then
+              echo '::error::Failed to remove the job-owned Buildx builder' >&2
+              if [ "$code" -eq 0 ]; then code=1; fi
+            fi
+            exit "$code"
+          }
+          trap cleanup EXIT
+          docker buildx create --name "$builder" --driver docker-container \
+            --driver-opt network=host \
+            --buildkitd-flags '--allow-insecure-entitlement network.host' >/dev/null
+          builder_created=true
+          docker buildx build --builder "$builder" --load --network=host --allow network.host \
+            -f ai-vision/agent-plugins/tests/diagnostics_e2e/fixtures/Codex.Dockerfile \
+            -t aivision-diagnostics-codex:ci .
+          container="$(docker create aivision-diagnostics-codex:ci)"
+          docker cp "$container:/usr/local/bin/cdxhooks" '${{ runner.temp }}/diagnostics-cdxhooks'
+          test -s '${{ runner.temp }}/diagnostics-cdxhooks'
+          docker rm "$container"
+          container=
+          docker buildx build --builder "$builder" --load \
+            -f ai-vision/agent-plugins/tests/diagnostics_e2e/fixtures/PlatformCLI.Dockerfile \
+            -t aivision-diagnostics-docker-cli:local \
+            ai-vision/agent-plugins/tests/diagnostics_e2e/fixtures
+          docker buildx rm --force "$builder" >/dev/null
+          builder_created=false
+          docker image inspect aivision-diagnostics-codex:ci aivision-diagnostics-docker-cli:local >/dev/null
+          trap - EXIT
+      - name: Run actual owned fake34 and scoped Quick Rule API
+        shell: bash
+        run: |
+          dsh_node="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["dsh02"][0])' \
+            '${{ runner.temp }}/diagnostics-runtimes/runtimes.json')"
+          dsh_cli="$(python -c 'import json,sys; print(json.load(open(sys.argv[1]))["dsh02"][1])' \
+            '${{ runner.temp }}/diagnostics-runtimes/runtimes.json')"
+          test -f "$dsh_node"
+          test -f "$dsh_cli"
+          python ai-vision/agent-plugins/tests/diagnostics_e2e/validate_local.py \
+            --ci-owned-fake --repo . --out '${{ runner.temp }}/diagnostics-platform-quick' \
+            --codex-image aivision-diagnostics-codex:ci \
+            --hook-binary '${{ runner.temp }}/diagnostics-cdxhooks' \
+            --dsh-node "$dsh_node" --dsh02 "$dsh_cli"
+      - name: Preserve sanitized platform summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagnostics-platform-${{ matrix.os }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/diagnostics-platform-quick/summary.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Stop Colima
+        if: always() && runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/aivision-colima
+        run: colima delete --data --force
+
+  result:
+    name: Selected checks passed
+    if: always()
+    needs: [portable-contracts, application-contracts, owned-database, owned-platform-quick]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify every selected check completed
+        env:
+          TIER: ${{ inputs.tier }}
+          SELECTED_JSON: >-
+            {"portable-contracts": ${{ inputs.portable }}, "application-contracts": ${{ inputs.application }}, "owned-database": ${{ inputs.database }}, "owned-platform-quick": ${{ inputs.platform }}}
+          RESULTS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PYRESULT'
+          import json
+          import os
+          from pathlib import Path
+
+          selected = json.loads(os.environ['SELECTED_JSON'])
+          results = json.loads(os.environ['RESULTS_JSON'])
+          failures = []
+          tier = os.environ['TIER']
+          if tier not in {'pr', 'daily', 'release'}:
+              failures.append('Unknown test tier: ' + tier)
+          lines = ['## Selected checks', '', '| Check | Selected | Result |', '| --- | --- | --- |']
+          for job, required in selected.items():
+              result = results.get(job, {}).get('result', 'missing')
+              lines.append(f'| {job} | {required} | {result} |')
+              if required and result != 'success':
+                  failures.append(f'{job}: required check {result}')
+          lines += ['', 'Selected platform checks require trusted access to the pinned images.',
+                    'A skipped selected check is a failure, including an unavailable fork platform check.']
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as summary:
+              summary.write('\n'.join(lines) + '\n')
+          if failures:
+              raise SystemExit('\n'.join(failures))
+          PYRESULT

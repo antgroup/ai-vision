@@ -1,0 +1,143 @@
+id: langgraph
+logo: /assets/frameworks/langgraph.svg
+label: LangGraph
+marketPreview: true
+marketSort: 2
+frontendSort: 3
+pipInstall: pip install "langgraph>=1.2.12,<2" "langchain>=1.4.3,<2" "langchain-core>=1.6.6,<2" "langchain-openai>=1.6.7,<2" "langfuse>=5.0.2,<6" "python-dotenv>=1.2.4,<2"
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+- export OPENAI_MODEL="gpt-4o"
+- export OPENAI_BASE_URL="https://api.openai.com/v1"
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+- OPENAI_MODEL="gpt-4o"
+- OPENAI_BASE_URL="https://api.openai.com/v1"
+officialDocs: https://langfuse.com/integrations/frameworks/langgraph
+integrationNotes: >-
+  Add a Langfuse callback to your existing LangGraph invocation; installing the SDK or setting credentials alone does not record a request.
+  Keep existing callbacks, business configuration and checkpointer. Use the same session_id for turns in one conversation;
+  thread_id remains the framework's persistence key. Use one tracing integration per destination to avoid duplicate spans.
+  The complete example loads .env from the script directory; shell variables take precedence.
+existingExample: |-
+  from langchain_core.runnables.config import merge_configs
+  from langfuse import get_client, propagate_attributes
+  from langfuse.langchain import CallbackHandler
+
+  langfuse = get_client()  # Once at service startup, after loading the environment.
+
+  # Keep your existing agent/graph, tools, state, checkpointer and request config.
+  # existing_config must not already contain a Langfuse tracing callback.
+  config = merge_configs(existing_config, {"callbacks": [CallbackHandler()]})
+  with propagate_attributes(session_id=session_id, tags=["framework:langgraph"]):
+      with langfuse.start_as_current_observation(
+          name="langgraph-request", as_type="agent", input=existing_input
+      ) as request:
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          result = existing_graph.invoke(existing_input, config=config)
+          request.update(output=result)
+
+  # Keep the shared client alive between requests. At service shutdown, after all
+  # requests finish, call langfuse.flush() and langfuse.shutdown() in finally.
+  # For a short script, use the complete example below for guaranteed cleanup.
+pipExample: |-
+  import os
+  from pathlib import Path
+
+  from dotenv import load_dotenv
+
+  load_dotenv(Path(__file__).with_name(".env"), override=False)
+  from typing import Literal
+  import uuid
+
+  from langchain.messages import HumanMessage
+  from langchain.tools import tool
+  from langchain_openai import ChatOpenAI
+  from langgraph.graph import MessagesState, StateGraph
+  from langgraph.prebuilt import ToolNode
+
+  from langfuse import get_client, propagate_attributes
+  from langfuse.langchain import CallbackHandler
+
+  langfuse = get_client()
+
+
+  @tool
+  def search(query: str):
+      """Call to surf the web."""
+      if "sf" in query.lower() or "san francisco" in query.lower():
+          return "It's 60 degrees and foggy."
+      return "It's 90 degrees and sunny."
+
+
+  tools = [search]
+  tool_node = ToolNode(tools)
+
+
+  def main():
+      model = ChatOpenAI(
+          model=os.environ["OPENAI_MODEL"],
+          api_key=os.environ["OPENAI_API_KEY"],
+          base_url=os.environ["OPENAI_BASE_URL"],
+          use_responses_api=False,
+          temperature=0,
+      ).bind_tools(tools)
+
+      def should_continue(state: MessagesState) -> Literal["tools", "__end__"]:
+          messages = state["messages"]
+          last_message = messages[-1]
+          if last_message.tool_calls:
+              return "tools"
+          return "__end__"
+
+      def call_model(state: MessagesState):
+          messages = state["messages"]
+          # Invoking `model` will automatically infer the correct tracing context
+          response = model.invoke(messages)
+          return {"messages": [response]}
+
+      workflow = StateGraph(MessagesState)
+      workflow.add_node("agent", call_model)
+      workflow.add_node("tools", tool_node)
+      workflow.add_edge("__start__", "agent")
+      workflow.add_conditional_edges("agent", should_continue)
+      workflow.add_edge("tools", "agent")
+
+      app = workflow.compile()
+
+      # Initialize Langfuse CallbackHandler for LangChain (tracing)
+      langfuse_handler = CallbackHandler()
+
+      session_id = str(uuid.uuid4())
+      inputs = {"messages": [HumanMessage(content="Use the search tool for the weather in sf.")]}
+      try:
+          with propagate_attributes(session_id=session_id, tags=["framework:langgraph"]):
+              with langfuse.start_as_current_observation(
+                  name="langgraph-onboarding", as_type="agent",
+                  input={"message": inputs["messages"][0].content},
+              ) as request:
+                  print("AI Vision trace_id:", langfuse.get_current_trace_id())
+                  final_state = app.invoke(
+                      inputs,
+                      config={"configurable": {"thread_id": session_id}, "callbacks": [langfuse_handler]},
+                  )
+                  output = final_state["messages"][-1].content
+                  request.update(output=output)
+                  print(output)
+      finally:
+          # Short script: export even if the model or tool raises.
+          # In a service, keep the client alive until all requests finish.
+          try:
+              langfuse.flush()
+          finally:
+              langfuse.shutdown()
+
+
+  if __name__ == "__main__":
+      main()

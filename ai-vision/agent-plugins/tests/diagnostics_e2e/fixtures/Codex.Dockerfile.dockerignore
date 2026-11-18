@@ -1,0 +1,14 @@
+**
+!ai-vision/
+!ai-vision/agent-plugins/
+!ai-vision/agent-plugins/agentic-otel-common/
+!ai-vision/agent-plugins/agentic-otel-common/Cargo.toml
+!ai-vision/agent-plugins/agentic-otel-common/src/
+!ai-vision/agent-plugins/agentic-otel-common/src/**
+!ai-vision/agent-plugins/codex/
+!ai-vision/agent-plugins/codex/cdxhooks/
+!ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml
+!ai-vision/agent-plugins/codex/cdxhooks/Cargo.lock
+!ai-vision/agent-plugins/codex/cdxhooks/build.rs
+!ai-vision/agent-plugins/codex/cdxhooks/src/
+!ai-vision/agent-plugins/codex/cdxhooks/src/**

@@ -1,0 +1,26 @@
+[project]
+name = "hermes-replay"
+version = "0.2.2"
+description = "Developer-only raw capture, offline replay, and local reporting for Hermes"
+requires-python = ">=3.10"
+dependencies = [
+    "aivision-hermes-core==0.2.2",
+]
+
+[project.entry-points."hermes_agent.plugins"]
+hermes-replay = "hermes_replay:register"
+
+[project.scripts]
+hermes-replay = "hermes_replay.replay:main"
+observ-hermes-replay = "hermes_replay.replay:main"
+observ-hermes-report = "hermes_replay.report:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["hermes_replay"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"hermes_replay/plugin.yaml" = "hermes_replay/plugin.yaml"

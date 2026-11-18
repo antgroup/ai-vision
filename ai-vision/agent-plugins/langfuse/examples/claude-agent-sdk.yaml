@@ -1,0 +1,91 @@
+id: claude-agent-sdk
+logo: /assets/frameworks/claude-agent-sdk.png
+label: Claude Agent SDK
+marketPreview: true
+marketSort: 3
+frontendSort: 4
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export ANTHROPIC_API_KEY="sk-ant-..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- ANTHROPIC_API_KEY="sk-ant-..."
+pipInstall: pip install claude-agent-sdk openinference-instrumentation-claude-agent-sdk "langfuse>=4.16.0,<5"
+pipExample: |-
+  import asyncio
+  from typing import Any
+
+  from langfuse import get_client, propagate_attributes
+  from openinference.instrumentation.claude_agent_sdk import ClaudeAgentSDKInstrumentor
+
+  langfuse = get_client()
+  ClaudeAgentSDKInstrumentor().instrument()
+
+  from claude_agent_sdk import (
+      ClaudeAgentOptions,
+      ClaudeSDKClient,
+      tool,
+      create_sdk_mcp_server,
+  )
+
+
+  @tool(
+      "get_weather",
+      "Gets the current weather for a given city",
+      {
+          "city": str,
+      },
+  )
+  async def get_weather(args: dict[str, Any]) -> dict[str, Any]:
+      """Simulated weather lookup tool"""
+      city = args["city"]
+
+      # Simulated weather data
+      weather_data = {
+          "San Francisco": "Foggy, 62F",
+          "New York": "Sunny, 75F",
+          "London": "Rainy, 55F",
+          "Tokyo": "Clear, 68F",
+      }
+
+      weather = weather_data.get(city, "Weather data not available")
+      return {"content": [{"type": "text", "text": f"Weather in {city}: {weather}"}]}
+
+
+  async def main():
+      # Create SDK MCP server with the weather tool
+      weather_server = create_sdk_mcp_server(
+          name="weather",
+          version="1.0.0",
+          tools=[get_weather],
+      )
+
+      options = ClaudeAgentOptions(
+          model="claude-sonnet-4-5",
+          system_prompt="You are a friendly travel assistant who helps with weather information.",
+          mcp_servers={"weather": weather_server},
+          allowed_tools=["mcp__weather__get_weather"],
+      )
+
+      with langfuse.start_as_current_observation(
+          as_type="span", name="claude-agent-sdk-request"
+      ):
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          async with ClaudeSDKClient(options=options) as client:
+              await client.query("What's the weather like in San Francisco and Tokyo?")
+
+              async for message in client.receive_response():
+                  print(message)
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:claude-agent-sdk"]):
+              asyncio.run(main())
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

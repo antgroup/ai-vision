@@ -1,0 +1,6 @@
+{"timestamp":"2026-04-12T10:00:00.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-compact-1"}}
+{"timestamp":"2026-04-12T10:00:01.000Z","type":"event_msg","payload":{"type":"user_message","message":"summarize context\n"}}
+{"timestamp":"2026-04-12T10:00:05.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":215600,"output_tokens":20,"total_tokens":215620},"total_token_usage":{"input_tokens":215600,"output_tokens":20,"total_tokens":215620}}}}
+{"timestamp":"2026-04-12T10:00:10.000Z","type":"compacted","payload":{}}
+{"timestamp":"2026-04-12T10:00:16.000Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":44649,"output_tokens":10,"total_tokens":44659},"total_token_usage":{"input_tokens":260249,"output_tokens":30,"total_tokens":260279}}}}
+{"timestamp":"2026-04-12T10:00:20.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-compact-1","last_agent_message":"compaction recorded"}}

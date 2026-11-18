@@ -1,0 +1,921 @@
+#!/usr/bin/env python3
+"""Install one telemetry plugin through its host's native hooks/plugin registration.
+
+Downloaded as install-<agent>.py. No separate aivision executable is installed.
+Python 3.11+ is required. Use --config-dir for an isolated or custom host config.
+"""
+from __future__ import annotations
+
+import argparse
+import getpass
+import hashlib
+import importlib.util
+import ipaddress
+import json
+import os
+from pathlib import Path
+import platform
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from uuid import UUID
+
+DEFAULT_BASE_URL = "__AIVISION_BASE_URL__"
+DEFAULT_AGENT = "__AIVISION_AGENT__"
+NATIVE_BUILD = "__compiled__" in globals()
+
+ALIASES = {"cc": "claude-code", "claude": "claude-code", "cdx": "codex", "km": "kimi", "kimi-cli": "kimi", "ocd": "opencode", "ocw": "openclaw", "ds": "dsh", "deepseek": "dsh"}
+
+
+class ConnectError(RuntimeError):
+    def __init__(self, message, *, status=None):
+        super().__init__(message)
+        self.status = status
+
+
+def compatible_python():
+    """Find an installed interpreter without changing the system Python."""
+    candidates = []
+    if os.environ.get("AIVISION_PYTHON"):
+        candidates.append([os.environ["AIVISION_PYTHON"]])
+    candidates.extend([[name] for name in ("python3.14", "python3.13", "python3.12", "python3.11", "python3", "python")])
+    if os.name == "nt":
+        candidates.append(["py", "-3"])
+    if shutil.which("uv"):
+        try:
+            result = subprocess.run(
+                ["uv", "python", "find", "--no-project", "--no-python-downloads", ">=3.11"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                candidates.append([result.stdout.strip()])
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    for command in candidates:
+        try:
+            result = subprocess.run(
+                [*command, "-c", "import sys; print(sys.executable); sys.exit(sys.version_info < (3, 11))"],
+                capture_output=True, text=True, timeout=10,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip()
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+    raise ConnectError(
+        "Python 3.11+ is required; no compatible installed interpreter was found. "
+        "Install Python 3.12 (with uv: uv python install 3.12), then rerun this command, "
+        "or set AIVISION_PYTHON to its executable path."
+    )
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def loopback_host(url):
+    # This installer must also run standalone before support files are fetched.
+    host = urllib.parse.urlsplit(url).hostname
+    if host == 'localhost':
+        return host
+    try:
+        return host if ipaddress.ip_address(host).is_loopback else None
+    except ValueError:
+        return None
+
+
+def request_bytes(url, body=None, headers=None):
+    request_headers = dict(headers or {})
+    if body is not None:
+        request_headers["Content-Type"] = "application/json"
+    request = urllib.request.Request(
+        url,
+        data=json.dumps(body).encode() if body is not None else None,
+        headers=request_headers,
+    )
+    try:
+        handlers = [NoRedirect]
+        if loopback_host(url):
+            handlers.append(urllib.request.ProxyHandler({}))
+        with urllib.request.build_opener(*handlers).open(request, timeout=30) as response:
+            return response.read(256 * 1024 * 1024)
+    except urllib.error.HTTPError as exc:
+        if url.endswith('/agent-installations/exchange') and exc.code in (401, 403):
+            raise ConnectError("The installation grant has expired, has already been used, or permissions have changed; rerun aiv connect <agent> or generate a new command in the Agent marketplace.") from None
+        raise ConnectError(f"Server returned HTTP {exc.code}; check access or rerun aiv connect <agent>", status=exc.code) from None
+    except (OSError, urllib.error.URLError):
+        raise ConnectError("Cannot reach the AI Vision server") from None
+
+
+def request_data(url, body=None, headers=None):
+    payload = json.loads(request_bytes(url, body, headers))
+    if payload.get("code") != 0:
+        raise ConnectError("AI Vision rejected the request; check access or regenerate the installation command")
+    return payload["data"]
+
+
+def validate_url(value):
+    url = urllib.parse.urlsplit(value)
+    if url.scheme not in {"http", "https"} or not url.hostname or url.username or url.password or url.query or url.fragment:
+        raise ConnectError("--base-url must be an absolute HTTP(S) URL without credentials or query parameters")
+    return value.rstrip("/")
+
+
+def install_authorization(args, base, managed):
+    """Redeem a browser grant once; use the saved Agent credential on retries."""
+    ticket = getattr(args, 'installation_token', None)
+    if ticket:
+        if not ticket.startswith('aiv-install-'):
+            raise ConnectError("Invalid installation grant format; run aiv connect <agent> to request a new grant automatically.")
+        ticket_hash = hashlib.sha256(ticket.encode()).hexdigest()
+        for path in (managed / 'ingest.json', managed / 'pending-installation.json'):
+            try:
+                saved = json.loads(path.read_text())
+            except (OSError, ValueError):
+                continue
+            if (saved.get('installation_token_hash') == ticket_hash
+                    and saved.get('base_url') == base
+                    and saved.get('agent_uuid') == args.agent_uuid
+                    and (not args.space_id or saved.get('space_id') == args.space_id)
+                    and saved.get('agent_credential')):
+                token = request_data(base + '/openapi/v1/ingest-tokens',
+                    {'agent_uuid': args.agent_uuid},
+                    {'Authorization': 'Bearer ' + saved['agent_credential']})
+                return token, {'agent_credential': saved['agent_credential'], 'installation_token_hash': ticket_hash}
+        token = request_data(base + '/openapi/v1/agent-installations/exchange',
+            {'agent_uuid': args.agent_uuid, 'space_id': args.space_id},
+            {'Authorization': 'Bearer ' + ticket})
+        credential = token.pop('agent_credential', None)
+        if not isinstance(credential, str) or not credential.startswith('aiv-agent-'):
+            raise ConnectError('The server did not return an Agent credential; regenerate the installation command')
+        return token, {'agent_credential': credential, 'installation_token_hash': ticket_hash}
+    key = args.space_key or (Path(args.space_key_file).expanduser().read_text().strip() if args.space_key_file else os.environ.get('AIVISION_SPACE_KEY', ''))
+    if not key:
+        key = getpass.getpass('AI Vision SpaceKey: ').strip()
+    token = request_data(base + '/openapi/v1/ingest-tokens',
+        {'agent_uuid': args.agent_uuid}, {'Authorization': 'Bearer ' + key})
+    return token, {'space_key': key}
+
+
+def save_installation_authorization(path, data):
+    """Keep redeemed credentials recoverable if a later installation step fails."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(dir=path.parent)
+    try:
+        with os.fdopen(descriptor, 'w') as stream:
+            json.dump(data, stream)
+        os.replace(temporary, path)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
+def download(item, destination, base_url):
+    # All executable code must come from this deployment, never an upstream CDN.
+    base = urllib.parse.urlsplit(base_url)
+    url = urllib.parse.urlsplit(item["url"])
+    if (url.scheme, url.netloc) != (base.scheme, base.netloc) or not url.path.startswith(base.path.rstrip("/") + "/api/"):
+        raise ConnectError("Download URL does not belong to this AI Vision deployment")
+    if not re.fullmatch(r"[a-f0-9]{64}", item.get("sha256", "")):
+        raise ConnectError("Missing artifact checksum")
+    content = request_bytes(item["url"])
+    if hashlib.sha256(content).hexdigest() != item["sha256"]:
+        raise ConnectError("Artifact checksum mismatch; original installation was preserved")
+    destination.write_bytes(content)
+    return destination
+
+
+def kimi_version_major(version):
+    match = re.fullmatch(r'(?:kimi(?:[- ](?:code|cli))?,?(?: version)?\s+)?v?(\d+)\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?',
+                         version.strip(), re.IGNORECASE)
+    return int(match[1]) if match else None
+
+
+def kimi_code_host(version):
+    major = kimi_version_major(version)
+    return major is not None and major >= 2
+
+
+def kimi_host_version(host):
+    try:
+        result = subprocess.run([host, '--version'], stdin=subprocess.DEVNULL,
+                                capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        raise ConnectError('Could not read the Kimi host version; check the kimi executable') from None
+    version = result.stdout.strip()
+    if result.returncode or kimi_version_major(version) is None:
+        raise ConnectError('Unrecognized Kimi host version; check kimi --version before installing')
+    return version
+
+
+def host_directory(agent, host_version=None):
+    home = Path.home()
+    if agent == 'kimi':
+        if host_version is None:
+            host = shutil.which('kimi')
+            if not host:
+                for key in ('KIMI_CODE_HOME', 'KIMI_SHARE_DIR'):
+                    if os.environ.get(key):
+                        return Path(os.environ[key]).expanduser().resolve()
+            host_version = kimi_host_version(host) if host else ''
+        if kimi_code_host(host_version):
+            key, default = 'KIMI_CODE_HOME', home / '.kimi-code'
+        else:
+            key, default = 'KIMI_SHARE_DIR', home / '.kimi'
+        return Path(os.environ.get(key) or str(default)).expanduser().resolve()
+    defaults = {
+        "codex": ("CODEX_HOME", home / ".codex"),
+        "claude-code": ("CLAUDE_CONFIG_DIR", home / ".claude"),
+        "opencode": ("OPENCODE_CONFIG_DIR", home / ".config/opencode"),
+        "openclaw": ("OPENCLAW_STATE_DIR", home / ".openclaw"),
+        "pi": ("PI_CODING_AGENT_DIR", home / ".pi/agent"),
+        "dsh": ("DSH_HOME", home / ".dsh"),
+    }
+    if agent == "opencode" and os.environ.get("OPENCODE_CONFIG"):
+        return Path(os.environ["OPENCODE_CONFIG"]).expanduser().resolve().parent
+    key, default = defaults[agent]
+    return Path(os.environ.get(key, str(default))).expanduser().resolve()
+
+
+def native_env(agent, directory):
+    env = os.environ.copy()
+    key = {"codex": "CODEX_HOME", "claude-code": "CLAUDE_CONFIG_DIR", "kimi": "KIMI_SHARE_DIR",
+           "opencode": "OPENCODE_CONFIG_DIR", "openclaw": "OPENCLAW_STATE_DIR", "pi": "PI_CODING_AGENT_DIR", "dsh": "DSH_HOME"}[agent]
+    env[key] = str(directory)
+    if agent == 'kimi':
+        # Each host generation reads its own variable. Pin both to honor an
+        # explicit --config-dir even if the invoking shell carries stale values.
+        env['KIMI_CODE_HOME'] = str(directory)
+    return env
+
+
+def run(command, env):
+    try:
+        result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired):
+        raise ConnectError(f"Could not run {Path(command[0]).name}; check the host and its runtime") from None
+    if result.returncode:
+        # Host tools sometimes print full configuration on failure; don't echo it.
+        raise ConnectError(f"{Path(command[0]).name} failed (exit {result.returncode}); configuration will be restored")
+    return result.stdout
+
+
+def platform_download(downloads):
+    universal = next((d for d in downloads if d["platform"] == "all" and d["arch"] == "all"), None)
+    if universal:
+        return universal
+    system = platform.system().lower()
+    if system == "linux":
+        system = "linux-musl" if platform.libc_ver()[0] == "musl" or list(Path('/lib').glob('ld-musl-*.so.1')) else "linux-gnu"
+    arch = {"x86_64": "x64", "amd64": "x64", "arm64": "arm64", "aarch64": "arm64"}.get(platform.machine().lower())
+    item = next((d for d in downloads if (d["platform"], d["arch"]) == (system, arch)), None)
+    if item is None:
+        raise ConnectError(f"This deployment has no plugin build for {system}/{arch or platform.machine()}")
+    return item
+
+
+def check_binary_runtime(binary):
+    """Probe the verified binary before registering hooks, without a hook payload."""
+    binary = Path(binary)
+    try:
+        result = subprocess.run([str(binary), '--version'], stdin=subprocess.DEVNULL,
+                                capture_output=True, text=True, errors='replace', timeout=10,
+                                # Old Kimi builds ignore --version; prevent loading
+                                # legacy config or writing logs before rejecting them.
+                                env={**os.environ, 'AIVISION_MANAGED_INGEST': '1',
+                                     'AIVISION_COLLECTION_MODE': 'privacy'})
+    except subprocess.TimeoutExpired:
+        raise ConnectError(f'{binary.name} runtime check timed out; use a compatible plugin build') from None
+    except OSError:
+        raise ConnectError(f'{binary.name} cannot run on this system; check architecture, executable permissions and runtime libraries') from None
+    if result.returncode:
+        # Only surface known loader version names, never arbitrary process output.
+        required = sorted(set(re.findall(r'GLIBC_[0-9]+(?:\.[0-9]+)+', result.stderr)))
+        if required:
+            libc, version = platform.libc_ver()
+            current = f'{libc} {version}' if libc and version else 'unknown libc'
+            raise ConnectError(f'{binary.name} requires {", ".join(required)}; this host has {current}. '
+                               'Use a compatible plugin build or a supported host; update the deployment artifacts and rerun aiv connect')
+        raise ConnectError(f'{binary.name} runtime check failed (exit {result.returncode}); check architecture and runtime libraries')
+    if not result.stdout.strip().startswith(binary.name + ' '):
+        raise ConnectError(f'{binary.name} did not report its version; update the deployment plugin artifacts')
+
+
+def unpack_package(archive, destination):
+    with tarfile.open(archive, "r:gz") as package:
+        for member in package.getmembers():
+            relative = Path(member.name)
+            if relative.is_absolute() or '..' in relative.parts or relative.parts[0] != 'package' or not (member.isfile() or member.isdir()):
+                raise ConnectError("Unsafe plugin archive")
+        package.extractall(destination, filter="data")
+    path = destination / "package"
+    if not (path / "package.json").is_file() or not (path / "dist/index.js").is_file():
+        raise ConnectError("Incomplete production plugin package")
+    return path
+
+
+MODE_ENV = {'codex': 'CDXHOOKS_COLLECTION_MODE', 'claude-code': 'CCHOOKS_COLLECTION_MODE',
+            'kimi': 'KIMI_COLLECTION_MODE', 'opencode': 'OBSERV_OPENCODE_COLLECTION_MODE',
+            'openclaw': 'OBSERV_OPENCLAW_COLLECTION_MODE', 'pi': 'OBSERV_PI_COLLECTION_MODE',
+            'dsh': 'DSH_OBSERV_COLLECTION_MODE'}
+
+
+def parse_collection_mode(value):
+    if not isinstance(value, str) or value.strip().lower() not in ('full', 'privacy'):
+        raise ConnectError('Collection mode must be full or privacy; no configuration was changed')
+    return value.strip().lower()
+
+
+def saved_collection_mode(agent, root, args):
+    """Read actual native settings, not a CLI profile or an installation receipt."""
+    managed = root / 'aivision' / agent
+    paths = {'opencode': root / 'observ-opencode.json', 'pi': root / 'observ-pi.json',
+             'dsh': managed / 'observ-dsh.json'}
+    path = paths.get(agent, managed / 'ingest.json')
+    key = 'collectionMode' if agent in paths else 'collection_mode'
+    if agent == 'openclaw':
+        path = Path(os.environ.get('OPENCLAW_CONFIG_PATH', str(root / 'openclaw.json'))).expanduser() if not args.config_dir else root / 'openclaw.json'
+        key = 'collectionMode'
+    if not path.exists():
+        return 'full', 'default'
+    try:
+        doc = read_json(path)
+        if agent == 'openclaw':
+            doc = doc.get('plugins', {}).get('entries', {}).get('observ-openclaw', {}).get('config', {})
+        if key in doc:
+            return parse_collection_mode(doc[key]), 'native_config' if key == 'collectionMode' else 'managed_config'
+    except (OSError, ValueError, TypeError, AttributeError):
+        raise ConnectError('Cannot read existing collection mode; fix the local configuration before installing') from None
+    return 'full', 'default'
+
+
+def collection_mode_environment(agent):
+    for name in ('AIVISION_COLLECTION_MODE', MODE_ENV[agent]):
+        if name in os.environ:
+            return {'mode': parse_collection_mode(os.environ[name]), 'source': name}
+    return None
+
+
+def plugin_config(previous, config, token, collection_mode=None):
+    result = dict(previous)
+    if collection_mode is not None:
+        result['collectionMode'] = collection_mode
+    result.update({"enableTelemetry": True, "debug": False, "ingestConfig": str(config),
+                   "dynamicUsername": False, "dynamicUid": False})
+    endpoint = token["endpoint"].rstrip('/').replace('/v1/traces', '').replace('/v1/logs', '').replace('/v1/metrics', '')
+    for name, signal in [("tracesConfig", "traces"), ("eventsConfig", "logs"), ("metricsConfig", "metrics")]:
+        result[name] = {**result.get(name, {}), "enabled": True, "endpoint": f"{endpoint}/v1/{signal}", "headers": {}}
+    exporter = {**result.get("otelExporter", {}), "endpoint": endpoint, "headers": {}}
+    exporter["attributes"] = {
+        key: value
+        for key, value in exporter.get("attributes", {}).items()
+        if key not in {"ant.username", "username", "user.id"}
+    }
+    exporter["resourceAttributes"] = {**exporter.get("resourceAttributes", {}), "ant.agent.product": token["product"]}
+    result["otelExporter"] = exporter
+    return result
+
+
+def native_bundle_inventory(bundle):
+    """Hash every persistent runtime file, including relative path and mode."""
+    records = []
+    bundle = Path(bundle)
+    if not bundle.is_dir() or bundle.is_symlink():
+        raise ConnectError('Native installer bundle is missing or invalid')
+    for path in sorted(bundle.rglob('*')):
+        if path.is_symlink() or not (path.is_file() or path.is_dir()):
+            raise ConnectError('Native installer bundle must contain regular files and directories')
+        if path.is_file():
+            records.append((path.relative_to(bundle).as_posix(), path.stat().st_mode & 0o777,
+                            hashlib.sha256(path.read_bytes()).hexdigest()))
+    if not records or not (bundle / 'connect').is_file() or not os.access(bundle / 'connect', os.X_OK):
+        raise ConnectError(f'Native installer bundle has no executable connect entrypoint: {bundle}')
+    digest = hashlib.sha256(json.dumps(records, separators=(',', ':')).encode()).hexdigest()
+    return digest
+
+
+def persist_native_runtime(bundle, managed):
+    """Persist the complete standalone runtime before the CLI deletes its download."""
+    bundle = Path(bundle).resolve()
+    digest = native_bundle_inventory(bundle)
+    parent = managed / 'runtime'
+    destination = parent / digest
+    if destination.exists():
+        if native_bundle_inventory(destination) != digest:
+            raise ConnectError('Installed native runtime is damaged; original configuration was preserved')
+        return destination / 'connect', False
+    parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='.native-runtime-', dir=parent) as temporary:
+        staged = Path(temporary) / 'connect'
+        shutil.copytree(bundle, staged)
+        if native_bundle_inventory(staged) != digest:
+            raise ConnectError('Native runtime changed while copying; original configuration was preserved')
+        os.replace(staged, destination)
+    return destination / 'connect', True
+
+
+def native_runtime_valid(runtime, digest, managed):
+    try:
+        runtime = Path(runtime)
+        expected = managed / 'runtime' / digest / 'connect'
+        return (re.fullmatch(r'[a-f0-9]{64}', digest) is not None and runtime == expected
+                and runtime.resolve() == expected.absolute()
+                and native_bundle_inventory(runtime.parent) == digest)
+    except (OSError, ValueError, TypeError, ConnectError):
+        return False
+
+
+def native_bundle_root():
+    # Nuitka makes argv[0] absolute for standalone executables. containing_dir
+    # may name the distribution's parent when folder and binary share a name.
+    # Never derive the bundle from cwd or an installed client Python.
+    return Path(sys.argv[0]).resolve().parent
+
+
+def register_native(args, plugin, root, installed, managed, support, token, tx, config, runtime=None):
+    agent = plugin["key"]
+    env = native_env(agent, root)
+    ingest = managed / "ingest.json"
+    if plugin.get("binary"):
+        if NATIVE_BUILD:
+            if runtime is None:
+                raise ConnectError('Native runtime must be persisted before hook registration')
+            command = [str(runtime), '--hook-runtime', '--config', str(ingest), '--binary', str(installed)]
+        else:
+            command = [sys.executable, str(managed / "hook_runtime.py"), "--config", str(ingest), "--binary", str(installed)]
+        command = subprocess.list2cmdline(command) if os.name == "nt" else shlex.join(command)
+        if agent == "kimi":
+            path = root / "config.toml"
+            tx.write(path, config.kimi_hooks(path.read_text() if path.exists() else "", command,
+                                            include_interrupt=kimi_code_host(plugin.get('host_version', ''))))
+        else:
+            if agent == "codex":
+                features = run([plugin["host"], "features", "list"], env)
+                names = {line.split()[0] for line in features.splitlines() if line.split()}
+                feature = "hooks" if "hooks" in names else "codex_hooks" if "codex_hooks" in names else None
+                if not feature:
+                    raise ConnectError("This Codex version does not expose native hooks; update Codex before installing")
+                path = root / "config.toml"
+                tx.write(path, config.enable_feature(path.read_text() if path.exists() else "", feature))
+            path = root / ("hooks.json" if agent == "codex" else "settings.json")
+            events = ["UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop", "SessionEnd"]
+            tx.json(path, config.merge_hooks(config.read_object(path), command, plugin["binary"], events))
+    elif agent == "opencode":
+        path = Path(os.environ.get("OPENCODE_CONFIG", str(root / "opencode.json"))).expanduser() if not args.config_dir else root / "opencode.json"
+        tx.watch(path)
+        run(["node", str(support / "register-opencode.mjs"), "--profile", "production", "--config", str(path), "--entry", str(installed / "dist/index.js")], env)
+        settings = root / "observ-opencode.json"
+        tx.json(settings, plugin_config(config.read_object(settings), ingest, token, args.collection_mode))
+    elif agent == "openclaw":
+        path = Path(os.environ.get("OPENCLAW_CONFIG_PATH", str(root / "openclaw.json"))).expanduser() if not args.config_dir else root / "openclaw.json"
+        doc = config.read_object(path)
+        plugins = doc.setdefault("plugins", {})
+        load = plugins.setdefault("load", {})
+        paths = load.setdefault("paths", [])
+        if not isinstance(paths, list):
+            raise ConnectError("OpenClaw plugins.load.paths must be an array")
+        # Native load paths support local extension packages directly.
+        paths[:] = [p for p in paths if not str(p).startswith(str(managed / "versions") + os.sep)]
+        paths.append(str(installed))
+        identifier = json.loads((installed / 'openclaw.plugin.json').read_text())['id']
+        entry = plugins.setdefault("entries", {}).setdefault(identifier, {})
+        hooks = entry.setdefault('hooks', {})
+        if not isinstance(hooks, dict) or hooks.get('allowConversationAccess', True) is not True:
+            raise ConnectError(f'OpenClaw plugins.entries.{identifier}.hooks.allowConversationAccess must be true for tracing; '
+                               'an explicit denial was preserved. Grant this permission and retry connect')
+        # External plugins cannot receive the turn-start/input/end hooks without
+        # this host permission, even when collectionMode redacts exported content.
+        hooks['allowConversationAccess'] = True
+        entry["enabled"] = True
+        entry["config"] = plugin_config(entry.get("config", {}), ingest, token, args.collection_mode)
+        allow = plugins.get("allow")
+        if isinstance(allow, list) and identifier not in allow:
+            allow.append(identifier)
+        tx.json(path, doc)
+    elif agent == "pi":
+        path = root / "settings.json"
+        doc = config.read_object(path)
+        packages = doc.get('packages', [])
+        doc['packages'] = [p for p in packages if not ((source := pi_package_path(p, root)) is not None
+                           and source.is_relative_to((managed / 'versions').resolve()))]
+        tx.json(path, doc)
+        # Use Pi's own package manager, as in the existing production Makefile.
+        run([plugin["host"], "install", str(installed)], env)
+        path = root / "observ-pi.json"
+        tx.watch(path)
+        base = token['endpoint'].rstrip('/').removesuffix('/v1/traces')
+        run(["node", str(support / "configure-pi.mjs"), str(path), base+'/v1/traces', base+'/v1/metrics', base+'/v1/logs'], env)
+        tx.json(path, plugin_config(config.read_object(path), ingest, token, args.collection_mode))
+    elif agent == "dsh":
+        settings = managed / "observ-dsh.json"
+        tx.json(settings, plugin_config(config.read_object(settings), ingest, token, args.collection_mode))
+        for profile in args.profiles.split(','):
+            if not re.fullmatch(r'[a-zA-Z0-9_-]+', profile):
+                raise ConnectError("Invalid dsh profile name")
+            profile_dir = root / "profiles" / profile
+            for name in ('cordis.patch.yml', 'package.json', 'package-lock.json', 'cordis.yml'):
+                tx.watch(profile_dir / name)
+            run([plugin["host"], "plugin", "--profile", profile, "add", str(installed)], env)
+            run(["node", str(support / "register-dsh.mjs"), "--profile", profile,
+                 "--config-src", str(settings), "--config-file", str(settings), "--state-dir", str(root)], env)
+
+
+def preflight(args):
+    agent = ALIASES.get(args.agent, args.agent)
+    base = validate_url(args.base_url)
+    catalog = request_data(base + "/api/public/onboarding/catalog.json")
+    entry = next((x for x in catalog["agents"] if x["key"] == agent), None)
+    if entry is None:
+        raise ConnectError("Unknown Agent; use --list-agents")
+    plugin = entry['plugin']
+    if agent == 'kimi':
+        host = shutil.which(plugin['host'])
+        if not host:
+            raise ConnectError(f"Install and configure {plugin['name']} first ({plugin['host']} not found)")
+        plugin = {**plugin, 'host': host, 'host_version': kimi_host_version(host)}
+    root = Path(args.config_dir).expanduser().resolve() if args.config_dir else host_directory(agent, plugin.get('host_version'))
+    item = platform_download(entry["downloads"])
+    requested = getattr(args, 'collection_mode', None)
+    mode, source = (parse_collection_mode(requested), 'argument') if requested is not None else saved_collection_mode(agent, root, args)
+    override = collection_mode_environment(agent)
+    supported = item.get('collection_modes', ['full'])
+    if mode not in supported or (override and override['mode'] not in supported):
+        raise ConnectError('This plugin artifact does not support the requested collection mode; update the deployment image and plugin artifacts')
+    args.collection_mode, args.collection_mode_source = mode, source
+    host = shutil.which(plugin['host'])
+    if not host:
+        raise ConnectError(f"Install and configure {plugin['name']} first ({plugin['host']} not found)")
+    # Run exactly the executable we checked; PATH lookup may otherwise fall
+    # through an invalid launcher to a different installed host version.
+    plugin = {**plugin, 'host': host}
+    if not plugin.get('binary') and not shutil.which('node'):
+        raise ConnectError("Node.js is required by this plugin")
+    if agent == 'dsh' and any(not re.fullmatch(r'[a-zA-Z0-9_-]+', p) for p in args.profiles.split(',')):
+        raise ConnectError('Invalid dsh profile name')
+    return agent, base, catalog, entry, plugin, root, item
+
+
+def install(args):
+    if not getattr(args, 'dry_run', False):
+        try:
+            args.agent_uuid = str(UUID(args.agent_uuid or ""))
+        except ValueError:
+            raise ConnectError("--agent-uuid must be a real UUID; use aiv connect <agent> to register automatically or generate the installation command in the Agent market") from None
+    agent, base, catalog, entry, plugin, root, item = preflight(args)
+    if args.dry_run:
+        result = {'agent': agent, 'agent_product': plugin['product'], 'version': entry['version'],
+                  'collection_mode': args.collection_mode, 'collection_mode_source': args.collection_mode_source,
+                  'collection_mode_environment': collection_mode_environment(agent),
+                  'config_dir': str(root), 'platform': item['platform'], 'arch': item['arch'], 'ready': True}
+        if getattr(args, 'format', 'text') == 'json':
+            print(json.dumps(result))
+        else:
+            print(f"Would install {plugin['name']} {entry['version']} to {root}; collection mode: {args.collection_mode} ({args.collection_mode_source}); no credentials exchanged or files modified")
+        return
+    env = native_env(agent, root)
+    version = [plugin['host_version']] if agent == 'kimi' else run([plugin['host'], '--version'], env).strip().splitlines()
+    if not version:
+        raise ConnectError("Host version check failed")
+    managed = root / 'aivision' / agent
+    token, authorization = install_authorization(args, base, managed)
+    key = authorization.get('agent_credential') or authorization['space_key']
+    if args.space_id and token['space_id'] != args.space_id:
+        raise ConnectError("Installation authorization belongs to a different space")
+    if token.get('agent_uuid') != args.agent_uuid:
+        raise ConnectError("Ingest token belongs to a different Agent")
+    validate_url(token['endpoint'])
+    if token.get("agent_product") != plugin["product"]:
+        raise ConnectError("Agent UUID belongs to a different Agent product")
+    token['product'] = token["agent_product"]
+    managed.mkdir(parents=True, exist_ok=True)
+    ingest_config = {'base_url':base, **authorization, 'space_id':token['space_id'],
+                     'agent_uuid':token['agent_uuid'], 'endpoint':token['endpoint'], 'agent':agent,
+                     'product':token['agent_product'], 'config_dir':str(root), 'collection_mode': args.collection_mode}
+    if authorization.get('agent_credential'):
+        save_installation_authorization(managed / 'pending-installation.json', ingest_config)
+    version_root = managed / 'versions' / (entry['version'] + '-' + item['sha256'][:12])
+    version_dir = version_root / plugin.get('package', 'hooks')
+    created = not version_dir.exists()
+    native_runtime = None
+    native_runtime_created = False
+    try:
+        with tempfile.TemporaryDirectory(prefix='aivision-install-') as temp:
+            support = Path(temp)
+            required = ([] if NATIVE_BUILD else ['native_config.py']) + (([] if NATIVE_BUILD else ['hook_runtime.py']) if plugin.get('binary') else {'opencode':['register-opencode.mjs'], 'pi':['configure-pi.mjs'], 'dsh':['register-dsh.mjs'], 'openclaw':[]}[agent])
+            for name in required:
+                info = next((s for s in catalog['support_files'] if s['name'] == name), None)
+                if info is None:
+                    raise ConnectError(f'Missing installer support file: {name}')
+                download(info, support / name, base)
+            if NATIVE_BUILD:
+                import native_config as config
+            else:
+                spec = importlib.util.spec_from_file_location('aivision_native_config', support / 'native_config.py')
+                config = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(config)
+            artifact = download(item, support / 'artifact', base)
+            if created:
+                version_dir.parent.mkdir(parents=True, exist_ok=True)
+                with tempfile.TemporaryDirectory(dir=version_dir.parent) as staged:
+                    staged = Path(staged)
+                    if plugin.get('binary'):
+                        extracted = staged / 'contents'
+                        extracted.mkdir()
+                        shutil.copyfile(artifact, extracted / item['target_filename'])
+                        os.chmod(extracted / item['target_filename'], 0o755)
+                    else:
+                        extracted = unpack_package(artifact, staged)
+                    os.replace(extracted, version_dir)
+            installed = version_dir / item['target_filename'] if plugin.get('binary') else version_dir
+            if plugin.get('binary'):
+                if hashlib.sha256(installed.read_bytes()).hexdigest() != item['sha256']:
+                    raise ConnectError('Installed hook checksum mismatch; runtime check was not attempted')
+                check_binary_runtime(installed)
+                if NATIVE_BUILD:
+                    native_runtime, native_runtime_created = persist_native_runtime(native_bundle_root(), managed)
+            with config.ConfigTransaction() as tx:
+                tx.json(managed / 'ingest.json', ingest_config, private=True)
+                token['valid_until'] = time.time() + token['expires_in']
+                tx.json(managed / 'ingest-token.json', token, private=True)
+                if plugin.get('binary'):
+                    if NATIVE_BUILD:
+                        for legacy in [managed / 'hook_runtime.py', managed / 'hook_runtime.py.aivision-backup', *list((managed / '__pycache__').glob('hook_runtime.*.pyc'))]:
+                            tx.remove(legacy)
+                    else:
+                        tx.write(managed / 'hook_runtime.py', (support / 'hook_runtime.py').read_text(), private=True)
+                register_native(args, plugin, root, installed, managed, support, token, tx, config, runtime=native_runtime)
+                registration_files = {}
+                if agent == 'dsh':
+                    for profile in args.profiles.split(','):
+                        for name in ('cordis.patch.yml', 'package.json', 'cordis.yml'):
+                            path = root / 'profiles' / profile / name
+                            if path.is_file():
+                                registration_files[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+                tx.json(managed / 'installation.json', {'agent':agent, 'version':entry['version'], 'sha256':item['sha256'],
+                        'host_version': version[0], 'installed_path': str(installed), 'profiles': getattr(args, 'profiles', 'tui,web'),
+                        'registration_files': registration_files,
+                        **({'runtime_format': 'native-tar-v1', 'runtime_path': str(native_runtime), 'runtime_sha256': native_runtime.parent.name} if native_runtime else {})})
+                # A mint/refresh only authorizes ingestion. Confirm installation
+                # after native registration, inside the local rollback boundary.
+                confirmation = request_data(
+                    base + f"/openapi/v1/agents/{args.agent_uuid}/installation-complete",
+                    {}, {"Authorization": f"Bearer {key}"},
+                )
+                if (confirmation.get('agent_uuid') != args.agent_uuid
+                        or confirmation.get('space_id') != token['space_id']
+                        or confirmation.get('status') != 1):
+                    raise ConnectError("Installation confirmation failed; original configuration was restored")
+    except BaseException:
+        if native_runtime_created and native_runtime is not None:
+            shutil.rmtree(native_runtime.parent, ignore_errors=True)
+        if created and version_root.exists():
+            shutil.rmtree(version_root)
+        raise
+    (managed / 'pending-installation.json').unlink(missing_ok=True)
+    print(f"{plugin['name']} telemetry plugin installed. Config directory: {root}")
+    print(f'Saved collection mode: {args.collection_mode}. Restart the host and start a new session to apply it; existing sessions and historical data are unchanged.')
+    override = collection_mode_environment(agent)
+    if override:
+        print(f"Current process environment override: {override['mode']} ({override['source']}); the host may have a different environment.")
+    if agent == 'codex':
+        print('Restart Codex and use /hooks to review and trust the new AI Vision hooks; untrusted hooks will not run.')
+    print(f'Restart the Agent and run a real task, then use aiv agent status {agent} or aiv query trace list to check reported data.')
+    print('Enabling or installing the plugin does not confirm that telemetry has been received.')
+
+
+def read_json(path):
+    value = json.loads(path.read_text())
+    if not isinstance(value, dict):
+        raise ValueError('Expected JSON object')
+    return value
+
+
+def pi_package_path(package, root):
+    """Pi persists local package sources relative to its settings directory."""
+    source = package.get('source') if isinstance(package, dict) else package
+    if not isinstance(source, str) or not source:
+        return None
+    path = Path(source).expanduser()
+    # Absolute Windows drive paths are local sources, not URL schemes.
+    if not path.is_absolute() and re.match(r'^[a-zA-Z][a-zA-Z0-9+.-]*:', source):
+        return None
+    return (path if path.is_absolute() else root / path).resolve()
+
+
+def native_registered(agent, root, installed, managed, args, installation):
+    """Read native registration without executing the host or modifying it."""
+    import tomllib
+    native_runtime = installation.get('runtime_path') if installation.get('runtime_format') == 'native-tar-v1' else None
+    def is_hook(command):
+        if native_runtime and os.name == 'nt':
+            # Match the managed command emitted by register_native. POSIX shlex
+            # consumes unquoted Windows path backslashes as escape characters.
+            expected = [native_runtime, '--hook-runtime', '--config', str(managed / 'ingest.json'), '--binary', str(installed)]
+            return command == subprocess.list2cmdline(expected)
+        parts = shlex.split(command)
+        if native_runtime:
+            return parts == [native_runtime, '--hook-runtime', '--config', str(managed / 'ingest.json'), '--binary', str(installed)]
+        return str(installed) in parts and str(managed / 'ingest.json') in parts and str(managed / 'hook_runtime.py') in parts
+
+    if agent in ('codex', 'claude-code', 'kimi'):
+        if native_runtime:
+            if not native_runtime_valid(native_runtime, installation.get('runtime_sha256'), managed):
+                return False
+        elif not (managed / 'hook_runtime.py').is_file():
+            return False
+        if not os.access(installed, os.X_OK):
+            return False
+        if agent == 'kimi':
+            hooks = tomllib.loads((root / 'config.toml').read_text()).get('hooks', [])
+            events = ('Stop', 'StopFailure', 'Interrupt') if kimi_code_host(installation.get('host_version', '')) else ('Stop', 'StopFailure')
+            return all(any(h.get('event') == event and is_hook(h.get('command', '')) for h in hooks) for event in events)
+        if agent == 'codex':
+            features = tomllib.loads((root / 'config.toml').read_text()).get('features', {})
+            if not (features.get('hooks') is True or features.get('codex_hooks') is True):
+                return False
+        doc = read_json(root / ('hooks.json' if agent == 'codex' else 'settings.json'))
+        if doc.get('disableAllHooks') is True:
+            return False
+        hooks = doc.get('hooks', {})
+        return all(any(is_hook(h.get('command', '')) for entry in hooks.get(event, []) for h in entry.get('hooks', []))
+                   for event in ('UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop', 'SessionEnd'))
+
+    def telemetry_enabled(doc):
+        return doc.get('enableTelemetry') is True and doc.get('ingestConfig') == str(managed / 'ingest.json')
+
+    if agent == 'opencode':
+        path = Path(os.environ.get('OPENCODE_CONFIG', str(root / 'opencode.json'))).expanduser() if not args.config_dir else root / 'opencode.json'
+        doc = read_json(path)
+        entries = doc.get('plugin', [])
+        registered = any((x[0] if isinstance(x, list) and x else x) in (str(installed / 'dist/index.js'), (installed / 'dist/index.js').as_uri()) for x in entries)
+        return registered and telemetry_enabled(read_json(root / 'observ-opencode.json'))
+    if agent == 'openclaw':
+        path = Path(os.environ.get('OPENCLAW_CONFIG_PATH', str(root / 'openclaw.json'))).expanduser() if not args.config_dir else root / 'openclaw.json'
+        plugins = read_json(path).get('plugins', {})
+        identifier = read_json(installed / 'openclaw.plugin.json')['id']
+        entry = plugins.get('entries', {}).get(identifier, {})
+        allowed = plugins.get('allow')
+        return (plugins.get('enabled', True) is not False and str(installed) in plugins.get('load', {}).get('paths', [])
+                and (not isinstance(allowed, list) or identifier in allowed)
+                and entry.get('hooks', {}).get('allowConversationAccess') is True
+                and entry.get('enabled') is True and telemetry_enabled(entry.get('config', {})))
+    if agent == 'pi':
+        packages = read_json(root / 'settings.json').get('packages', [])
+        return any(pi_package_path(x, root) == installed.resolve() for x in packages) and telemetry_enabled(read_json(root / 'observ-pi.json'))
+    if agent == 'dsh':
+        files = installation.get('registration_files', {})
+        if not files:
+            return None
+        if not telemetry_enabled(read_json(managed / 'observ-dsh.json')):
+            return False
+        # Verify the exact native state successfully written by the installer.
+        # A user-edited YAML file is reported as unverified, never guessed at.
+        for name, digest in files.items():
+            path = Path(name)
+            if not path.is_relative_to(root) or not path.is_file():
+                return False
+            if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                return None
+        return True
+    return False
+
+
+def installation_status(args):
+    agent = ALIASES.get(args.agent, args.agent)
+    if agent not in ('codex', 'claude-code', 'kimi', 'opencode', 'openclaw', 'pi', 'dsh'):
+        raise ConnectError('Unknown Agent; use --list-agents')
+    root = Path(args.config_dir).expanduser().resolve() if args.config_dir else host_directory(agent)
+    managed = root / 'aivision' / agent
+    result = {'agent': agent, 'config_dir': str(root), 'installed': False, 'registration': 'missing',
+              'credential': 'missing', 'issues': [], 'collection_mode': 'unknown',
+              'collection_mode_source': 'unknown', 'collection_mode_environment': None}
+    try:
+        result['collection_mode'], result['collection_mode_source'] = saved_collection_mode(agent, root, args)
+        result['collection_mode_environment'] = collection_mode_environment(agent)
+    except ConnectError as exc:
+        result['collection_mode'] = 'unknown'
+        result['issues'].append(str(exc))
+    try:
+        installation = read_json(managed / 'installation.json')
+        installed = Path(installation['installed_path'])
+        if agent in ('codex', 'claude-code', 'kimi'):
+            artifact_ok = installed.is_file()
+            if artifact_ok and installation.get('sha256'):
+                artifact_ok = hashlib.sha256(installed.read_bytes()).hexdigest() == installation['sha256']
+        else:
+            artifact_ok = (installed / 'package.json').is_file() and (installed / 'dist/index.js').is_file()
+        result['installed'] = artifact_ok and installation.get('agent') == agent
+        if not result['installed']:
+            result['issues'].append('Installed plugin artifact is missing or damaged')
+        elif agent in ('codex', 'claude-code', 'kimi'):
+            try:
+                check_binary_runtime(installed)
+            except ConnectError as exc:
+                result['installed'] = False
+                result['issues'].append(str(exc))
+        result['version'] = installation.get('version')
+        registration_record = installation
+        if agent == 'kimi' and (host := shutil.which('kimi')):
+            try:
+                # A shared/explicit directory can outlive a host upgrade.
+                # Requirements come from the current CLI, not the old receipt.
+                registration_record = {**installation, 'host_version': kimi_host_version(host)}
+            except ConnectError as exc:
+                result['issues'].append(str(exc))
+                registration_record = None
+        registration = (native_registered(agent, root, installed, managed, args, registration_record)
+                        if registration_record is not None else None)
+        result['registration'] = 'verified' if registration else 'missing' if registration is False else 'unverified'
+        if agent == 'openclaw' and registration is False:
+            path = Path(os.environ.get('OPENCLAW_CONFIG_PATH', str(root / 'openclaw.json'))).expanduser() if not args.config_dir else root / 'openclaw.json'
+            identifier = read_json(installed / 'openclaw.plugin.json')['id']
+            entry = read_json(path).get('plugins', {}).get('entries', {}).get(identifier, {})
+            if entry.get('hooks', {}).get('allowConversationAccess') is not True:
+                result['issues'].append(f'OpenClaw requires plugins.entries.{identifier}.hooks.allowConversationAccess=true; '
+                                        'run connect again, or grant the permission first if explicitly denied')
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        result['issues'].append('Installation record, artifact or native configuration is missing or invalid')
+        result['registration'] = 'unverified'
+    try:
+        saved = read_json(managed / 'ingest.json')
+        result.update({key: saved.get(key, '') for key in ('space_id', 'agent_uuid', 'base_url')})
+        result['agent_product'] = saved.get('product', '')
+        base = validate_url(saved['base_url'])
+        # Downloaded scripts replace DEFAULT_BASE_URL with a real origin; that
+        # default is still an expected scope, not permission to use any saved origin.
+        expected_base = args.base_url
+        if not expected_base or expected_base.startswith('__AIVISION_'):
+            expected_base = base
+        if (base != validate_url(expected_base) or (args.space_id and args.space_id != saved['space_id'])
+                or (args.agent_uuid and args.agent_uuid != saved['agent_uuid']) or saved.get('agent') != agent):
+            result['credential'] = 'scope_mismatch'
+        else:
+            credential = saved.get('agent_credential') or saved.get('space_key')
+            if credential:
+                result['credential'] = 'unverified'
+                token = request_data(base + '/openapi/v1/ingest-tokens', {'agent_uuid': saved['agent_uuid']},
+                                     {'Authorization': 'Bearer ' + credential})
+                if (token.get('space_id'), token.get('agent_uuid'), token.get('agent_product')) != (saved['space_id'], saved['agent_uuid'], saved['product']):
+                    result['credential'] = 'scope_mismatch'
+                else:
+                    result['credential'] = 'valid'
+    except ConnectError as exc:
+        result['credential'] = 'invalid' if exc.status in (401, 403) else 'unverified'
+        result['issues'].append(str(exc))
+    except (OSError, ValueError, KeyError, TypeError):
+        result['issues'].append('Ingest configuration is missing or invalid')
+    # Deliberately return no keys/tokens, and do not cache the validation token.
+    return result
+
+
+def main():
+    if NATIVE_BUILD and sys.argv[1:2] == ['--hook-runtime']:
+        import hook_runtime
+        del sys.argv[1]
+        return hook_runtime.main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--agent', default=os.environ.get('AIVISION_AGENT', DEFAULT_AGENT))
+    parser.add_argument('--base-url', default=os.environ.get('AIVISION_BASE_URL', DEFAULT_BASE_URL))
+    parser.add_argument('--space-key')
+    parser.add_argument('--space-key-file')
+    parser.add_argument('--installation-token', help='One-use authorization from aiv connect or the Agent market')
+    parser.add_argument('--space-id', help='Expected space ID')
+    parser.add_argument('--agent-uuid', help='Agent UUID provisioned in the selected Space')
+    parser.add_argument('--config-dir', help='Native Agent configuration directory')
+    parser.add_argument('--collection-mode', help='full|privacy (default: preserve saved mode, or full on first install)')
+    parser.add_argument('--profiles', default='tui,web', help='dsh profiles, comma separated')
+    parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--status', action='store_true', help='Check native installation and credentials without emitting telemetry')
+    parser.add_argument('--format', choices=('text', 'json'), default='text')
+    parser.add_argument('--list-agents', action='store_true')
+    args = parser.parse_args()
+    if args.list_agents:
+        print('claude-code, codex, kimi, opencode, openclaw, pi, dsh')
+        return 0
+    try:
+        if sys.version_info < (3, 11):
+            executable = compatible_python()
+            print(f'Using Python 3.11+: {executable}', flush=True)
+            os.execv(executable, [executable, str(Path(__file__).resolve()), *sys.argv[1:]])
+        if args.status:
+            result = installation_status(args)
+            print(json.dumps(result, ensure_ascii=False) if args.format == 'json' else json.dumps(result, ensure_ascii=False, indent=2))
+        else:
+            install(args)
+    except (ConnectError, ValueError, OSError, KeyError) as exc:
+        # Never dump response/config objects, which can contain credentials.
+        message = str(exc) if isinstance(exc, ConnectError) else f'Invalid configuration or filesystem error ({type(exc).__name__}); original config preserved'
+        print(f'Installation failed: {message}', file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

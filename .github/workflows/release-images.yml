@@ -1,0 +1,684 @@
+name: Release images
+
+# Source checks, candidate read-back and an artifact deployment smoke must
+# pass before aliases change. Public releases qualify four native service
+# images and an exact data-backend mirror of the selected SigNoz index.
+# The legacy nightly schedule is paused while portable candidate CI is rebuilt.
+# Explicit manual/tag publication remains a separate operation.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Explicitly publish this run after qualification; false only creates a reviewable candidate
+        type: boolean
+        required: false
+        default: false
+      tag:
+        description: dev/daily from the default branch, or a unique trial alias from another branch
+        type: string
+        required: true
+        default: dev
+      signoz_image:
+        description: External SigNoz image@sha256 digest; otherwise use AIVISION_SIGNOZ_IMAGE
+        type: string
+        required: false
+      reuse_release:
+        description: Prior versioned published Release for unchanged images; default is the latest published versioned Release
+        type: string
+        required: false
+      force_rebuild:
+        description: Rebuild all owned images, including unchanged contexts, to refresh base images or build dependencies
+        type: boolean
+        default: false
+      snapshot_date:
+        description: Snapshot day YYYYMMDD; blank uses this original workflow run's date in Asia/Shanghai, including reruns
+        type: string
+        required: false
+      daily_revision:
+        description: Accepted Daily version for this snapshot day; 1 omits the suffix, 2 appends .2; reruns keep the same value
+        type: string
+        default: '1'
+      candidate_channel:
+        description: Product candidate channel; auto keeps the selected rolling alias or uses dev for a unique trial alias
+        type: choice
+        options: [auto, daily, dev]
+        default: auto
+
+# Serializes this workflow's alias writers. Registry updates are not transactional.
+concurrency:
+  group: release-images
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  prepare:
+    if: github.repository == 'antgroup/ai-vision'
+    name: resolve exact source and external dependency
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    outputs:
+      image_repositories: ${{ steps.images.outputs.image_repositories }}
+      product_version: ${{ steps.plan.outputs.product_version }}
+      run_number: ${{ steps.plan.outputs.run_number }}
+      snapshot_date: ${{ steps.plan.outputs.snapshot_date }}
+      daily_revision: ${{ steps.plan.outputs.daily_revision }}
+      channel: ${{ steps.plan.outputs.channel }}
+      candidate_tag: ${{ steps.plan.outputs.candidate_tag }}
+      tier: ${{ steps.plan.outputs.tier }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - id: plan
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_SNAPSHOT_DATE: ${{ inputs.snapshot_date }}
+          INPUT_DAILY_REVISION: ${{ inputs.daily_revision }}
+          INPUT_CANDIDATE_CHANNEL: ${{ inputs.candidate_channel }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if [[ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')" != public ]]; then
+            echo '::error::The image workflow requires a public product repository.'
+            exit 1
+          fi
+          if [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" && "$GITHUB_REF" != refs/tags/v* ]] &&
+             [[ "$GITHUB_EVENT_NAME" != workflow_dispatch || "$PUBLISH" != false ]]; then
+            echo '::error::A public trial branch requires a manual candidate-only run with publish=false.'
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/release-plan"
+          RELEASE_CREATED_AT="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at')"
+          export RELEASE_CREATED_AT
+          python3 scripts/ci/release_plan.py plan --file "$RUNNER_TEMP/release-plan/release-plan.json"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            git merge-base --is-ancestor "$GITHUB_SHA" "origin/$DEFAULT_BRANCH"
+          fi
+      - id: images
+        run: |
+          image_repositories=$(python3 scripts/ci/public_registry.py repositories)
+          echo "image_repositories=$image_repositories" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pin SigNoz before building any product artifact
+        env:
+          EXPLICIT_SIGNOZ: ${{ inputs.signoz_image || vars.AIVISION_SIGNOZ_IMAGE }}
+        run: |
+          set -euo pipefail
+          ref="$EXPLICIT_SIGNOZ"
+          if [[ ! "$ref" =~ ^ghcr\.io/ob-labs/signoz-ob@sha256:[a-f0-9]{64}$ ]]; then
+            echo '::error::Set AIVISION_SIGNOZ_IMAGE or signoz_image to an explicit ghcr.io/ob-labs/signoz-ob@sha256 digest.'
+            exit 1
+          fi
+          manifest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}')
+          printf '%s\n' "$manifest" > "$RUNNER_TEMP/signoz-manifest.json"
+          python3 scripts/ci/release_plan.py platforms --file "$RUNNER_TEMP/signoz-manifest.json"
+          digest=$(jq -er '.digest | select(test("^sha256:[a-f0-9]{64}$"))' <<< "$manifest")
+          test "$digest" = "${ref#*@}"
+          image="${ref%@*}"
+          if [[ "$image" == *:* ]]; then image="${image%:*}"; fi
+          printf '%s@%s\n' "$image" "$digest" > "$RUNNER_TEMP/release-plan/signoz-image.txt"
+          python3 scripts/ci/release_plan.py digest --file "$RUNNER_TEMP/release-plan/signoz-image.txt"
+      - name: Plan unchanged component reuse from a verified published Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REUSE_RELEASE: ${{ inputs.reuse_release }}
+          FORCE_REBUILD: ${{ inputs.force_rebuild }}
+        run: |
+          set -euo pipefail
+          args=()
+          if [[ "$FORCE_REBUILD" == true ]]; then args+=(--force); fi
+          python3 scripts/ci/release_reuse.py prepare --directory "$RUNNER_TEMP/release-plan" --release "$REUSE_RELEASE" "${args[@]}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-plan-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-plan/
+          if-no-files-found: error
+          retention-days: 14
+
+  plugins:
+    needs: [prepare]
+    uses: ./.github/workflows/release-plugins.yml
+    permissions:
+      contents: read
+
+  cli:
+    needs: [prepare, plugins]
+    uses: ./.github/workflows/release-cli.yml
+    with:
+      plugin_dist: true
+      product_version: ${{ needs.prepare.outputs.product_version }}
+      run_number: ${{ needs.prepare.outputs.run_number }}
+      channel: ${{ needs.prepare.outputs.channel }}
+      snapshot_date: ${{ needs.prepare.outputs.snapshot_date }}
+      daily_revision: ${{ needs.prepare.outputs.daily_revision }}
+    permissions:
+      contents: read
+
+  public-data-backend:
+    name: mirror the reviewed public data-backend candidate
+    needs: [prepare]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-plan-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-plan
+      - name: Install the pinned regctl release tool
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          bin="$RUNNER_TEMP/release-tools"
+          mkdir -p "$bin"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --retry 3 \
+            https://github.com/regclient/regclient/releases/download/v0.11.3/regctl-linux-amd64 \
+            --output "$bin/regctl"
+          printf '%s  %s\n' ac9223101f1fad7beda29c4236d5119d72561a7258f0fd77ce4805bf6d86ab32 "$bin/regctl" | sha256sum --check
+          chmod 0755 "$bin/regctl"
+          echo "$bin" >> "$GITHUB_PATH"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Copy and read back the exact upstream OCI index
+        run: |
+          python3 scripts/ci/public_registry.py mirror \
+            --upstream-file "$RUNNER_TEMP/release-plan/signoz-image.txt" \
+            --output "$RUNNER_TEMP/data-backend-mirror.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: data-backend-mirror-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/data-backend-mirror.json
+          if-no-files-found: error
+          retention-days: 14
+
+  build:
+    name: candidate ${{ matrix.image }} ${{ matrix.arch }}
+    needs: [prepare, plugins]
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE_REPOSITORY: ${{ fromJSON(needs.prepare.outputs.image_repositories)[matrix.image] }}
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        image: [aivision-be, aivision-fe, antcollector-gw, agentlens]
+        arch: [amd64, arm64]
+        include:
+          - image: aivision-be
+            context: ai-vision
+            file: ai-vision/aivision-py-be/Dockerfile
+          - image: aivision-fe
+            context: ai-vision/vfe
+            file: ai-vision/vfe/Dockerfile
+          - image: antcollector-gw
+            context: antcollector
+            file: antcollector/Dockerfile
+          - image: agentlens
+            context: agentlens
+            file: agentlens/docker/Dockerfile.selfhost
+          - arch: amd64
+            runner: ubuntu-22.04
+          - arch: arm64
+            runner: ubuntu-22.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-plan-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-plan
+      - name: Read the shared actual component build identity
+        id: identity
+        env:
+          COMPONENT: ${{ matrix.image }}
+        run: |
+          set -euo pipefail
+          identity=$(jq -c --arg image "$COMPONENT" '.[$image].identity' "$RUNNER_TEMP/release-plan/component-plan.json" | base64 -w0)
+          echo "base64=$identity" >> "$GITHUB_OUTPUT"
+          echo "reuse=$(jq -r --arg image "$COMPONENT" '.[$image].ref // empty' "$RUNNER_TEMP/release-plan/component-plan.json")" >> "$GITHUB_OUTPUT"
+      - if: matrix.image == 'aivision-be' && steps.identity.outputs.reuse == ''
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-dist-${{ github.run_attempt }}
+          path: ai-vision/agent-plugins/dist
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify both native children of an unchanged published image
+        if: steps.identity.outputs.reuse != ''
+        id: reuse
+        env:
+          IMAGE: ${{ matrix.image }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          digest=$(python3 scripts/ci/release_reuse.py native --directory "$RUNNER_TEMP/release-plan" --component "$IMAGE" --arch "$ARCH")
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      - id: build
+        if: steps.identity.outputs.reuse == ''
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.file }}
+          platforms: linux/${{ matrix.arch }}
+          build-args: |
+            AIVISION_BUILD_INFO_BASE64=${{ steps.identity.outputs.base64 }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.product_version }}
+            io.aivision.build-id=${{ github.run_id }}.${{ github.run_attempt }}
+          outputs: type=image,name=${{ env.IMAGE_REPOSITORY }},push-by-digest=true,name-canonical=true,push=true
+          cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
+          cache-to: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }},mode=max
+      - name: Read identity back from the native candidate image
+        if: steps.identity.outputs.reuse == ''
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          IDENTITY: ${{ steps.identity.outputs.base64 }}
+          ARCH: ${{ matrix.arch }}
+        run: python3 scripts/ci/release_image.py --ref "$IMAGE_REPOSITORY@$DIGEST" --arch "$ARCH" --identity "$IDENTITY"
+      - name: Export verified native digest and actual build identity
+        env:
+          DIGEST: ${{ steps.build.outputs.digest || steps.reuse.outputs.digest }}
+          IDENTITY: ${{ steps.identity.outputs.base64 }}
+          IMAGE: ${{ matrix.image }}
+        run: |
+          set -euo pipefail
+          [[ "$DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+          printf '%s' "$IDENTITY" | base64 -d > "$RUNNER_TEMP/digests/$IMAGE.build-info.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ github.run_attempt }}-${{ matrix.image }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 14
+
+  manifest:
+    name: candidate manifest ${{ matrix.image }}
+    needs: [prepare, build]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE_REPOSITORY: ${{ fromJSON(needs.prepare.outputs.image_repositories)[matrix.image] }}
+      CANDIDATE_TAG: ${{ needs.prepare.outputs.candidate_tag }}
+      IMAGE: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [aivision-be, aivision-fe, antcollector-gw, agentlens]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: digests-${{ github.run_attempt }}-${{ matrix.image }}-*
+          path: ${{ runner.temp }}/digests
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-plan-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/release-plan
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Select the verified reused index or create the unique candidate tag
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/image-refs"
+          mapfile -t identities < <(find "$RUNNER_TEMP/digests" -name "$IMAGE.build-info.json" -type f | sort)
+          test "${#identities[@]}" -eq 2
+          cmp "${identities[0]}" "${identities[1]}"
+          cp "${identities[0]}" "$RUNNER_TEMP/image-refs/$IMAGE.build-info.json"
+          reuse=$(jq -r --arg image "$IMAGE" '.[$image].ref // empty' "$RUNNER_TEMP/release-plan/component-plan.json")
+          if [[ -n "$reuse" ]]; then
+            ref="$reuse"
+          else
+            mapfile -t digests < <(find "$RUNNER_TEMP/digests" -regextype posix-extended -type f -regex '.*/[a-f0-9]{64}' | sort)
+            test "${#digests[@]}" -eq 2
+            args=()
+            for file in "${digests[@]}"; do
+              digest="${file##*/}"
+              args+=("$IMAGE_REPOSITORY@sha256:$digest")
+            done
+            docker buildx imagetools create --tag "$IMAGE_REPOSITORY:$CANDIDATE_TAG" "${args[@]}"
+            ref="$IMAGE_REPOSITORY:$CANDIDATE_TAG"
+          fi
+          manifest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}')
+          printf '%s\n' "$manifest" > "$RUNNER_TEMP/manifest.json"
+          python3 scripts/ci/release_plan.py platforms --file "$RUNNER_TEMP/manifest.json" --digests-directory "$RUNNER_TEMP/digests"
+          digest=$(jq -er '.digest | select(test("^sha256:[a-f0-9]{64}$"))' <<< "$manifest")
+          if [[ -n "$reuse" ]]; then test "$reuse" = "$IMAGE_REPOSITORY@$digest"; fi
+          printf '%s@%s\n' "$IMAGE_REPOSITORY" "$digest" > "$RUNNER_TEMP/image-refs/$IMAGE.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: image-ref-${{ github.run_attempt }}-${{ matrix.image }}
+          path: ${{ runner.temp }}/image-refs/
+          if-no-files-found: error
+          retention-days: 14
+
+  assets:
+    name: assemble candidate assets and immutable manifest
+    needs: [prepare, cli, plugins, manifest, public-data-backend]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-plan-${{ github.run_attempt }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: data-backend-mirror-${{ github.run_attempt }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: aiv-release-${{ github.run_attempt }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-release-${{ github.run_attempt }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: image-ref-${{ github.run_attempt }}-*
+          path: image-refs
+          merge-multiple: true
+      - name: Verify archive checksums and record exact image references
+        run: |
+          set -euo pipefail
+          (cd release && sha256sum -c SHA256SUMS)
+          python3 scripts/ci/release_assets.py --directory release --image-refs image-refs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ github.run_attempt }}
+          path: release/
+          if-no-files-found: error
+          retention-days: 14
+
+  public-registry:
+    name: verify public candidate indexes anonymously
+    needs: [assets]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      platform_images: ${{ steps.qualify.outputs.platform_images }}
+      deployment_images: ${{ steps.qualify.outputs.deployment_images }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets-${{ github.run_attempt }}
+          path: release
+      - id: qualify
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/public_registry.py verify --manifest release/release-manifest.json
+          fixtures=$(python3 scripts/ci/public_registry.py source-fixtures --manifest release/release-manifest.json)
+          deployment=$(python3 scripts/ci/public_registry.py source-fixtures --manifest release/release-manifest.json --use-data-backend)
+          echo "platform_images=$fixtures" >> "$GITHUB_OUTPUT"
+          echo "deployment_images=$deployment" >> "$GITHUB_OUTPUT"
+
+  public-source-checks:
+    needs: [prepare, public-registry]
+    uses: ./.github/workflows/ci.yml
+    with:
+      tier: ${{ needs.prepare.outputs.tier }}
+      profile: full
+      public_platform_images: ${{ needs.public-registry.outputs.platform_images }}
+      public_deploy_images: ${{ needs.public-registry.outputs.deployment_images }}
+    permissions:
+      contents: read
+      packages: read
+
+  artifact-smoke:
+    name: Linux amd64 candidate deployment (${{ matrix.backend }})
+    needs: [prepare, assets, public-registry]
+    if: >-
+      always() && !cancelled() && needs.prepare.result == 'success' && needs.assets.result == 'success' &&
+      needs.public-registry.result == 'success'
+    runs-on: ${{ vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        backend: [oceanbase, seekdb]
+    env:
+      BACKEND: ${{ matrix.backend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux' && runner.arch == 'X64'
+        with:
+          python-version: '3.12'
+      - name: Reclaim unused Android SDK on the disposable hosted VM
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux' && runner.arch == 'X64'
+        run: python scripts/ci/prepare_platform_disk.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets-${{ github.run_attempt }}
+          path: release
+      - name: Deploy the packaged CLI and exact image digests without source mounts
+        run: |
+          set -euo pipefail
+          test "$(uname -m)" = x86_64
+          docker_config=$(mktemp -d "$RUNNER_TEMP/anonymous-docker.XXXXXX")
+          trap 'rm -rf "$docker_config"' EXIT
+          daemon=$(docker info --format '{{.ID}}')
+          if [[ -n "$daemon" && "$(DOCKER_CONFIG="$docker_config" docker info --format '{{.ID}}' 2>/dev/null)" == "$daemon" ]]; then
+            export DOCKER_CONFIG="$docker_config"
+          else
+            echo 'Using the runner Docker context for deployment. The public registry job independently verifies anonymous access.'
+          fi
+          (cd release && sha256sum -c SHA256SUMS)
+          mkdir -p "$RUNNER_TEMP/release-cli"
+          tar -xzf release/aiv-linux-x64.tar.gz -C "$RUNNER_TEMP/release-cli" aiv
+          expected=$(jq -r .product_version release/release-plan.json)
+          test "$("$RUNNER_TEMP/release-cli/aiv" --version)" = "aiv $expected"
+          export AIVISION_SEEKDB_SMOKE_IMAGES_JSON OCEANBASE_IMAGE SEEKDB_IMAGE AIVISION_RELEASE_MANIFEST_BASE64
+          AIVISION_RELEASE_MANIFEST_BASE64=$(python3 -c 'import base64,json; print(base64.b64encode(json.dumps(json.load(open("release/release-manifest.json")),sort_keys=True,separators=(",",":")).encode()).decode())')
+          OCEANBASE_IMAGE=$(jq -r .databases.oceanbase release/release-manifest.json)
+          SEEKDB_IMAGE=$(jq -r .databases.seekdb release/release-manifest.json)
+          AIVISION_SEEKDB_SMOKE_IMAGES_JSON=$(jq -c '.images | {signoz: .["signoz-ob"], gateway: .["antcollector-gw"], backend: .["aivision-be"], agentlens: .agentlens, frontend: .["aivision-fe"]}' release/release-manifest.json)
+          python3 deploy/tests/seekdb_deploy_smoke.py \
+            --backend "$BACKEND" --require-pinned-images \
+            --aiv "$RUNNER_TEMP/release-cli/aiv" \
+            --runtime-base "$RUNNER_TEMP" \
+            --out "$RUNNER_TEMP/release-smoke-$BACKEND"
+          jq -e --arg backend "$BACKEND" '.status == "passed" and .backend == $backend and .initial_images.pinned_content_verified == true and .recast_images.pinned_content_verified == true' "$RUNNER_TEMP/release-smoke-$BACKEND/summary.json"
+      - name: Export only the sanitized passed smoke receipt
+        run: |
+          python3 scripts/ci/release_candidate.py smoke --directory release \
+            --backend "$BACKEND" --summary "$RUNNER_TEMP/release-smoke-$BACKEND/summary.json" \
+            --output "$RUNNER_TEMP/receipts/smoke-$BACKEND.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-smoke-${{ github.run_attempt }}-${{ matrix.backend }}
+          path: ${{ runner.temp }}/receipts/smoke-${{ matrix.backend }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  acceptance:
+    name: freeze qualified candidate acceptance
+    needs: [prepare, assets, artifact-smoke, public-source-checks]
+    if: >-
+      always() && !cancelled() && needs.prepare.result == 'success' &&
+      needs.assets.result == 'success' && needs.artifact-smoke.result == 'success' &&
+      needs.public-source-checks.result == 'success'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets-${{ github.run_attempt }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-smoke-${{ github.run_attempt }}-*
+          path: receipts
+          merge-multiple: true
+      - run: python3 scripts/ci/release_candidate.py freeze --directory release --receipts receipts --output acceptance/candidate-acceptance.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-acceptance-${{ github.run_attempt }}
+          path: acceptance/candidate-acceptance.json
+          if-no-files-found: error
+          retention-days: 14
+
+  preflight:
+    name: verify stable publication prerequisites
+    needs: [prepare, assets, artifact-smoke, acceptance]
+    if: >-
+      (needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') &&
+      (github.event_name == 'push' || inputs.publish == true)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets-${{ github.run_attempt }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-acceptance-${{ github.run_attempt }}
+          path: acceptance
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          python3 scripts/ci/release_publish.py preflight --directory release --acceptance acceptance/candidate-acceptance.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-stable:
+    name: publish reviewed stable or RC artifacts
+    needs: [prepare, preflight, artifact-smoke, acceptance]
+    if: >-
+      (needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') &&
+      (github.event_name == 'push' || inputs.publish == true)
+    environment: release
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets-${{ github.run_attempt }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-acceptance-${{ github.run_attempt }}
+          path: acceptance
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          python3 scripts/ci/release_publish.py publish --directory release --acceptance acceptance/candidate-acceptance.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-development:
+    name: publish verified development artifacts
+    needs: [prepare, assets, artifact-smoke, acceptance]
+    if: inputs.publish == true && (needs.prepare.outputs.channel == 'dev' || needs.prepare.outputs.channel == 'daily')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-assets-${{ github.run_attempt }}
+          path: release
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-acceptance-${{ github.run_attempt }}
+          path: acceptance
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          python3 scripts/ci/release_publish.py publish --directory release --acceptance acceptance/candidate-acceptance.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,124 @@
+[
+  {
+    "key": "claude-code",
+    "product": "ClaudeCode",
+    "runtime": "claudecode",
+    "name": "Claude Code",
+    "icon": "/assets/agents/claude-code.svg",
+    "source": "claudecode/cchooks",
+    "binary": "cchooks",
+    "features": "common,tool_context",
+    "host": "claude"
+  },
+  {
+    "key": "codex",
+    "product": "Codex",
+    "runtime": "codex",
+    "name": "Codex",
+    "icon": "/assets/agents/codex.svg",
+    "source": "codex/cdxhooks",
+    "binary": "cdxhooks",
+    "features": "common,tool_context",
+    "host": "codex"
+  },
+  {
+    "key": "kimi",
+    "product": "KimiCLI",
+    "runtime": "kimicli",
+    "name": "Kimi CLI",
+    "icon": "/assets/agents/kimi.svg",
+    "source": "kimi/kimihooks",
+    "binary": "kimihooks",
+    "features": "",
+    "host": "kimi"
+  },
+  {
+    "key": "opencode",
+    "product": "OpenCode",
+    "runtime": "opencode",
+    "name": "OpenCode",
+    "icon": "/assets/agents/opencode.svg",
+    "source": "opencode/observ-opencode",
+    "package": "observ-opencode",
+    "host": "opencode"
+  },
+  {
+    "key": "openclaw",
+    "product": "OpenClaw",
+    "runtime": "openclaw",
+    "name": "OpenClaw",
+    "icon": "/assets/agents/openclaw.svg",
+    "source": "openclaw/observ-openclaw",
+    "package": "observ-openclaw",
+    "host": "openclaw"
+  },
+  {
+    "key": "pi",
+    "product": "Pi",
+    "runtime": "pi",
+    "name": "Pi",
+    "icon": "/assets/agents/pi.svg",
+    "source": "pi/observ-pi",
+    "package": "observ-pi",
+    "host": "pi"
+  },
+  {
+    "key": "hermes",
+    "product": "Hermes",
+    "runtime": "hermes",
+    "name": "Hermes Agent",
+    "icon": "",
+    "host": "hermes",
+    "setup_mode": "OTHER",
+    "source_install": true,
+    "native_relay_onboarding": {
+      "enabled": true,
+      "integrations": ["hermes-relay"],
+      "hermes_version": "0.22.5",
+      "relay_requirement": ">=0.10,<0.11",
+      "docs_url": "https://github.com/nousresearch/hermes-agent/blob/v0.22.5/website/docs/user-guide/features/built-in-plugins.md#nemo-relay-native-integration-migration-note"
+    }
+  },
+  {
+    "key": "dsh",
+    "product": "DeepSeekHarness",
+    "runtime": "dsh",
+    "name": "DeepSeek Harness",
+    "icon": "/assets/agents/dsh.svg",
+    "source": "deepseek/observ-dsh",
+    "package": "observ-dsh",
+    "host": "dsh"
+  },
+  {
+    "key": "langfuse",
+    "product": "langfuse",
+    "runtime": "langfuse-sdk",
+    "name": "Langfuse",
+    "icon": "/assets/agents/langfuse.svg",
+    "examples_dir": "langfuse/examples",
+    "setup_mode": "LANGFUSE",
+    "integration": {
+      "kind": "observability_sdk",
+      "onboardingPath": "/access/langfuse-onboarding",
+      "docsUrl": "https://langfuse.com/docs/observability/sdk/overview",
+      "verifiedVersions": ["langfuse==3.15.0", "langfuse==4.16.0", "langfuse==5.0.2", "@langfuse/*@5.14.0", "@langfuse/*@6.0.0"]
+    }
+  },
+  {
+    "key": "nvidia-nemo-relay",
+    "product": "nvidia-nemo-relay",
+    "runtime": "signoz",
+    "name": "NVIDIA NeMo Relay",
+    "icon": "/assets/agents/relay.svg",
+    "examples_dir": "nvidia-nemo-relay/examples",
+    "setup_mode": "OTHER",
+    "display_scope": "ALL",
+    "make_default": false,
+    "integration": {
+      "kind": "partner_runtime",
+      "onboardingPath": "/access/relay-onboarding",
+      "docsUrl": "https://docs.nvidia.com/nemo/relay/about-nemo-relay/overview",
+      "verifiedVersions": ["nemo-relay==0.9.3"]
+    }
+  }
+]

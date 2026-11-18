@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Vision Frontend"
+  short_description: "AI Vision React 前端开发规范与验证流程"
+  default_prompt: "Use $ai-vision-frontend to implement and verify an AI Vision frontend change."

@@ -1,0 +1,51 @@
+id: google-gemini
+logo: /assets/frameworks/google-gemini.svg
+label: Google Gemini
+marketPreview: true
+marketSort: 8
+frontendSort: 10
+pipInstall: pip install google-genai openinference-instrumentation-google-genai "langfuse>=4.16.0,<5"
+pipExample: |-
+  import os
+
+  from google import genai
+  from langfuse import get_client, propagate_attributes
+  from openinference.instrumentation.google_genai import GoogleGenAIInstrumentor
+
+  langfuse = get_client()
+  GoogleGenAIInstrumentor().instrument()
+
+  # genai.Client() reads GOOGLE_API_KEY / GEMINI_API_KEY
+  client = genai.Client()
+
+
+  def main():
+      with langfuse.start_as_current_observation(
+          as_type="span", name="google-gemini-request"
+      ):
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          # Make a traced Gemini call
+          response = client.models.generate_content(
+              model=os.environ.get("GOOGLE_MODEL", "gemini-2.0-flash-exp"),
+              contents="Explain quantum computing in simple terms.",
+          )
+          print(response.text)
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:google-gemini"]):
+              main()
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export GOOGLE_API_KEY="..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- GOOGLE_API_KEY="..."

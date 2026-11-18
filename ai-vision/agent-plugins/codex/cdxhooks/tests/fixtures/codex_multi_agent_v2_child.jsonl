@@ -1,0 +1,10 @@
+{"timestamp":"2026-07-10T08:53:47.518Z","type":"session_meta","payload":{"session_id":"parent-v2","id":"child-v2","parent_thread_id":"parent-v2","cli_version":"0.144.0-alpha.4","source":{"subagent":{"thread_spawn":{"parent_thread_id":"parent-v2","depth":1,"agent_path":"/root/sleep_foreground","agent_nickname":"Hume","agent_role":null}}},"thread_source":"subagent","agent_nickname":"Hume","agent_path":"/root/sleep_foreground","multi_agent_version":"v2"}}
+{"timestamp":"2026-07-10T08:53:59.000Z","type":"session_meta","payload":{"id":"inherited-root-context","source":"cli","thread_source":"user","multi_agent_version":"v2"}}
+{"timestamp":"2026-07-10T08:54:00.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-v2-child"}}
+{"timestamp":"2026-07-10T08:54:00.100Z","type":"event_msg","payload":{"type":"user_message","message":"Run sleep 5 && echo done"}}
+{"timestamp":"2026-07-10T08:54:00.200Z","type":"turn_context","payload":{"turn_id":"turn-v2-child","cwd":"/tmp/cdxhooks-v2","model":"gpt-5.5","multi_agent_version":"v2"}}
+{"timestamp":"2026-07-10T08:54:02.694Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","arguments":"{\"cmd\":\"sleep 5 && echo done\"}","call_id":"call-child-sleep"}}
+{"timestamp":"2026-07-10T08:54:08.068Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-child-sleep","output":"Process exited with code 0\nFinal output:\ndone"}}
+{"timestamp":"2026-07-10T08:54:09.419Z","type":"event_msg","payload":{"type":"agent_message","message":"done","phase":"final_answer"}}
+{"timestamp":"2026-07-10T08:54:09.420Z","type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"done"}],"phase":"final_answer"}}
+{"timestamp":"2026-07-10T08:54:09.445Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-v2-child","last_agent_message":"done"}}

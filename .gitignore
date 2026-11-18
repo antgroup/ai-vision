@@ -1,0 +1,72 @@
+.env
+node_modules
+.pnpm-store/
+__pycache__/
+
+# Local AI implementation plans
+**/.claude/plans/
+
+# Local debugging and agent session notes
+/ai-vision/network.txt
+/ai-vision/summary.md
+/ai-vision/agent-plugins/progress.txt
+
+# Local SDD workspace (not part of the source repository)
+/docs/specs/
+/docs/decisions/AI_CHANGELOG.md
+/docs/skills/SKILL.md
+
+# Local credentials and machine-specific configuration
+aivision.vars.yaml
+.env.*
+!.env.example
+!.env.*.example
+!.env.template
+# These versioned defaults contain examples only; use environment overrides.
+!ai-vision/aivision-py-be/.env.container
+!ai-vision/aivision-py-be/.env.development
+!ai-vision/aivision-py-be/.env.gray
+!ai-vision/aivision-py-be/.env.prepub
+!ai-vision/aivision-py-be/.env.prod
+!ai-vision/vfe/.env.development
+!ai-vision/vfe/.env.production
+.mcp.json
+**/.claude/memory/
+**/.claude/settings.local.json
+.aivision/
+.antcckeys
+*.keys.json
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# Local Python environments, caches and databases
+.venv/
+venv/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.sqlite
+*.sqlite3
+*.db
+.DS_Store
+
+# Legacy local debugging artifacts with embedded credentials
+/ai-vision/agent-plugins/codex/cdxhooks/otel_curl_test.sh
+/ai-vision/agent-plugins/codex/cdxhooks/otel_curl_test.md
+/artifacts/*
+
+# Local acceptance reports and screenshots are kept outside the source tree.
+/docs/validation/
+/ai-vision/aivision-py-be/aivision_backend/build-info.json
+/ai-vision/agent-plugins/tests/framework_acceptance/
+
+# Local Archify viewers and validation receipts (portable sources live in docs/)
+/.archify/
+
+# Local design and implementation planning artifacts
+/docs/superpowers/

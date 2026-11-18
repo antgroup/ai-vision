@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Vision Backend"
+  short_description: "AI Vision Django 后端开发规范与验证流程"
+  default_prompt: "Use $ai-vision-backend to implement and verify an AI Vision backend change."

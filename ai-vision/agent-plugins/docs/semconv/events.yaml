@@ -1,0 +1,766 @@
+# AI Vision Agent Semantic Conventions - Events
+# Version: v4.1
+#
+# Changes from v3.0:
+#   - Renamed: llm_request → api_request (align with CC/Codex naming)
+#   - Merged: llm_error into api_request (single-event model, error via error.type)
+#   - Added: event.sequence on all events
+#   - Added: Three-layer token fields on api_request (L1 gen_ai.usage.*, L2 agentic.usage.*, L3 agentic.usage.raw.*)
+#   - Upgraded: duration_ms to required on api_request and tool_result (RED completeness)
+#   - Added: error.message conditionally_required on tool_result
+#   - Added: tool_call start event, correlated to tool_result by gen_ai.tool.call.id
+#
+# Design principles:
+#   - body contains only `event.name`; all data in attributes
+#   - 10 common attributes shared across all events (added event.sequence)
+#   - field names follow gen_ai.* and agentic.* semantic conventions
+#   - Agent lifecycle events include subagent_spawned and subagent_ended
+#   - Terminal single-event model: success + failure share tool_result, error.type conditionally required
+#   - Tool lifecycle: tool_call marks actual execution start; tool_result remains the terminal RED event
+#   - RED derivation: Rate = count(tool_result), Error = count(where error.type), Duration = histogram(duration_ms)
+#
+# Common attributes (all events):
+#   required:  event.name, gen_ai.operation.name, ant.username, ant.agent.type,
+#              ant.agent.product, gen_ai.conversation.id, gen_ai.chat.id
+#   recommended: event.sequence, agentic.runtime.name, agentic.turn.number
+#
+# v3 migration notes:
+#   - llm_request → api_request (rename)
+#   - llm_error → merged into api_request (error.type + error.message conditionally required)
+
+groups:
+  # ============================================================
+  # OTel Standard Events (reference only)
+  # ============================================================
+
+  - id: event.gen_ai.inference.operation.details
+    type: event
+    name: gen_ai.client.inference.operation.details
+    stability: experimental
+    brief: >
+      OTel standard GenAI inference detail event. NOT used in agentic scenarios —
+      kept here as reference. Use the ant.* events below instead.
+    attributes:
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.output.type
+        requirement_level:
+          conditionally_required: "When the request specifies output format"
+      - ref: gen_ai.request.choice.count
+        requirement_level:
+          conditionally_required: "When available and != 1"
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.request.seed
+        requirement_level:
+          conditionally_required: "When the request includes a seed"
+      - ref: server.port
+        requirement_level:
+          conditionally_required: "When server.address is set"
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.request.frequency_penalty
+        requirement_level: recommended
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.request.presence_penalty
+        requirement_level: recommended
+      - ref: gen_ai.request.stop_sequences
+        requirement_level: recommended
+      - ref: gen_ai.request.temperature
+        requirement_level: recommended
+      - ref: gen_ai.request.top_p
+        requirement_level: recommended
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+      - ref: gen_ai.response.id
+        requirement_level: opt_in
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.usage.cache_creation.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.cache_read.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.reasoning.output_tokens
+        requirement_level: opt_in
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        requirement_level: recommended
+      - ref: server.address
+        requirement_level: recommended
+      - ref: gen_ai.input.messages
+        requirement_level: opt_in
+      - ref: gen_ai.output.messages
+        requirement_level: opt_in
+      - ref: gen_ai.system_instructions
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions
+        requirement_level: opt_in
+
+  - id: event.gen_ai.evaluation.result
+    type: event
+    name: gen_ai.evaluation.result
+    stability: experimental
+    brief: >
+      OTel standard GenAI evaluation result event.
+    attributes:
+      - ref: gen_ai.evaluation.name
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: gen_ai.evaluation.score.label
+        requirement_level:
+          conditionally_required: "When applicable"
+      - ref: gen_ai.evaluation.score.value
+        requirement_level:
+          conditionally_required: "When applicable"
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.evaluation.explanation
+        requirement_level: recommended
+      - ref: gen_ai.response.id
+        requirement_level: opt_in
+
+  # ============================================================
+  # Ant Agentic Events (v4.0 — single-event model)
+  # ============================================================
+
+  # ── user_prompt ──────────────────────────────────────────────
+  - id: event.ant.user_prompt
+    type: event
+    name: user_prompt
+    stability: experimental
+    brief: >
+      Recorded when a user submits a prompt to the agent.
+      Body contains only `event.name`. All metadata in attributes.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `user_prompt`"
+          requirement_level: required
+    attributes:
+      # ── Common: Required ──
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `user_prompt`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `chat`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      # ── Common: Recommended ──
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: recommended
+      # ── Event-specific: Opt-In ──
+      - ref: gen_ai.input.messages
+        requirement_level: opt_in
+        note: "JSON-serialized array of input messages in OpenAI API format. Opt-in due to potential sensitive content."
+
+  # ── api_request (v4: renamed from llm_request, merged llm_error) ──
+  - id: event.ant.api_request
+    type: event
+    name: api_request
+    stability: experimental
+    brief: >
+      Recorded when an LLM API request completes (success or failure).
+      Single-event model: success and failure are distinguished by the
+      presence of error.type. Replaces v3 llm_request + llm_error.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `api_request`"
+          requirement_level: required
+    attributes:
+      # ── Common: Required ──
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `api_request`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `chat`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      # ── Common: Recommended ──
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: recommended
+        note: "Required by the runtime event contract for ordinary requests. Native auxiliary calls with an explicit boolean agentic.llm.auxiliary=true, known source agent, and aux:<agent>:<official message id> chat identity omit this unavailable ordinal."
+      - ref: agentic.llm.auxiliary
+        requirement_level: opt_in
+        note: "Only runtime-observed native title/summary/compaction calls, never uncorrelated primary requests."
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: "When agentic.llm.auxiliary is true"
+      # ── RED: Required ──
+      - ref: gen_ai.request.model
+        requirement_level: required
+      - ref: duration_ms
+        requirement_level: required
+        note: "RED Duration. LLM API request duration in milliseconds."
+      # ── RED: Conditionally Required (error path) ──
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the API request fails"
+        note: "RED Error. Error category (e.g. `timeout`, `rate_limit_exceeded`, `500`)."
+      - ref: error.message
+        requirement_level:
+          conditionally_required: "When a human-readable error message is available"
+      - ref: http.response.status_code
+        requirement_level:
+          conditionally_required: "For HTTP errors"
+      # ── Token Layer 1: Normalized (Conditionally Required on success) ──
+      - ref: gen_ai.usage.input_tokens
+        requirement_level:
+          conditionally_required: "When the request succeeds unless agentic.usage.input_tokens.missing is the exact string 'true'"
+        note: "L1 Normalized: total input tokens INCLUDING cache (OpenAI convention). Preserve reported zero; omit unknown values and use the corresponding missing marker. Use agentic.usage.fresh_input_tokens for cache-excluded value."
+      - ref: gen_ai.usage.output_tokens
+        requirement_level:
+          conditionally_required: "When the request succeeds unless agentic.usage.output_tokens.missing is the exact string 'true'"
+        note: "L1 Normalized: total output tokens (includes reasoning/thinking). An input missing marker does not waive this field."
+      # ── Event-specific: Recommended ──
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.provider.name
+        requirement_level: recommended
+        note: "LLM provider identifier (e.g. `anthropic`, `openai`)."
+      - ref: gen_ai.usage.total_tokens
+        requirement_level:
+          conditionally_required: "When the request succeeds and neither direction has an exact string 'true' missing marker"
+        note: "L1 Normalized: = input_tokens + output_tokens. Omit an unknown total instead of fabricating zero."
+      - ref: attempt
+        requirement_level: recommended
+        note: "Retry attempt number (starting at 1)."
+      - ref: gen_ai.usage.cache_read.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.reasoning.output_tokens
+        requirement_level: opt_in
+      - ref: gen_ai.usage.cache_creation.input_tokens
+        requirement_level: recommended
+      # ── Token Layer 2: Breakdown (Recommended) ──
+      - ref: agentic.usage.fresh_input_tokens
+        requirement_level: recommended
+        note: "L2 Breakdown: input tokens excluding cache (= gen_ai.usage.input_tokens - cache_read - cache_write)."
+      - ref: agentic.usage.cache_read_tokens
+        requirement_level: recommended
+        note: "L2 Breakdown: cache hit tokens. Subset of gen_ai.usage.input_tokens."
+      - ref: agentic.usage.input_tokens.missing
+        requirement_level: opt_in
+        note: "Exact string 'true' only; permits omitting unknown input and total, never output or other required fields."
+      - ref: agentic.usage.output_tokens.missing
+        requirement_level: opt_in
+        note: "Exact string 'true' only; permits omitting unknown output and total, never input or other required fields."
+      - ref: agentic.usage.cache_write_tokens
+        requirement_level: recommended
+        note: "L2 Breakdown: cache creation tokens. Subset of gen_ai.usage.input_tokens."
+      - ref: agentic.usage.reasoning_tokens
+        requirement_level: recommended
+        note: "L2 Breakdown: reasoning/thinking tokens. Subset of gen_ai.usage.output_tokens."
+      - ref: agentic.usage.tool_tokens
+        requirement_level: recommended
+        note: "L2 Breakdown: tool-related tokens. Cross-cuts input and output."
+      # ── Token Layer 3: Raw (Opt-In, by provider) ──
+      - ref: agentic.usage.raw.input_tokens
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.cache_read_input_tokens
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.cache_creation_input_tokens
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.output_tokens
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.input_token_count
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.output_token_count
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.reasoning_token_count
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.tool_token_count
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.prompt_token_count
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.candidates_token_count
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.cached_content_token_count
+        requirement_level: opt_in
+      - ref: agentic.usage.raw.thoughts_token_count
+        requirement_level: opt_in
+      # ── Content: Opt-In ──
+      - ref: gen_ai.output.messages
+        requirement_level: opt_in
+      - ref: gen_ai.system_instructions
+        requirement_level: opt_in
+
+  # ── tool_call ───────────────────────────────────────────────
+  - id: event.ant.tool_call
+    type: event
+    name: tool_call
+    stability: experimental
+    brief: >
+      Recorded when an authorized tool invocation starts executing.
+      Correlate it with the terminal tool_result event using gen_ai.tool.call.id.
+      Do not reconstruct this event from a terminal callback when the start hook is missing.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `tool_call`"
+          requirement_level: required
+    attributes:
+      # ── Common: Required ──
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `tool_call`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `execute_tool`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      # ── Common: Sequence/runtime recommended; turn required ──
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: required
+      # ── Tool identity: Required ──
+      - ref: gen_ai.tool.name
+        requirement_level: required
+        note: "Unmodified tool name reported by the runtime; human-readable display labels belong in span names."
+      - ref: gen_ai.tool.call.id
+        requirement_level: required
+        note: "Stable correlation key shared with the terminal tool_result event."
+      # ── Tool Classification: Required ──
+      - ref: agentic.tool.type
+        requirement_level: required
+      - ref: agentic.tool.name
+        requirement_level: required
+      - ref: agentic.tool.raw_name
+        requirement_level: opt_in
+        note: "Unmodified runtime tool identifier; gen_ai.tool.name uses the same raw value while agentic.tool.name carries the parsed logical name."
+      - ref: agentic.tool.id
+        requirement_level: required
+      # ── Correlation Content: Exactly one input state ──
+      - ref: gen_ai.tool.call.arguments
+        requirement_level:
+          conditionally_required: >
+            When the source execution-start payload contains the args
+            property, including an explicit null value. Encoded as a JSON string.
+      - ref: agentic.tool.input.missing
+        requirement_level:
+          conditionally_required: >
+            When the source payload does not contain args. Fixed string value
+            "true" and mutually exclusive with gen_ai.tool.call.arguments.
+      - ref: agentic.tool.input.truncated
+        requirement_level:
+          conditionally_required: >
+            When field-level canonical projection proves args was truncated.
+            Fixed string value "true" and invalid without arguments.
+
+  # ── tool_result ─────────────────────────────────────────────
+  - id: event.ant.tool_result
+    type: event
+    name: tool_result
+    stability: experimental
+    brief: >
+      Recorded when a tool execution completes (success or failure).
+      Single-event model: failure indicated by error.type presence.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `tool_result`"
+          requirement_level: required
+    attributes:
+      # ── Common: Required ──
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `tool_result`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `execute_tool`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      # ── Common: Recommended ──
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: recommended
+      # ── RED: Required ──
+      - ref: gen_ai.tool.name
+        requirement_level: required
+        note: "Unmodified tool name reported by the runtime; must match the paired tool_call event."
+      - ref: duration_ms
+        requirement_level: required
+        note: "RED Duration. Tool execution duration in milliseconds. Upgraded from recommended in v3."
+      # ── RED: Conditionally Required (error path) ──
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the tool execution fails"
+      - ref: error.message
+        requirement_level:
+          conditionally_required: "When a human-readable error message is available"
+      # ── Tool Classification: Conditionally Required ──
+      - ref: agentic.tool.type
+        requirement_level:
+          conditionally_required: "When tool classification is available"
+        note: "Classification of the physical tool invocation (builtin/mcp/skill). A derived Skill-load span does not duplicate tool_result."
+      - ref: agentic.tool.name
+        requirement_level:
+          conditionally_required: "When tool classification is available"
+        note: "Parsed logical name of the physical tool invocation. Derived Skill-load spans do not emit this event."
+      - ref: agentic.tool.raw_name
+        requirement_level: opt_in
+        note: "Unmodified runtime tool identifier shared with the paired tool_call event."
+      - ref: agentic.tool.id
+        requirement_level:
+          conditionally_required: "When tool classification is available"
+      # ── Event-specific: Recommended ──
+      - ref: gen_ai.tool.call.id
+        requirement_level: recommended
+      # ── Event-specific: Opt-In ──
+      - ref: gen_ai.tool.call.arguments
+        requirement_level: opt_in
+
+  # ── session_start ───────────────────────────────────────────
+  - id: event.ant.session_start
+    type: event
+    name: session_start
+    stability: experimental
+    brief: >
+      Recorded when an agent session becomes active. This lifecycle event is
+      correlated to the session trace and does not represent an LLM request.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `session_start`"
+          requirement_level: required
+    attributes:
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `session_start`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `chat`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: agentic.runtime.name
+        requirement_level: required
+      - ref: gen_ai.session.id
+        requirement_level: required
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: recommended
+
+  # ── session_end ─────────────────────────────────────────────
+  - id: event.ant.session_end
+    type: event
+    name: session_end
+    stability: experimental
+    brief: >
+      Recorded once when an agent session reaches its terminal lifecycle state.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `session_end`"
+          requirement_level: required
+    attributes:
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `session_end`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `chat`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: agentic.runtime.name
+        requirement_level: required
+      - ref: gen_ai.session.id
+        requirement_level: required
+      - ref: agentic.turn.number
+        requirement_level: required
+      - ref: event.sequence
+        requirement_level: recommended
+
+  # ── compaction_result ───────────────────────────────────────
+  - id: event.ant.compaction_result
+    type: event
+    name: compaction_result
+    stability: experimental
+    brief: >
+      Recorded when an explicitly observed context compaction operation ends.
+      Emit only when the runtime exposes a real compaction lifecycle signal.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `compaction_result`"
+          requirement_level: required
+    attributes:
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `compaction_result`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `execute_tool`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: agentic.runtime.name
+        requirement_level: required
+      - ref: agentic.turn.number
+        requirement_level: required
+      - ref: gen_ai.tool.name
+        requirement_level: required
+        note: "Fixed value: `compaction`"
+      - ref: agentic.tool.type
+        requirement_level: required
+        note: "Fixed value: `system`"
+      - ref: duration_ms
+        requirement_level: required
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When compaction fails"
+      - ref: error.message
+        requirement_level:
+          conditionally_required: "When a human-readable error message is available"
+      - ref: gen_ai.tool.call.result
+        requirement_level: opt_in
+
+  # ── subagent_spawned ────────────────────────────────────────
+  - id: event.ant.subagent_spawned
+    type: event
+    name: subagent_spawned
+    stability: experimental
+    brief: >
+      Recorded when a synchronous child agent is attached to its parent turn.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `subagent_spawned`"
+          requirement_level: required
+    attributes:
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `subagent_spawned`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `invoke_agent`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: recommended
+      - ref: gen_ai.agent.id
+        requirement_level: required
+      - ref: gen_ai.agent.name
+        requirement_level: required
+      - ref: agentic.subagent.session_key
+        requirement_level: required
+      - ref: agentic.subagent.parent_thread_id
+        requirement_level: recommended
+      - ref: agentic.subagent.child_thread_id
+        requirement_level: recommended
+      - ref: agentic.subagent.name
+        requirement_level: recommended
+      - ref: agentic.subagent.mode
+        requirement_level: recommended
+      - ref: agentic.subagent.run_id
+        requirement_level:
+          conditionally_required: "When a run ID is available"
+
+  # ── subagent_ended ──────────────────────────────────────────
+  - id: event.ant.subagent_ended
+    type: event
+    name: subagent_ended
+    stability: experimental
+    brief: >
+      Recorded when a synchronous child agent completes or terminates.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `subagent_ended`"
+          requirement_level: required
+    attributes:
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `subagent_ended`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `invoke_agent`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: recommended
+      - ref: gen_ai.agent.id
+        requirement_level: required
+      - ref: gen_ai.agent.name
+        requirement_level: required
+      - ref: duration_ms
+        requirement_level: required
+      - ref: agentic.subagent.session_key
+        requirement_level: required
+      - ref: agentic.subagent.parent_thread_id
+        requirement_level: recommended
+      - ref: agentic.subagent.child_thread_id
+        requirement_level: recommended
+      - ref: agentic.subagent.mode
+        requirement_level: recommended
+      - ref: agentic.subagent.run_id
+        requirement_level:
+          conditionally_required: "When a run ID is available"
+      - ref: agentic.subagent.outcome
+        requirement_level: recommended
+      - ref: agentic.subagent.reason
+        requirement_level:
+          conditionally_required: "When a termination reason is available"
+      - ref: agentic.subagent.target_kind
+        requirement_level: recommended
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the child agent fails"
+      - ref: error.message
+        requirement_level:
+          conditionally_required: "When a human-readable error message is available"
+
+  # ── tool_decision ───────────────────────────────────────────
+  - id: event.ant.tool_decision
+    type: event
+    name: tool_decision
+    stability: experimental
+    brief: >
+      Recorded when a tool permission decision is made.
+      Captures whether the tool was allowed, denied, skipped, or unknown.
+      Valuable for security auditing and permission analysis.
+    body:
+      fields:
+        - id: event.name
+          type: string
+          stability: experimental
+          brief: "Fixed value: `tool_decision`"
+          requirement_level: required
+    attributes:
+      # ── Common: Required ──
+      - ref: event.name
+        requirement_level: required
+        note: "Fixed value: `tool_decision`"
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `execute_tool`"
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      # ── Common: Recommended ──
+      - ref: event.sequence
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: recommended
+      # ── Event-specific: Required ──
+      - ref: gen_ai.tool.name
+        requirement_level: required
+      - ref: agentic.tool.decision
+        requirement_level: required
+        note: "Values: `allow`, `deny`, `skip`, `unknown`."
+      - ref: agentic.tool.decision.source
+        requirement_level: required
+        note: "Values: `user`, `auto`, `policy`, `hook`, `config`."
+      # ── Event-specific: Conditionally Required ──
+      - ref: agentic.tool.type
+        requirement_level:
+          conditionally_required: "When tool classification is available"
+      - ref: agentic.tool.name
+        requirement_level:
+          conditionally_required: "When tool classification is available"
+      # ── Event-specific: Recommended ──
+      - ref: gen_ai.tool.call.id
+        requirement_level: recommended
+      # ── Event-specific: Opt-In ──
+      - ref: gen_ai.tool.call.arguments
+        requirement_level: opt_in

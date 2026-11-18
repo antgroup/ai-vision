@@ -1,0 +1,176 @@
+{
+  "assets": [
+    {
+      "destination": "aivision-cli/blueprints/aivision-source.yaml",
+      "sha256": "4b9bfcb304aafd647e1dc6baf705828e3cd0b96dbdfafd32c8176b361c4d23d2",
+      "source": "deploy/blueprints/aivision-source.yaml"
+    },
+    {
+      "destination": "aivision-cli/blueprints/aivision.yaml",
+      "sha256": "edb59a045ac28a8bc445f31322d4eb029f2069843e84f0db03c3a18311460270",
+      "source": "deploy/blueprints/aivision.yaml"
+    },
+    {
+      "destination": "aivision-cli/internal/deploy/assets/bootstrap/backend-bootstrap.py",
+      "sha256": "41a8a766e71e72ebbccb0aa0e5227441ae0fb4437ac7ee3ddabb3c41ea0046aa",
+      "source": "deploy/bootstrap/backend-bootstrap.py"
+    },
+    {
+      "destination": "aivision-cli/internal/deploy/assets/bootstrap/database-init.py",
+      "sha256": "6e27d498a1d9bea4408f17d6e4279658aa36f193acd5f84737e3635dc5f63a69",
+      "source": "deploy/bootstrap/database-init.py"
+    },
+    {
+      "destination": "aivision-cli/internal/deploy/assets/bootstrap/oceanbase.sh",
+      "sha256": "3e6c157377f317743bd3da86cbfa19d75c5797af538c932fceae51091a8ad450",
+      "source": "deploy/bootstrap/oceanbase.sh"
+    },
+    {
+      "destination": "aivision-cli/internal/deploy/assets/bootstrap/seekdb.sh",
+      "sha256": "67a15ac133194af6532945b5e583197854af7967c8bbd154cc22542d30502ac1",
+      "source": "deploy/bootstrap/seekdb.sh"
+    },
+    {
+      "destination": "aivision-cli/internal/deploy/assets/bootstrap/wait-http.py",
+      "sha256": "608cc8d7fc14981be28ac6a1f82e5b8de2f8b57826f28353d86e0d6fdaa77559",
+      "source": "deploy/bootstrap/wait-http.py"
+    },
+    {
+      "destination": "aivision-cli/internal/deploy/assets/components.json",
+      "sha256": "522c8fe61583f5314824dbabda096acf24b0704243a19c05040c68323739d03d",
+      "source": "deploy/components.json"
+    },
+    {
+      "destination": "docs/deployment/aivision.vars.example.yaml",
+      "sha256": "1621976e07a8f2160c56960cc432d31563ded4c15b2c7b8b247f0556e99cd908",
+      "source": "deploy/config/aivision.vars.example.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/README.md",
+      "sha256": "410e9c0fbc4dce5d97acf7b158bf3b927d903f1d2f2c78e3fcd431077a3e95b7",
+      "source": "deploy/kubernetes/README.md"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/agentlens.yaml",
+      "sha256": "39f8829d086dbab521271daa7dab2e201104c330f12d054e626dcd97daab9abd",
+      "source": "deploy/kubernetes/base/agentlens.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/backend.yaml",
+      "sha256": "96db3faeee743ef81c30f1bc4800521761d6bd1f9665bcdc9dff3355fe5a7060",
+      "source": "deploy/kubernetes/base/backend.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/bootstrap.yaml",
+      "sha256": "3616e1bbb8cfb7517fa3ad478495267caf01f352bf0d360ad131024378c46981",
+      "source": "deploy/kubernetes/base/bootstrap.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/certificate-check.yaml",
+      "sha256": "e9e7ddca5b724a8d2ce9261de3cd9d262bc6b223e1e999b2d4b4c88f5f7e3a78",
+      "source": "deploy/kubernetes/base/certificate-check.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/config.yaml",
+      "sha256": "6a9da5a568a302d44a337f55b7b48399537d7f9926ea3747eaca3030647b899e",
+      "source": "deploy/kubernetes/base/config.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/database-init.yaml",
+      "sha256": "5272a6cc7e2335adc5cfbd65b2ee80bf629e9d84808364284123924ec4f4555e",
+      "source": "deploy/kubernetes/base/database-init.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/database.yaml",
+      "sha256": "bb4b1be9316421569178b21541a50e94b14795e712cd5b9186886e4a19367f30",
+      "source": "deploy/kubernetes/base/database.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/frontend.yaml",
+      "sha256": "a7b9212c76bf11d49e24865eb88d81f8f831f99da15e3a5cad474dbf6cdb7dd5",
+      "source": "deploy/kubernetes/base/frontend.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/gateway.yaml",
+      "sha256": "5a399f8a47cc06935527d9e8af4755bebf9cae71e1aa9992824a9f38bc433add",
+      "source": "deploy/kubernetes/base/gateway.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/ingress-controller.yaml",
+      "sha256": "707dcba1a781d0bd22473123b77ea297e62d65f87253e9d94fa49c77b74f6816",
+      "source": "deploy/kubernetes/base/ingress-controller.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/ingress.yaml",
+      "sha256": "07eda3cd9180163a006a03844b0b0406f82ebe0ddf5c24734d7b61b88c4341ba",
+      "source": "deploy/kubernetes/base/ingress.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/namespace.yaml",
+      "sha256": "298634e1202e5fe5d9eadfad70b18d0da1cc804bfae5626301ea00dc3b8efa25",
+      "source": "deploy/kubernetes/base/namespace.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/signoz.yaml",
+      "sha256": "95f7244f5f3b1d1b5f5707384de1c4feb5b4f8d5a6ec6005afa6e574c51efb83",
+      "source": "deploy/kubernetes/base/signoz.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/tenant.yaml",
+      "sha256": "0efa8a7d7a63f6e69881bd45ee57860792e6f4e26afc51383b28314a0e2c7c11",
+      "source": "deploy/kubernetes/base/tenant.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/dependencies/SHA256SUMS",
+      "sha256": "040b7cee650afa5fa31008179ccd968bc6611b6f5a1e5df98d57bddd86662d87",
+      "source": "deploy/kubernetes/dependencies/SHA256SUMS"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/dependencies/cert-manager.LICENSE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "source": "deploy/kubernetes/dependencies/cert-manager.LICENSE"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/dependencies/cert-manager.yaml",
+      "sha256": "e03b668ec8675214af6b0a671699d088f2601fa3878e0dbe1b41d3feafd1879f",
+      "source": "deploy/kubernetes/dependencies/cert-manager.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/dependencies/ob-operator.LICENSE",
+      "sha256": "6f939ba8edeeacacbb6b7ac852a7ffb0ca0d16f9ceb05af8c1a777fb94cfb605",
+      "source": "deploy/kubernetes/dependencies/ob-operator.LICENSE"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/dependencies/ob-operator.yaml",
+      "sha256": "71d3f64fa7a6585472fa7ae3d2b9fe655342fa2e07c2c212c82d60a8f1d34d95",
+      "source": "deploy/kubernetes/dependencies/ob-operator.yaml"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/helm-roadmap.md",
+      "sha256": "ba4a7675357cef94de848a1024d84cb237040ebce5b0c992054fe3fc856971e3",
+      "source": "deploy/kubernetes/helm-roadmap.md"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/lifecycle.md",
+      "sha256": "0a317ec20aae5e525ef9753ddbe30c61d308c5f72db5ec865691ba34a9c8be28",
+      "source": "deploy/kubernetes/lifecycle.md"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/native/bootstrap.yaml",
+      "sha256": "e65ee876f5292ae6c08e93bddadc730abfddb67b1916f86efdc7c055d2a10178",
+      "source": "deploy/kubernetes/base/bootstrap.yaml",
+      "source_sha256": "3616e1bbb8cfb7517fa3ad478495267caf01f352bf0d360ad131024378c46981",
+      "transform": "select NATIVE_PYTHON_RUNTIME=true template branch"
+    },
+    {
+      "destination": "aivision-cli/deploy/kubernetes/native/database-init.yaml",
+      "sha256": "7254bb0d13ddb9dfa964851de3174af1398be1e75dcfa97d0997b5fe9e7fa303",
+      "source": "deploy/kubernetes/base/database-init.yaml",
+      "source_sha256": "5272a6cc7e2335adc5cfbd65b2ee80bf629e9d84808364284123924ec4f4555e",
+      "transform": "select NATIVE_PYTHON_RUNTIME=true template branch"
+    }
+  ],
+  "generated_by": "deploy/scripts/package_assets.py",
+  "ownership": "Generated compatibility assets; edit the canonical deploy/ sources.",
+  "schema_version": 1
+}

@@ -1,0 +1,178 @@
+{
+  "source_repository": "https://github.com/ob-labs/ai-vision-ob",
+  "source_base_revision": "historical-source-revision-redacted",
+  "source_worktree_dirty": true,
+  "source_revision_boundary": "The base revision alone does not contain this implementation. Exact accepted product commit must be recorded before publishing.",
+  "frontend_source_aggregate_sha256": "ddd06dbca2d579690a6657a050cce220e1b653739023ec23645618223c4b4f3b",
+  "source_inventory": [
+    {
+      "path": "ai-vision/vfe/src/features/plugins/OpenShellBootstrap.tsx",
+      "sha256": "447d5c92b85f2c9904ca0b302df3467db9be7180b6195aab599e371998258ab3"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/plugins/OpenShellInstallation.tsx",
+      "sha256": "28963d217fd99223e0203cbc8089387b75a321bdaffb84441f786b67abbe5b9b"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/plugins/PluginWorkspace.tsx",
+      "sha256": "24b91259641c94ed144fae094c1ffd57e2875c1f9038c058bcc92a8f5c7dd75b"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/plugins/installation.ts",
+      "sha256": "9e9dad72613525639d4880e6fc1c3ba5edc9c02360a9509c2376ce9154a2bd34"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/plugins/installationApi.ts",
+      "sha256": "d15208d145150b311fc540b7d78bd38ee715888546053a8d573e36be0f4125b3"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/plugins/installationTypes.ts",
+      "sha256": "6ac439375ac10d188da7bc3ebfe113cdfe715083ad1bc8794074af186437898c"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionForm.tsx",
+      "sha256": "4533f75f87062add87f144f10878266eeda15b374ec2b1c9d1607f2b5c2936a8"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionsSection.tsx",
+      "sha256": "fa8020f3001340d11b558dec98152c1b855b84294634060173a17687534c16be"
+    },
+    {
+      "path": "ai-vision/vfe/src/features/sandbox-connections/useSandboxConnectionPermissions.ts",
+      "sha256": "7bf9b539fc9d6db30416f22de87c3bf6de2479d1380efdbf4d6b81b6221ec94c"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/en-US.json",
+      "sha256": "1f122e5ebe4e667b6fec242621beda96f8d2039c8499acdab4bef8bfde2cb71d"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/ja-JP.json",
+      "sha256": "34be771d7556eceb317afd9e6c2edd80578c39b56065f252e4dca6b61a35d516"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/zh-CN.json",
+      "sha256": "7d0e42651e3424927f336b145ff9d14853fd3a3e7fa73084015ebb8c8d97f713"
+    }
+  ],
+  "capture_date": "2026-11-03",
+  "capture_method": "Natural browser viewport screenshots of the actual frontend and local Django/AgentLens/database, captured by the parent acceptance worker.",
+  "encoding": "cwebp -lossless -z 9 from parent native JPEGs; decoded RGB pixels compared exactly to each original.",
+  "pixel_redrawing": false,
+  "cropping": false,
+  "sensitive_data_review": "All command capabilities are masked by the product preview; no service key, private key or copied full command is included. Internal local QA endpoint, immutable image reference and synthetic Space name remain visible.",
+  "runtime_scope": "Prepared local cache and loopback registry; source QA Linux ARM64 images on macOS ARM64 Docker VM; not released/private native delivery or Linux x64 qualification.",
+  "source_cli_sha256": "b2218f28b0b4430dab96c469c1ab8532b9f3a3c87fab9dabf9728f3a00aa731f",
+  "runtime_readback": {
+    "original_file": "<local-capture>/real-acceptance-readback.json",
+    "sha256": "0108eb6bbbaffac275d9eb22d9e73adeafd47aa31badd340b2a73cb2d130e805",
+    "all_readback_checks_passed": true,
+    "checks": {
+      "actual_rule_trial_succeeded": true,
+      "db_closed_cleanup_verified": true,
+      "plugin_closed_cleanup_verified": true,
+      "same_daemon_complete_absence": true,
+      "sdk_no_sandboxes_or_templates": true,
+      "health_ready_and_idle": true,
+      "all_seven_stages_done": true,
+      "registration_saved": true,
+      "binding_persisted_require_false": true,
+      "services_nonroot_no_added_caps": true,
+      "service_publish_loopback_only": true,
+      "docker_socket_absent_backend_and_diagnosis": true,
+      "gateway_mtls_enforced": true,
+      "worker_nonroot_hard_landlock_no_egress": true,
+      "raw_secrets_absent": true
+    },
+    "space_uuid": "550aec06-f031-4dd2-9bad-78a86ccfc672",
+    "session_uuid": "cfee05e5-0918-4661-b0af-22ea05a37da4",
+    "connection_uuid": "bb405b75160e599aaedfc7a16c4413f5",
+    "rule_metric": 13,
+    "execution_ms": 2532.3
+  },
+  "reload_readback": {
+    "original_file": "<local-capture>/reload-readback.json",
+    "sha256": "811ff271bd9a285dbd1bbfca686d2f56ed6583c1efa33f9bb8f8097626e506a3",
+    "sandbox_request_count": 20,
+    "all_get_only": true,
+    "note": "20 GET requests, including transient authentication retries; no install, enrollment or default-binding mutation."
+  },
+  "new_space_preparation_boundary": "Japanese and English intro/command captures use separate new Spaces and real backend create responses. Those commands were not run. Terminal-state translations read the single accepted Chinese-session installation.",
+  "verification_boundary": "Natural screenshots and actual local ARM64 execution, with prepared official image caches and a loopback source-QA registry. Not public artifact publication, fully cold startup, native-private compliance, Linux x64 qualification or another host.",
+  "images": [
+    {
+      "view": "intro",
+      "locale": "zh-CN",
+      "ui_locale": "zh-CN",
+      "theme": "light",
+      "original_file": "<local-capture>/02-intro-zh-CN.jpg",
+      "original_sha256": "dbcad29b84a3d29c8adc26ce9018640cc86c8373381deca27bce76b8aa1baf27",
+      "path": "docs/deployment/assets/openshell-bootstrap-intro.zh-CN.light.webp",
+      "sha256": "78344c6ca939ee3f6422a5ab106d9829ecac09d6ea779ef82974d08e156c8e1e",
+      "width": 1280,
+      "height": 720,
+      "decoded_rgb_pixels_identical": true,
+      "capture_sequence": 2,
+      "execution_scope": "Accepted automatic host run and actual registered/default connection; this is the single executed installation.",
+      "session_uuid": "cfee05e5-0918-4661-b0af-22ea05a37da4",
+      "original_file_modified_at_utc": "2026-11-03T05:07:41.920952+00:00"
+    },
+    {
+      "view": "space-default",
+      "locale": "zh-CN",
+      "ui_locale": "zh-CN",
+      "theme": "light",
+      "original_file": "<local-capture>/06-space-default-zh-CN.jpg",
+      "original_sha256": "45f4c2d1b5e41a4dab5abeb20b5f2a950a991384405ff6bb3cf616de8d5d855d",
+      "path": "docs/deployment/assets/openshell-bootstrap-space-default.zh-CN.light.webp",
+      "sha256": "ad1b10c7c45b84bf2ce45453e193053a3594c85e48c7985ed04c3df4646e6248",
+      "width": 1280,
+      "height": 720,
+      "decoded_rgb_pixels_identical": true,
+      "capture_sequence": 6,
+      "execution_scope": "Accepted automatic host run and actual registered/default connection; this is the single executed installation.",
+      "session_uuid": "cfee05e5-0918-4661-b0af-22ea05a37da4",
+      "original_file_modified_at_utc": "2026-11-03T05:08:21.636972+00:00"
+    },
+    {
+      "view": "restored",
+      "locale": "en",
+      "ui_locale": "en-US",
+      "theme": "dark",
+      "original_file": "<local-capture>/09-restored-en-US-dark-mobile.jpg",
+      "original_sha256": "9c3f328693291427e44e415ba1caac8577f4f1f335d204810afa1820846db19f",
+      "path": "docs/deployment/assets/openshell-bootstrap-restored.en.dark.mobile.webp",
+      "sha256": "68a24dc0f3549b41048186eace3c4a7d5b05e607c0127b1b01078617ab7e6601",
+      "width": 390,
+      "height": 844,
+      "decoded_rgb_pixels_identical": true,
+      "capture_sequence": 9,
+      "execution_scope": "Localized read-only rendering of the same accepted installation; no additional host execution.",
+      "session_uuid": "cfee05e5-0918-4661-b0af-22ea05a37da4",
+      "original_file_modified_at_utc": "2026-11-03T05:14:21.620495+00:00"
+    },
+    {
+      "view": "intro",
+      "locale": "en",
+      "ui_locale": "en-US",
+      "theme": "dark",
+      "original_file": "<local-capture>/13-intro-en-US-dark.jpg",
+      "original_sha256": "ad17eaf58aea6b765bd927e1541d714eeb616b7908df5dd348fd2f988fa5c404",
+      "path": "docs/deployment/assets/openshell-bootstrap-intro.en.dark.webp",
+      "sha256": "eb62a864c56402d36613210355db11f251a25470da58f7e4d0253feb5756411a",
+      "width": 1280,
+      "height": 720,
+      "decoded_rgb_pixels_identical": true,
+      "capture_sequence": 13,
+      "execution_scope": "Actual backend preparation in a separate new Space, with masked command; no host execution, enrollment or default enable for this capture.",
+      "original_file_modified_at_utc": "2026-11-03T05:21:20.335325+00:00"
+    }
+  ],
+  "source_manifest_sha256": "c22d9c0b48d665210923609724ce0800e5fa671323e97a693cadd066453202d5",
+  "capture_source_directory": "<local-capture>",
+  "capture_source_images_aggregate_sha256": "f8b1f45bdab36f951a0d563a424f34ba6596204de451d41ff83f419c890dd04f",
+  "capture_source_images_hash_method": "SHA-256 of ordered basename:original_sha256 lines with trailing newline, sequence 01 through 14. Images only.",
+  "excluded_capture_sets": [
+    "earlier failed or manual host runs",
+    "frontend fixture screenshot sets"
+  ]
+}

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aivision-backend
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: backend}
+data:
+  AIVISION_TRACE_RESPONSE_MAX_BYTES: {{.AIVISION_TRACE_RESPONSE_MAX_BYTES | quote}}
+  AIVISION_TRACE_REQUEST_MAX_BYTES: {{.AIVISION_TRACE_REQUEST_MAX_BYTES | quote}}
+  AIVISION_TRACE_QUERY_CONCURRENCY: {{.AIVISION_TRACE_QUERY_CONCURRENCY | quote}}
+  AIVISION_QUERY_MODE: {{.AIVISION_QUERY_MODE | quote}}
+  DB_ENGINE: aivision_backend.db_backends.mysql_connector_oceanbase
+  DB_HOST: oceanbase
+  DB_PORT: "2881"
+  DB_USER: root@aivision
+  DB_NAME: aivision
+  BE_PORT: "8001"
+  ALLOWED_HOSTS: {{.AllowedHosts | quote}}
+  AIVISION_TRUST_PROXY_HEADERS: "true"
+  AUTH_COOKIE_SECURE: {{.SecureCookies | quote}}
+  CSRF_TRUSTED_ORIGINS: {{.WebURL | quote}}
+  CORS_ALLOWED_ORIGINS: {{.WebURL | quote}}
+  SITE_URL: {{.WebURL | quote}}
+  AIVISION_PUBLIC_BASE_URL: {{.WebURL | quote}}
+  AIVISION_RELEASE_MANIFEST_BASE64: {{.AIVISION_RELEASE_MANIFEST_BASE64 | quote}}
+  AIVISION_OTLP_INGEST_ENDPOINT: {{.OTLPURL | quote}}
+  AIVISION_OTLP_UPSTREAM_ENDPOINT: http://antcollector-gw:4318
+  AIVISION_LOG_DIR: /var/log/aivision
+  AGENTLENS_BASE_URL: http://agentlens:8081
+  SIGNOZ_INTERNAL_URL: http://signoz-ob:8080
+  SIGNOZ_ROOT_EMAIL: admin@aivision.local
+  SIGNOZ_ROOT_ORG_NAME: AI Vision

@@ -1,0 +1,710 @@
+{
+  "review_head_before_fix": "historical-source-revision-redacted",
+  "base_main": "historical-source-revision-redacted",
+  "candidate": "Accompanying commit; tested worktree content identified below",
+  "source_sha256": {
+    "ai-vision/vfe/eslint.config.js": "5fdba3b80c2a86acf57e01e2867f1e0b1f367d0ee6b9c4f04eb1ae966e62d45b",
+    "ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx": "02bee43fa7f11ed35eb84a93375955e8f6bada4a3e60b5983abe35f41b087349",
+    "ai-vision/vfe/src/agents/traces/TraceSearchBar.tsx": "245fe16e1a9e27e04db73118ee026a66a90df6a34966c8c42532831fa2db76d0",
+    "ai-vision/vfe/src/components/bizcharts/charts/ChartPanel.tsx": "07761c28abbfb0dc85a9de18eb5ded0331ac436ebde126d98a24737c1a57041a",
+    "ai-vision/vfe/src/components/bizcharts/datatable/DataTable.tsx": "ff0150c1881bdd40bcfe95408e47ff16a22418fba8cec5e77b3ca863a875f25c",
+    "ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx": "76188fa6b53da7270abf32de224f11a5abe85f41954afd035de552aec1d02207",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/CodeMirrorEditor.tsx": "46686269eb3cae8d48270fd90e00ee0cf9ca7f4e90d6f6311052f829ffe268f6",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/CreateLlmDiagnoserModal.tsx": "2b9d45570c4f9b6726a5740b1f1bebc80a4a99ee39deca8c59a0967685549d1b",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/ModelConnectionPickerModal.tsx": "be3c7383888732a6bcad314d4cbf926515767cf8bb574dce16baa0064d41b975",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/RawTraceVariablePicker.tsx": "97dbe25943e08556094af4a036d12031c86e91d55863b044c8839475adbeab22",
+    "ai-vision/vfe/src/components/diagnose/job/TaskDetailDialog.tsx": "29a355e012bac5e9f5fc69132c5a9e3a751dcbc162203bd4d5e2a86a3a69111d",
+    "ai-vision/vfe/src/components/dialogs/AlertDialogContent.tsx": "ef4fd5e426f9e8aa0230a62c7cf1bc9b84ae66a92330e18f65cc77f041511d31",
+    "ai-vision/vfe/src/components/dialogs/DialogContent.tsx": "729ed997249721e7568bbfbd272fcfd4f62a582ea17cad468bc6991cf2683b9f",
+    "ai-vision/vfe/src/components/dialogs/dialogLayout.ts": "1b6f3efb51c27c0c22ab4cb7e44a90423ae4aab39d094920aaada356e6214e1a",
+    "ai-vision/vfe/src/components/dialogs/useDialogFocus.ts": "bcc742b62b371d8149ff4b72b86b5e331f307d66f7fe270bd924c5b1a96dad4d",
+    "ai-vision/vfe/src/components/labs/shared/LabsIntroBanner.tsx": "db50ea001d8e06ad666623e14d3035eaa6a3773888d83df562c2efe78e4a048c",
+    "ai-vision/vfe/src/components/labs/shared/LabsServerCatalogueToolbar.tsx": "4cc524edba0f104967c9bc4edc0ff1263d8dd33ad1b5d5af2dba112ebac7f03f",
+    "ai-vision/vfe/src/components/labs/shared/importDialogStyles.ts": "74ad24fd9f7055ed0e072f0a3036aa70300e936f2161775b9e01552fc00b47bb",
+    "ai-vision/vfe/src/components/layout/SpaceSelect.tsx": "afcdfa6433e2c9490f316e960650133ce03b1ef7172145c0e7d55c473316bfa7",
+    "ai-vision/vfe/src/components/traces-lf/shared/MarkdownMedia.tsx": "3e619aff6f45009ac142b5b5c4582e1cba8f4b891d56f5740893d94e17a78f0a",
+    "ai-vision/vfe/src/components/traces-otel/shared/MarkdownMedia.tsx": "74eb909460d839167e3d84b3ffcad0eeea5f5ee50b846c3ec06e35eb591c9ae0",
+    "ai-vision/vfe/src/components/traces/ShareDialog.tsx": "9499992d88495a3254b97d0a2f90d9f14c1564866d7a7bbef77fe882df38a2b0",
+    "ai-vision/vfe/src/features/model-connections/ConnectionActions.tsx": "f1aeb869d9ee6ba395acfd3f0083483a5f70274cb0f918fe42a757c211c3adb1",
+    "ai-vision/vfe/src/features/model-connections/DiagnosticValidationDialog.tsx": "e3dd2ffb77afe5fabc1dc70fcf1fe411e4e1edf4331a636c97f84e913012d513",
+    "ai-vision/vfe/src/features/model-connections/ModelConnectionDetail.tsx": "be9fd67e3db7841539d7d1c2400a1cadd4e7cca6620288d86f1c79f0f5bc940c",
+    "ai-vision/vfe/src/features/model-connections/ModelConnectionForm.tsx": "02064beb436b3a94092e5968f189f0d15ec942028f5da7c8aaa31f1e1ca0d352",
+    "ai-vision/vfe/src/features/model-connections/ModelConnectionsSection.tsx": "b75369fa7e43efcb5862694763f51e7e4a869db0545baab5289792d7fcd09979",
+    "ai-vision/vfe/src/features/model-pricing/ModelPricingContent.tsx": "730b3400161e8b95c205fb314629cc8dc5679627bd31eff9fa3560b59ea39afb",
+    "ai-vision/vfe/src/features/model-pricing/PricingModelResolver.tsx": "6c5971e39401240a00d0fb85b7448cb4fef83b6f06c03a37fb5484701a87109d",
+    "ai-vision/vfe/src/features/model-pricing/PricingRuleForm.tsx": "079e6cc694133f47e8d0a70d22b3709110b6cb3d8a3cbcc1dc80e79750baaec6",
+    "ai-vision/vfe/src/features/model-pricing/PricingSettingsDialog.tsx": "00667c2007a52e7b83f1122a0b11ed21725482d89e1a28e33108d4824ca18e87",
+    "ai-vision/vfe/src/features/plugins/PluginWorkspace.tsx": "3b03572bd34beb7ab2ae37aa1b59d1ff3ce9fb23eab0cf7bbe61396465f7a0f9",
+    "ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionForm.tsx": "338e16a88626d2fcc374b841606879be3c81efcfde781d2caebd61cc96ba5659",
+    "ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionsSection.tsx": "cc0742ce59a2c01bb4dc2e4adbaee2a1d6ec335fdde8919d5057f84570a53ac5",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "7eb0ae5122e1fd9473cfde376a7d972363120a5a18a260f3dcebd76dfd86d133",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "ffcfff915465d879aa7e357f0b58fbe0f73a21b5646e950020e944af879028d6",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "f8fab9f3e546e96b5ba9828fef873dba1b9868098409c16e589117388e3b0545",
+    "ai-vision/vfe/src/labs/mcp/McpConfigImportDialog.tsx": "fba168b852bbe58db4cd2fb6d0798210653e14dd9b876401eb2d7e1e7927453f",
+    "ai-vision/vfe/src/labs/mcp/McpIntroBanner.tsx": "fa589dde6ac5fbcc275e17cc5f0bb048dff27b7566b2156ec883e7c4b67c3310",
+    "ai-vision/vfe/src/labs/mcp/McpOverview.tsx": "acd9f0e3a545830991f63ec3d1c702309a4a9fc2cfab3b94541b0dfc7571f0b6",
+    "ai-vision/vfe/src/labs/mcp/McpPage.tsx": "7d3235cd2f8810714cf822148cc1e932e156c6e1975702b50a0c1a8590bbc40e",
+    "ai-vision/vfe/src/labs/mcp/McpToolsSyncDialog.tsx": "61e42c90aedd4d3d3d0b4bcc7233a0777629f5f14499b1e2d0afea697fb90d2c",
+    "ai-vision/vfe/src/labs/memory/MemoryIntroBanner.tsx": "752c35890bf88cda879dbe5b1931f2ed4bb3a9efe5e754dfccccbea5fde627b4",
+    "ai-vision/vfe/src/labs/memory/MemoryOverview.tsx": "3ff65584208a40b4097089a49ceb763c14adf587fcb4e862a0a3f75cd0dc2970",
+    "ai-vision/vfe/src/labs/memory/MemoryPage.tsx": "2f29008dd2a29382882558557a8cb637cd963a5018a91f150ad7816a20c12f7b",
+    "ai-vision/vfe/src/labs/skill/SkillConfigImportDialog.tsx": "8605d5df74c72a12ec07086f787c5f4f0ebe8e1b6eeae286f0e4a62f6f9048ad",
+    "ai-vision/vfe/src/labs/skill/SkillOverview.tsx": "6c37d7866c618801a5a8411313ec8a11fc8bb4ae7e30dabbe4f1ae43ebdb6b6c",
+    "ai-vision/vfe/src/labs/skill/SkillPage.tsx": "a6dcc3662adef06966309b11d14c918a8159cf5d61ab222ff60dad6f9d3a2b4e",
+    "ai-vision/vfe/src/pages/AgentsPage.tsx": "ae90d20fc2e6fab4aa2333bc5178f944444636e6fc0bbd426675198b701574f3",
+    "ai-vision/vfe/src/pages/diagnose/DiagnoserPage.tsx": "a9e576b04812a12150e6aa63ba8822becf8d7a2d27aa312dc28953e74b75ac16",
+    "ai-vision/vfe/src/pages/diagnose/JobPage.tsx": "f14e7e1c49800294b5bd9509e5202c7e23218a1f8c0d7b15a362590acb47e84c",
+    "ai-vision/vfe/src/pages/settings/AddMemberSheet.tsx": "12b65ef9efbc112e0503d832e29f374343e80c0638876e9b9634f4e371393538",
+    "ai-vision/vfe/src/pages/settings/MemberManagement.tsx": "070b1a8ce1689d617e47fad6270132b79f73bb135b5c8b1cbcb290c466765cbd",
+    "ai-vision/vfe/src/pages/settings/SettingsPage.tsx": "e3f1794cd17f4dc460b6c2e90007e05de286e227e21076c71f32826aed6a4c73",
+    "ai-vision/vfe/src/pages/settings/SpaceKeysManagement.tsx": "f8c49458ec49a0edc9eac418991bd860c3585b71dc68c5f1efd3d919b782f4af",
+    "ai-vision/vfe/src/pages/settings/UnifiedKeysSection.tsx": "2c354c1b8c2d79d8780b533c929b45c912edf7769683cfff5d916b17dac49d09",
+    "ai-vision/vfe/tests/e2e/dialogSizing.spec.ts": "6395a08271f7833e2fdffb8438597051ad466cdaa0e209164729b576e1b49c7a",
+    "ai-vision/vfe/tests/e2e/labsImportDialogs.spec.ts": "608bd2ddb93b29309c2d44eded9ba17c99a453cb8aac200439b99a73f3d3e1ad",
+    "ai-vision/vfe/tests/e2e/memoryObservability.spec.ts": "a3aff5f6934d2951ca558e30423f6faaa6956acc7c578f48b7f24ade2412e1d2",
+    "ai-vision/vfe/tests/e2e/modelPricing.spec.ts": "342014af8fd68b45f2dd37713440dab5f16ebcc37a5ca4867ea893bf466ce677",
+    "ai-vision/vfe/tests/e2e/taskDialogLayout.spec.ts": "2d7d732ae5f845943202bdaf3242f009f5e147c49e882a800705e15164d8ab96",
+    "ai-vision/vfe/tests/frameworkLifecycleDom.test.ts": "6841f0b5896157175323ceaf4027b8e7a9070ba2cc3539c9dfd506dceaf157be",
+    "ai-vision/vfe/tests/frameworkModuleLoading.test.ts": "2a0b713dd2fa72862480229126b704173adfac483146873299ecdc0ee9943f98",
+    "ai-vision/vfe/tests/nativeUiHarness.ts": "4a6902f664e328ce2526dea8252c58e01c25851b71a33082352add8cd9c3e530"
+  },
+  "production_build": {
+    "file_count": 0,
+    "ordered_relative_path_and_bytes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "fixture_results": {
+    "node_passed": 1722,
+    "initial_full_browser": {
+      "passed": 412,
+      "failed": 4,
+      "total": 416
+    },
+    "after_fix_affected_browser": {
+      "passed": 32,
+      "failed": 0
+    },
+    "main_equivalent_sdk_control": {
+      "failed": 3,
+      "tracked_frontend_files_compared": 865,
+      "mismatches": 0
+    }
+  },
+  "producer_payload_sha256": "5e396c0a0b17c922a3463d7c881624f882117d041b3892bca359f40701a7bb0c",
+  "fresh_provider_calls": 0,
+  "results": {
+    "browser-regression.json": {
+      "pages": [
+        {
+          "device": "desktop",
+          "name": "memory",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "memory-help",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "memory-operations",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "memory-calls",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "dashboard",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "dashboard-activity",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "dashboard-sessions",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "settings",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "mcp",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "mcp-help",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "skill",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "models",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "desktop",
+          "name": "plugins",
+          "viewport": 1440,
+          "document": 1440
+        },
+        {
+          "device": "mobile",
+          "name": "memory",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "memory-help",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "memory-operations",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "memory-calls",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "dashboard",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "dashboard-activity",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "dashboard-sessions",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "settings",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "mcp",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "mcp-help",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "skill",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "models",
+          "viewport": 390,
+          "document": 390
+        },
+        {
+          "device": "mobile",
+          "name": "plugins",
+          "viewport": 390,
+          "document": 390
+        }
+      ],
+      "interactions": [
+        {
+          "device": "desktop",
+          "memoryHelpKeyboard": true,
+          "searchReset": true,
+          "sortReset": true
+        },
+        {
+          "device": "desktop",
+          "recentModelCalls": 8,
+          "totalTokens": 1564,
+          "trendSwitchRoundTrip": true,
+          "sessionsExpanded": true
+        },
+        {
+          "device": "mobile",
+          "memoryHelpKeyboard": true,
+          "searchReset": true,
+          "sortReset": true
+        },
+        {
+          "device": "mobile",
+          "recentModelCalls": 8,
+          "totalTokens": 1564,
+          "trendSwitchRoundTrip": true,
+          "sessionsExpanded": true
+        }
+      ],
+      "encryptedRequests": [
+        {
+          "device": "desktop",
+          "keys": [
+            "payloadVersion",
+            "kid",
+            "iv",
+            "encryptedPayload"
+          ],
+          "hasEncryptedPayload": true,
+          "payloadVersion": "v1",
+          "plainQueryKeys": []
+        },
+        {
+          "device": "desktop",
+          "keys": [
+            "payloadVersion",
+            "kid",
+            "iv",
+            "encryptedPayload"
+          ],
+          "hasEncryptedPayload": true,
+          "payloadVersion": "v1",
+          "plainQueryKeys": []
+        },
+        {
+          "device": "mobile",
+          "keys": [
+            "payloadVersion",
+            "kid",
+            "iv",
+            "encryptedPayload"
+          ],
+          "hasEncryptedPayload": true,
+          "payloadVersion": "v1",
+          "plainQueryKeys": []
+        },
+        {
+          "device": "mobile",
+          "keys": [
+            "payloadVersion",
+            "kid",
+            "iv",
+            "encryptedPayload"
+          ],
+          "hasEncryptedPayload": true,
+          "payloadVersion": "v1",
+          "plainQueryKeys": []
+        }
+      ],
+      "errors": [],
+      "failedApi": [],
+      "single": [],
+      "compare": []
+    },
+    "trace-browser-regression.json": {
+      "single": [
+        {
+          "device": "desktop",
+          "case": "single-sand",
+          "hits": 1,
+          "recallItems": 1
+        },
+        {
+          "device": "desktop",
+          "case": "empty-first",
+          "hits": 0,
+          "recallItems": 0
+        },
+        {
+          "device": "desktop",
+          "case": "double-cobalt",
+          "hits": 2,
+          "recallItems": 2
+        },
+        {
+          "device": "desktop",
+          "case": "empty-no-capture",
+          "hits": 0,
+          "recallItems": 0
+        },
+        {
+          "device": "desktop",
+          "case": "single-amber",
+          "hits": 1,
+          "recallItems": 1
+        },
+        {
+          "device": "desktop",
+          "case": "triple-opal",
+          "hits": 3,
+          "recallItems": 3
+        },
+        {
+          "device": "desktop",
+          "case": "empty-late",
+          "hits": 0,
+          "recallItems": 0
+        },
+        {
+          "device": "desktop",
+          "case": "double-violet-no-capture",
+          "hits": 2,
+          "recallItems": 2
+        },
+        {
+          "device": "mobile",
+          "case": "single-sand",
+          "hits": 1,
+          "recallItems": 1
+        },
+        {
+          "device": "mobile",
+          "case": "empty-first",
+          "hits": 0,
+          "recallItems": 0
+        },
+        {
+          "device": "mobile",
+          "case": "double-cobalt",
+          "hits": 2,
+          "recallItems": 2
+        },
+        {
+          "device": "mobile",
+          "case": "empty-no-capture",
+          "hits": 0,
+          "recallItems": 0
+        },
+        {
+          "device": "mobile",
+          "case": "single-amber",
+          "hits": 1,
+          "recallItems": 1
+        },
+        {
+          "device": "mobile",
+          "case": "triple-opal",
+          "hits": 3,
+          "recallItems": 3
+        },
+        {
+          "device": "mobile",
+          "case": "empty-late",
+          "hits": 0,
+          "recallItems": 0
+        },
+        {
+          "device": "mobile",
+          "case": "double-violet-no-capture",
+          "hits": 2,
+          "recallItems": 2
+        }
+      ],
+      "compare": [
+        {
+          "device": "desktop",
+          "pair": 1,
+          "side": "A",
+          "case": "single-sand",
+          "hits": 1
+        },
+        {
+          "device": "desktop",
+          "pair": 1,
+          "side": "B",
+          "case": "empty-first",
+          "hits": 0
+        },
+        {
+          "device": "desktop",
+          "pair": 2,
+          "side": "A",
+          "case": "double-cobalt",
+          "hits": 2
+        },
+        {
+          "device": "desktop",
+          "pair": 2,
+          "side": "B",
+          "case": "empty-no-capture",
+          "hits": 0
+        },
+        {
+          "device": "desktop",
+          "pair": 3,
+          "side": "A",
+          "case": "single-amber",
+          "hits": 1
+        },
+        {
+          "device": "desktop",
+          "pair": 3,
+          "side": "B",
+          "case": "triple-opal",
+          "hits": 3
+        },
+        {
+          "device": "desktop",
+          "pair": 4,
+          "side": "A",
+          "case": "empty-late",
+          "hits": 0
+        },
+        {
+          "device": "desktop",
+          "pair": 4,
+          "side": "B",
+          "case": "double-violet-no-capture",
+          "hits": 2
+        },
+        {
+          "device": "mobile",
+          "pair": 1,
+          "side": "A",
+          "case": "single-sand",
+          "hits": 1
+        },
+        {
+          "device": "mobile",
+          "pair": 1,
+          "side": "B",
+          "case": "empty-first",
+          "hits": 0
+        },
+        {
+          "device": "mobile",
+          "pair": 2,
+          "side": "A",
+          "case": "double-cobalt",
+          "hits": 2
+        },
+        {
+          "device": "mobile",
+          "pair": 2,
+          "side": "B",
+          "case": "empty-no-capture",
+          "hits": 0
+        },
+        {
+          "device": "mobile",
+          "pair": 3,
+          "side": "A",
+          "case": "single-amber",
+          "hits": 1
+        },
+        {
+          "device": "mobile",
+          "pair": 3,
+          "side": "B",
+          "case": "triple-opal",
+          "hits": 3
+        },
+        {
+          "device": "mobile",
+          "pair": 4,
+          "side": "A",
+          "case": "empty-late",
+          "hits": 0
+        },
+        {
+          "device": "mobile",
+          "pair": 4,
+          "side": "B",
+          "case": "double-violet-no-capture",
+          "hits": 2
+        }
+      ],
+      "errors": [],
+      "failedApi": []
+    },
+    "platform-readback.json": {
+      "admission": {
+        "http_status": 200,
+        "response_content_type": "application/x-protobuf",
+        "otlp_response_decoded": true,
+        "otlp_rejected_spans": 0,
+        "otlp_error_message_present": false
+      },
+      "space_id": "03a1e2ef-01b2-42ba-bd94-5ce0d557f4eb",
+      "agent_uuid": "79178c2e-df9b-4a88-b096-683afee24d0f",
+      "from_ms": 1794467288417,
+      "to_ms": 1794467308495,
+      "cases": [
+        {
+          "case": "single-sand",
+          "trace_id": "89cb51164b8380a757a1d8b5cb74c55a",
+          "spans": 24,
+          "powercontext_attributes": 95,
+          "exact_ids_parents_times_usage": true,
+          "search_hits": 1,
+          "auto_capture": true
+        },
+        {
+          "case": "empty-first",
+          "trace_id": "a3ae2a52eb67be51ce4d8c5ba00decc1",
+          "spans": 24,
+          "powercontext_attributes": 95,
+          "exact_ids_parents_times_usage": true,
+          "search_hits": 0,
+          "auto_capture": true
+        },
+        {
+          "case": "double-cobalt",
+          "trace_id": "1043979e327ef4ba3c25a11f6e846077",
+          "spans": 24,
+          "powercontext_attributes": 95,
+          "exact_ids_parents_times_usage": true,
+          "search_hits": 2,
+          "auto_capture": true
+        },
+        {
+          "case": "empty-no-capture",
+          "trace_id": "466a7dee5ade091ff592b99676616e26",
+          "spans": 16,
+          "powercontext_attributes": 63,
+          "exact_ids_parents_times_usage": true,
+          "search_hits": 0,
+          "auto_capture": false
+        },
+        {
+          "case": "single-amber",
+          "trace_id": "a34b10cef0b6fab201847ce5489fa768",
+          "spans": 24,
+          "powercontext_attributes": 95,
+          "exact_ids_parents_times_usage": true,
+          "search_hits": 1,
+          "auto_capture": true
+        },
+        {
+          "case": "triple-opal",
+          "trace_id": "d59cb2b7ce2983760c02c2e7a0eea55c",
+          "spans": 24,
+          "powercontext_attributes": 95,
+          "exact_ids_parents_times_usage": true,
+          "search_hits": 3,
+          "auto_capture": true
+        },
+        {
+          "case": "empty-late",
+          "trace_id": "59d23cf26c129aacc9279232ea925669",
+          "spans": 24,
+          "powercontext_attributes": 95,
+          "exact_ids_parents_times_usage": true,
+          "search_hits": 0,
+          "auto_capture": true
+        },
+        {
+          "case": "double-violet-no-capture",
+          "trace_id": "d614d81fde05d13505da1ab82c0c1d44",
+          "spans": 16,
+          "powercontext_attributes": 63,
+          "exact_ids_parents_times_usage": true,
+          "search_hits": 2,
+          "auto_capture": false
+        }
+      ]
+    },
+    "browser/activity-regression.json": [
+      {
+        "device": "desktop",
+        "version": "after",
+        "httpStatus": 200,
+        "encryptedPayload": true,
+        "activityChartRendered": true,
+        "axisMaximum": 8,
+        "chartText": "08:0002468"
+      },
+      {
+        "device": "mobile",
+        "version": "after",
+        "httpStatus": 200,
+        "encryptedPayload": true,
+        "activityChartRendered": true,
+        "axisMaximum": 8,
+        "chartText": "08:0002468"
+      }
+    ],
+    "browser/session-regression.json": [
+      {
+        "device": "desktop",
+        "loadedSessions": 8
+      },
+      {
+        "device": "mobile",
+        "loadedSessions": 8
+      }
+    ],
+    "browser/form-regression.json": [
+      {
+        "device": "desktop",
+        "version": "after",
+        "formOpenedAndDismissed": true,
+        "sandboxNoOverflow": true
+      },
+      {
+        "device": "mobile",
+        "version": "after",
+        "formOpenedAndDismissed": true,
+        "sandboxNoOverflow": true
+      }
+    ]
+  },
+  "screenshot_sha256": {
+    "mobile-task-before.png": "b9570db0f63416df43e4a93fee8154c2a577186cf077a514fd003c3a96fcc496",
+    "mobile-task-after.png": "b2a66f0e9361000ff986f7c86e1950660d515b5d666fd2ab1eabb1c6f929f6a4",
+    "desktop-task-after.png": "b6e307ee12ec8f9274647df2500290687546278ee6e802b819b93eccd1234a7e",
+    "mobile-compare-2-A-after.png": "782b52a86dc61924dfe26434a29ec8e4edb6a531ddd27615bb2533d444a71091",
+    "desktop-dashboard-activity-after.png": "eb2249a67500956cf35399ba47c39a863173cc6bf4043374c1bdb7ac5a93e9b4",
+    "mobile-dashboard-activity-after.png": "4e7acc4d953be44b6f91eb3ada814b4472deae89a85426429a0e4ab37a8be754"
+  },
+  "local_log_sha256": {
+    "lint.log": "9df2d92eabb39b257e96a92472ef6a970c9e0d3915ccaf77953a1a7971c71372",
+    "lint-fix.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "format-fix.log": "dd92c6ce42625eb5bb07843dc6c808e325397610deb8eb7ef767843178fa9b7b",
+    "typecheck-fix.log": "de482370a88496e78a4c09a05fe54d4d972f35f55892f42e2192e6a853b1829f",
+    "build-fix.log": "b3319daed22387a841f2f65d33aca1aea869193406f865b66a7f974dcc32896d",
+    "build-production.log": "9d1e0893e1bdb7cab31fe797c64a557700c6e64ee0f95ec333c000e24a8b1274",
+    "unit-final.log": "449887c86db99fc9c22a7714fe25210e83896ac7895241d98193e47a75b26837",
+    "e2e.log": "75a9037cc4a52a05834a2f0559e71f341cf7662f2c680c2735f38964922de40c",
+    "affected-e2e.log": "d451975d4b9ff2265389d07c0eea61b60d09c4703e09b5beddd9eebea750123d",
+    "sdk-baseline.log": "16809a9cc89d8fe8e51c0f993295aed466a2bec69de6cfb310f30925d312210d",
+    "live-browser.log": "e83c07cb25a71fe1f2f5b23165b7dd379562207ffe7dc8a3c9c8383b2035264e",
+    "live-trace.log": "31093ba505ee95f95748e92135e073502e3294b4cf7f84f3a5dd962ce08f1792",
+    "live-activity.log": "32c37c3464c0ce6522af879c4e08a20a7865562b8999eb6a15b3b66394f2f42a",
+    "live-session.log": "3e30e7b3396746bcb17deec75cbff09d346e75b1f79b6169a90dc224565442a2",
+    "live-form.log": "5c523e94632aef8ef169031f2f3e07201b37d5b6aec110917462d19cd2f2608c"
+  }
+}

@@ -1,0 +1,45 @@
+// observ-hermes production configuration
+// Default path: $HERMES_HOME/observ-hermes.json, with HERMES_HOME=~/.hermes.
+// Replay capture and local artifacts are configured only by hermes-replay.
+{
+  "enableTelemetry": true,
+  "serviceName": "hermes",
+  "collectionMode": "privacy",
+  "debug": false,
+  "dynamicUsername": false,
+  "dynamicUid": false,
+  "otelExporter": {
+    "endpoint": "http://127.0.0.1:4319",
+    "protocol": "http/json",
+    "headers": {},
+    "attributes": {
+      "ant.username": ""
+    },
+    "resourceAttributes": {
+      "ant.agent.type": "hermes",
+      "ant.agent.product": "Hermes",
+      "ant.agent.instance": "",
+      "ant.agent.env": "Default",
+      "ant.agent.scene": "default"
+    },
+    "metricsTemporalityPreference": "delta"
+  },
+  "tracesConfig": {
+    "endpoint": "http://127.0.0.1:4319/v1/traces",
+    "headers": {},
+    "enabled": true
+  },
+  "metricsConfig": {
+    "endpoint": "http://127.0.0.1:4319/v1/metrics",
+    "headers": {},
+    "enabled": true
+  },
+  "eventsConfig": {
+    "endpoint": "http://127.0.0.1:4319/v1/logs",
+    "headers": {},
+    "enabled": true
+  },
+  "metricExportInterval": 60000,
+  "logsExportInterval": 5000,
+  "logDir": ""
+}

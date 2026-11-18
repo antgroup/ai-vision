@@ -1,0 +1,48 @@
+[package]
+name = "weaver-guard"
+version = "0.2.6"
+edition = "2021"
+description = "CLI validator for AI Agent OTLP telemetry"
+license = "Apache-2.0"
+
+[[bin]]
+name = "weaver-guard"
+path = "src/main.rs"
+required-features = ["cli"]
+
+[features]
+default = ["cli"]
+cli = ["clap", "colored", "ratatui", "crossterm", "tracing-subscriber"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_yml = "0.0.12"
+serde_json = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"], optional = true }
+anyhow = "1.0"
+thiserror = "2.0"
+clap = { version = "4.6", features = ["derive"], optional = true }
+shellexpand = "3.1"
+chrono = { version = "0.4", features = ["serde"] }
+colored = { version = "3", optional = true }
+walkdir = "2"
+ratatui = { version = "0.29", optional = true }
+crossterm = { version = "0.28", optional = true }
+toml = "0.8"
+axum = "0.8"
+bytes = "1"
+flate2 = "1"
+tar = "0.4"
+opentelemetry-proto = { version = "0.31", features = ["gen-tonic", "logs", "metrics", "trace"] }
+prost = "0.14"
+prost-types = "0.14"
+reqwest = { version = "0.13", default-features = false, features = ["json", "gzip", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "process"] }
+
+# Weaver crates (git dependency)
+weaver_checker = { git = "https://github.com/open-telemetry/weaver.git", rev = "d096dda21e3b7a32e8653283b394ba0fe954d96f" }
+
+[dev-dependencies]
+tempfile = "3.10"

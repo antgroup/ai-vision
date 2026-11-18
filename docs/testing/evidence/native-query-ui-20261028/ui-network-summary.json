@@ -1,0 +1,152 @@
+{
+  "dashboard": [
+    {
+      "url": "http://127.0.0.1:32407/api/v1/spaces/5af73e76-87f3-4a98-b8ec-686b658c5115/signoz/traces/metrics?from=1792886400000&to=1792898399999&agent_product=langfuse&bucket=hour&groupBy=model&agent_uuid=fda49f61-f1d6-478d-aeb3-544be9dd0c8f&include_cost=false",
+      "method": "GET",
+      "body": null
+    },
+    {
+      "url": "http://127.0.0.1:32407/api/v1/spaces/5af73e76-87f3-4a98-b8ec-686b658c5115/signoz/traces/list",
+      "method": "POST",
+      "body": {
+        "agent_product": "langfuse",
+        "agent_uuid": "fda49f61-f1d6-478d-aeb3-544be9dd0c8f",
+        "page": 1,
+        "limit": 200,
+        "from": "1792886400000",
+        "to": "1792898399999",
+        "fields": [
+          "trace_id",
+          "name",
+          "start_time_unix_nano",
+          "end_time_unix_nano",
+          "span_count",
+          "status_code",
+          "attributes.gen_ai.input.messages",
+          "inputEvidence"
+        ],
+        "orderBy": "start_time_unix_nano.desc"
+      }
+    },
+    {
+      "url": "http://127.0.0.1:32407/api/v1/spaces/5af73e76-87f3-4a98-b8ec-686b658c5115/signoz/sessions/list",
+      "method": "POST",
+      "body": {
+        "agent_product": "langfuse",
+        "agent_uuid": "fda49f61-f1d6-478d-aeb3-544be9dd0c8f",
+        "session_semantics": "canonical-trace-v1",
+        "page": 1,
+        "limit": 10,
+        "from": "1792886400000",
+        "to": "1792898399999"
+      }
+    }
+  ],
+  "dashboardResponses": [
+    {
+      "url": "http://127.0.0.1:32407/api/v1/spaces/5af73e76-87f3-4a98-b8ec-686b658c5115/signoz/traces/metrics?from=1792886400000&to=1792898399999&agent_product=langfuse&bucket=hour&groupBy=model&agent_uuid=fda49f61-f1d6-478d-aeb3-544be9dd0c8f&include_cost=false",
+      "status": 200,
+      "envelopeKeys": [
+        "code",
+        "message",
+        "data"
+      ],
+      "dataKeys": [
+        "traceCount",
+        "spanCount",
+        "generationCount",
+        "toolCount",
+        "errorCount",
+        "errorRate",
+        "usage",
+        "reportedUsage",
+        "coverage",
+        "usageByType",
+        "groups",
+        "timeseries",
+        "latencyMs",
+        "meta",
+        "costsIncluded"
+      ],
+      "firstRowKeys": [],
+      "summaryKeys": [],
+      "usageKeys": [],
+      "hasCostSummary": false
+    },
+    {
+      "url": "http://127.0.0.1:32407/api/v1/spaces/5af73e76-87f3-4a98-b8ec-686b658c5115/signoz/traces/list",
+      "status": 200,
+      "envelopeKeys": [
+        "code",
+        "message",
+        "data"
+      ],
+      "dataKeys": [
+        "data",
+        "meta",
+        "facets"
+      ],
+      "firstRowKeys": [
+        "trace_id",
+        "name",
+        "start_time_unix_nano",
+        "end_time_unix_nano",
+        "span_count",
+        "status_code",
+        "attributes.gen_ai.input.messages",
+        "inputEvidence",
+        "ioPreview"
+      ],
+      "summaryKeys": [],
+      "usageKeys": [],
+      "hasCostSummary": false
+    },
+    {
+      "url": "http://127.0.0.1:32407/api/v1/spaces/5af73e76-87f3-4a98-b8ec-686b658c5115/signoz/sessions/list",
+      "status": 200,
+      "envelopeKeys": [
+        "code",
+        "message",
+        "data"
+      ],
+      "dataKeys": [
+        "data",
+        "facets",
+        "meta"
+      ],
+      "firstRowKeys": [
+        "session_id",
+        "created_at",
+        "last_activity",
+        "start_time_unix_nano",
+        "end_time_unix_nano",
+        "duration_ms",
+        "trace_count",
+        "span_count",
+        "session_status",
+        "status_code",
+        "user_id",
+        "username",
+        "user_ids",
+        "tags",
+        "environment",
+        "space_id",
+        "agent_product",
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "usage",
+        "coverage",
+        "costCoverage",
+        "matched_trace_ids",
+        "matched_trace_count",
+        "ioPreview",
+        "attributes.gen_ai.input.messages",
+        "attributes.gen_ai.output.messages"
+      ],
+      "summaryKeys": [],
+      "usageKeys": [],
+      "hasCostSummary": false
+    }
+  ]
+}

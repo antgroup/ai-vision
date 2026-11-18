@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "source_repository": "https://github.com/ob-labs/ai-vision-ob",
+  "source_base_revision": "historical-source-revision-redacted",
+  "capture_date": "2026-11-03",
+  "source_worktree_dirty_at_capture": true,
+  "source_identity_boundary": "Captures were made during the example refinement worktree. The final delivered catalog hash below includes numerical guard fixes made after some captures; the selected retrieval and Python recipes are unchanged. The base commit alone does not contain the refinement. The source inventory identifies the final reviewed source bytes, not a claim that every byte was captured on screen.",
+  "final_catalog_sha256": "db420f3848193bccb6691cc5ddbd24f7b18333aef4b9ff4791962f66de3b0005",
+  "source_inventory": [
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/enhancedRuleExamples.ts",
+      "sha256": "db420f3848193bccb6691cc5ddbd24f7b18333aef4b9ff4791962f66de3b0005"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/enhancedRuleModel.ts",
+      "sha256": "972828cdfd5a7a6d7a0615f9c3f61b00dca49464e8b7c154742d6e97d8bdad06"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/EnhancedRuleEnvironment.tsx",
+      "sha256": "f95e5ed0e898fbdc3b6bf5cf4bef08b66145887d107e4e4af2a1d28386963fd7"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/CreateRuleDiagnoserForm.tsx",
+      "sha256": "ef781723cfe173a8bdaf1b93c80a5b2a268ef9485b9fe8e86022874d1aab14ed"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/zh-CN.json",
+      "sha256": "cfaf387180b059e17fdc2a527e1dcf7824cfdf730ac7b1e28914765732434756"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/en-US.json",
+      "sha256": "df925625774cd27c9b12a27dc8e86ebb9b332e42ca39519aab0d3560257501e2"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/ja-JP.json",
+      "sha256": "cde34fe4e039ee02ee14c76b20e858f1cfd543f66b3e68e66345ba4c275a88d0"
+    }
+  ],
+  "capture_method": "Root-operated real Codex in-app browser, original full viewport JPEGs. No interception, redraw, crop, overlay, or reencoding.",
+  "environment": {
+    "host": "macOS ARM64",
+    "docker_vm": "OrbStack Linux ARM64",
+    "provider": "OpenShell",
+    "prepared_environment": true,
+    "synthetic_input": true,
+    "real_agent_trace_ingestion_verified": false
+  },
+  "runtime_manifest_sha256": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+  "browser_trials": {
+    "count": 3,
+    "cases": [
+      "retrieval-positive",
+      "retrieval-reordered-ranking-bad",
+      "python-nine-reference-tests-good"
+    ],
+    "scope": "Actual local browser to real backend and OpenShell, with explicitly synthetic Trace inputs. Two selected screenshots show results; the catalog capture does not prove execution of all seven templates."
+  },
+  "visible_result_evidence": {
+    "retrieval": {
+      "ranking_quality": "bad",
+      "ndcg": 0.6934264036172708,
+      "minimum_ndcg": 0.9,
+      "citation_coverage": "good",
+      "coverage": 1
+    },
+    "python": {
+      "verdict": "good",
+      "passed": 9,
+      "failed": 0,
+      "total": 9,
+      "skipped": 0
+    }
+  },
+  "runtime_acceptance": {
+    "final_unique_cases": 49,
+    "all_final_cases_match_expected": true,
+    "final_templates": 7,
+    "raw_http_trials": 80,
+    "raw_http_attempts_matching_expected": 78,
+    "historical_unexpected_failures": 2,
+    "historical_failures_fixed_and_retested": true,
+    "invalid_reference_cases_expected_execution_failed": 10,
+    "exact_large_integer_verified": true,
+    "report_sha256": "49f1ff5a16109942e1500f96c3107554d8a7b27841fc265b25a5956840bd2f30"
+  },
+  "final_cleanup_readback": {
+    "all_sql_and_journal_leases": 111,
+    "all_closed": true,
+    "all_cleanup_verified": true,
+    "new_leases_this_refinement": 83,
+    "new_http_trials": 80,
+    "new_browser_trials": 3,
+    "matching_workload_containers": 0,
+    "matching_workload_volumes": 0,
+    "mtls_gateway_sandboxes": 0,
+    "mtls_gateway_templates": 0,
+    "plugin_ready": true,
+    "active_leases": 0,
+    "application_docker_sockets": false,
+    "receipt_sha256": "f2925aae4d8c2d01628ea67b51589dae38d9c57b054dedcd08d31eecd615562f"
+  },
+  "verification_limits": [
+    "Prepared local ARM64 source-QA environment; not a cold public-registry installation.",
+    "Synthetic Trace inputs; not real Agent telemetry ingestion or semantic faithfulness evaluation.",
+    "No Linux AMD64, released artifact, private-native delivery, or documentation publication qualification.",
+    "Three screenshots establish their selected visible views only, not every catalog example or every runtime case."
+  ],
+  "assets": [
+    {
+      "scene": "advanced-example-catalog",
+      "source_file": "refined-examples/02-advanced-catalog.jpg",
+      "documentation_asset": "assets/figures/enhanced-rule-examples-catalog.jpg",
+      "product_asset": "docs/deployment/assets/enhanced-rule-examples-catalog.jpg",
+      "sha256": "32daa3bd04ee48acb41e2eeb0f03f1e0a88ee39d8fb01c7d1c4bfe09b9f60fab",
+      "bytes": 42921,
+      "width": 572,
+      "height": 848,
+      "ui_language": "zh-CN",
+      "theme": "dark",
+      "original_bytes_preserved": true
+    },
+    {
+      "scene": "retrieval-ranking-bad-coverage-good",
+      "source_file": "refined-examples/05-retrieval-ranking-bad.jpg",
+      "documentation_asset": "assets/figures/enhanced-rule-ranking-quality.jpg",
+      "product_asset": "docs/deployment/assets/enhanced-rule-ranking-quality.jpg",
+      "sha256": "8f9ab11e19ae7d27a2c19a29f18a7f22635e8dad621cd5ef3609ef4dc6c44f80",
+      "bytes": 35648,
+      "width": 572,
+      "height": 848,
+      "ui_language": "zh-CN",
+      "theme": "dark",
+      "original_bytes_preserved": true
+    },
+    {
+      "scene": "python-nine-reference-tests-good",
+      "source_file": "refined-examples/06-python-nine-tests.jpg",
+      "documentation_asset": "assets/figures/enhanced-rule-reference-nine-tests.jpg",
+      "product_asset": "docs/deployment/assets/enhanced-rule-reference-nine-tests.jpg",
+      "sha256": "625c4c5cff5b26aab1e0311fe63aa5b34ace92c29cd44366b03c1173729aa076",
+      "bytes": 42429,
+      "width": 572,
+      "height": 848,
+      "ui_language": "zh-CN",
+      "theme": "dark",
+      "original_bytes_preserved": true
+    }
+  ]
+}

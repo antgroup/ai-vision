@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aivision-fe
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: frontend}
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  progressDeadlineSeconds: 420
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: aivision-fe}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/component: frontend, app: aivision-fe, app.kubernetes.io/part-of: aivision, aivision.ob-labs.io/managed-by: aiv-kubernetes}
+      annotations:
+        aivision.ob-labs.io/config: {{.ConfigHash | quote}}
+        aivision.ob-labs.io/rollout: {{.Rollout | quote}}
+    spec:
+      serviceAccountName: aivision
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: fe
+          image: {{.FE_IMAGE | quote}}
+          imagePullPolicy: {{.IMAGE_PULL | quote}}
+          ports: [{containerPort: 5174, name: http}]
+          env:
+            - {name: FE_PORT, value: "5174"}
+            - {name: BE_UPSTREAM, value: "http://aivision-be:8001"}
+            - name: AIVISION_TRUST_PROXY_HEADERS
+              valueFrom:
+                configMapKeyRef: {name: aivision-backend, key: AIVISION_TRUST_PROXY_HEADERS}
+          startupProbe:
+            httpGet: {path: /, port: http}
+            failureThreshold: 60
+            periodSeconds: 5
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /, port: http}
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 50m, memory: 32Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aivision-fe
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: frontend}
+spec:
+  type: ClusterIP
+  selector: {app: aivision-fe}
+  ports:
+    - name: http
+      port: 5174
+      targetPort: http

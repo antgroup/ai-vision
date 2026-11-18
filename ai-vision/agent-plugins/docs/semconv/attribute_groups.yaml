@@ -1,0 +1,2306 @@
+# AI Vision Agent Semantic Conventions - Attribute Registry
+# Defines all reusable attributes referenced by signals (spans, events, metrics).
+# Version: v2.0
+
+groups:
+  - id: registry.aivision.billing
+    type: attribute_group
+    display_name: AI Vision model billing
+    brief: "Billing evidence for a model call."
+    attributes:
+      - id: aivision.billing.mode
+        type:
+          allow_custom_values: false
+          members:
+            - id: subscription
+              value: "subscription"
+              brief: "The call uses a subscription entitlement."
+              stability: experimental
+            - id: pay_as_you_go
+              value: "pay_as_you_go"
+              brief: "The call uses metered API billing."
+              stability: experimental
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Billing mode established for this model call by the client or connection configuration."
+        note: "Omit when unknown. A model name or a protocol-compatible client does not identify its billing mode."
+        examples: ["subscription", "pay_as_you_go"]
+
+      - id: aivision.billing.estimate_list_price
+        type: boolean
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Legacy subscription estimate preference retained for telemetry compatibility."
+        note: "AI Vision estimates eligible subscription usage automatically and ignores this flag."
+
+  # ============================================================
+  # Ant Identity Attributes
+  # ============================================================
+  - id: registry.ant
+    type: attribute_group
+    display_name: Ant Identity
+    brief: "Ant platform identity attributes shared across all signals."
+    attributes:
+      - id: ant.username
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "User identifier"
+        examples: ["100001"]
+
+      - id: ant.uid
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When available"
+        brief: "External customer UID"
+        examples: ["2088xxxx"]
+
+      - id: ant.agent.type
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Agent engine type identifier."
+        examples: ["claudecode", "opencode", "openclaw"]
+
+      - id: ant.agent.product
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Agent product name."
+        examples: ["openclaw", "codex", "claude-code"]
+
+      - id: ant.meta.trigger
+        type:
+          allow_custom_values: false
+          members:
+            - id: unspecified
+              value: ""
+              brief: "Caller did not declare an invocation trigger"
+              stability: experimental
+            - id: automation
+              value: "automation"
+              brief: "Caller-declared automated invocation attributed to automation, scheduler, or an upstream agent orchestrator."
+              stability: experimental
+            - id: interactive
+              value: "interactive"
+              brief: "Caller-declared invocation attributed to real-user interaction."
+              stability: experimental
+            - id: unknown
+              value: "unknown"
+              brief: "Explicit but unrecognized caller-declared invocation trigger"
+              stability: experimental
+        stability: experimental
+        requirement_level:
+          conditionally_required: "For ClaudeCode/cchooks and Codex/cdxhooks Resource attributes"
+        brief: "Caller-declared invocation trigger for the telemetry-producing agent process."
+        note: "Resource-scoped attribution; do not infer from prompt, transcript, username, Git, or process directory."
+        examples: ["", "automation", "interactive", "unknown"]
+
+  # ============================================================
+  # User Identity Attributes
+  # ============================================================
+  - id: registry.user
+    type: attribute_group
+    display_name: User Identity
+    brief: "User identity attributes for access control and auditing."
+    attributes:
+      - id: user.id
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "Unique user identifier (account ID or external UID)"
+        note: "Currently added for Langfuse userId field mapping compatibility. May be removed in future versions when ant.username is natively supported."
+        examples: ["100001", "alice"]
+
+  # ============================================================
+  # GenAI Core Attributes
+  # ============================================================
+  - id: registry.gen_ai
+    type: attribute_group
+    display_name: GenAI Core
+    brief: "GenAI core semantic convention attributes."
+    attributes:
+      - id: gen_ai.operation.name
+        type:
+          allow_custom_values: true
+          members:
+            - id: chat
+              value: "chat"
+              brief: "Chat completion operation"
+              stability: experimental
+            - id: create_agent
+              value: "create_agent"
+              brief: "Create GenAI Agent"
+              stability: experimental
+            - id: embeddings
+              value: "embeddings"
+              brief: "Embeddings operation"
+              stability: experimental
+            - id: execute_tool
+              value: "execute_tool"
+              brief: "Execute tool"
+              stability: experimental
+            - id: generate_content
+              value: "generate_content"
+              brief: "Multimodal content generation"
+              stability: experimental
+            - id: invoke_agent
+              value: "invoke_agent"
+              brief: "Invoke GenAI Agent"
+              stability: experimental
+            - id: retrieval
+              value: "retrieval"
+              brief: "Retrieval operation"
+              stability: experimental
+            - id: text_completion
+              value: "text_completion"
+              brief: "Text completion operation (Legacy)"
+              stability: experimental
+        stability: experimental
+        brief: "The name of the operation being performed."
+        examples: ["chat", "invoke_agent", "execute_tool"]
+
+      - id: gen_ai.session.id
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "A stable session identifier for session lifecycle events."
+        examples: ["session_abc123"]
+
+      - id: gen_ai.provider.name
+        type:
+          allow_custom_values: true
+          members:
+            - id: anthropic
+              value: "anthropic"
+              brief: "Anthropic"
+              stability: experimental
+            - id: openai
+              value: "openai"
+              brief: "OpenAI"
+              stability: experimental
+            - id: qwen
+              value: "qwen"
+              brief: "Tongyi Qwen"
+              stability: experimental
+            - id: alibaba
+              value: "alibaba"
+              brief: "Alibaba"
+              stability: experimental
+            - id: aws_bedrock
+              value: "aws.bedrock"
+              brief: "AWS Bedrock"
+              stability: experimental
+            - id: azure_ai_openai
+              value: "azure.ai.openai"
+              brief: "Azure OpenAI"
+              stability: experimental
+            - id: deepseek
+              value: "deepseek"
+              brief: "DeepSeek"
+              stability: experimental
+            - id: gcp_gemini
+              value: "gcp.gemini"
+              brief: "Gemini"
+              stability: experimental
+            - id: gcp_vertex_ai
+              value: "gcp.vertex_ai"
+              brief: "Vertex AI"
+              stability: experimental
+            - id: mistral_ai
+              value: "mistral_ai"
+              brief: "Mistral AI"
+              stability: experimental
+        stability: experimental
+        brief: "The name of the GenAI provider."
+        examples: ["anthropic", "openai", "qwen"]
+
+      - id: gen_ai.system
+        type:
+          allow_custom_values: true
+          members:
+            - id: anthropic
+              value: "anthropic"
+              brief: "Anthropic"
+              stability: experimental
+            - id: openai
+              value: "openai"
+              brief: "OpenAI"
+              stability: experimental
+            - id: qwen
+              value: "qwen"
+              brief: "Tongyi Qwen"
+              stability: experimental
+            - id: alibaba
+              value: "alibaba"
+              brief: "Alibaba"
+              stability: experimental
+            - id: aws_bedrock
+              value: "aws.bedrock"
+              brief: "AWS Bedrock"
+              stability: experimental
+            - id: azure_ai_openai
+              value: "azure.ai.openai"
+              brief: "Azure OpenAI"
+              stability: experimental
+            - id: deepseek
+              value: "deepseek"
+              brief: "DeepSeek"
+              stability: experimental
+            - id: gcp_gemini
+              value: "gcp.gemini"
+              brief: "Gemini"
+              stability: experimental
+            - id: gcp_vertex_ai
+              value: "gcp.vertex_ai"
+              brief: "Vertex AI"
+              stability: experimental
+            - id: mistral_ai
+              value: "mistral_ai"
+              brief: "Mistral AI"
+              stability: experimental
+            - id: theta
+              value: "theta"
+              brief: "Theta (MiniMax)"
+              stability: experimental
+        stability: experimental
+        brief: "Legacy compatibility provider identifier. New telemetry SHOULD use `gen_ai.provider.name` instead."
+        examples: ["openai", "anthropic", "qwen"]
+
+      - id: gen_ai.span.kind
+        type:
+          allow_custom_values: true
+          members:
+            - id: chat
+              value: "CHAT"
+              brief: "Chat entry point"
+              stability: experimental
+            - id: agent
+              value: "AGENT"
+              brief: "Agent service invocation"
+              stability: experimental
+            - id: llm
+              value: "LLM"
+              brief: "Model service invocation"
+              stability: experimental
+            - id: tool
+              value: "TOOL"
+              brief: "Tool invocation"
+              stability: experimental
+            - id: compaction
+              value: "COMPACTION"
+              brief: "Context compaction system operation"
+              stability: experimental
+            - id: mcp
+              value: "MCP"
+              brief: "MCP protocol invocation"
+              stability: experimental
+            - id: retriever
+              value: "RETRIEVER"
+              brief: "Retrieval operation"
+              stability: experimental
+            - id: reranker
+              value: "RERANKER"
+              brief: "Reranking operation"
+              stability: experimental
+            - id: embedding
+              value: "EMBEDDING"
+              brief: "Embedding operation"
+              stability: experimental
+            - id: guardrail
+              value: "GUARDRAIL"
+              brief: "Content safety check"
+              stability: experimental
+        stability: experimental
+        brief: "Ant extended span type. Distinguishes different span categories in the Ant agent system."
+        examples: ["CHAT", "AGENT", "LLM", "TOOL"]
+
+  # ============================================================
+  # GenAI Request Attributes
+  # ============================================================
+  - id: registry.gen_ai.request
+    type: attribute_group
+    display_name: GenAI Request
+    brief: "GenAI request parameters."
+    attributes:
+      - id: gen_ai.request.model
+        type: string
+        stability: experimental
+        brief: "The name of the model a request is being made to."
+        examples: ["claude-sonnet-4-6", "qwen-max"]
+
+      - id: gen_ai.request.temperature
+        type: double
+        stability: experimental
+        brief: "The temperature setting for generation."
+        examples: [0.0, 0.7, 1.0]
+
+      - id: gen_ai.request.max_tokens
+        type: int
+        stability: experimental
+        brief: "The maximum number of tokens to generate."
+        examples: [100, 4000]
+
+      - id: gen_ai.request.top_p
+        type: double
+        stability: experimental
+        brief: "Top-p sampling parameter."
+        examples: [1.0]
+
+      - id: gen_ai.request.top_k
+        type: double
+        stability: experimental
+        brief: "Top-k sampling parameter."
+        examples: [1.0, 3.0]
+
+      - id: gen_ai.request.frequency_penalty
+        type: double
+        stability: experimental
+        brief: "Frequency penalty parameter."
+        examples: [0.1]
+
+      - id: gen_ai.request.presence_penalty
+        type: double
+        stability: experimental
+        brief: "Presence penalty parameter."
+        examples: [0.1]
+
+      - id: gen_ai.request.stop_sequences
+        type: string[]
+        stability: experimental
+        brief: "List of stop sequences."
+        examples: [["forest", "lived"]]
+
+      - id: gen_ai.request.seed
+        type: int
+        stability: experimental
+        brief: "Random seed for deterministic generation."
+        examples: [100]
+
+      - id: gen_ai.request.choice.count
+        type: int
+        stability: experimental
+        brief: "Number of candidate completions."
+        examples: [1, 3]
+
+      - id: gen_ai.request.encoding_formats
+        type: string[]
+        stability: experimental
+        brief: "Requested encoding formats for embeddings."
+        examples: [["float", "binary"]]
+
+  # ============================================================
+  # GenAI Response Attributes
+  # ============================================================
+  - id: registry.gen_ai.response
+    type: attribute_group
+    display_name: GenAI Response
+    brief: "GenAI response attributes."
+    attributes:
+      - id: gen_ai.response.model
+        type: string
+        stability: experimental
+        brief: "The name of the model that generated the response."
+        examples: ["claude-sonnet-4-6-20250514"]
+
+      - id: gen_ai.response.id
+        type: string
+        stability: experimental
+        brief: "Unique identifier for the completion."
+        examples: ["chatcmpl-123", "msg_abc123"]
+
+      - id: gen_ai.response.finish_reasons
+        type: string[]
+        stability: experimental
+        brief: "Array of reasons the model stopped generating."
+        examples: [["stop"], ["end_turn"]]
+
+      - id: gen_ai.response.time_to_first_token
+        type: int
+        stability: experimental
+        brief: "Time to first token in milliseconds."
+        examples: [538, 2000, 5782]
+
+  # ============================================================
+  # GenAI Usage Attributes
+  # ============================================================
+  - id: registry.gen_ai.usage
+    type: attribute_group
+    display_name: GenAI Usage
+    brief: "GenAI token usage attributes."
+    attributes:
+      - id: gen_ai.usage.input_tokens
+        type: int
+        stability: experimental
+        brief: "Total number of input tokens, including cached input tokens."
+        examples: [100, 1500]
+
+      - id: gen_ai.usage.output_tokens
+        type: int
+        stability: experimental
+        brief: "Number of output tokens."
+        examples: [180, 800]
+
+      - id: gen_ai.usage.total_tokens
+        type: int
+        stability: experimental
+        brief: "Total number of tokens (input + output)."
+        examples: [300, 2300]
+
+      - id: gen_ai.usage.cache_read.input_tokens
+        type: int
+        stability: experimental
+        brief: "Number of input tokens read from cache."
+        examples: [50, 500]
+
+      - id: gen_ai.usage.cache_creation.input_tokens
+        type: int
+        stability: experimental
+        brief: "Number of input tokens written to cache."
+        examples: [25, 200]
+
+      - id: gen_ai.usage.reasoning.output_tokens
+        type: int
+        stability: experimental
+        brief: "Reasoning output tokens, already included in output_tokens."
+        examples: [0, 120]
+
+      - id: gen_ai.usage.details.cache_read_input_tokens
+        type: int
+        stability: experimental
+        brief: "Cache read tokens (Ant extended detail field)."
+        examples: [50]
+
+      - id: gen_ai.usage.details.cache_creation_input_tokens
+        type: int
+        stability: experimental
+        brief: "Cache creation tokens (Ant extended detail field)."
+        examples: [25]
+
+      - id: gen_ai.usage.details.cache_hit_rate
+        type: double
+        stability: experimental
+        brief: "Cache hit rate (Ant extended detail field)."
+        examples: [0.85]
+
+  # ============================================================
+  # GenAI Agent Attributes
+  # ============================================================
+  - id: registry.gen_ai.agent
+    type: attribute_group
+    display_name: GenAI Agent
+    brief: "GenAI agent identification attributes."
+    attributes:
+      - id: gen_ai.agent.id
+        type: string
+        stability: experimental
+        brief: "Unique identifier for the agent."
+        examples: ["asst_5j66UpCpwteGg4YSxUnt7lPY", "29794"]
+
+      - id: gen_ai.agent.name
+        type: string
+        stability: experimental
+        brief: "Human-readable name of the agent."
+        examples: ["Math Tutor", "CodeAssistant"]
+
+      - id: gen_ai.agent.version
+        type: string
+        stability: experimental
+        brief: "Version of the agent."
+        examples: ["1.0.0", "v1.2.3"]
+
+      - id: gen_ai.agent.description
+        type: string
+        stability: experimental
+        brief: "Description of the agent."
+        examples: ["Helps with math problems"]
+
+  # ============================================================
+  # GenAI Tool Attributes
+  # ============================================================
+  - id: registry.gen_ai.tool
+    type: attribute_group
+    display_name: GenAI Tool
+    brief: "GenAI tool invocation attributes."
+    attributes:
+      - id: gen_ai.tool.call.id
+        type: string
+        stability: experimental
+        brief: "Unique identifier for the tool call."
+        examples: ["call_mszuSIzqtI65i1wAUOE8w5H4"]
+
+      - id: gen_ai.tool.name
+        type: string
+        stability: experimental
+        brief: "Name of the tool."
+        examples: ["Read", "Edit", "Bash", "Flights"]
+
+      - id: gen_ai.tool.type
+        type:
+          allow_custom_values: true
+          members:
+            - id: function
+              value: "function"
+              brief: "Client-side execution. Agent generates parameters, client executes logic."
+              stability: experimental
+            - id: extension
+              value: "extension"
+              brief: "Agent-side execution. Directly calls external APIs."
+              stability: experimental
+            - id: datastore
+              value: "datastore"
+              brief: "Access and query structured/unstructured external data."
+              stability: experimental
+            - id: skill
+              value: "skill"
+              brief: "Predefined prompt-driven workflow. Agent runtime loads and executes a skill template."
+              stability: experimental
+        stability: experimental
+        brief: "Type of the tool."
+        examples: ["function", "extension", "datastore", "skill"]
+
+      - id: gen_ai.tool.description
+        type: string
+        stability: experimental
+        brief: "Description of the tool."
+        examples: ["Read file content"]
+
+      - id: gen_ai.tool.call.arguments
+        type: string
+        stability: experimental
+        brief: "Tool call arguments (Opt-In, may contain sensitive data)."
+        examples: ['{"path":"src/main.ts"}']
+
+      - id: gen_ai.tool.call.parameters
+        type: string
+        stability: experimental
+        brief: "Tool call parameters (alias for gen_ai.tool.call.arguments)."
+        note: "Some runtimes use 'parameters' instead of 'arguments'. Semantically equivalent."
+        examples: ['{"path":"src/main.ts"}']
+
+      - id: gen_ai.tool.call.result
+        type: string
+        stability: experimental
+        brief: "Tool call result (Opt-In, may contain sensitive data)."
+        examples: ['{"updated":true}']
+
+      - id: gen_ai.tool.definitions
+        type: string
+        stability: experimental
+        brief: "Available tool definitions list (Opt-In)."
+
+  # ============================================================
+  # GenAI Conversation Attributes
+  # ============================================================
+  - id: registry.gen_ai.conversation
+    type: attribute_group
+    display_name: GenAI Conversation
+    brief: "GenAI conversation and chat identification attributes."
+    attributes:
+      - id: gen_ai.conversation.id
+        type: string
+        stability: experimental
+        brief: "Unique identifier for the conversation."
+        examples: ["conv_5j66UpCpwteGg4YSxUnt7lPY", "conv-abc-123"]
+
+      - id: gen_ai.chat.id
+        type: string
+        stability: experimental
+        brief: "Unique identifier for a single chat turn within a conversation."
+        examples: ["chat-456"]
+
+  # ============================================================
+  # GenAI Content Attributes
+  # ============================================================
+  - id: registry.gen_ai.content
+    type: attribute_group
+    display_name: GenAI Content
+    brief: "GenAI input/output content attributes."
+    attributes:
+      - id: gen_ai.input.messages
+        type: string
+        stability: experimental
+        brief: "JSON-serialized array of input messages in OpenAI API format: [{role, content, tool_calls?, tool_call_id?}]. Opt-In, may contain sensitive data."
+
+      - id: gen_ai.output.messages
+        type: string
+        stability: experimental
+        brief: "JSON-serialized array of output messages in OpenAI API format: [{role, content, finish_reason, tool_calls?}]. Opt-In, may contain sensitive data."
+
+      - id: gen_ai.system_instructions
+        type: string
+        stability: experimental
+        brief: "JSON-serialized string of system instructions independent of chat history. Opt-In, may contain sensitive data."
+
+      - id: gen_ai.output.type
+        type:
+          allow_custom_values: true
+          members:
+            - id: text
+              value: "text"
+              brief: "Plain text"
+              stability: experimental
+            - id: json
+              value: "json"
+              brief: "JSON object"
+              stability: experimental
+            - id: image
+              value: "image"
+              brief: "Image"
+              stability: experimental
+            - id: speech
+              value: "speech"
+              brief: "Speech"
+              stability: experimental
+        stability: experimental
+        brief: "Requested output content type."
+        examples: ["text", "json"]
+
+      - id: gen_ai.data_source.id
+        type: string
+        stability: experimental
+        brief: "Data source identifier."
+        examples: ["H7STPQYOND", "zsearch-knowledge-base"]
+
+      - id: gen_ai.token.type
+        type:
+          allow_custom_values: true
+          members:
+            - id: input
+              value: "input"
+              brief: "Input token"
+              stability: experimental
+            - id: output
+              value: "output"
+              brief: "Output token"
+              stability: experimental
+            - id: cache_read
+              value: "cache_read"
+              brief: "Cache read token (Ant extension)"
+              stability: experimental
+            - id: cache_creation
+              value: "cache_creation"
+              brief: "Cache creation token (Ant extension)"
+              stability: experimental
+        stability: experimental
+        brief: "Token type for metrics."
+        examples: ["input", "output"]
+
+  # ============================================================
+  # GenAI Evaluation Attributes
+  # ============================================================
+  - id: registry.gen_ai.evaluation
+    type: attribute_group
+    display_name: GenAI Evaluation
+    brief: "GenAI evaluation result attributes."
+    attributes:
+      - id: gen_ai.evaluation.name
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "Name of the evaluation metric."
+        examples: ["Relevance", "IntentResolution"]
+
+      - id: gen_ai.evaluation.score.label
+        type: string
+        stability: experimental
+        brief: "Evaluation score label."
+        examples: ["relevant", "pass", "fail"]
+
+      - id: gen_ai.evaluation.score.value
+        type: double
+        stability: experimental
+        brief: "Evaluation score value."
+        examples: [4.0]
+
+      - id: gen_ai.evaluation.explanation
+        type: string
+        stability: experimental
+        brief: "Evaluation explanation."
+        examples: ["The response is factually accurate."]
+
+  # ============================================================
+  # GenAI Embeddings Attributes
+  # ============================================================
+  - id: registry.gen_ai.embeddings
+    type: attribute_group
+    display_name: GenAI Embeddings
+    brief: "GenAI embeddings operation attributes."
+    attributes:
+      - id: gen_ai.embeddings.dimension.count
+        type: int
+        stability: experimental
+        brief: "Number of dimensions in the output embeddings."
+        examples: [1024]
+
+  # ============================================================
+  # GenAI Retrieval Attributes
+  # ============================================================
+  - id: registry.gen_ai.retrieval
+    type: attribute_group
+    display_name: GenAI Retrieval
+    brief: "GenAI retrieval operation attributes."
+    attributes:
+      - id: gen_ai.retrieval.documents
+        type: string
+        stability: experimental
+        brief: "Retrieved documents list (Opt-In)."
+
+      - id: gen_ai.retrieval.query.text
+        type: string
+        stability: experimental
+        brief: "Retrieval query text (Opt-In, may contain sensitive data)."
+
+  # ============================================================
+  # Server Attributes
+  # ============================================================
+  - id: registry.server
+    type: attribute_group
+    display_name: Server
+    brief: "Server connection attributes."
+    attributes:
+      - id: server.address
+        type: string
+        stability: experimental
+        brief: "Server address (hostname or IP)."
+        examples: ["api.anthropic.com", "dashscope.aliyuncs.com"]
+
+      - id: server.port
+        type: int
+        stability: experimental
+        brief: "Server port number."
+        examples: [443]
+
+  # ============================================================
+  # Version Control System / Repository Context Attributes
+  # ============================================================
+  - id: registry.vcs
+    type: attribute_group
+    display_name: Version Control System
+    brief: "Git repository and HEAD context attached to telemetry Resource when available."
+    attributes:
+      - id: vcs.repository.url.full
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When a trusted Git worktree exposes a repository remote"
+        brief: "Full URL of the Git repository remote selected for the current worktree."
+        examples: ["ssh://git@example.test/team/repo.git"]
+        note: "May expose organization or project identity; omit when no trusted remote is available."
+
+      - id: vcs.ref.head.name
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When a trusted Git worktree exposes the current HEAD reference"
+        brief: "Name of the current Git HEAD reference or the literal `HEAD` for detached HEAD."
+        examples: ["main", "feature/repository-context", "HEAD"]
+        note: "Do not infer a branch from a directory name or an unrelated parent repository."
+
+      - id: vcs.ref.head.revision
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Revision identifier of the current Git HEAD when the runtime exposes it."
+        examples: ["0123456789abcdef0123456789abcdef01234567"]
+        note: "Optional enhancement; collectors must not run an unbounded or replay-local probe solely to populate it."
+
+  # ============================================================
+  # Error Attributes
+  # ============================================================
+  - id: registry.error
+    type: attribute_group
+    display_name: Error
+    brief: "Error attributes."
+    attributes:
+      - id: error.type
+        type: string
+        stability: experimental
+        brief: "Describes the type of error."
+        examples: ["timeout", "500", "rate_limit_exceeded"]
+
+  # ============================================================
+  # HTTP Attributes
+  # ============================================================
+  - id: registry.http
+    type: attribute_group
+    display_name: HTTP
+    brief: "HTTP attributes."
+    attributes:
+      - id: http.response.status_code
+        type: int
+        stability: experimental
+        brief: "HTTP response status code."
+        examples: [200, 429, 500]
+
+  # ============================================================
+  # MCP Protocol Attributes
+  # ============================================================
+  - id: registry.mcp
+    type: attribute_group
+    display_name: MCP
+    brief: "MCP (Model Context Protocol) attributes."
+    attributes:
+      - id: mcp.server_id
+        type: string
+        stability: experimental
+        brief: "MCP Server identifier."
+        examples: ["mcp.example.logs", "github-mcp"]
+
+      - id: mcp.request_type
+        type: string
+        stability: experimental
+        brief: "MCP invocation type."
+        examples: ["tools/list", "tools/call"]
+
+      - id: mcp.tool_name
+        type: string
+        stability: experimental
+        brief: "MCP tool name (required for tools/call)."
+        examples: ["queryAppLogContentByTraceId", "create_pull_request"]
+
+  # ============================================================
+  # Retrieval Attributes (Ant Extended - RETRIEVER Span)
+  # ============================================================
+  - id: registry.retrieval
+    type: attribute_group
+    display_name: Retrieval
+    brief: "Ant extended retrieval operation attributes for RETRIEVER spans."
+    attributes:
+      - id: retrieval.query
+        type: string
+        stability: experimental
+        brief: "Retrieval query text."
+        examples: ["what is the topic?"]
+
+      - id: retrieval.kind
+        type: string
+        stability: experimental
+        brief: "Type of retrieval operation."
+        examples: ["vector_query", "text_query"]
+
+      - id: retrieval.system
+        type: string
+        stability: experimental
+        brief: "Retrieval database system."
+        examples: ["zsearch", "tbase"]
+
+      - id: retrieval.request.top_k
+        type: int
+        stability: experimental
+        brief: "Number of top-K nearest documents to retrieve."
+        examples: [3]
+
+  # ============================================================
+  # Reranker Attributes
+  # ============================================================
+  - id: registry.reranker
+    type: attribute_group
+    display_name: Reranker
+    brief: "Reranker operation attributes."
+    attributes:
+      - id: reranker.model_name
+        type: string
+        stability: experimental
+        brief: "Reranker model name."
+        examples: ["antllm"]
+
+      - id: reranker.top_k
+        type: int
+        stability: experimental
+        brief: "Number of top-K documents to return after reranking."
+        examples: [3]
+
+  # ============================================================
+  # Embedding Attributes (Ant Extended)
+  # ============================================================
+  - id: registry.embedding
+    type: attribute_group
+    display_name: Embedding
+    brief: "Ant extended embedding attributes for EMBEDDING spans."
+    attributes:
+      - id: embedding.model_name
+        type: string
+        stability: experimental
+        brief: "Embedding model name."
+        examples: ["text-embedding-v1"]
+
+  # ============================================================
+  # Guardrail Attributes
+  # ============================================================
+  - id: registry.guardrail
+    type: attribute_group
+    display_name: Guardrail
+    brief: "Content safety guardrail attributes."
+    attributes:
+      - id: guardrail.input
+        type: string
+        stability: experimental
+        brief: "Content to be checked."
+
+      - id: guardrail.result
+        type: string
+        stability: experimental
+        brief: "Check result."
+
+      - id: guardrail.action
+        type: string
+        stability: experimental
+        brief: "Action taken (pass/block)."
+        examples: ["pass", "block"]
+
+  # ============================================================
+  # Coding Agent Attributes
+  # ============================================================
+  - id: registry.code
+    type: attribute_group
+    display_name: Coding Agent
+    brief: "Coding agent tool and file operation attributes."
+    attributes:
+      - id: code.tool.name
+        type: string
+        stability: experimental
+        brief: "Command name for coding agent tools."
+        examples: ["bash", "read", "edit"]
+
+      - id: code.tool.exit_code
+        type: int
+        stability: experimental
+        brief: "Command exit code."
+        examples: [0, 1]
+
+      - id: code.file.operation
+        type: string
+        stability: experimental
+        brief: "File operation type."
+        examples: ["read", "write", "delete"]
+
+      - id: code.file.path
+        type: string
+        stability: experimental
+        brief: "File path being operated on."
+        examples: ["/src/main.py", "/src/main.ts"]
+
+  # ============================================================
+  # Evaluation Pipeline Attributes
+  # ============================================================
+  - id: registry.eval
+    type: attribute_group
+    display_name: Evaluation Pipeline
+    brief: "Evaluation pipeline attributes for AGENT spans."
+    attributes:
+      - id: eval.trace_source
+        type: string
+        stability: experimental
+        brief: "Trace source type."
+        examples: ["prod", "sample", "synthetic"]
+
+      - id: eval.dataset.id
+        type: string
+        stability: experimental
+        brief: "Dataset identifier."
+        examples: ["dataset_golden_v1"]
+
+      - id: eval.prompt.id
+        type: string
+        stability: experimental
+        brief: "Prompt unique identifier."
+        examples: ["prompt_customer_service_v2"]
+
+      - id: eval.case.id
+        type: string
+        stability: experimental
+        brief: "Test case unique identifier."
+        examples: ["case_001"]
+
+      - id: eval.case.type
+        type: string
+        stability: experimental
+        brief: "Test case type."
+        examples: ["golden", "bad"]
+
+  # ============================================================
+  # Agentic Runtime & Business Attributes
+  # ============================================================
+  - id: registry.agentic
+    type: attribute_group
+    display_name: Agentic Runtime
+    brief: "Agentic runtime, business context, and traffic attributes."
+    attributes:
+      - id: agentic.collection.mode
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "Data collection mode controlling privacy filtering."
+        note: "Duplicated from resource onto every span. Use 'full' when privacy mode is not implemented."
+        examples: ["full", "privacy"]
+
+      - id: agentic.runtime.name
+        type: string
+        stability: experimental
+        brief: "Agent runtime name."
+        examples: ["claude-code", "codex", "dsh"]
+
+      - id: agentic.runtime.version
+        type: string
+        stability: experimental
+        brief: "Agent runtime version."
+        examples: ["v1.0.0"]
+
+      - id: agentic.runtime.cwd
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Current working directory of the agent runtime."
+        note: "The directory path where the agent is operating. May change between turns (e.g., worktree switches)."
+        examples: ["/Users/alice/projects/myapp", "/home/bob/workspace"]
+
+      - id: agentic.span.truncated
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether span attributes were reduced to satisfy the serialized span budget."
+        examples: ["true"]
+
+      - id: agentic.span.original_length
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Serialized bare-span JSON length before budget enforcement, in bytes."
+        examples: [4198400]
+
+      - id: agentic.span.size_limit
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Maximum serialized bare-span JSON length, in bytes."
+        examples: [4194304]
+
+      - id: agentic.span.truncation.reason
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Reason span attributes were reduced before export."
+        examples: ["size_budget"]
+
+      - id: agentic.mode
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Agent runtime interaction mode."
+        examples: ["ask", "code"]
+
+      - id: agentic.client.type
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Client surface that initiated the agent session."
+        examples: ["CLI"]
+
+      - id: agentic.client.version
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Client surface version that initiated the agent session."
+        examples: ["2.0.1"]
+
+      - id: agentic.turn.id
+        type: string
+        stability: experimental
+        brief: "Turn identifier within a conversation."
+        examples: ["turn-1"]
+
+      - id: agentic.turn.number
+        type: int
+        stability: experimental
+        brief: "Turn sequence number within a conversation (1-based)."
+        examples: [1, 2, 3]
+
+      - id: agentic.turn.index
+        type: int
+        stability: experimental
+        brief: "Turn index within a conversation (0-based)."
+        examples: [0, 1, 2]
+
+      - id: agentic.turn.synthetic
+        type: boolean
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When the turn is synthetically created (e.g., for between-turn compaction)"
+        brief: "Indicates this turn span was synthetically created for a system operation, not a user interaction."
+        examples: [true]
+
+      - id: agentic.turn.trigger
+        type:
+          allow_custom_values: false
+          members:
+            - id: interactive
+              value: "interactive"
+              brief: "Direct human prompt"
+              stability: experimental
+            - id: programmatic
+              value: "programmatic"
+              brief: "SDK/API initiated prompt without proof of scheduling"
+              stability: experimental
+            - id: queued
+              value: "queued"
+              brief: "Prompt delivered through the host queue"
+              stability: experimental
+            - id: system
+              value: "system"
+              brief: "Host, system, or task notification initiated turn"
+              stability: experimental
+            - id: subagent
+              value: "subagent"
+              brief: "Peer or coordinator initiated agent turn"
+              stability: experimental
+            - id: unknown
+              value: "unknown"
+              brief: "Missing, conflicting, or unsupported trigger evidence"
+              stability: experimental
+        stability: experimental
+        requirement_level:
+          conditionally_required: "For ClaudeCode and Codex Turn root spans"
+        brief: "Host-observed trigger mechanism, normalized for a single agent turn."
+        note: "Turn-scoped observation; only on the logical Turn root, independent from Resource ant.meta.trigger and must not be inferred from prompt text."
+        examples: ["interactive", "programmatic", "queued", "system", "subagent", "unknown"]
+
+      - id: agentic.response.index
+        type: int
+        stability: experimental
+        brief: "LLM response index within a single turn (0-based). A turn may contain multiple LLM responses."
+        examples: [0, 1]
+
+      - id: agentic.input.delta
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Incremental input context since the previous LLM generation within the same turn."
+        note: |
+          For the first generation in a turn (agentic.response.index=0), this equals the user message
+          (same as gen_ai.input.messages). For subsequent generations, it contains only the immediately
+          preceding assistant response and its tool results — the new context added since the last LLM call.
+          Serialized as a JSON array of OpenAI-format messages.
+        examples: ['[{"role":"assistant","content":"...","tool_calls":[...]},{"role":"tool","tool_call_id":"...","content":"..."}]']
+
+      - id: agentic.tool.count
+        type: int
+        stability: experimental
+        brief: "Number of tool calls triggered in this LLM response."
+        examples: [0, 1, 3]
+
+      - id: agentic.tool.type
+        type:
+          allow_custom_values: true
+          members:
+            - id: builtin
+              value: "builtin"
+              brief: "Built-in tool (e.g. Read, Write, Bash, Grep)"
+              stability: experimental
+            - id: mcp
+              value: "mcp"
+              brief: "MCP server tool call"
+              stability: experimental
+            - id: skill
+              value: "skill"
+              brief: "Skill/command invocation"
+              stability: experimental
+            - id: system
+              value: "system"
+              brief: "Agent runtime system operation such as context compaction"
+              stability: experimental
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Tool classification inferred from the raw tool name or runtime-specific invocation evidence."
+        examples: ["builtin", "mcp", "skill", "system"]
+        note: |
+          Inference rules:
+          - `gen_ai.tool.name` starts with `mcp__`  → `mcp`
+          - `gen_ai.tool.name` equals `Skill`        → `skill`
+          - A successful generic `read` that matches the active session's
+            `<available_skills>` location (or strict unknown-catalog fallback)
+            remains `builtin`; a separate zero-duration derived span emitted
+            after that read uses `gen_ai.tool.name=Skill` and type `skill`
+          - Otherwise                                → `builtin`
+
+      - id: agentic.tool.name
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Parsed logical name of the tool, derived from the raw name or runtime-specific invocation evidence."
+        examples: ["Read", "code_search.query_code_with_keyword", "eve-beta-skill", "medeval:task-one-shot"]
+        note: |
+          Derivation from `gen_ai.tool.name`:
+          - builtin: same as `gen_ai.tool.name` (e.g. `Read`, `Write`, `Bash`)
+          - mcp: strip `mcp__` prefix, replace `__` with `.`
+            (e.g. `mcp__code_search__query_code_with_keyword` → `code_search.query_code_with_keyword`)
+          - skill: the skill name from isMeta message or keyword matching
+            (e.g. `eve-beta-skill`, `medeval:task-one-shot`)
+          - derived Skill load: the catalog name for the exact `SKILL.md`
+            location; strict fallback uses the terminal skill directory name
+
+      - id: agentic.tool.derived
+        type: boolean
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether this span is a derived semantic observation rather than a physical tool invocation."
+        examples: [true]
+        note: |
+          Set to true only for derived Skill-load observations. Consumers that
+          count physical tool executions must exclude these spans and use the
+          physical tool event/metrics as the source of truth.
+
+      - id: agentic.tool.call_id.synthetic
+        type: boolean
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether gen_ai.tool.call.id was synthesized rather than supplied by the runtime."
+        examples: [true]
+        note: |
+          Derived Skill-load observations always use a distinct synthetic call
+          id. Physical ID-less tool calls may also set this marker when local
+          correlation creates their call id.
+
+      - id: agentic.error.category
+        type:
+          allow_custom_values: false
+          members:
+            - id: api_error
+              value: "api_error"
+              brief: "Provider/API returned an application or protocol error."
+              stability: experimental
+            - id: network_error
+              value: "network_error"
+              brief: "Network transport failed before a valid application response."
+              stability: experimental
+            - id: timeout
+              value: "timeout"
+              brief: "Operation exceeded its timeout budget."
+              stability: experimental
+            - id: rate_limit
+              value: "rate_limit"
+              brief: "Provider or runtime rejected the operation due to rate limits."
+              stability: experimental
+            - id: auth
+              value: "auth"
+              brief: "Authentication failed or credentials were invalid."
+              stability: experimental
+            - id: permission
+              value: "permission"
+              brief: "Authorization, policy, or user permission denied the operation."
+              stability: experimental
+            - id: validation
+              value: "validation"
+              brief: "Input, schema, argument, or request validation failed."
+              stability: experimental
+            - id: tool_error
+              value: "tool_error"
+              brief: "Tool execution failed after being invoked."
+              stability: experimental
+            - id: cancelled
+              value: "cancelled"
+              brief: "Operation was cancelled by user, runtime, or policy."
+              stability: experimental
+            - id: other
+              value: "other"
+              brief: "Known error that cannot be mapped to a stable category."
+              stability: experimental
+        stability: experimental
+        requirement_level:
+          conditionally_required: "Required on API request and tool error count metric datapoints."
+        brief: "Low-cardinality error category for RED error metrics."
+        examples: ["timeout", "rate_limit", "tool_error", "other"]
+        note: |
+          This attribute is intentionally low-cardinality and bounded for metric
+          dimensions. Raw error classes and messages belong in correlated events
+          (`error.type`, `error.message`) rather than metric datapoint attributes.
+
+      - id: agentic.tool.raw_name
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Original tool name as reported by the agent runtime, before parsing."
+        examples: ["mcp__code_search__query_code_with_keyword", "Skill", "Bash", "mcp__openaiDeveloperDocs__search_openai_docs"]
+        note: |
+          Preserves the raw tool identifier from the agent runtime (e.g. Claude Code, Codex).
+          Useful for debugging and correlating with agent-internal tool registries.
+          - builtin: same as the tool name (e.g. `Bash`, `Read`)
+          - mcp: the full `mcp__<server>__<method>` encoding
+          - native skill: `Skill` (the literal tool name used by the runtime)
+          - derived Skill load: the source generic tool name, e.g. `read`
+
+      - id: agentic.tool.duration_ms
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Tool execution duration in milliseconds, from tool.execute.before to tool.execute.after; derived instantaneous observations use 0."
+        examples: [0, 85, 450, 2717]
+
+      - id: agentic.llm.auxiliary
+        type: boolean
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Runtime-observed background LLM request with no user Turn ordinal."
+        note: >
+          Set true only for OpenCode's native title, summary, or compaction
+          request observed at the official provider hooks without an assistant
+          message correlation. Preserve the source conversation and agent name,
+          and derive gen_ai.chat.id as aux:<agent>:<official message id>.
+          Such requests remain standalone LLM spans; never manufacture a CHAT
+          span, a zero Turn number, or a parent from the current user Turn.
+          Uncorrelated primary calls and unknown agent names cannot use this marker.
+        examples: [true]
+
+      - id: agentic.llm.duration_ms
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "LLM request duration in milliseconds, from llm_input to llm_output."
+        examples: [1200, 5000, 15000]
+
+      - id: agentic.llm.ttfb_ms
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Time to first byte in milliseconds for the LLM response."
+        examples: [200, 800, 1500]
+
+      - id: agentic.model_call.id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Provider-assigned or framework-assigned call identifier for a single model API invocation."
+        examples: ["call-abc123", "req-456"]
+
+      - id: agentic.llm.error.type
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "LLM error category for API/client failures."
+        examples: ["api_error", "ProviderAuthError"]
+
+      - id: agentic.llm.error.message
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "LLM error message, redacted in privacy mode when content collection is disabled."
+        examples: ["[REDACTED]"]
+
+      - id: agentic.llm.error.status_code
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "LLM/API error status code when available."
+        examples: [401, 429]
+
+      - id: agentic.llm.retry.attempt
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Retry attempt number for an LLM/API error span."
+        examples: [1, 2, 3]
+
+      - id: agentic.llm.retry.max
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Maximum retry count configured for the LLM/API request."
+        examples: [3, 5]
+
+      - id: agentic.llm.retry.delay_ms
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Retry delay in milliseconds before the next LLM/API attempt."
+        examples: [500, 1200]
+
+      - id: agentic.llm.retry_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Total number of LLM/API retries associated with a generation span."
+        examples: [1, 2]
+
+      - id: agentic.llm.is_synthetic
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Marker indicating the generation span represents a synthetic client-side API-error message."
+        examples: ["true"]
+
+      - id: agentic.llm.step
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Zero-based index of this LLM step within the turn (matches StepBegin.n from wire.jsonl)."
+        examples: [0, 1, 2]
+
+      - id: agentic.tool.id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Tool invocation identifier."
+        examples: ["toolu_abc123", "skill-eve-beta-skill"]
+        note: |
+          Typically equals `gen_ai.tool.call.id` for builtin and mcp tools.
+          For skill invocations without a real tool_use_id, a synthetic
+          id is generated as `skill-{skill_name}`.
+
+      - id: agentic.subagent.name
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Subagent invocation name as reported by the agent runtime."
+        examples: ["Agent", "Task"]
+
+      - id: agentic.subagent.session_key
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Runtime session key for the spawned subagent transcript."
+        examples: ["agent_b3f813f2-a315-4959-aada-af454725839e"]
+
+      - id: agentic.subagent
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Boolean marker indicating this span belongs to a subagent session."
+        examples: ["true"]
+
+      - id: agentic.subagent.mode
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Subagent execution mode."
+        examples: ["sync", "async"]
+
+      - id: agentic.subagent.depth
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Nesting depth of the subagent (1 = direct child of root)."
+        examples: [1, 2]
+
+      - id: agentic.subagent.parent_thread_id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Session/thread ID of the parent that spawned this subagent."
+        examples: ["019e54a5-e6c6-7432-978e-f9620b5a2e8b"]
+
+      - id: agentic.subagent.child_thread_id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Session/thread ID of the spawned child subagent."
+        examples: ["019e54a6-7b9e-7f50-8024-2bc88c07f89b"]
+
+      - id: agentic.subagent.sender_thread_id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Thread ID of the agent that initiated the spawn/interaction."
+        examples: ["thread-parent"]
+
+      - id: agentic.subagent.receiver_thread_id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Thread ID of the agent receiving an interaction message."
+        examples: ["thread-child-1"]
+
+      - id: agentic.subagent.nickname
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Human-readable nickname of the subagent."
+        examples: ["Dewey", "worker"]
+
+      - id: agentic.subagent.agent_nickname
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Agent nickname from session_meta source (child-up model)."
+        examples: ["Dewey", "coder"]
+
+      - id: agentic.subagent.role
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Role of the subagent."
+        examples: ["worker", "coder", "analyst"]
+
+      - id: agentic.subagent.agent_role
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Agent role from session_meta source (child-up model)."
+        examples: ["worker", "coder"]
+
+      - id: agentic.subagent.agent_path
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Hierarchical path of the subagent in the agent tree."
+        examples: ["/root/worker/coder"]
+
+      - id: agentic.subagent.call_id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Tool call ID that spawned this subagent."
+        examples: ["call_btsNB7AIEaIocsjeavC4v6Li"]
+
+      - id: agentic.subagent.status
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Completion status of the subagent invocation."
+        examples: ["completed", "running", "failed"]
+
+      - id: agentic.subagent.prompt
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Initial prompt/instruction sent to the subagent."
+        examples: ["analyze the code"]
+
+      - id: agentic.subagent.model
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Model used by the subagent."
+        examples: ["gpt-5.2", "claude-4-sonnet"]
+
+      - id: agentic.tool.parallel_group
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Group ID linking tool calls that execute in parallel within the same generation."
+        examples: ["88def5b430f42549"]
+
+      - id: agentic.tool.input.truncated
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether tool input was truncated for export."
+        examples: ["true"]
+
+      - id: agentic.tool.input.missing
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether tool input arguments were unavailable in the source transcript."
+        examples: ["true"]
+
+      - id: agentic.tool.input.original_length
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Original length of tool input before truncation."
+        examples: [50000]
+
+      - id: agentic.tool.output.truncated
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether tool output was truncated for export."
+        examples: ["true"]
+
+      - id: agentic.tool.output.original_length
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Original length of tool output before truncation."
+        examples: [100000]
+
+      - id: agentic.skill.tags
+        type: string[]
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Tags associated with the detected skill invocation."
+        examples: [["code-review", "security"]]
+
+      - id: agentic.tool.decision
+        type:
+          allow_custom_values: false
+          members:
+            - id: allow
+              value: "allow"
+              brief: "Tool execution permitted"
+              stability: experimental
+            - id: deny
+              value: "deny"
+              brief: "Tool execution denied"
+              stability: experimental
+            - id: skip
+              value: "skip"
+              brief: "Tool execution skipped"
+              stability: experimental
+            - id: unknown
+              value: "unknown"
+              brief: "Decision status not available"
+              stability: experimental
+        stability: experimental
+        requirement_level: required
+        brief: "Tool permission decision result."
+        examples: ["allow", "deny", "skip", "unknown"]
+
+      - id: agentic.tool.decision.source
+        type:
+          allow_custom_values: true
+          members:
+            - id: user
+              value: "user"
+              brief: "User manually approved/denied"
+              stability: experimental
+            - id: auto
+              value: "auto"
+              brief: "Automatically decided by agent runtime"
+              stability: experimental
+            - id: policy
+              value: "policy"
+              brief: "Decided by permission policy"
+              stability: experimental
+            - id: hook
+              value: "hook"
+              brief: "Decided by hook/plugin"
+              stability: experimental
+            - id: config
+              value: "config"
+              brief: "Decided by configuration"
+              stability: experimental
+        stability: experimental
+        requirement_level: required
+        brief: "Source of the tool permission decision."
+        examples: ["user", "auto", "policy", "hook", "config"]
+
+      # ── Tool Output Truncation (C15) ─────────────────────────────
+
+      - id: agentic.tool.output.truncated
+        type: boolean
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When tool output has been truncated"
+        brief: "Indicates the tool output was truncated."
+        examples: [true]
+
+      - id: agentic.tool.output.original_length
+        type: int
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When tool output has been truncated"
+        brief: "Original length of the tool output before truncation."
+        examples: [50000, 128000]
+
+      # ── Subagent Attributes (C6) ────────────────────────────────
+
+      - id: agentic.subagent.session_key
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "Child agent session key for cross-trace correlation (C7)."
+        examples: ["agent:helper:task-1"]
+
+      - id: agentic.subagent.run_id
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When a run ID is available"
+        brief: "Run identifier for the subagent execution."
+        examples: ["run-abc123"]
+
+      - id: agentic.subagent.name
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Subagent name or agent ID."
+        examples: ["helper", "researcher", "coder"]
+
+      - id: agentic.subagent.label
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When a display label differs from agentId"
+        brief: "Display label for the subagent."
+        examples: ["Research Assistant", "Code Helper"]
+
+      - id: agentic.subagent.mode
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Subagent execution mode."
+        examples: ["run", "session"]
+
+      - id: agentic.subagent.outcome
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Subagent termination outcome."
+        examples: ["ok", "error", "timeout", "killed", "reset", "deleted"]
+
+      - id: agentic.subagent.reason
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When termination reason is available"
+        brief: "Reason for subagent termination."
+        examples: ["completed", "user_cancelled", "timeout_exceeded"]
+
+      - id: agentic.subagent.target_kind
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Target type of the subagent delegation."
+        examples: ["subagent", "acp"]
+
+      - id: agentic.subagent.description
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Description or prompt for the subagent task (may contain sensitive data)."
+        examples: ["Search for recent API changes"]
+
+      - id: agentic.subagent.result
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Result summary from the subagent (may contain sensitive data)."
+        examples: ["Found 3 API changes in the last week"]
+
+      - id: agentic.subagent.duration_ms
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Duration of subagent execution in milliseconds."
+        examples: [1500, 30000]
+
+      - id: agentic.subagent.error
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When subagent fails"
+        brief: "Error message from subagent execution."
+        examples: ["timeout after 30s", "agent crashed"]
+
+      # ── Compaction Attributes (C8) ──────────────────────────────
+
+      - id: agentic.compaction.messages_before
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Number of messages before compaction."
+        examples: [1030, 72]
+
+      - id: agentic.compaction.messages_after
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Number of messages after compaction."
+        examples: [1, 5]
+
+      - id: agentic.compaction.messages_compacted
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Number of messages removed by compaction."
+        examples: [1029, 67]
+
+      - id: agentic.compaction.tokens_before
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Token count before compaction."
+        examples: [65268, 13298]
+
+      - id: agentic.compaction.tokens_after
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Token count after compaction."
+        examples: [946, 1200]
+
+      - id: agentic.compaction.tokens_saved
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Tokens saved by compaction (tokens_before - tokens_after)."
+        examples: [64322, 12098]
+
+      - id: agentic.compaction.reason
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When the compaction trigger reason is available"
+        brief: "Reason for triggering compaction."
+        examples: ["max_tokens_exceeded", "manual_request", "context_window_pressure"]
+
+      - id: agentic.compaction.error
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When compaction fails"
+        brief: "Error message when compaction fails."
+        examples: ["compaction did not reduce message count"]
+
+      - id: traffic.source
+        type: string
+        stability: experimental
+        brief: "Traffic source."
+        examples: ["direct", "ad", "organic"]
+
+      - id: business.scene
+        type: string
+        stability: experimental
+        brief: "Business scenario."
+        examples: ["chat", "training", "eval"]
+
+      - id: business.app_id
+        type: string
+        stability: experimental
+        brief: "Application unique identifier."
+        examples: ["app_xxx_123"]
+
+      - id: agentic.compaction.trigger
+        type: string
+        stability: experimental
+        brief: "Trigger type for context compaction."
+        examples: ["auto", "manual"]
+
+      - id: agentic.compaction.tokens.before
+        type: int
+        stability: experimental
+        brief: "Token count before compaction."
+        examples: [50000, 100000]
+
+      - id: agentic.compaction.tokens.after
+        type: int
+        stability: experimental
+        brief: "Token count after compaction."
+        examples: [8000, 15000]
+
+      - id: agentic.compaction.tokens.saved
+        type: int
+        stability: experimental
+        brief: "Tokens saved by compaction (before - after)."
+        examples: [42000, 85000]
+
+      - id: agentic.compaction.sequence
+        type: int
+        stability: experimental
+        brief: "Compaction sequence number within the session (1-based)."
+        examples: [1, 2, 3]
+
+      - id: agentic.compaction.ratio
+        type: string
+        stability: experimental
+        brief: "Compaction ratio (tokens_saved / tokens_before)."
+        examples: ["0.84", "0.50"]
+
+      - id: agentic.subagent.id
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When the span represents a subagent invocation."
+        brief: "Unique identifier of the subagent instance."
+        examples: ["a501b5629", "sub-abc123"]
+
+      - id: agentic.subagent.type
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When the span represents a subagent invocation."
+        brief: "Type/role of the subagent (e.g., coder, researcher)."
+        examples: ["coder", "researcher", "planner"]
+
+      - id: agentic.subagent.parent_tool_call_id
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When the span represents a subagent invocation."
+        brief: "Tool call ID that spawned this subagent, linking it to the parent agent's tool call."
+        examples: ["fc-a3ce68ce-1234", "toolu_abc123"]
+
+  # ============================================================
+  # Event Common Attributes
+  # ============================================================
+  - id: registry.event
+    type: attribute_group
+    display_name: Event Common
+    brief: "Common attributes shared across all events."
+    attributes:
+      - id: event.name
+        type: string
+        stability: experimental
+        brief: "Event name."
+        examples: ["user_prompt", "api_request", "tool_call", "tool_result", "tool_decision"]
+
+      - id: event.sequence
+        type: int
+        stability: experimental
+        brief: "Monotonically increasing sequence number within a single prompt processing cycle."
+        examples: [1, 2, 5]
+
+  # ============================================================
+  # Ant Business Event Specific Attributes
+  # ============================================================
+  - id: registry.ant_event
+    type: attribute_group
+    display_name: Ant Business Events
+    brief: "Attributes specific to Ant business events."
+    attributes:
+      - id: duration_ms
+        type: int
+        stability: experimental
+        brief: "Duration in milliseconds."
+        examples: [120, 2350]
+
+      - id: attempt
+        type: int
+        stability: experimental
+        brief: "Retry attempt number."
+        examples: [1, 2]
+
+      - id: error.message
+        type: string
+        stability: experimental
+        brief: "Human-readable error message describing the error."
+        examples: ["Rate limit exceeded", "Connection timeout"]
+
+  # ============================================================
+  # Response Attributes (CHAT Span)
+  # ============================================================
+  - id: registry.response
+    type: attribute_group
+    display_name: Response
+    brief: "Response and input attributes for CHAT spans."
+    attributes:
+      - id: response.total_packets
+        type: int
+        stability: experimental
+        brief: "Number of streaming response packets."
+        examples: [52]
+
+      - id: response.duration
+        type: int
+        stability: experimental
+        brief: "Total call duration in milliseconds."
+        examples: [13825]
+
+      - id: input.intent
+        type: string
+        stability: experimental
+        brief: "Intent recognized from the user query."
+        examples: ["medical_diagnosis"]
+
+  # ============================================================
+  # Agent Metric Dimension Attributes
+  # ============================================================
+  - id: registry.agent_metric
+    type: attribute_group
+    display_name: Agent Metric Dimensions
+    brief: "Dimension attributes for agent.* business metrics."
+    attributes:
+      - id: model
+        type: string
+        stability: experimental
+        brief: "Model identifier for agent metrics."
+        examples: ["claude-sonnet-4-6"]
+
+      - id: type
+        type: string
+        stability: experimental
+        brief: "Type dimension for agent metrics (token type or activity type)."
+        examples: ["input", "output", "cache_read", "cache_creation", "user", "agent"]
+
+      - id: tool_name
+        type: string
+        stability: experimental
+        brief: "Tool name for agent.tool_call.count metric."
+        examples: ["web_search", "code_edit"]
+
+      - id: status
+        type: string
+        stability: experimental
+        brief: "Request status for agent.api_request.count metric."
+        examples: ["success", "error"]
+
+      - id: error_type
+        type: string
+        stability: experimental
+        brief: "Error type for agent.error.count metric."
+        examples: ["llm_api", "tool_execution", "timeout", "rate_limit", "auth"]
+
+  # ============================================================
+  # Agentic Usage Token Attributes (Three-Layer Model)
+  # Version: v4.0
+  # ============================================================
+  - id: registry.agentic.usage
+    type: attribute_group
+    display_name: Agentic Usage (Token Breakdown)
+    brief: "Three-layer token usage model: L2 breakdown and L3 raw per-provider fields."
+    note: |
+      Layer 2 subset invariants (MUST hold for valid data):
+        fresh_input_tokens + cache_read_tokens + cache_write_tokens = gen_ai.usage.input_tokens
+        reasoning_tokens <= gen_ai.usage.output_tokens
+        tool_tokens <= gen_ai.usage.input_tokens + gen_ai.usage.output_tokens
+      Violation of these constraints indicates a Normalizer bug.
+      null means the agent/provider does not support the field; 0 means supported but zero for this request.
+    attributes:
+      # ── Layer 2: Breakdown (derived from Layer 1 gen_ai.usage.*) ──
+      - id: agentic.usage.fresh_input_tokens
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Input tokens excluding cache (= gen_ai.usage.input_tokens - cache_read_tokens - cache_write_tokens)."
+        examples: [87, 1500]
+
+      - id: agentic.usage.cache_read_tokens
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Cache hit input tokens. Subset of gen_ai.usage.input_tokens."
+        examples: [49024, 0]
+
+      - id: agentic.usage.input_tokens.missing
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether input-token usage is unavailable from the actual source."
+        note: "Only the exact string 'true' marks input usage unknown and permits omitting the input count. It does not waive output or non-usage fields. Unknown is not measured zero; legacy numeric placeholders with this marker remain unknown."
+        examples: ["true"]
+
+      - id: agentic.usage.output_tokens.missing
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether output-token usage is unavailable from the actual source."
+        note: "Only the exact string 'true' marks output usage unknown and permits omitting the output count. It does not waive input or non-usage fields. Either unknown direction permits omitting an input+output total. Unknown is not measured zero; legacy numeric placeholders with this marker remain unknown."
+        examples: ["true"]
+
+      - id: agentic.usage.cache_read_tokens.missing
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether cache-read token usage is unavailable from the actual source."
+        note: "Only the exact string 'true' marks the detail unavailable, including when the host erased reportedness. Omit the corresponding numeric detail; unknown is not measured zero. This marker does not waive other usage or required attributes."
+        examples: ["true"]
+
+      - id: agentic.usage.cache_write_tokens.missing
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether cache-write token usage is unavailable from the actual source."
+        note: "Only the exact string 'true' marks the detail unavailable, including when the host erased reportedness. Omit the corresponding numeric detail; unknown is not measured zero. This marker does not waive other usage or required attributes."
+        examples: ["true"]
+
+      - id: agentic.usage.reasoning_tokens.missing
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether reasoning-token usage is unavailable from the actual source."
+        note: "Only the exact string 'true' marks the detail unavailable, including when the host erased reportedness. Omit the corresponding numeric detail; unknown is not measured zero. This marker does not waive other usage or required attributes."
+        examples: ["true"]
+
+      - id: agentic.usage.tool_tokens.missing
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Whether tool-token usage is unavailable from the actual source."
+        note: "Only the exact string 'true' marks the detail unavailable, including when the host erased reportedness. Omit the corresponding numeric detail; unknown is not measured zero. This marker does not waive other usage or required attributes."
+        examples: ["true"]
+
+      - id: agentic.usage.cache_write_tokens
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Cache creation input tokens. Subset of gen_ai.usage.input_tokens."
+        examples: [0, 5000]
+
+      - id: agentic.usage.reasoning_tokens
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Internal reasoning/thinking tokens. Subset of gen_ai.usage.output_tokens."
+        examples: [500, 0]
+
+      - id: agentic.usage.tool_tokens
+        type: int
+        stability: experimental
+        requirement_level: recommended
+        brief: "Tool definition + tool call result tokens. Cross-cuts input and output."
+        examples: [200, 0]
+
+      # ── Layer 3: Raw - Anthropic (provider version: Anthropic API 2024-10) ──
+      - id: agentic.usage.raw.input_tokens
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Anthropic raw: new input tokens, excludes cache."
+        note: "opt-in (by anthropic). Maps to Anthropic API `usage.input_tokens`."
+        examples: [87]
+
+      - id: agentic.usage.raw.cache_read_input_tokens
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Anthropic raw: cache read (hit) tokens."
+        note: "opt-in (by anthropic). Maps to Anthropic API `usage.cache_read_input_tokens`."
+        examples: [49024]
+
+      - id: agentic.usage.raw.cache_creation_input_tokens
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Anthropic raw: cache creation tokens."
+        note: "opt-in (by anthropic). Maps to Anthropic API `usage.cache_creation_input_tokens`."
+        examples: [0]
+
+      - id: agentic.usage.raw.output_tokens
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Anthropic raw: output tokens (includes thinking)."
+        note: "opt-in (by anthropic). Maps to Anthropic API `usage.output_tokens`."
+        examples: [386]
+
+      # ── Layer 3: Raw - OpenAI (provider version: OpenAI API 2024-12) ──
+      - id: agentic.usage.raw.input_token_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "OpenAI raw: total input tokens (includes cache)."
+        note: "opt-in (by openai). Maps to OpenAI API `usage.prompt_tokens`."
+        examples: [1500]
+
+      - id: agentic.usage.raw.output_token_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "OpenAI raw: output tokens (includes reasoning)."
+        note: "opt-in (by openai). Maps to OpenAI API `usage.completion_tokens`."
+        examples: [800]
+
+      - id: agentic.usage.raw.reasoning_token_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "OpenAI raw: reasoning tokens (subset of output)."
+        note: "opt-in (by openai). Maps to OpenAI API `usage.completion_tokens_details.reasoning_tokens`."
+        examples: [500]
+
+      - id: agentic.usage.raw.tool_token_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "OpenAI raw: tool-related tokens (cross input+output)."
+        note: "opt-in (by openai). Codex CLI specific field."
+        examples: [200]
+
+      # ── Layer 3: Raw - Google (provider version: Gemini API 2025-03) ──
+      - id: agentic.usage.raw.prompt_token_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Google raw: prompt tokens (includes cache)."
+        note: "opt-in (by google). Maps to Gemini API `usageMetadata.promptTokenCount`."
+        examples: [1500]
+
+      - id: agentic.usage.raw.candidates_token_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Google raw: candidate output tokens."
+        note: "opt-in (by google). Maps to Gemini API `usageMetadata.candidatesTokenCount`."
+        examples: [800]
+
+      - id: agentic.usage.raw.cached_content_token_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Google raw: cached content tokens (subset of prompt)."
+        note: "opt-in (by google). Maps to Gemini API `usageMetadata.cachedContentTokenCount`."
+        examples: [1200]
+
+      - id: agentic.usage.raw.thoughts_token_count
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Google raw: thinking tokens (subset of candidates)."
+        note: "opt-in (by google). Maps to Gemini API `usageMetadata.thoughtsTokenCount`."
+        examples: [400]
+
+  # ============================================================
+  # Internal Trace Propagation Attributes
+  # ============================================================
+  - id: registry.internal.sofa
+    type: attribute_group
+    display_name: Internal SOFA Trace Propagation
+    brief: >
+      Internal attributes for SOFA-to-OTel trace context propagation.
+      Set on both spans and span links to preserve the original SOFA
+      identifiers for debugging and cross-system correlation.
+      These attributes are prefixed with `_internal.` to indicate they
+      are implementation-specific and not part of the public semconv contract.
+    attributes:
+      - id: _internal.sofa.trace_id
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When upstream SOFA trace headers are present"
+        brief: "Original SOFA TraceId from upstream HTTP request header `sofa-traceid`."
+        examples: ["0a1b2c3d4e5f67890a1b2c3d4e5f6789", "1e2004b7163914d430173e60e611f900"]
+
+      - id: _internal.sofa.span_id
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When upstream SOFA trace headers are present"
+        brief: "Original SOFA RpcId from upstream HTTP request header `sofa-rpcid`."
+        examples: ["0.1.2.3", "0.1"]
+
+      - id: _internal.sofa.request_id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Request ID from upstream HTTP request header `x-request-id`, if present."
+        examples: ["req-abc-123", "7f3d2a1b"]
+
+      - id: _internal.span_link.role
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "When a span link to an upstream trace context is present"
+        brief: >
+          Role of the span link, indicating the relationship between the current
+          span and the linked span context. Set on both the span link attributes
+          and the span itself.
+        examples: ["child", "parent"]
+        note: >
+          `child` means the current span is a child of the linked context
+          (e.g., openclaw receiving an upstream SOFA request).
+          `parent` means the current span is a parent of the linked context
+          (e.g., making an outbound SOFA call).
+
+  - id: registry.internal.meta
+    type: attribute_group
+    display_name: Internal Trace Metadata
+    brief: >
+      Internal metadata used by repository-owned trace indexing and display.
+      These attributes describe logical application roles and do not replace
+      OpenTelemetry trace topology.
+    attributes:
+      - id: _internal.meta.root
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: >
+          Identifies a logical agent Turn root for trace indexing. The value is
+          the string `1`; it does not imply that the span has no OTel parent.
+        examples: ["1"]
+        note: >
+          Currently emitted by Claude Code, Codex, OpenCode, OpenClaw,
+          and Pi owned Turn roots. Borrowed subagent AGENT spans, synthetic
+          compaction CHAT spans, LLM generations (including spans whose operation
+          name is `chat`), and other non-Turn spans do not use this marker.

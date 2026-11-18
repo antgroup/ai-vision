@@ -1,0 +1,132 @@
+{
+  "id": "observ-dsh",
+  "name": "DeepSeek Harness Observability",
+  "description": "OpenTelemetry-based observability for dsh (DeepSeek Harness) with Ant AI Agent semantic conventions. Traces, metrics, and events are captured directly from the dsh session firehose.",
+  "version": "0.2.0",
+  "uiHints": {
+    "enableTelemetry": {
+      "label": "Enable Telemetry (Master Switch)",
+      "help": "Must be enabled for any telemetry data collection. Env: DSH_OBSERV_ENABLED=1"
+    },
+    "collectionMode": {
+      "label": "Collection Mode",
+      "help": "full records configured content; privacy redacts content-bearing telemetry. Env: DSH_OBSERV_COLLECTION_MODE"
+    },
+    "debug": {
+      "label": "Debug Logging",
+      "help": "Enable verbose plugin diagnostic logging. Does not enable transcript capture or offline replay. Env: DSH_OBSERV_DEBUG"
+    },
+    "otelExporter": {
+      "label": "OTel Exporter Configuration",
+      "help": "Base OTLP endpoint, protocol, and headers."
+    },
+    "tracesConfig": {
+      "label": "Traces Configuration",
+      "help": "Signal-specific configuration for trace export"
+    },
+    "metricsConfig": {
+      "label": "Metrics Configuration",
+      "help": "Signal-specific configuration for metrics export"
+    },
+    "eventsConfig": {
+      "label": "Events/Logs Configuration",
+      "help": "Signal-specific configuration for events/logs export"
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enableTelemetry": {
+        "type": "boolean",
+        "description": "Enable telemetry collection (master switch). Env: DSH_OBSERV_ENABLED",
+        "default": true
+      },
+      "serviceName": {
+        "type": "string",
+        "description": "OpenTelemetry service name. Env: DSH_OBSERV_SERVICE_NAME",
+        "default": "dsh"
+      },
+      "collectionMode": {
+        "type": "string",
+        "description": "Collection mode. 'privacy' forces content-bearing payloads to [REDACTED]. Env: DSH_OBSERV_COLLECTION_MODE",
+        "enum": ["full", "privacy"],
+        "default": "full"
+      },
+      "debug": {
+        "type": "boolean",
+        "description": "Enable verbose plugin diagnostic logging. Env: DSH_OBSERV_DEBUG",
+        "default": false
+      },
+      "dynamicUsername": {
+        "type": "boolean",
+        "description": "Resolve ant.username from AIVISION_ANT_USERNAME whenever telemetry is recorded",
+        "default": false
+      },
+      "dynamicUid": {
+        "type": "boolean",
+        "description": "Resolve ant.uid from AIVISION_ANT_UID whenever telemetry is recorded",
+        "default": false
+      },
+      "configFile": {
+        "type": "string",
+        "description": "Explicit path to a JSON config file (pi/opencode schema). Default resolution: DSH_OBSERV_CONFIG → ~/.config/dsh/aivision.config.json → bundled configs/aivision.config.json"
+      },
+      "otelExporter": {
+        "type": "object",
+        "description": "Base OTel exporter configuration",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "Base OTLP endpoint URL. Env: DSH_OBSERV_OTLP_ENDPOINT or OTEL_EXPORTER_OTLP_ENDPOINT"
+          },
+          "protocol": {
+            "type": "string",
+            "enum": ["grpc", "http/json", "http/protobuf"],
+            "default": "http/json"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Common signal attributes, including ant.username and ant.uid"
+          },
+          "resourceAttributes": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Resource attribute overrides. ant.agent.type and ant.agent.product are fixed to dsh / DeepSeekHarness"
+          }
+        }
+      },
+      "tracesConfig": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean", "default": true },
+          "endpoint": { "type": "string" },
+          "headers": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+      },
+      "metricsConfig": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean", "default": true },
+          "endpoint": { "type": "string" },
+          "headers": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+      },
+      "eventsConfig": {
+        "type": "object",
+        "properties": {
+          "enabled": { "type": "boolean", "default": true },
+          "endpoint": { "type": "string" },
+          "headers": { "type": "object", "additionalProperties": { "type": "string" } }
+        }
+      },
+      "metricExportInterval": { "type": "number", "default": 60000 },
+      "logsExportInterval": { "type": "number", "default": 5000 }
+    }
+  }
+}

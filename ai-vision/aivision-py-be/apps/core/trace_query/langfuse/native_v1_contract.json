@@ -1,0 +1,283 @@
+{
+  "contract": "AI Vision native tracing / Langfuse v1 reads",
+  "baseline": {
+    "pythonSdk": "4.16.0",
+    "commit": "0bc5897b0e2402e50baf8aa004a1adbffd333a61",
+    "source": "https://github.com/langfuse/langfuse-python/tree/0bc5897b0e2402e50baf8aa004a1adbffd333a61/langfuse/api",
+    "sdkNamespaces": [
+      "api.trace",
+      "api.sessions",
+      "api.legacy.observations_v1"
+    ],
+    "additionalPython3Version": "3.15.0 (exact package; separate real-SDK read/write regression required)",
+    "javascriptTypescript": "Not claimed"
+  },
+  "authentication": {
+    "sdk": "HTTP Basic AgentUUID:SpaceKey, same credentials as OTLP",
+    "scope": "Authenticated Agent UUID is immutable; query parameters cannot override it",
+    "legacyReadCredentials": "Existing authorized READ keys and bearer SpaceKeys retain Space authorization",
+    "projectId": "Agent UUID for SDK identity; Space UUID for unbound legacy Space reads",
+    "traceURL": "/project/{AgentUUID}/traces/{traceId} supports SDK-generated links with browser login and Space membership; unbound legacy Space project URLs are not supported"
+  },
+  "transport": {
+    "otlp": "HTTP protobuf",
+    "compression": [
+      "identity",
+      "gzip"
+    ],
+    "malformedPayload": 400
+  },
+  "endpoints": {
+    "GET /api/public/projects": {
+      "response": "Projects",
+      "query": []
+    },
+    "GET /api/public/traces": {
+      "response": "Traces",
+      "query": [
+        "page",
+        "limit",
+        "name",
+        "userId",
+        "sessionId",
+        "fromTimestamp",
+        "toTimestamp",
+        "orderBy",
+        "tags",
+        "version",
+        "release",
+        "environment",
+        "fields",
+        "filter"
+      ],
+      "orderBy": [
+        "id",
+        "timestamp",
+        "name",
+        "userId",
+        "release",
+        "version",
+        "public",
+        "bookmarked",
+        "sessionId"
+      ],
+      "fieldGroups": [
+        "core",
+        "io",
+        "scores",
+        "observations",
+        "metrics"
+      ],
+      "filterColumns": [
+        "id",
+        "name",
+        "timestamp",
+        "userId",
+        "sessionId",
+        "environment",
+        "version",
+        "release",
+        "tags",
+        "bookmarked",
+        "metadata",
+        "latency",
+        "inputTokens",
+        "outputTokens",
+        "totalTokens",
+        "tokens",
+        "inputCost",
+        "outputCost",
+        "totalCost",
+        "level",
+        "warningCount",
+        "errorCount",
+        "defaultCount",
+        "debugCount",
+        "scores_avg",
+        "scores",
+        "score_categories",
+        "score_booleans"
+      ]
+    },
+    "GET /api/public/traces/{traceId}": {
+      "response": "TraceWithFullDetails",
+      "query": []
+    },
+    "GET /api/public/observations": {
+      "response": "ObservationsViews",
+      "query": [
+        "page",
+        "limit",
+        "name",
+        "userId",
+        "type",
+        "traceId",
+        "level",
+        "parentObservationId",
+        "environment",
+        "fromStartTime",
+        "toStartTime",
+        "version",
+        "filter"
+      ],
+      "filterColumns": [
+        "id",
+        "type",
+        "name",
+        "traceId",
+        "startTime",
+        "endTime",
+        "environment",
+        "level",
+        "statusMessage",
+        "version",
+        "latency",
+        "timeToFirstToken",
+        "tokensPerSecond",
+        "inputTokens",
+        "outputTokens",
+        "totalTokens",
+        "tokens",
+        "inputCost",
+        "outputCost",
+        "totalCost",
+        "model",
+        "promptName",
+        "promptVersion",
+        "metadata",
+        "userId",
+        "traceName",
+        "traceEnvironment",
+        "traceTags"
+      ]
+    },
+    "GET /api/public/observations/{observationId}": {
+      "response": "ObservationsView",
+      "query": []
+    },
+    "GET /api/public/sessions": {
+      "response": "PaginatedSessions",
+      "query": [
+        "page",
+        "limit",
+        "fromTimestamp",
+        "toTimestamp",
+        "environment"
+      ]
+    },
+    "GET /api/public/sessions/{sessionId}": {
+      "response": "SessionWithTraces",
+      "query": []
+    }
+  },
+  "pagination": {
+    "pageDefault": 1,
+    "limitDefault": 50,
+    "limitMaximum": 100,
+    "meta": [
+      "page",
+      "limit",
+      "totalItems",
+      "totalPages"
+    ],
+    "emptyTotalPages": 0
+  },
+  "filterSemantics": {
+    "combination": "AND; structured filter replaces legacy parameter filters before pagination",
+    "timeBounds": "from inclusive, to exclusive; ISO 8601 timezone required; up to nine fractional digits",
+    "tags": "all supplied tags",
+    "environment": "any supplied environment",
+    "null": "Missing values match is null; boolean <> includes missing values",
+    "objects": "key required for Object and categoryOptions filters",
+    "operators": {
+      "datetime": [
+        ">",
+        "<",
+        ">=",
+        "<="
+      ],
+      "string": [
+        "=",
+        "contains",
+        "does not contain",
+        "starts with",
+        "ends with"
+      ],
+      "number": [
+        "=",
+        ">",
+        "<",
+        ">=",
+        "<="
+      ],
+      "stringOptions": [
+        "any of",
+        "none of"
+      ],
+      "categoryOptions": [
+        "any of",
+        "none of"
+      ],
+      "arrayOptions": [
+        "any of",
+        "none of",
+        "all of"
+      ],
+      "stringObject": [
+        "=",
+        "contains",
+        "does not contain",
+        "starts with",
+        "ends with"
+      ],
+      "numberObject": [
+        "=",
+        ">",
+        "<",
+        ">=",
+        "<="
+      ],
+      "booleanObject": [
+        "=",
+        "<>"
+      ],
+      "boolean": [
+        "=",
+        "<>"
+      ],
+      "null": [
+        "is null",
+        "is not null"
+      ]
+    }
+  },
+  "projection": {
+    "traceListObservations": "IDs",
+    "traceDetailObservations": "full observation objects",
+    "sessions": "All associated authorized traces, not only one storage page",
+    "scores": "Empty until score ingestion is implemented; score filter syntax remains accepted",
+    "legacyUsage": "Required v1 integer fields use 0 when unknown; usageDetails omits unknown buckets; native usage remains null",
+    "usageDetails": "Mutually exclusive input/cache/output/reasoning buckets; reported total takes priority",
+    "cost": "Reported USD cost first; otherwise explicit versioned price configuration; unknown remains null",
+    "timestamps": "Nanoseconds preserved in wire ISO strings; official Python datetime parser is microsecond precision"
+  },
+  "capacity": {
+    "scan": "Complete operator-declared retained history starting at fixed AIVISION_NATIVE_TRACE_HISTORY_START, split into contiguous <=31-day windows; never a sliding default",
+    "historyStart": "Required ISO 8601 timestamp; operator must cover all retained data and move earlier before backfill",
+    "futureSkewSeconds": 300,
+    "maximumWindows": 120,
+    "maximumTraces": 10000,
+    "incompleteOrOverLimit": "503 capability error; never silently partial"
+  },
+  "deferred": [
+    "v2 observations reads",
+    "legacy batch ingestion",
+    "OTLP JSON",
+    "Prompt APIs",
+    "Dataset APIs",
+    "Score ingestion",
+    "Eval APIs",
+    "full Metrics DSL",
+    "JS/TS compatibility claim"
+  ]
+}

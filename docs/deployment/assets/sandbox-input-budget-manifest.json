@@ -1,0 +1,723 @@
+{
+  "schema_version": 1,
+  "scope": "Prepared source QA on macOS ARM64 with OrbStack Linux ARM64; synthetic data, actual authenticated collector/SQL/OpenShell. No release qualification.",
+  "review_comment": "ob-labs/ai-vision-ob PR 143, comment 6626660901",
+  "source_base": "historical-source-revision-redacted",
+  "tested_source": "Dirty-worktree files identified by SHA256 below; committed without further runtime changes.",
+  "source_sha256": {
+    ".github/workflows/release-openshell.yml": "d64f3c5e7f48e0b48831e2b942b9daf5b25f8798c0d8fe55146e450d61d4808c",
+    "agentlens/docker/Dockerfile.rule-worker": "3e849194ee5ba945ce2edb7c02e7661fd2b601628556760289108a16321a2847",
+    "agentlens/docker/build-sandbox-worker.py": "b7fb4fafb6278d118f12d5004289f9759ee11d2fcac8f6fe2527580b2eba8282",
+    "agentlens/docker/check-worker-input-budget.py": "f81fec509b802d42fbb99a077e5bbdb86d788eb76408696ab1c87ed07eafd0f7",
+    "agentlens/native/custom_rule_worker.c": "5c87a6fbcd4c1fd2ba0c74b6af78df52a6eede35d09c2ef3a72c95126776efef",
+    "agentlens/src/agentlens/config.py": "b9650b24e0f011adfdfce02a0b316b0fe4c377b3071377b07b778bb7875a91c0",
+    "agentlens/src/agentlens/diagnoser/executors/rule/custom/enhanced_worker.py": "43e14c379a9252086e1c65b3fd40d2856a3aca04990041891e1139d550d7b51c",
+    "agentlens/src/agentlens/diagnoser/executors/rule/custom/worker_main.py": "47075e8bc7a2c1d543a0ded31b560b6b2dc48a6c55e0638bcabaac468b50cb5c",
+    "agentlens/src/agentlens/domain/sandbox.py": "9c4762163d34cd9d9eb875a6d547e0be3cd74a1f985fa08e851f7deab1d262a3",
+    "agentlens/src/agentlens/infra/sandbox.py": "b340a8a7c5a1d3841112b08de1afd88423b3f52302be9d339524359926d90a15",
+    "agentlens/src/agentlens/sandbox_plugin/config.py": "3057a19e27e270ecb015d8e501193c6a8ec731b526ef7d5908f2f8291c677b40",
+    "agentlens/src/agentlens/sandbox_plugin/main.py": "599ac4d9062a5dc8fc87ce55aa26d9b51a243178dd59e9b9e3bee00d18092520",
+    "agentlens/src/agentlens/sandbox_plugin/runtime.py": "6fe141e0193c4d5bad9b4de967ca792015b0041bc7eaf71dacd07c354625cfe7",
+    "agentlens/src/agentlens/service/sandbox_execution.py": "ad9b61bd12446e934934363dfe6e0d78afea7bff6625dc92a8ed9b9ad44f2906",
+    "agentlens/src/agentlens/web/routes/diagnoser.py": "7e8db8084b49c29eac2461aa93955cc25c8ee4910b029cf54fad531642d4ae37",
+    "agentlens/src/agentlens/web/routes/sandbox.py": "bb2c96322a8b2675b744f223cef8eac875a132388f869716f07e5a367beb6984",
+    "agentlens/src/agentlens/web/schemas/diagnoser.py": "e3781ec436697bec42d9f18b63cefb3638d116c88afc2ed8bc3b96ee33e61180",
+    "agentlens/src/agentlens/web/schemas/sandbox.py": "31ad6a7a198810324111a82d220875fe6a497e9fbe604559a5791ebe711af212",
+    "agentlens/tests/unit/diagnoser/rule_custom/test_enhanced_worker.py": "02ffcfd12d6bc644004f290b3d18e5f7c3dec27e2ee37fd1cf2e1bc9e481557a",
+    "agentlens/tests/unit/sandbox_plugin/test_input_budget.py": "09204a8d7c530ddcba214bca3ec719f126af929272cda94071e76d95235b906e",
+    "agentlens/tests/unit/test_sandbox_integrations.py": "8b8acd52cec9d582a239da9f94a51175fb544baf65004a58309635c58f8fb9fa",
+    "agentlens/tests/unit/web/routes/test_rule_trial.py": "576dcddc6622130c1251cec9c988f57f0e6a263554c7329fa1bbd1af4113858e",
+    "ai-vision/aivision-py-be/apps/core/tests/test_sandbox_proxy.py": "24dd42e9ba8acbe56bcefc6c95a265396ea4e1ce1bcb4210d6ee18d663408ff7",
+    "ai-vision/aivision-py-be/apps/core/urls/api/diagnose.py": "0c022d64775ac929b2d07b8cd9e955478cd92c591e9983c5396998eaa738c4c4",
+    "ai-vision/aivision-py-be/apps/core/views/__init__.py": "232a71bb7ed6c81a6f39e1806e4356071dc34c7b0c0575dd7bc41b7c2ac42047",
+    "ai-vision/aivision-py-be/apps/core/views/agentlens_proxy.py": "2776a8d2f50b46038f40b89d368a77220ead40f7376bfc632b7674b4cb9f29ce",
+    "ai-vision/vfe/package.json": "af01746f8fce9c7194031f50a7d47392b31d24fdf4c7028d4d5d03f2ec9431b5",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/CreateRuleDiagnoserForm.tsx": "4c266ca4defb6d11308c2b7bbe942795a16989316a0f4f7d5958c23d1fcbe8cf",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/RuleInputBudget.tsx": "2e9defa73bcee13760813ba5bd691b7ba16508051a32c39bb53bf728f58e49c7",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/ruleApi.ts": "dc176efde7626136bdccb62beaa955b370d0855f3389bc4f38656b6c50e239e8",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/useRuleInputBudget.ts": "2708926fba7752c0a332779a48975ca556fc7efac16d879bb4dba0f56ad6c136",
+    "ai-vision/vfe/src/components/diagnose/diagnoser/useRuleRuntime.ts": "0c1cdca378a1c735bd718719c1b9e12d61b013582c928074d6a15db0929ed9a6",
+    "ai-vision/vfe/src/features/sandbox-connections/types.ts": "ac0e0b8be0807563e3b91f2d8b0ec8e1bbab3abea3bc6d30124ccca74b587540",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "2f6ae14a692a59d236cfc3a391787502534945f6a547ff06ad92082b2a518e47",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "ef7c8eb3f8c6abe36b74c5e894ffa3ac046cadc19a6104ee91c987caeeb9698f",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "a56ba7e0e1f3ffd6b426ca412ad32ce672883ff47be89b42e59c1e5cda72160b",
+    "ai-vision/vfe/tests/ruleInputBudgetDom.test.ts": "5281d75c19453308cfb23e1bb8ecf7375eaced5876b48a8dad2cd995ee574d6d",
+    "ai-vision/vfe/tests/specialistDiagnosisDom.test.ts": "da572da75716bf9629d02d3487234cbd7c6848ec256d60190834770a554010d5"
+  },
+  "plugin_source_readback": {
+    "agentlens/src/agentlens/config.py": "b9650b24e0f011adfdfce02a0b316b0fe4c377b3071377b07b778bb7875a91c0",
+    "agentlens/src/agentlens/diagnoser/executors/rule/custom/enhanced_worker.py": "43e14c379a9252086e1c65b3fd40d2856a3aca04990041891e1139d550d7b51c",
+    "agentlens/src/agentlens/diagnoser/executors/rule/custom/worker_main.py": "47075e8bc7a2c1d543a0ded31b560b6b2dc48a6c55e0638bcabaac468b50cb5c",
+    "agentlens/src/agentlens/domain/sandbox.py": "9c4762163d34cd9d9eb875a6d547e0be3cd74a1f985fa08e851f7deab1d262a3",
+    "agentlens/src/agentlens/infra/sandbox.py": "b340a8a7c5a1d3841112b08de1afd88423b3f52302be9d339524359926d90a15",
+    "agentlens/src/agentlens/sandbox_plugin/config.py": "3057a19e27e270ecb015d8e501193c6a8ec731b526ef7d5908f2f8291c677b40",
+    "agentlens/src/agentlens/sandbox_plugin/main.py": "599ac4d9062a5dc8fc87ce55aa26d9b51a243178dd59e9b9e3bee00d18092520",
+    "agentlens/src/agentlens/sandbox_plugin/runtime.py": "6fe141e0193c4d5bad9b4de967ca792015b0041bc7eaf71dacd07c354625cfe7",
+    "agentlens/src/agentlens/service/sandbox_execution.py": "ad9b61bd12446e934934363dfe6e0d78afea7bff6625dc92a8ed9b9ad44f2906",
+    "agentlens/src/agentlens/web/routes/diagnoser.py": "7e8db8084b49c29eac2461aa93955cc25c8ee4910b029cf54fad531642d4ae37",
+    "agentlens/src/agentlens/web/routes/sandbox.py": "bb2c96322a8b2675b744f223cef8eac875a132388f869716f07e5a367beb6984",
+    "agentlens/src/agentlens/web/schemas/diagnoser.py": "e3781ec436697bec42d9f18b63cefb3638d116c88afc2ed8bc3b96ee33e61180",
+    "agentlens/src/agentlens/web/schemas/sandbox.py": "31ad6a7a198810324111a82d220875fe6a497e9fbe604559a5791ebe711af212"
+  },
+  "images": {
+    "worker": "127.0.0.1:55074/qa/enhanced-worker@sha256:dcd12199d3e3a908b8deccd64d9cce12f3c5b9198af1ab0cfc1dc47cc7449592",
+    "plugin_image_id": "sha256:170890b3a2e587b0ea42ad943c31953b2aac3f3042c5180397b2494b215e518a",
+    "worker_build": "Cython-compiled owned modules and native entrypoints from Dockerfile.rule-worker, Linux ARM64, no dependency changes",
+    "runtime_manifest_sha256": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5"
+  },
+  "budgets": {
+    "default_bytes": 8388608,
+    "hard_max_bytes": 16777216,
+    "legacy_effective_bytes": 2097152,
+    "frame_bytes": 4096,
+    "provider_version": "0.1.6"
+  },
+  "complete_trace": {
+    "fixture": "7 complete spans, exactly one root, registered langfuse-sdk runtime",
+    "synthetic_source_sha256": "ddf07d045a68767b8e676e6ce275eeeca63505d1e9d68b7413658253ab3633cd",
+    "source_bytes": 1536000,
+    "sql_rows_bytes": 3091926,
+    "projected_trace_bytes": 3093020,
+    "request_bytes": 3103468,
+    "worker_stdin_bytes": 3102912,
+    "no_fields_removed": true,
+    "reporter_business_fixture_available": false
+  },
+  "legacy_components": [
+    {
+      "case": "full_hydrated_framework",
+      "trace_id": "5131791464b74c6c86226f9e1e535c5e",
+      "source_spans": 7,
+      "source_payload_bytes": 1536000,
+      "sql_readback_json_bytes": 3091926,
+      "projected_trace_bytes": 3093020,
+      "spans_sha256": "71fbd47fbfc24b29c38abe45c873205907a3a4539e7974c07b94950bef5fe459",
+      "preview": {
+        "valid": false,
+        "mode": "sandbox",
+        "request_bytes": 3103468,
+        "worker_input_bytes": null,
+        "max_input_bytes": 2097152,
+        "transport": null,
+        "code": "sandbox_input_limit",
+        "details": {
+          "stage": "request",
+          "actual_bytes": 3103468,
+          "allowed_bytes": 2097152
+        }
+      },
+      "trial": {
+        "verdict": "failed",
+        "skipped": false,
+        "skip_reason": null,
+        "skip_reason_detail": null,
+        "summary": "Sandbox input exceeds the supported limit. Received 3103468 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+        "metrics": [
+          {
+            "name": "complete_input",
+            "verdict": "failed",
+            "reason": "Sandbox input exceeds the supported limit. Received 3103468 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+            "evidence": {}
+          }
+        ],
+        "execution": {
+          "status": "failed",
+          "code": "sandbox_input_limit",
+          "msg": "Sandbox input exceeds the supported limit. Received 3103468 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+          "evidence": {
+            "code_hash": "191169da0ef77e4edb5af2947b976119e77043f3b113dabc121ffc5a2033f4a7",
+            "execution_ms": 28.7,
+            "cache_hit": false,
+            "backend": "sandbox",
+            "provider": "openshell",
+            "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+            "sandbox_input": {
+              "stage": "request",
+              "actual_bytes": 3103468,
+              "allowed_bytes": 2097152
+            }
+          }
+        }
+      },
+      "diagnoser_uuid": "dg-zt3jtzm7",
+      "dataset_uuid": "a92b17593d424324824848736af46bc9",
+      "job_uuid": "3d2ad4d58a004373a2faa6b42e3bc190",
+      "task_uuid": "540eec31891545d08cc2758229f80746",
+      "task_status": "succeeded",
+      "task_stats": {
+        "source": {
+          "total": 1,
+          "invalid": 0,
+          "projection_failed": 0
+        },
+        "diagnosers": {
+          "dg-zt3jtzm7": {
+            "complete_input": {
+              "bad": 0,
+              "good": 0,
+              "total": 1,
+              "failed": 1,
+              "evaluate": 1
+            }
+          }
+        },
+        "skip_reasons": {},
+        "schema_version": 3,
+        "source_complete": true,
+        "score_policy_version": "lightweight-v1",
+        "diagnoser_definitions": {
+          "dg-zt3jtzm7": {
+            "key": "rule_custom",
+            "name": "QA issue150 full_hydrated_framework 04fe83",
+            "uuid": "dg-zt3jtzm7",
+            "digest": "0ac2f76572f4b075f6150e754775c8784e8b92324d904aa3d4722662a0d528cc",
+            "weight": 0,
+            "metrics": [
+              {
+                "desc": "Full source payload hash",
+                "name": "complete_input"
+              }
+            ],
+            "version": "v1",
+            "category": "outcome",
+            "revision": "1.6.0",
+            "score_role": "quality"
+          }
+        }
+      },
+      "record_uuid": "r-d820bf0f2663ab4f",
+      "record_verdict": "failed",
+      "record_execution": {
+        "status": "failed",
+        "code": "sandbox_input_limit",
+        "msg": "Sandbox input exceeds the supported limit. Received 3103468 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+        "evidence": {
+          "code_hash": "191169da0ef77e4edb5af2947b976119e77043f3b113dabc121ffc5a2033f4a7",
+          "execution_ms": 45.5,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "sandbox_input": {
+            "stage": "request",
+            "actual_bytes": 3103468,
+            "allowed_bytes": 2097152
+          }
+        }
+      },
+      "record_metrics": [
+        {
+          "name": "complete_input",
+          "verdict": "failed",
+          "reason": "Sandbox input exceeds the supported limit. Received 3103468 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+          "evidence": {}
+        }
+      ],
+      "leases": []
+    }
+  ],
+  "qualified_components": [
+    {
+      "case": "full_hydrated_framework",
+      "trace_id": "5131791464b74c6c86226f9e1e535c5e",
+      "source_spans": 7,
+      "source_payload_bytes": 1536000,
+      "sql_readback_json_bytes": 3091926,
+      "projected_trace_bytes": 3093020,
+      "spans_sha256": "71fbd47fbfc24b29c38abe45c873205907a3a4539e7974c07b94950bef5fe459",
+      "preview": {
+        "valid": true,
+        "mode": "sandbox",
+        "request_bytes": 3103468,
+        "worker_input_bytes": 3102912,
+        "max_input_bytes": 8388608,
+        "transport": "streaming",
+        "code": "",
+        "details": {},
+        "validation_message": "",
+        "validation_line": null
+      },
+      "trial": {
+        "verdict": "good",
+        "skipped": false,
+        "skip_reason": null,
+        "skip_reason_detail": null,
+        "summary": "All 7 SQL spans and original payloads match; framework projection and six libraries verified",
+        "metrics": [
+          {
+            "name": "complete_input",
+            "verdict": "good",
+            "reason": "All 7 SQL spans and original payloads match; framework projection and six libraries verified",
+            "evidence": {
+              "spans": 7,
+              "payload_retained": true,
+              "spans_sha256": "71fbd47fbfc24b29c38abe45c873205907a3a4539e7974c07b94950bef5fe459",
+              "content_sha256": "01ca791cdfacd54a6262ea2c20636862380a67b4ab634094056587531f341e86",
+              "content_bytes": 1536000,
+              "projection_ok": true,
+              "tables_ok": true,
+              "pytest": "GOOD"
+            }
+          }
+        ],
+        "execution": {
+          "status": "succeeded",
+          "code": "",
+          "msg": "",
+          "evidence": {
+            "code_hash": "191169da0ef77e4edb5af2947b976119e77043f3b113dabc121ffc5a2033f4a7",
+            "execution_ms": 2961.2,
+            "cache_hit": false,
+            "backend": "sandbox",
+            "provider": "openshell",
+            "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+            "rule_runtime": "python-eval-v1",
+            "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+            "captured_stdout": "",
+            "captured_stderr": "",
+            "output_truncated": false
+          }
+        }
+      },
+      "diagnoser_uuid": "dg-hp9hw1r5",
+      "dataset_uuid": "6dc0e09a3ee34e2e9938d7a5fc00a7d9",
+      "job_uuid": "ebc2edb478934e1d93de6b0062166f3f",
+      "task_uuid": "e26741db8b9246939bb6140a6ff40a46",
+      "task_status": "succeeded",
+      "task_stats": {
+        "source": {
+          "total": 1,
+          "invalid": 0,
+          "projection_failed": 0
+        },
+        "diagnosers": {
+          "dg-hp9hw1r5": {
+            "complete_input": {
+              "bad": 0,
+              "good": 1,
+              "total": 1,
+              "failed": 0,
+              "evaluate": 1
+            }
+          }
+        },
+        "skip_reasons": {},
+        "schema_version": 3,
+        "source_complete": true,
+        "score_policy_version": "lightweight-v1",
+        "diagnoser_definitions": {
+          "dg-hp9hw1r5": {
+            "key": "rule_custom",
+            "name": "QA issue150 full_hydrated_framework 9a03c7",
+            "uuid": "dg-hp9hw1r5",
+            "digest": "1e177c2a5cfd77a24008f76414d4104c04f120eaee25dbb08397a3c8e143eec3",
+            "weight": 0,
+            "metrics": [
+              {
+                "desc": "Full source payload hash",
+                "name": "complete_input"
+              }
+            ],
+            "version": "v1",
+            "category": "outcome",
+            "revision": "1.6.0",
+            "score_role": "quality"
+          }
+        }
+      },
+      "record_uuid": "r-21b4c7d80cde42f2",
+      "record_verdict": "good",
+      "record_execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "191169da0ef77e4edb5af2947b976119e77043f3b113dabc121ffc5a2033f4a7",
+          "execution_ms": 2988.9,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "record_metrics": [
+        {
+          "name": "complete_input",
+          "verdict": "good",
+          "reason": "All 7 SQL spans and original payloads match; framework projection and six libraries verified",
+          "evidence": {
+            "spans": 7,
+            "payload_retained": true,
+            "spans_sha256": "71fbd47fbfc24b29c38abe45c873205907a3a4539e7974c07b94950bef5fe459",
+            "content_sha256": "01ca791cdfacd54a6262ea2c20636862380a67b4ab634094056587531f341e86",
+            "content_bytes": 1536000,
+            "projection_ok": true,
+            "tables_ok": true,
+            "pytest": "GOOD"
+          }
+        }
+      ],
+      "leases": [
+        {
+          "uuid": "36c83c04a02bddc25b99e8a4266a4065ff23234dcf6cc94118255e68160d07e8",
+          "state": "closed",
+          "cleanup_verified": true
+        }
+      ]
+    }
+  ],
+  "admission_boundaries": [
+    {
+      "case": "exact_8MiB",
+      "preview": {
+        "valid": true,
+        "mode": "sandbox",
+        "request_bytes": 8388608,
+        "worker_input_bytes": 8388052,
+        "max_input_bytes": 8388608,
+        "transport": "streaming",
+        "code": "",
+        "details": {},
+        "validation_message": "",
+        "validation_line": null
+      },
+      "trial": {
+        "verdict": "good",
+        "skipped": false,
+        "skip_reason": null,
+        "skip_reason_detail": null,
+        "summary": "All 7 SQL spans and original payloads match; framework projection and six libraries verified",
+        "metrics": [
+          {
+            "name": "complete_input",
+            "verdict": "good",
+            "reason": "All 7 SQL spans and original payloads match; framework projection and six libraries verified",
+            "evidence": {
+              "spans": 7,
+              "payload_retained": true,
+              "spans_sha256": "38b60a630813b90fbcfc1d3b02317408584a7bd7d8a60c798215bf7ae5fec468",
+              "content_sha256": "01ca791cdfacd54a6262ea2c20636862380a67b4ab634094056587531f341e86",
+              "content_bytes": 1536000,
+              "projection_ok": true,
+              "tables_ok": true,
+              "pytest": "GOOD"
+            }
+          }
+        ],
+        "execution": {
+          "status": "succeeded",
+          "code": "",
+          "msg": "",
+          "evidence": {
+            "code_hash": "191169da0ef77e4edb5af2947b976119e77043f3b113dabc121ffc5a2033f4a7",
+            "execution_ms": 3451.4,
+            "cache_hit": false,
+            "backend": "sandbox",
+            "provider": "openshell",
+            "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+            "rule_runtime": "python-eval-v1",
+            "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+            "captured_stdout": "",
+            "captured_stderr": "",
+            "output_truncated": false
+          }
+        }
+      },
+      "new_leases": 1
+    },
+    {
+      "case": "8MiB_plus_one",
+      "preview": {
+        "valid": false,
+        "mode": "sandbox",
+        "request_bytes": 8388609,
+        "worker_input_bytes": null,
+        "max_input_bytes": 8388608,
+        "transport": null,
+        "code": "sandbox_input_limit",
+        "details": {
+          "stage": "request",
+          "actual_bytes": 8388609,
+          "allowed_bytes": 8388608
+        },
+        "validation_message": "",
+        "validation_line": null
+      },
+      "trial": {
+        "verdict": "failed",
+        "skipped": false,
+        "skip_reason": null,
+        "skip_reason_detail": null,
+        "summary": "Sandbox input exceeds the supported limit. Received 8388609 bytes; limit 8388608 bytes (request). Reduce the complete execution input.",
+        "metrics": [
+          {
+            "name": "complete_input",
+            "verdict": "failed",
+            "reason": "Sandbox input exceeds the supported limit. Received 8388609 bytes; limit 8388608 bytes (request). Reduce the complete execution input.",
+            "evidence": {}
+          }
+        ],
+        "execution": {
+          "status": "failed",
+          "code": "sandbox_input_limit",
+          "msg": "Sandbox input exceeds the supported limit. Received 8388609 bytes; limit 8388608 bytes (request). Reduce the complete execution input.",
+          "evidence": {
+            "code_hash": "191169da0ef77e4edb5af2947b976119e77043f3b113dabc121ffc5a2033f4a7",
+            "execution_ms": 46.1,
+            "cache_hit": false,
+            "backend": "sandbox",
+            "provider": "openshell",
+            "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+            "sandbox_input": {
+              "stage": "request",
+              "actual_bytes": 8388609,
+              "allowed_bytes": 8388608
+            }
+          }
+        }
+      },
+      "new_leases": 0
+    }
+  ],
+  "compiled_reader_boundaries": [
+    {
+      "worker": "restricted",
+      "stdin_bytes": 3000000,
+      "status": "ok"
+    },
+    {
+      "worker": "restricted",
+      "stdin_bytes": 16777216,
+      "status": "ok"
+    },
+    {
+      "worker": "restricted",
+      "stdin_bytes": 16777217,
+      "status": "error"
+    },
+    {
+      "worker": "enhanced",
+      "stdin_bytes": 3000000,
+      "status": "ok"
+    },
+    {
+      "worker": "enhanced",
+      "stdin_bytes": 16777216,
+      "status": "ok"
+    },
+    {
+      "worker": "enhanced",
+      "stdin_bytes": 16777217,
+      "status": "error"
+    },
+    {
+      "worker": "legacy-local",
+      "stdin_bytes": 16777217,
+      "status": "ok"
+    }
+  ],
+  "cleanup": {
+    "journal": {
+      "leases": 166,
+      "all_closed": true,
+      "same_daemon": true
+    },
+    "docker": {
+      "matching_workload_containers": 0,
+      "matching_workload_volumes": 0,
+      "daemon_id": "3c073cb2-6024-481d-bc72-811bf1448e23"
+    },
+    "gateway": {
+      "sandboxes": 0,
+      "templates": 0,
+      "authenticated_mtls": true
+    },
+    "plugin": {
+      "ready": true,
+      "active_leases": 0,
+      "draining": false,
+      "capabilities": [
+        "custom_rule",
+        "single_execution",
+        "durable_leases",
+        "verified_cleanup",
+        "execution_input_preflight",
+        "streaming_stdin",
+        "python_eval_v1"
+      ]
+    },
+    "application_docker_sockets": {
+      "aiv-enhanced-rules-backend": false,
+      "aiv-enhanced-rules-diagnosis": false
+    },
+    "refs": {
+      "worker": "127.0.0.1:55074/qa/enhanced-worker@sha256:dcd12199d3e3a908b8deccd64d9cce12f3c5b9198af1ab0cfc1dc47cc7449592",
+      "plugin_image_id": "sha256:170890b3a2e587b0ea42ad943c31953b2aac3f3042c5180397b2494b215e518a"
+    },
+    "agentlens_sql": {
+      "leases": 166,
+      "all_closed": true,
+      "all_cleanup_verified": true
+    }
+  },
+  "checks": {
+    "agentlens_unit": {
+      "tests": 3198,
+      "skipped": 325,
+      "errors": 0,
+      "failures": 0
+    },
+    "sdk_transport": {
+      "tests": 17,
+      "skipped": 0,
+      "errors": 0,
+      "failures": 0
+    },
+    "django_proxy": {
+      "tests": 12,
+      "passed": 12,
+      "database": "isolated SQLite permission tests"
+    },
+    "frontend": {
+      "tests": 1605,
+      "passed": 1605,
+      "lint": "passed",
+      "typecheck": "passed",
+      "build": "passed",
+      "final_layout_recheck": {
+        "trial_tests": 28,
+        "form_tests": 64,
+        "build": "passed"
+      },
+      "changed_files_prettier": "passed",
+      "repository_prettier": {
+        "prettier_failed_files": [
+          "src/agents/dashboards/claudecode/index.ts",
+          "src/agents/dashboards/claudecode/sections/tableControls.ts",
+          "src/agents/lib/agent-display.ts",
+          "src/agents/lib/agentProducts.ts",
+          "src/agents/registry/capabilities.ts",
+          "src/agents/shared/index.ts",
+          "src/agents/shared/LazyDashboardSection.tsx",
+          "src/agents/types/index.ts",
+          "src/components/agents/celebration/Fireworks.tsx",
+          "src/components/bizcharts/statscard/index.ts",
+          "src/components/diagnose/diagnoser/diagnoserColors.ts",
+          "src/components/error/ErrorPage.tsx",
+          "src/components/labs/shared/LabsStatStrip.tsx",
+          "src/components/layout/NotificationBanner.tsx",
+          "src/components/layout/theme-provider.tsx",
+          "src/components/traces-lf/useTimelineZoom.ts",
+          "src/components/traces/useTimelineZoom.ts",
+          "src/components/ui/breadcrumb.tsx",
+          "src/components/ui/calendar.tsx",
+          "src/components/ui/checkbox.tsx",
+          "src/components/ui/command.tsx",
+          "src/components/ui/dialog.tsx",
+          "src/components/ui/dropdown-menu.tsx",
+          "src/components/ui/pagination.tsx",
+          "src/components/ui/select.tsx",
+          "src/components/ui/sheet.tsx",
+          "src/features/model-pricing/currency.ts",
+          "src/features/model-pricing/PricingCurrency.tsx",
+          "src/hooks/use-theme-toggle.ts",
+          "src/index.css",
+          "src/lib/formatters.ts",
+          "src/lib/schemas/observability.ts",
+          "src/pages/traces-otel/TraceComparePage.tsx",
+          "tests/e2e/skillTrace.spec.ts",
+          "tests/spanTreeDom.test.ts",
+          "tests/traceEvidence.test.ts"
+        ],
+        "count": 36,
+        "changed_in_this_revision": []
+      }
+    },
+    "adr": "passed",
+    "ruff": "passed",
+    "workflow_yaml": "parsed",
+    "independent_review": {
+      "findings": 0,
+      "fixed_findings": [
+        "Preserve historical local compiled reader behavior",
+        "Display bounded static validation diagnostics and line numbers"
+      ]
+    }
+  },
+  "browser": {
+    "source": "Real Chrome against Vite + Django + AgentLens; no HTTP response mocks",
+    "scope": "Manual editor input copied from actual SQL readback. Existing LangGraph QA channel; browser rule checks all SQL span hashes and original payloads. The registered langfuse-sdk projection and six-library verification are covered separately by actual Trial and persisted Runner records above.",
+    "preview": {
+      "detail": "èº«ä»½è®¤è¯ä¿¡æ¯æªæä¾ã"
+    },
+    "oversize": {
+      "preview": {
+        "code": 0,
+        "message": "success",
+        "data": {
+          "valid": false,
+          "mode": "sandbox",
+          "request_bytes": 9095317,
+          "worker_input_bytes": null,
+          "max_input_bytes": 8388608,
+          "transport": null,
+          "code": "sandbox_input_limit",
+          "details": {
+            "stage": "request",
+            "actual_bytes": 9095317,
+            "allowed_bytes": 8388608
+          },
+          "validation_message": "",
+          "validation_line": null
+        }
+      },
+      "immediatelyDisabled": true
+    },
+    "static_validation": {
+      "code": 0,
+      "message": "success",
+      "data": {
+        "valid": false,
+        "mode": "sandbox",
+        "request_bytes": null,
+        "worker_input_bytes": null,
+        "max_input_bytes": null,
+        "transport": null,
+        "code": "rule_validation_error",
+        "details": {},
+        "validation_message": "expected ':'",
+        "validation_line": 1
+      }
+    },
+    "success": {
+      "verdict": "good",
+      "execution_status": "succeeded"
+    },
+    "screenshots": [
+      {
+        "path": "sandbox-input-budget-success.png",
+        "sha256": "528661252a721c183eb4bfbef61fe988f7d2e394e13dc6835919671ce074c017"
+      },
+      {
+        "path": "sandbox-input-budget-oversize.png",
+        "sha256": "bdc1b1ffcac8c83c8635198b5374fddc93c9c8348b12ad764eb92032b27d282a"
+      },
+      {
+        "path": "sandbox-input-budget-validation.png",
+        "sha256": "c32ad4d105b0a3a60539de0c0b86ce011596064ef32c28b668f716dbf21735c1"
+      }
+    ]
+  },
+  "limits": [
+    "Reporter private business fixture not rerun; a complete synthetic 7-span fixture follows the same ingestion/hydration/projection path.",
+    "Persisted Task is invoked with Runner._run_sync; automatic scheduler discovery is not tested.",
+    "AgentLens/Django are source services on prepared dependency images, not compiled private service bundles.",
+    "Native worker qualification is Linux ARM64 only; Linux AMD64, Kubernetes, WAN and cold installs not run.",
+    "Hosted CI is separate from manual checks; repository-wide Prettier has 36 pre-existing violations outside this change."
+  ]
+}

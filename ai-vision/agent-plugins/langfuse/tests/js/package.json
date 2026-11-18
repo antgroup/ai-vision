@@ -1,0 +1,30 @@
+{
+  "name": "aivision-langfuse-js-onboarding-tests",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test test_onboarding.mjs test_lifecycle.mjs test_verifier.mjs"
+  },
+  "devDependencies": {
+    "@langchain/core": "1.2.18",
+    "@langchain/langgraph": "1.5.1",
+    "@langchain/openai": "1.6.2",
+    "@langfuse/langchain": "5.14.0",
+    "@langfuse/openai": "5.14.0",
+    "@langfuse/otel": "5.14.0",
+    "@langfuse/tracing": "5.14.0",
+    "@opentelemetry/exporter-trace-otlp-proto": "0.223.0",
+    "@opentelemetry/otlp-exporter-base": "0.223.0",
+    "@opentelemetry/sdk-node": "0.223.0",
+    "@types/node": "22.20.5",
+    "dotenv": "17.4.2",
+    "openai": "7.37.0",
+    "protobufjs": "7.6.6",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "yaml": "2.9.1"
+  }
+}

@@ -1,0 +1,231 @@
+# yaml-language-server: $schema=../semconv.schema.json
+# OpenClaw 可观测语义约定 - Metrics 定义
+# 文档版本: v1.0
+# 基于 Claude Code 文档: https://code.claude.com/docs/en/monitoring-usage
+
+groups:
+  # --------------------------------------------------------------------------
+  # Session Counter
+  # --------------------------------------------------------------------------
+  - id: metric.openclaw.session.count
+    type: metric
+    metric_name: openclaw.session.count
+    brief: "Count of CLI sessions started"
+    instrument: counter
+    unit: "{session}"
+    stability: development
+    attributes:
+      - ref: session.id
+        requirement_level: recommended
+      - ref: app.version
+        requirement_level: opt_in
+      - ref: organization.id
+        requirement_level: recommended
+      - ref: user.account_uuid
+        requirement_level: recommended
+      - ref: user.id
+        requirement_level: recommended
+      - ref: user.email
+        requirement_level: recommended
+      - ref: terminal.type
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # Lines of Code Counter
+  # --------------------------------------------------------------------------
+  - id: metric.openclaw.lines_of_code.count
+    type: metric
+    metric_name: openclaw.lines_of_code.count
+    brief: "Count of lines of code modified"
+    instrument: counter
+    unit: "{line}"
+    stability: development
+    attributes:
+      - ref: session.id
+        requirement_level: recommended
+      - ref: app.version
+        requirement_level: opt_in
+      - ref: organization.id
+        requirement_level: recommended
+      - ref: user.account_uuid
+        requirement_level: recommended
+      - ref: user.id
+        requirement_level: recommended
+      - ref: user.email
+        requirement_level: recommended
+      - ref: terminal.type
+        requirement_level: recommended
+      - ref: openclaw.code_line.type
+        requirement_level: required
+
+  # --------------------------------------------------------------------------
+  # Pull Request Counter
+  # --------------------------------------------------------------------------
+  - id: metric.openclaw.pull_request.count
+    type: metric
+    metric_name: openclaw.pull_request.count
+    brief: "Number of pull requests created"
+    instrument: counter
+    unit: "{pull_request}"
+    stability: development
+    attributes:
+      - ref: session.id
+        requirement_level: recommended
+      - ref: app.version
+        requirement_level: opt_in
+      - ref: organization.id
+        requirement_level: recommended
+      - ref: user.account_uuid
+        requirement_level: recommended
+      - ref: user.id
+        requirement_level: recommended
+      - ref: user.email
+        requirement_level: recommended
+      - ref: terminal.type
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # Commit Counter
+  # --------------------------------------------------------------------------
+  - id: metric.openclaw.commit.count
+    type: metric
+    metric_name: openclaw.commit.count
+    brief: "Number of git commits created"
+    instrument: counter
+    unit: "{commit}"
+    stability: development
+    attributes:
+      - ref: session.id
+        requirement_level: recommended
+      - ref: app.version
+        requirement_level: opt_in
+      - ref: organization.id
+        requirement_level: recommended
+      - ref: user.account_uuid
+        requirement_level: recommended
+      - ref: user.id
+        requirement_level: recommended
+      - ref: user.email
+        requirement_level: recommended
+      - ref: terminal.type
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # Cost Counter
+  # --------------------------------------------------------------------------
+  - id: metric.openclaw.cost.usage
+    type: metric
+    metric_name: openclaw.cost.usage
+    brief: "Cost of the OpenClaw session"
+    instrument: counter
+    unit: "USD"
+    stability: development
+    attributes:
+      - ref: session.id
+        requirement_level: recommended
+      - ref: app.version
+        requirement_level: opt_in
+      - ref: organization.id
+        requirement_level: recommended
+      - ref: user.account_uuid
+        requirement_level: recommended
+      - ref: user.id
+        requirement_level: recommended
+      - ref: user.email
+        requirement_level: recommended
+      - ref: terminal.type
+        requirement_level: recommended
+      - ref: gen_ai.request.model
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # Token Counter
+  # --------------------------------------------------------------------------
+  - id: metric.openclaw.token.usage
+    type: metric
+    metric_name: openclaw.token.usage
+    brief: "Number of tokens used"
+    instrument: counter
+    unit: "{token}"
+    stability: development
+    attributes:
+      - ref: session.id
+        requirement_level: recommended
+      - ref: app.version
+        requirement_level: opt_in
+      - ref: organization.id
+        requirement_level: recommended
+      - ref: user.account_uuid
+        requirement_level: recommended
+      - ref: user.id
+        requirement_level: recommended
+      - ref: user.email
+        requirement_level: recommended
+      - ref: terminal.type
+        requirement_level: recommended
+      - ref: gen_ai.request.model
+        requirement_level: recommended
+      - ref: openclaw.token.type
+        requirement_level: required
+
+  # --------------------------------------------------------------------------
+  # Code Edit Tool Decision Counter
+  # --------------------------------------------------------------------------
+  - id: metric.openclaw.code_edit_tool.decision
+    type: metric
+    metric_name: openclaw.code_edit_tool.decision
+    brief: "Count of code editing tool permission decisions"
+    instrument: counter
+    unit: "{decision}"
+    stability: development
+    attributes:
+      - ref: session.id
+        requirement_level: recommended
+      - ref: app.version
+        requirement_level: opt_in
+      - ref: organization.id
+        requirement_level: recommended
+      - ref: user.account_uuid
+        requirement_level: recommended
+      - ref: user.id
+        requirement_level: recommended
+      - ref: user.email
+        requirement_level: recommended
+      - ref: terminal.type
+        requirement_level: recommended
+      - ref: openclaw.tool_name
+        requirement_level: required
+      - ref: openclaw.decision
+        requirement_level: required
+      - ref: openclaw.decision_source
+        requirement_level: required
+      - ref: openclaw.language
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # Active Time Counter
+  # --------------------------------------------------------------------------
+  - id: metric.openclaw.active_time.total
+    type: metric
+    metric_name: openclaw.active_time.total
+    brief: "Total active time in seconds, excluding idle time"
+    instrument: counter
+    unit: "s"
+    stability: development
+    attributes:
+      - ref: session.id
+        requirement_level: recommended
+      - ref: app.version
+        requirement_level: opt_in
+      - ref: organization.id
+        requirement_level: recommended
+      - ref: user.account_uuid
+        requirement_level: recommended
+      - ref: user.id
+        requirement_level: recommended
+      - ref: user.email
+        requirement_level: recommended
+      - ref: terminal.type
+        requirement_level: recommended
+      - ref: openclaw.activity.type
+        requirement_level: required

@@ -1,0 +1,53 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <p>为以下业务空间手动绑定 Observation Project：</p>
+  <ul>
+    {% for obj in queryset %}
+      <li>{{ obj.name }} ({{ obj.uuid }})</li>
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />
+    {% endfor %}
+  </ul>
+
+  <fieldset style="margin:16px 0;padding:12px;border:1px solid #ccc;border-radius:4px;">
+    <legend style="font-weight:bold;">Langfuse Project 信息</legend>
+    <p>
+      <label for="upstream_project_id">Project ID（必填）：</label><br/>
+      <input type="text" name="upstream_project_id" id="upstream_project_id" required style="width:400px;padding:4px 8px;" placeholder="如 clxxxxxxxxxxxxxx" />
+    </p>
+    <p>
+      <label for="upstream_project_name">Project Name（选填）：</label><br/>
+      <input type="text" name="upstream_project_name" id="upstream_project_name" style="width:400px;padding:4px 8px;" placeholder="留空则自动生成" />
+    </p>
+  </fieldset>
+
+  <fieldset style="margin:16px 0;padding:12px;border:1px solid #ccc;border-radius:4px;">
+    <legend style="font-weight:bold;">读取 Key（READ）</legend>
+    <p>
+      <label for="read_public_key">Public Key（必填）：</label><br/>
+      <input type="text" name="read_public_key" id="read_public_key" required style="width:400px;padding:4px 8px;" placeholder="pk-lf-..." />
+    </p>
+    <p>
+      <label for="read_secret_key">Secret Key（必填）：</label><br/>
+      <input type="text" name="read_secret_key" id="read_secret_key" required style="width:400px;padding:4px 8px;" placeholder="sk-lf-..." />
+    </p>
+  </fieldset>
+
+  <fieldset style="margin:16px 0;padding:12px;border:1px solid #ccc;border-radius:4px;">
+    <legend style="font-weight:bold;">上报 Key（WRITE）</legend>
+    <p>
+      <label for="write_public_key">Public Key（必填）：</label><br/>
+      <input type="text" name="write_public_key" id="write_public_key" required style="width:400px;padding:4px 8px;" placeholder="pk-lf-..." />
+    </p>
+    <p>
+      <label for="write_secret_key">Secret Key（必填）：</label><br/>
+      <input type="text" name="write_secret_key" id="write_secret_key" required style="width:400px;padding:4px 8px;" placeholder="sk-lf-..." />
+    </p>
+  </fieldset>
+
+  <input type="hidden" name="action" value="bind_observation_project" />
+  <input type="hidden" name="_bind" value="1" />
+  <input type="submit" value="确认绑定" style="margin-top:8px;padding:8px 24px;font-size:14px;" />
+</form>
+{% endblock %}

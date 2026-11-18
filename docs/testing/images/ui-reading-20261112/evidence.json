@@ -1,0 +1,650 @@
+{
+  "baseline": "historical-source-revision-redacted",
+  "reviewed_source_patch_sha256": "d76998c53490c8aceb0192f6104f7657e8a36d0ab778a58245fc33d6788fc2e6",
+  "model": "deepseek-v4-pro-0813",
+  "provider": "Baidu Qianfan",
+  "dependencies": {
+    "powercontext": "1.5.0",
+    "langchain": "1.4.4",
+    "langchain-core": "1.7.6",
+    "langchain-openai": "1.7.4",
+    "langfuse": "5.0.2",
+    "opentelemetry-sdk": "1.45.2"
+  },
+  "otlp_sha256": "5e396c0a0b17c922a3463d7c881624f882117d041b3892bca359f40701a7bb0c",
+  "provider_calls": 8,
+  "successful_calls": 8,
+  "traces": 8,
+  "spans": 176,
+  "powercontext_attributes_checked": 696,
+  "usage": {
+    "input": 1528,
+    "output": 36,
+    "total": 1564
+  },
+  "from_ms": 1794467288417,
+  "to_ms": 1794467308495,
+  "cases": [
+    {
+      "case": "single-sand",
+      "trace_id": "89cb51164b8380a757a1d8b5cb74c55a",
+      "spans": 24,
+      "powercontext_attributes": 95,
+      "exact_ids_parents_times_usage": true,
+      "search_hits": 1,
+      "auto_capture": true
+    },
+    {
+      "case": "empty-first",
+      "trace_id": "a3ae2a52eb67be51ce4d8c5ba00decc1",
+      "spans": 24,
+      "powercontext_attributes": 95,
+      "exact_ids_parents_times_usage": true,
+      "search_hits": 0,
+      "auto_capture": true
+    },
+    {
+      "case": "double-cobalt",
+      "trace_id": "1043979e327ef4ba3c25a11f6e846077",
+      "spans": 24,
+      "powercontext_attributes": 95,
+      "exact_ids_parents_times_usage": true,
+      "search_hits": 2,
+      "auto_capture": true
+    },
+    {
+      "case": "empty-no-capture",
+      "trace_id": "466a7dee5ade091ff592b99676616e26",
+      "spans": 16,
+      "powercontext_attributes": 63,
+      "exact_ids_parents_times_usage": true,
+      "search_hits": 0,
+      "auto_capture": false
+    },
+    {
+      "case": "single-amber",
+      "trace_id": "a34b10cef0b6fab201847ce5489fa768",
+      "spans": 24,
+      "powercontext_attributes": 95,
+      "exact_ids_parents_times_usage": true,
+      "search_hits": 1,
+      "auto_capture": true
+    },
+    {
+      "case": "triple-opal",
+      "trace_id": "d59cb2b7ce2983760c02c2e7a0eea55c",
+      "spans": 24,
+      "powercontext_attributes": 95,
+      "exact_ids_parents_times_usage": true,
+      "search_hits": 3,
+      "auto_capture": true
+    },
+    {
+      "case": "empty-late",
+      "trace_id": "59d23cf26c129aacc9279232ea925669",
+      "spans": 24,
+      "powercontext_attributes": 95,
+      "exact_ids_parents_times_usage": true,
+      "search_hits": 0,
+      "auto_capture": true
+    },
+    {
+      "case": "double-violet-no-capture",
+      "trace_id": "d614d81fde05d13505da1ab82c0c1d44",
+      "spans": 16,
+      "powercontext_attributes": 63,
+      "exact_ids_parents_times_usage": true,
+      "search_hits": 2,
+      "auto_capture": false
+    }
+  ],
+  "browser": {
+    "viewports": {
+      "desktop": [
+        1440,
+        1000
+      ],
+      "mobile": [
+        390,
+        844
+      ]
+    },
+    "page_checks": [
+      {
+        "device": "desktop",
+        "name": "memory",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "memory-help",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "memory-operations",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "memory-calls",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "dashboard",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "dashboard-activity",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "dashboard-sessions",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "settings",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "mcp",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "mcp-help",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "skill",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "models",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "desktop",
+        "name": "plugins",
+        "viewport": 1440,
+        "document": 1440
+      },
+      {
+        "device": "mobile",
+        "name": "memory",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "memory-help",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "memory-operations",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "memory-calls",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "dashboard",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "dashboard-activity",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "dashboard-sessions",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "settings",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "mcp",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "mcp-help",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "skill",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "models",
+        "viewport": 390,
+        "document": 390
+      },
+      {
+        "device": "mobile",
+        "name": "plugins",
+        "viewport": 390,
+        "document": 390
+      }
+    ],
+    "interactions": [
+      {
+        "device": "desktop",
+        "memoryHelpKeyboard": true,
+        "searchReset": true,
+        "sortReset": true
+      },
+      {
+        "device": "desktop",
+        "recentModelCalls": 8,
+        "totalTokens": 1564,
+        "trendSwitchRoundTrip": true,
+        "sessionsExpanded": true
+      },
+      {
+        "device": "mobile",
+        "memoryHelpKeyboard": true,
+        "searchReset": true,
+        "sortReset": true
+      },
+      {
+        "device": "mobile",
+        "recentModelCalls": 8,
+        "totalTokens": 1564,
+        "trendSwitchRoundTrip": true,
+        "sessionsExpanded": true
+      }
+    ],
+    "encrypted_queries": [
+      {
+        "device": "desktop",
+        "keys": [
+          "payloadVersion",
+          "kid",
+          "iv",
+          "encryptedPayload"
+        ],
+        "hasEncryptedPayload": true,
+        "payloadVersion": "v1",
+        "plainQueryKeys": []
+      },
+      {
+        "device": "desktop",
+        "keys": [
+          "payloadVersion",
+          "kid",
+          "iv",
+          "encryptedPayload"
+        ],
+        "hasEncryptedPayload": true,
+        "payloadVersion": "v1",
+        "plainQueryKeys": []
+      },
+      {
+        "device": "mobile",
+        "keys": [
+          "payloadVersion",
+          "kid",
+          "iv",
+          "encryptedPayload"
+        ],
+        "hasEncryptedPayload": true,
+        "payloadVersion": "v1",
+        "plainQueryKeys": []
+      },
+      {
+        "device": "mobile",
+        "keys": [
+          "payloadVersion",
+          "kid",
+          "iv",
+          "encryptedPayload"
+        ],
+        "hasEncryptedPayload": true,
+        "payloadVersion": "v1",
+        "plainQueryKeys": []
+      }
+    ],
+    "single": [
+      {
+        "device": "desktop",
+        "case": "single-sand",
+        "hits": 1,
+        "recallItems": 1
+      },
+      {
+        "device": "desktop",
+        "case": "empty-first",
+        "hits": 0,
+        "recallItems": 0
+      },
+      {
+        "device": "desktop",
+        "case": "double-cobalt",
+        "hits": 2,
+        "recallItems": 2
+      },
+      {
+        "device": "desktop",
+        "case": "empty-no-capture",
+        "hits": 0,
+        "recallItems": 0
+      },
+      {
+        "device": "desktop",
+        "case": "single-amber",
+        "hits": 1,
+        "recallItems": 1
+      },
+      {
+        "device": "desktop",
+        "case": "triple-opal",
+        "hits": 3,
+        "recallItems": 3
+      },
+      {
+        "device": "desktop",
+        "case": "empty-late",
+        "hits": 0,
+        "recallItems": 0
+      },
+      {
+        "device": "desktop",
+        "case": "double-violet-no-capture",
+        "hits": 2,
+        "recallItems": 2
+      },
+      {
+        "device": "mobile",
+        "case": "single-sand",
+        "hits": 1,
+        "recallItems": 1
+      },
+      {
+        "device": "mobile",
+        "case": "empty-first",
+        "hits": 0,
+        "recallItems": 0
+      },
+      {
+        "device": "mobile",
+        "case": "double-cobalt",
+        "hits": 2,
+        "recallItems": 2
+      },
+      {
+        "device": "mobile",
+        "case": "empty-no-capture",
+        "hits": 0,
+        "recallItems": 0
+      },
+      {
+        "device": "mobile",
+        "case": "single-amber",
+        "hits": 1,
+        "recallItems": 1
+      },
+      {
+        "device": "mobile",
+        "case": "triple-opal",
+        "hits": 3,
+        "recallItems": 3
+      },
+      {
+        "device": "mobile",
+        "case": "empty-late",
+        "hits": 0,
+        "recallItems": 0
+      },
+      {
+        "device": "mobile",
+        "case": "double-violet-no-capture",
+        "hits": 2,
+        "recallItems": 2
+      }
+    ],
+    "compare": [
+      {
+        "device": "desktop",
+        "pair": 1,
+        "side": "A",
+        "case": "single-sand",
+        "hits": 1
+      },
+      {
+        "device": "desktop",
+        "pair": 1,
+        "side": "B",
+        "case": "empty-first",
+        "hits": 0
+      },
+      {
+        "device": "desktop",
+        "pair": 2,
+        "side": "A",
+        "case": "double-cobalt",
+        "hits": 2
+      },
+      {
+        "device": "desktop",
+        "pair": 2,
+        "side": "B",
+        "case": "empty-no-capture",
+        "hits": 0
+      },
+      {
+        "device": "desktop",
+        "pair": 3,
+        "side": "A",
+        "case": "single-amber",
+        "hits": 1
+      },
+      {
+        "device": "desktop",
+        "pair": 3,
+        "side": "B",
+        "case": "triple-opal",
+        "hits": 3
+      },
+      {
+        "device": "desktop",
+        "pair": 4,
+        "side": "A",
+        "case": "empty-late",
+        "hits": 0
+      },
+      {
+        "device": "desktop",
+        "pair": 4,
+        "side": "B",
+        "case": "double-violet-no-capture",
+        "hits": 2
+      },
+      {
+        "device": "mobile",
+        "pair": 1,
+        "side": "A",
+        "case": "single-sand",
+        "hits": 1
+      },
+      {
+        "device": "mobile",
+        "pair": 1,
+        "side": "B",
+        "case": "empty-first",
+        "hits": 0
+      },
+      {
+        "device": "mobile",
+        "pair": 2,
+        "side": "A",
+        "case": "double-cobalt",
+        "hits": 2
+      },
+      {
+        "device": "mobile",
+        "pair": 2,
+        "side": "B",
+        "case": "empty-no-capture",
+        "hits": 0
+      },
+      {
+        "device": "mobile",
+        "pair": 3,
+        "side": "A",
+        "case": "single-amber",
+        "hits": 1
+      },
+      {
+        "device": "mobile",
+        "pair": 3,
+        "side": "B",
+        "case": "triple-opal",
+        "hits": 3
+      },
+      {
+        "device": "mobile",
+        "pair": 4,
+        "side": "A",
+        "case": "empty-late",
+        "hits": 0
+      },
+      {
+        "device": "mobile",
+        "pair": 4,
+        "side": "B",
+        "case": "double-violet-no-capture",
+        "hits": 2
+      }
+    ],
+    "activity_loaded": [
+      {
+        "device": "desktop",
+        "version": "before",
+        "httpStatus": 200,
+        "encryptedPayload": true,
+        "activityChartRendered": true,
+        "axisMaximum": 8,
+        "chartText": "08:0002468"
+      },
+      {
+        "device": "desktop",
+        "version": "after",
+        "httpStatus": 200,
+        "encryptedPayload": true,
+        "activityChartRendered": true,
+        "axisMaximum": 8,
+        "chartText": "08:0002468"
+      },
+      {
+        "device": "mobile",
+        "version": "before",
+        "httpStatus": 200,
+        "encryptedPayload": true,
+        "activityChartRendered": true,
+        "axisMaximum": 8,
+        "chartText": "08:0002468"
+      },
+      {
+        "device": "mobile",
+        "version": "after",
+        "httpStatus": 200,
+        "encryptedPayload": true,
+        "activityChartRendered": true,
+        "axisMaximum": 8,
+        "chartText": "08:0002468"
+      }
+    ],
+    "page_errors": [],
+    "failed_api": [],
+    "sessions_loaded": [
+      {
+        "device": "desktop",
+        "loadedSessions": 8
+      },
+      {
+        "device": "mobile",
+        "loadedSessions": 8
+      }
+    ]
+  },
+  "checks": {
+    "lint": true,
+    "typecheck": true,
+    "production_build": true,
+    "node_tests_passed": 1722,
+    "playwright_fixture_tests_passed": 76
+  },
+  "screenshots": {
+    "desktop-memory-before.png": "8161409459070eed2c9f342f60fa895d1a08678ebef61f8217b7470ac1362525",
+    "desktop-memory-after.png": "ec1a45fc46b0e368096702fea9efe1a0f04780c96edb081245992a59cec6f8df",
+    "desktop-dashboard-before.png": "f2055b83c4bd49707c21e7073e3eb47ab09ba49bcac47770c13e27c19989816d",
+    "desktop-dashboard-after.png": "8ec796dcfde69226e0ceb71bc635e804366b3f0eeac5bcfbf57704c131dc986d",
+    "desktop-dashboard-activity-before.png": "423611e70d37122d7d4f000d63347105ecbf0918d36f70bf334d545b0413d9a4",
+    "desktop-dashboard-activity-after.png": "eb2249a67500956cf35399ba47c39a863173cc6bf4043374c1bdb7ac5a93e9b4",
+    "desktop-settings-before.png": "0e9d0d70e077e9ec0e54530e95e62a8773fe2563013d5e7dd70ee0cfc0fc5049",
+    "desktop-settings-after.png": "b19f68485aeb54f2488990e7d47c12ec7d261677438537bf01446fd8f61668dd",
+    "desktop-model-form-before.png": "7578d97e304f22f7b4e1239771d0b8bc564743869fa197ab8a54e1aec9f12369",
+    "desktop-model-form-after.png": "99d8af72cbd96312729f069728b86abee606bc00a28ccf1ce72b840c34c6082e",
+    "desktop-sandbox-before.png": "670efbefdb0455d88945dc65111e3e80b84e01aefff2b4d25af25a77ae91bda3",
+    "desktop-sandbox-after.png": "53503c535abc2a1c48a0579d56818e618b96d1f2c06cbe66f2c939b869a1005e",
+    "mobile-memory-before.png": "652046559ee94d84c6e2d3478a2e7dae64e065de0741bf95460805bf80919a87",
+    "mobile-memory-after.png": "c8551bea3364c90abaae7b39b8113039ca89dc7d10cff55ee84f7ea4a991db64",
+    "mobile-dashboard-before.png": "71872b067b3e912b14b69d28d45e41ed1ff101f25d2b5c673e88735144c05e77",
+    "mobile-dashboard-after.png": "3e0a6c15477a5e1797ab68dea6ffd89fd655f6812e66bd6513521a1292641f2f",
+    "mobile-dashboard-activity-before.png": "9c524537d9cb6c2b2dbe7bc036b93740678fd9b8f4ea4f7fe148b0343825e6cb",
+    "mobile-dashboard-activity-after.png": "4e7acc4d953be44b6f91eb3ada814b4472deae89a85426429a0e4ab37a8be754",
+    "mobile-settings-before.png": "1d9dccb7e017c31f27042beec1f2c918df1054ecc8aaa3c9b1c27d4df6df06e3",
+    "mobile-settings-after.png": "8b9c6fd1f3b3486c98e0646f2877c001a43f26f7c98e4694b849f52d73a1135a",
+    "mobile-model-form-before.png": "feeb655cea7a3745ba5e476841aa4bf65aa8c1bd9896120dc8dcea7c9869034c",
+    "mobile-model-form-after.png": "7422a8c4ff77b3c8c1879a95acf2b539404f6d6e11bd81787495d5879390fcd7",
+    "mobile-sandbox-before.png": "595e9483fa0e4c541f8680acb19c1720c0e560ffc7b05650d2d2255ae9c636e0",
+    "mobile-sandbox-after.png": "3b205cf052182dbaf13f05f5c28859a32242e5e208f38b2b556c3a142519ddef",
+    "desktop-mcp-before.png": "3d1b0c32bd6a7316ccc8a83967789fe206c15931c507b565664fb0391232ff37",
+    "desktop-mcp-after.png": "4d3e4743d457b44b0ed5b99de86eaa5ac282054e83d28092703756d90e37700d",
+    "desktop-skill-before.png": "807238eea1b2eec820ddcfb64617764e60805b00aabed3ebbacfb67e7ee29577",
+    "desktop-skill-after.png": "0f286c73de8e7904bf2d5648d8d41f50667549b1341ab732bced9f9219f96fe4",
+    "desktop-single-double-cobalt-after.png": "d018eb1782ebe0f6054ec636cbf4550e8680f6e9ea14e9ee8769e0a99bb4f64b",
+    "mobile-compare-2-A-after.png": "0637c06755795a7a5c377363ab27f1cd394428be0c3f4cc26cee55382e36ba39"
+  }
+}

@@ -1,0 +1,8 @@
+{"timestamp":"2026-08-23T08:53:46.507Z","type":"event_msg","payload":{"type":"task_started","turn_id":"ordinary-turn"}}
+{"timestamp":"2026-08-23T08:53:46.600Z","type":"event_msg","payload":{"type":"user_message","message":"fill context"}}
+{"timestamp":"2026-08-23T08:54:46.700Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":36941,"output_tokens":197,"total_tokens":37138}}}}
+{"timestamp":"2026-08-23T08:54:46.900Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"ordinary-turn","last_agent_message":"ready"}}
+{"timestamp":"2026-08-23T08:54:47.562Z","type":"event_msg","payload":{"type":"task_started","turn_id":"compaction-turn"}}
+{"timestamp":"2026-08-23T08:55:03.024Z","type":"compacted","payload":{"window_id":"compacted-window"}}
+{"timestamp":"2026-08-23T08:55:03.027Z","type":"event_msg","payload":{"type":"token_count","info":{"last_token_usage":{"input_tokens":0,"output_tokens":0,"total_tokens":5552}}}}
+{"timestamp":"2026-08-23T08:55:03.129Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"compaction-turn","last_agent_message":null}}

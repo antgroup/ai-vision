@@ -1,0 +1,103 @@
+{
+  "schema_version": "aivision.hermes-parity-scenario.v1",
+  "name": "parity-two-turn-success.v1",
+  "session_id": "parity-success",
+  "collection_mode": "full",
+  "hooks": [
+    {
+      "hook": "on_session_start",
+      "captured_at": "2026-07-22T10:00:00Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "model": "model-a", "platform": "cli"}
+    },
+    {
+      "hook": "pre_llm_call",
+      "captured_at": "2026-07-22T10:00:01Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-1", "task_id": "task-1", "model": "model-a", "user_message": "CANARY_SUCCESS_PROMPT_ONE", "conversation_history": []}
+    },
+    {
+      "hook": "pre_api_request",
+      "captured_at": "2026-07-22T10:00:02Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-1", "task_id": "task-1", "api_request_id": "api-1", "model": "model-a", "provider": "anthropic", "request_messages": [{"role": "user", "content": "CANARY_SUCCESS_PROMPT_ONE"}]}
+    },
+    {
+      "hook": "post_api_request",
+      "captured_at": "2026-07-22T10:00:03Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-1", "task_id": "task-1", "api_request_id": "api-1", "model": "model-a", "provider": "anthropic", "api_duration": 0.125, "response_model": "model-a", "finish_reason": "stop", "usage": {"input_tokens": 11, "output_tokens": 7, "cache_read_tokens": 13, "cache_write_tokens": 2, "prompt_tokens": 26}, "assistant_message": {"role": "assistant", "content": "CANARY_SUCCESS_OUTPUT_ONE"}}
+    },
+    {
+      "hook": "pre_tool_call",
+      "captured_at": "2026-07-22T10:00:04Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-1", "task_id": "task-1", "tool_call_id": "tool-1", "tool_name": "Read", "args": {"path": "CANARY_SUCCESS_TOOL_INPUT"}}
+    },
+    {
+      "hook": "post_tool_call",
+      "captured_at": "2026-07-22T10:00:05Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-1", "task_id": "task-1", "tool_call_id": "tool-1", "tool_name": "Read", "result": "CANARY_SUCCESS_TOOL_OUTPUT", "duration_ms": 25, "status": "success"}
+    },
+    {
+      "hook": "post_llm_call",
+      "captured_at": "2026-07-22T10:00:06Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-1", "task_id": "task-1", "model": "model-a", "user_message": "CANARY_SUCCESS_PROMPT_ONE", "assistant_response": "CANARY_SUCCESS_OUTPUT_ONE", "conversation_history": []}
+    },
+    {
+      "hook": "on_session_end",
+      "captured_at": "2026-07-22T10:00:07Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-1", "task_id": "task-1", "completed": true, "interrupted": false}
+    },
+    {
+      "hook": "pre_llm_call",
+      "captured_at": "2026-07-22T10:00:08Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-2", "task_id": "task-2", "model": "model-b", "user_message": "CANARY_SUCCESS_PROMPT_TWO", "conversation_history": []}
+    },
+    {
+      "hook": "pre_api_request",
+      "captured_at": "2026-07-22T10:00:09Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-2", "task_id": "task-2", "api_request_id": "api-2", "model": "model-b", "provider": "openai", "request_messages": [{"role": "user", "content": "CANARY_SUCCESS_PROMPT_TWO"}]}
+    },
+    {
+      "hook": "post_api_request",
+      "captured_at": "2026-07-22T10:00:10Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-2", "task_id": "task-2", "api_request_id": "api-2", "model": "model-b", "provider": "openai", "api_duration": 0.25, "response_model": "model-b", "finish_reason": "stop", "usage": {"input_tokens": 9, "output_tokens": 4, "cache_read_tokens": 0, "cache_write_tokens": 0, "prompt_tokens": 9}, "assistant_message": {"role": "assistant", "content": "CANARY_SUCCESS_OUTPUT_TWO"}}
+    },
+    {
+      "hook": "pre_tool_call",
+      "captured_at": "2026-07-22T10:00:11Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-2", "task_id": "task-2", "tool_call_id": "tool-2", "tool_name": "mcp__server__lookup", "args": {"query": "CANARY_SUCCESS_TOOL_TWO"}}
+    },
+    {
+      "hook": "post_tool_call",
+      "captured_at": "2026-07-22T10:00:12Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-2", "task_id": "task-2", "tool_call_id": "tool-2", "tool_name": "mcp__server__lookup", "result": {"answer": "CANARY_SUCCESS_TOOL_TWO_OUTPUT"}, "duration_ms": 40, "status": "success"}
+    },
+    {
+      "hook": "post_llm_call",
+      "captured_at": "2026-07-22T10:00:13Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-2", "task_id": "task-2", "model": "model-b", "user_message": "CANARY_SUCCESS_PROMPT_TWO", "assistant_response": "CANARY_SUCCESS_OUTPUT_TWO", "conversation_history": []}
+    },
+    {
+      "hook": "on_session_end",
+      "captured_at": "2026-07-22T10:00:14Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "turn_id": "turn-2", "task_id": "task-2", "completed": true, "interrupted": false}
+    },
+    {
+      "hook": "on_session_finalize",
+      "captured_at": "2026-07-22T10:00:15Z",
+      "raw": {"telemetry_schema_version": "hermes.observer.v1", "session_id": "parity-success", "platform": "cli", "reason": "shutdown"}
+    }
+  ],
+  "expected": {
+    "shared_events": {"session_start": 1, "session_end": 1, "user_prompt": 2, "api_request": 2, "tool_call": 2, "tool_result": 2},
+    "metrics": {
+      "agent.session.count": {"count": 1, "sum": 1},
+      "agent.token.usage": {"count": 4, "sum": 31},
+      "agent.cache.read_tokens": {"count": 1, "sum": 13},
+      "agent.cache.write_tokens": {"count": 1, "sum": 2},
+      "agent.api_request.count": {"count": 2, "sum": 2},
+      "agent.api_request.error.count": {"count": 0, "sum": 0},
+      "agent.api_request.duration": {"count": 2, "sum": 375},
+      "agent.tool_call.count": {"count": 2, "sum": 2},
+      "agent.tool_call.error.count": {"count": 0, "sum": 0},
+      "agent.tool_call.duration": {"count": 2, "sum": 65}
+    }
+  }
+}

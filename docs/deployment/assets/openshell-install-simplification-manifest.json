@@ -1,0 +1,47 @@
+{
+  "scope": "OpenShell installation UX and recovery-command quoting; browser progress uses synthetic API fixtures, not a new cold-install qualification.",
+  "base": "historical-source-revision-redacted",
+  "source_sha256": {
+    "ai-vision/vfe/src/features/plugins/OpenShellBootstrap.tsx": "ca20a22f319d653acf5ccab6fb34803ea39426defd70af0899c57366467dd236",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "6d06e63ecb4b9519ee5a20da7e4060317d390cb17d60fb8e78c699c91998dc0f",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "ba38b4806e9832a7dc24cbc0e025ab3b5998cd9594e71a7d6f500d19f69b64ac",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "036b070bc6b55471fc50ff438c6ef4b747b50da354435f651688bacb99f15326",
+    "ai-vision/vfe/tests/e2e/sandboxConnections.spec.ts": "5cb53e81d11d4ee7eda6287248fbea660d9b99ad47f5899f0bd6385ffbee5e32",
+    "ai-vision/vfe/tests/openShellBootstrapDom.test.ts": "17a5b3d778cb3bd37a18ee3afe9bbcd209b4af697e4339de7f4095058c5117e1",
+    "aivision-cli/internal/cli/plugin_progress.go": "f1c3b793d5311b08bfcbaf0bf436f678970849bafc51c1c2eb4f0e1e2bbd7838",
+    "aivision-cli/internal/cli/plugin_progress_test.go": "89cae01a43ef520fb40ffd1c99fb3dd4b6dcd98c7a433029a7ed3d21fcc2b9c9",
+    "docs/deployment/en/sandbox-plugins.md": "1260c9c2207e98c85c271275ac744f6db01632e4bb82aae3a6222fc1ad6576fb",
+    "docs/deployment/zh-CN/sandbox-plugins.md": "6d26d453c1b8d68c8f97814d58b67d62e25308127d9a263fc70aa1935776f33d"
+  },
+  "changes": [
+    "Prepare and copy in one explicit action; same-session retry on clipboard denial",
+    "Unquoted redacted command placeholders; actual credentials copied automatically",
+    "Seven real stages with confirmed completion count and cumulative installation time",
+    "Current layer status and reported bytes visible without expanding logs",
+    "Quote only unsafe recovery command paths; preserve sh and zsh argument values"
+  ],
+  "checks": {
+    "shell_roundtrip": "sh and zsh, ordinary and special arguments passed",
+    "cli": "go test -mod=vendor ./... passed; existing Darwin ARM64 go1.25.14, no dependency download",
+    "dom": "13 passed, no skips; clipboard denial, stale identity, redaction and progress",
+    "sandbox_frontend": "66 passed, no skips",
+    "i18n": "passed",
+    "changed_file_eslint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "browser": "3 passed: Chinese light desktop, English dark 390px, Japanese dark desktop",
+    "independent_review": "No actionable findings",
+    "diff_check": "passed"
+  },
+  "screenshots": {
+    "docs/deployment/assets/openshell-install-copy.zh-CN.fixture.png": "f8e622e03d54b34feff2cf6f27cf144c6e985e7cb53d5ebc400ce68bc4161b6f",
+    "docs/deployment/assets/openshell-install-copy.en.fixture.png": "560c2f5a9040167c51bb6f8afc5c221e863dae451bd349c79e610594ec396975",
+    "docs/deployment/assets/openshell-install-progress.zh-CN.fixture.png": "cb6c22b33b955542cbfe3d9f74824f74ec0965afa7fae223f2c259539248d533"
+  },
+  "limits": [
+    "Browser tests use synthetic image-layer events; 24 MB / 80 MB is a fixture for one layer, not actual download evidence.",
+    "No fresh Docker install, cold download, Windows or Linux CLI qualification in this revision.",
+    "Native browser connection timed out; project Playwright suite used for browser checks."
+  ],
+  "capture_date": "2026-11-05"
+}

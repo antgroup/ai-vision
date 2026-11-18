@@ -1,0 +1,147 @@
+name: Release aiv CLI
+
+# Produces the aiv-release artifact; release-images.yml owns GitHub publishing.
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      plugin_dist:
+        type: boolean
+        default: false
+      product_version:
+        type: string
+        default: ''
+      run_number:
+        type: string
+        default: ''
+      channel:
+        type: string
+        default: dev
+      snapshot_date:
+        type: string
+        default: ''
+      daily_revision:
+        type: string
+        default: '1'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            os: linux
+            arch: x64
+            hook_platform: linux-gnu/x64
+          - runner: ubuntu-22.04-arm
+            os: linux
+            arch: arm64
+            hook_platform: linux-gnu/arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: x64
+            hook_platform: darwin/x64
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+            hook_platform: darwin/arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test and build
+        working-directory: aivision-cli
+        env:
+          CGO_ENABLED: '0'
+          PRODUCT_VERSION: ${{ inputs.product_version }}
+          RELEASE_RUN_NUMBER: ${{ inputs.run_number }}
+          RELEASE_CHANNEL: ${{ inputs.channel }}
+          RELEASE_SNAPSHOT_DATE: ${{ inputs.snapshot_date }}
+          RELEASE_DAILY_REVISION: ${{ inputs.daily_revision }}
+        run: |
+          set -euo pipefail
+          case "${{ matrix.os }}/${{ matrix.arch }}" in
+            */x64) test "$(uname -m)" = x86_64 ;;
+            linux/arm64) test "$(uname -m)" = aarch64 ;;
+            darwin/arm64) test "$(uname -m)" = arm64 ;;
+            *) exit 1 ;;
+          esac
+          make assets-check
+          python3 -m unittest discover -s ../deploy/tests
+          go test -mod=vendor ./...
+          python3 -m unittest discover -s scripts -p 'test_install.py'
+          if [[ -n "$PRODUCT_VERSION" ]]; then
+            python3 ../scripts/build/build_info.py --component aiv --channel "$RELEASE_CHANNEL" \
+              --source-sha "$GITHUB_SHA" --build-id "$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT" \
+              --run-number "$RELEASE_RUN_NUMBER" \
+              --snapshot-date "$RELEASE_SNAPSHOT_DATE" --daily-revision "$RELEASE_DAILY_REVISION" \
+              --product-version "$PRODUCT_VERSION" >/dev/null
+            printf '%s\n' "$PRODUCT_VERSION" > "$RUNNER_TEMP/aiv-product-version"
+            make build VERSION_SOURCE="$RUNNER_TEMP/aiv-product-version"
+          else
+            PRODUCT_VERSION="$(cat ../VERSION)"
+            make build
+          fi
+          test "$(./aiv --version)" = "aiv $PRODUCT_VERSION"
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            test "$(./aiv --version)" = "aiv ${GITHUB_REF_NAME#v}"
+          fi
+          mkdir -p dist
+          tar -czf "dist/aiv-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" \
+            aiv LICENSE deploy/kubernetes/README.md deploy/kubernetes/dependencies/*.LICENSE
+          tar -xzf "dist/aiv-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" -C dist aiv
+          test "$(dist/aiv --version)" = "aiv $PRODUCT_VERSION"
+          rm dist/aiv
+      - if: inputs.plugin_dist
+        uses: actions/download-artifact@v4
+        with:
+          name: plugin-dist-${{ github.run_attempt }}
+          path: plugin-dist
+      - name: Verify matching hook artifacts
+        if: inputs.plugin_dist
+        run: python3 ai-vision/agent-plugins/scripts/verify_plugin_dist.py --dist plugin-dist --platform '${{ matrix.hook_platform }}' --require-privacy
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ github.run_attempt }}-${{ matrix.os }}-${{ matrix.arch }}
+          path: aivision-cli/dist/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14
+  package:
+    needs: build
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: cli-${{ github.run_attempt }}-*
+          path: release
+          merge-multiple: true
+      - name: Package installer and checksums
+        run: |
+          set -euo pipefail
+          for os in linux darwin; do
+            for arch in x64 arm64; do test -s "release/aiv-$os-$arch.tar.gz"; done
+          done
+          sed "s|__AIV_RELEASE_REPOSITORY__|$GITHUB_REPOSITORY|g" aivision-cli/scripts/install.sh > release/install-aiv.sh
+          cd release
+          sha256sum aiv-*.tar.gz install-aiv.sh > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aiv-release-${{ github.run_attempt }}
+          path: release/
+          if-no-files-found: error
+          retention-days: 14

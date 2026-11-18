@@ -1,0 +1,57 @@
+id: microsoft-agent-framework
+logo: /assets/frameworks/microsoft-agent-framework.svg
+label: Microsoft Agent Framework
+frontendSort: 15
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+- export OPENAI_RESPONSES_MODEL_ID="gpt-5-mini"
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+- OPENAI_RESPONSES_MODEL_ID="gpt-5-mini"
+pipInstall: pip install agent-framework opentelemetry-exporter-otlp-proto-http "langfuse>=4.16.0,<5"
+pipExample: |-
+  import asyncio
+  import os
+
+  from agent_framework.observability import configure_otel_providers
+  from agent_framework.openai import OpenAIChatClient
+  from langfuse import get_client, propagate_attributes
+
+  # Enable OpenTelemetry tracing (must be called before creating the client/agent)
+  configure_otel_providers(enable_sensitive_data=True)
+
+  # Langfuse client: registers the global provider and attaches its OTLP export
+  langfuse = get_client()
+
+
+  async def main():
+      # agent-framework 1.19+ API: build the agent via the chat client's .as_agent()
+      # (the old ChatAgent class has been removed)
+      client = OpenAIChatClient(
+          model=os.environ.get("OPENAI_MODEL", "gpt-4o"),
+          api_key=os.environ.get("OPENAI_API_KEY"),
+          base_url=os.environ.get("OPENAI_BASE_URL"),
+      )
+      agent = client.as_agent(instructions="You are a helpful assistant.")
+
+      with langfuse.start_as_current_observation(
+          as_type="span", name="microsoft-agent-framework-request"
+      ):
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          result = await agent.run("What's the capital of Bavaria?")
+          print(result.text)
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:microsoft-agent-framework"]):
+              asyncio.run(main())
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

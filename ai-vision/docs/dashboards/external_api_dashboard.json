@@ -1,0 +1,411 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "5m", "value": "5m" },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Interval",
+        "multi": false,
+        "name": "interval",
+        "options": [
+          { "selected": false, "text": "1m", "value": "1m" },
+          { "selected": false, "text": "2m", "value": "2m" },
+          { "selected": true, "text": "5m", "value": "5m" },
+          { "selected": false, "text": "10m", "value": "10m" },
+          { "selected": false, "text": "30m", "value": "30m" }
+        ],
+        "query": "1m,2m,5m,10m,30m",
+        "type": "custom"
+      },
+      {
+        "allValue": ".*",
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+        "definition": "query_result(aivision.external_api.calls)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Auth Type",
+        "multi": true,
+        "name": "auth_type",
+        "query": {
+          "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" },
+          "qryType": 3,
+          "query": "query_result(aivision.external_api.calls)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "regex": "/.*auth_type=\"([^\"]*).*/",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+        "definition": "query_result(aivision.external_api.calls)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Endpoint",
+        "multi": true,
+        "name": "endpoint",
+        "query": {
+          "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" },
+          "qryType": 3,
+          "query": "query_result(aivision.external_api.calls)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "regex": "/.*endpoint=\"([^\"]*).*/",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+        "definition": "query_result(aivision.external_api.calls)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Agent Product",
+        "multi": true,
+        "name": "agent_product",
+        "query": {
+          "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" },
+          "qryType": 3,
+          "query": "query_result(aivision.external_api.calls)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "regex": "/.*agent_product=\"([^\"]*).*/",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+        "definition": "query_result(aivision.external_api.calls)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Space ID",
+        "multi": true,
+        "name": "space_id",
+        "query": {
+          "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" },
+          "qryType": 3,
+          "query": "query_result(aivision.external_api.calls)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "regex": "/.*space_id=\"([^\"]*).*/",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      },
+      {
+        "allValue": ".*",
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+        "definition": "query_result(aivision.external_api.calls{user_uuid!=\"\"})",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Work ID",
+        "multi": true,
+        "name": "user_uuid",
+        "query": {
+          "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" },
+          "qryType": 3,
+          "query": "query_result(aivision.external_api.calls{user_uuid!=\"\"})",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "regex": "/.*user_uuid=\"([^\"]*).*/",
+        "refresh": 2,
+        "sort": 1,
+        "type": "query"
+      }
+    ]
+  },
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100,
+      "title": "📊 Overview",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 50 }] },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 1 },
+      "id": 1,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum(rate(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "Total QPS", "range": true, "refId": "A" }],
+      "title": "Total QPS",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 1 },
+      "id": 2,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum(increase(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$__range]))", "legendFormat": "Total Calls", "instant": true, "refId": "A" }],
+      "title": "Total Calls (selected range)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 1 },
+      "id": 3,
+      "options": { "legend": { "displayMode": "list", "placement": "right", "showLegend": true }, "pieType": "donut", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "tooltip": { "mode": "single", "sort": "none" } },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum by (auth_type) (rate(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "{{auth_type}}", "range": true, "refId": "A" }],
+      "title": "Calls by Auth Type",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.01 }] },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 1 },
+      "id": 4,
+      "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+      "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum(rate(aivision.external_api.calls{status=\"error\",auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval])) / sum(rate(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "Error Rate", "range": true, "refId": "A" }],
+      "title": "Error Rate",
+      "type": "stat"
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 7 },
+      "id": 200,
+      "title": "📈 By Endpoint",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+          "id": 5,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum by (endpoint) (rate(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "{{endpoint}}", "range": true, "refId": "A" }],
+          "title": "QPS by Endpoint",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "fillOpacity": 80, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "lineWidth": 1, "scaleDistribution": { "type": "linear" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+          "id": 6,
+          "options": { "barRadius": 0.05, "barWidth": 0.8, "groupWidth": 0.7, "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": false }, "orientation": "horizontal", "showValue": "always", "stacking": "none", "tooltip": { "mode": "single", "sort": "none" }, "xTickLabelRotation": 0 },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sort_desc(sum by (endpoint) (increase(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$__range])))", "legendFormat": "{{endpoint}}", "instant": true, "refId": "A" }],
+          "title": "Total Calls by Endpoint",
+          "type": "barchart"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 8 },
+      "id": 300,
+      "title": "🔑 By Auth Type",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
+          "id": 7,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum by (auth_type) (rate(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "{{auth_type}}", "range": true, "refId": "A" }],
+          "title": "QPS by Auth Type",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
+          "id": 8,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum by (auth_type, endpoint) (rate(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "{{auth_type}} / {{endpoint}}", "range": true, "refId": "A" }],
+          "title": "QPS by Auth Type × Endpoint",
+          "type": "timeseries"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+      "id": 400,
+      "title": "🤖 By Agent Product",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+          "id": 9,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum by (agent_product) (rate(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "{{agent_product}}", "range": true, "refId": "A" }],
+          "title": "QPS by Agent Product",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } }, "mappings": [] }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+          "id": 10,
+          "options": { "legend": { "displayMode": "list", "placement": "right", "showLegend": true }, "pieType": "donut", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "tooltip": { "mode": "single", "sort": "none" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum by (agent_product) (increase(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$__range]))", "legendFormat": "{{agent_product}}", "instant": true, "refId": "A" }],
+          "title": "Calls Distribution by Agent",
+          "type": "piechart"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 10 },
+      "id": 500,
+      "title": "🏢 By Space",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 11 },
+          "id": 11,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "topk(10, sum by (space_id) (rate(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval])))", "legendFormat": "{{space_id}}", "range": true, "refId": "A" }],
+          "title": "Top 10 Spaces by QPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [{ "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "unit", "value": "short" }, { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "gauge" } }] }] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 11 },
+          "id": 12,
+          "options": { "cellHeight": "sm", "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false }, "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Value" }] },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sort_desc(sum by (space_id) (increase(aivision.external_api.calls{auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$__range])))", "legendFormat": "{{space_id}}", "instant": true, "format": "table", "refId": "A" }],
+          "title": "Top Spaces by Total Calls",
+          "type": "table"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 11 },
+      "id": 600,
+      "title": "👤 By User (user_uuid)",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 1, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "id": 13,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "topk(10, sum by (user_uuid) (rate(aivision.external_api.calls{auth_type=\"user\",user_uuid=~\"$user_uuid\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval])))", "legendFormat": "{{user_uuid}}", "range": true, "refId": "A" }],
+          "title": "Top 10 Users by QPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "custom": { "align": "auto", "cellOptions": { "type": "auto" }, "inspect": false }, "mappings": [], "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] } }, "overrides": [{ "matcher": { "id": "byName", "options": "Value" }, "properties": [{ "id": "unit", "value": "short" }, { "id": "custom.cellOptions", "value": { "mode": "basic", "type": "gauge" } }] }] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "id": 14,
+          "options": { "cellHeight": "sm", "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false }, "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Value" }] },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sort_desc(sum by (user_uuid) (increase(aivision.external_api.calls{auth_type=\"user\",user_uuid=~\"$user_uuid\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$__range])))", "legendFormat": "{{user_uuid}}", "instant": true, "format": "table", "refId": "A" }],
+          "title": "Top Users by Total Calls",
+          "type": "table"
+        }
+      ]
+    },
+    {
+      "collapsed": true,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 12 },
+      "id": 700,
+      "title": "⚠️ Error Analysis",
+      "type": "row",
+      "panels": [
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+          "id": 15,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum by (endpoint) (rate(aivision.external_api.calls{status=\"error\",auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "{{endpoint}}", "range": true, "refId": "A" }],
+          "title": "Error QPS by Endpoint",
+          "type": "timeseries"
+        },
+        {
+          "datasource": { "type": "antmonitor-prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" },
+          "fieldConfig": { "defaults": { "color": { "mode": "palette-classic" }, "custom": { "axisBorderShow": false, "axisCenteredZero": false, "axisColorMode": "text", "axisLabel": "", "axisPlacement": "auto", "barAlignment": 0, "drawStyle": "line", "fillOpacity": 10, "gradientMode": "none", "hideFrom": { "legend": false, "tooltip": false, "viz": false }, "insertNulls": false, "lineInterpolation": "linear", "lineWidth": 2, "pointSize": 5, "scaleDistribution": { "type": "linear" }, "showPoints": "never", "spanNulls": false, "stacking": { "group": "A", "mode": "none" }, "thresholdsStyle": { "mode": "off" } }, "mappings": [], "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+          "id": 16,
+          "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+          "targets": [{ "datasource": { "type": "prometheus", "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66" }, "datasourceQuery": { "bizDomainId": "47", "dsId": "1400087", "namespace": "aivision_product", "type": "cloudStack" }, "editorMode": "code", "expr": "sum by (auth_type) (rate(aivision.external_api.calls{status=\"error\",auth_type=~\"$auth_type\",endpoint=~\"$endpoint\",agent_product=~\"$agent_product\",space_id=~\"$space_id\"}[$interval]))", "legendFormat": "{{auth_type}}", "range": true, "refId": "A" }],
+          "title": "Error QPS by Auth Type",
+          "type": "timeseries"
+        }
+      ]
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["aivision", "external-api", "openapi"],
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "AiVision External API 访问大盘",
+  "uid": "aivision-external-api-dashboard",
+  "version": 1,
+  "weekStart": ""
+}

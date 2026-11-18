@@ -1,0 +1,39 @@
+# Weaver Guard Example Configuration
+# OTLP proxy for AI Agent telemetry
+
+server:
+  # Port for OTLP gRPC server (traces, logs, metrics)
+  otlp_grpc_port: 4317
+  # Port for OTLP HTTP server (set to null to disable)
+  http_port: 4318
+  # Port for admin/health endpoints
+  admin_port: 4320
+
+backends:
+  # Trace backends - forward to one or more OTLP-compatible backends
+  traces:
+    - endpoint: "http://langfuse:4318/v1/traces"
+      headers:
+        Authorization: "Bearer ${LANGFUSE_PUBLIC_KEY}"
+    - endpoint: "http://jaeger:4318/v1/traces"
+
+  # Logs backends
+  logs:
+    - endpoint: "http://langfuse:4318/v1/logs"
+      headers:
+        Authorization: "Bearer ${LANGFUSE_PUBLIC_KEY}"
+
+  # Metrics backends
+  metrics:
+    - endpoint: "http://prometheus:9090/api/v1/write"
+      headers:
+        Authorization: "Bearer ${PROM_TOKEN}"
+
+# Validation configuration (optional)
+validation:
+  # Enable/disable validation
+  enabled: true
+  # Path to Rego policy directory (relative to config file location)
+  policies_dir: "../policies"
+  # Minimum log level for validation findings (violation=warn, improvement=info)
+  log_level: warn

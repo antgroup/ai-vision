@@ -1,0 +1,25 @@
+{
+  "name": "ai-vision",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "vfe"
+  ],
+  "devDependencies": {
+    "shadcn": "^4.3.0"
+  },
+  "scripts": {
+    "dev": "npm run dev -w vfe",
+    "build": "npm run build -w vfe",
+    "lint": "npm run lint -w vfe",
+    "ci": "npm run ci -w vfe"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/antgroup/ai-vision.git",
+    "directory": "ai-vision"
+  }
+}

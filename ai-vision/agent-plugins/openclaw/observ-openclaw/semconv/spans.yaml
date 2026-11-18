@@ -1,0 +1,285 @@
+
+# Agent 可观测语义约定 - Span 定义
+# 文档版本: v2.0
+
+groups:
+  # --------------------------------------------------------------------------
+  # CHAT Span - 会话层
+  # 会话层代表接近客户端的应用集合，如网关、业务应用
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.chat
+    type: span
+    span_kind: server
+    brief: "CHAT Span - 会话层，代表接近客户端的应用集合（网关、业务应用等）"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: session.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: recommended
+      - ref: gen_ai.user.id
+        requirement_level: recommended
+      - ref: user.type
+        requirement_level: recommended
+      - ref: gen_ai.response.time_to_first_token
+        requirement_level: required
+      - ref: gen_ai.response.time_per_output_token
+        requirement_level:
+          conditionally_required: "流式场景有效"
+      - ref: response.total_packets
+        requirement_level:
+          conditionally_required: "流式场景有效"
+      - ref: response.duration
+        requirement_level: recommended
+      - ref: http.response.status_code
+        requirement_level:
+          conditionally_required: "HTTP 调用必须填写"
+      - ref: gen_ai.input.messages
+        requirement_level: recommended
+      - ref: gen_ai.output.messages
+        requirement_level: recommended
+      - ref: input.intent
+        requirement_level: recommended
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.total_tokens
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # AGENT Span - Agent 服务调用
+  # Agent 服务调用的字段集合
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.agent
+    type: span
+    span_kind: internal
+    brief: "AGENT Span - Agent 服务调用，包含 Agent 实例和执行信息"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: gen_ai.agent.id
+        requirement_level: required
+      - ref: gen_ai.agent.name
+        requirement_level: required
+      - ref: gen_ai.agent.version
+        requirement_level: recommended
+      - ref: gen_ai.response.time_to_first_token
+        requirement_level: required
+      - ref: response.result_state
+        requirement_level: recommended
+      - ref: http.response.status_code
+        requirement_level:
+          conditionally_required: "HTTP 调用必须填写"
+      # L2 扩展字段
+      - ref: traffic.source
+        requirement_level: recommended
+      - ref: business.scene
+        requirement_level: recommended
+      - ref: business.app_id
+        requirement_level: recommended
+      # 评测链路字段
+      - ref: eval.trace_source
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+      - ref: eval.dataset.id
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+      - ref: eval.prompt.id
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+      - ref: eval.case.id
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+      - ref: eval.case.type
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+      # Agentic 运行时扩展
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.runtime.version
+        requirement_level: recommended
+      - ref: agentic.turn.id
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # TOOL Span - 工具调用
+  # Tool 调用相关的字段
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.tool
+    type: span
+    span_kind: client
+    brief: "TOOL Span - 工具调用，包含函数调用、扩展调用等信息"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: gen_ai.tool.call.id
+        requirement_level: recommended
+      - ref: gen_ai.tool.name
+        requirement_level: recommended
+      - ref: gen_ai.tool.type
+        requirement_level: recommended
+      - ref: response.result_state
+        requirement_level: recommended
+      # Coding Agent 扩展字段
+      - ref: code.tool.name
+        requirement_level:
+          conditionally_required: "Coding Agent 场景推荐"
+      - ref: code.tool.exit_code
+        requirement_level:
+          conditionally_required: "Coding Agent 场景推荐"
+      - ref: code.file.operation
+        requirement_level:
+          conditionally_required: "Coding Agent 场景推荐"
+      - ref: code.file.path
+        requirement_level:
+          conditionally_required: "Coding Agent 场景推荐"
+
+  # --------------------------------------------------------------------------
+  # MCP Span - MCP 协议调用
+  # MCP 协议调用的相关字段
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.mcp
+    type: span
+    span_kind: client
+    brief: "MCP Span - MCP 协议调用，包含 Server 交互和 Tool 调用信息"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: mcp.server_id
+        requirement_level: required
+      - ref: mcp.request_type
+        requirement_level: required
+      - ref: mcp.tool_name
+        requirement_level:
+          conditionally_required: "当 request_type 为 tools/call 时必须填写"
+      - ref: response.result_state
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # RETRIEVER Span - 召回操作
+  # 召回操作相关的字段
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.retriever
+    type: span
+    span_kind: client
+    brief: "RETRIEVER Span - 召回操作，用于 RAG 向量召回场景"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: retrieval.query
+        requirement_level: recommended
+      - ref: retrieval.kind
+        requirement_level: required
+      - ref: retrieval.system
+        requirement_level: required
+      - ref: retrieval.request.top_k
+        requirement_level: required
+
+  # --------------------------------------------------------------------------
+  # RERANKER Span - 重排操作
+  # 内容重排相关的字段
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.reranker
+    type: span
+    span_kind: internal
+    brief: "RERANKER Span - 内容重排，用于 RAG 结果重排场景"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: reranker.model_name
+        requirement_level: required
+      - ref: reranker.top_k
+        requirement_level: recommended
+      - ref: reranker.input_documents
+        requirement_level: opt_in
+      - ref: reranker.output_documents
+        requirement_level: opt_in
+
+  # --------------------------------------------------------------------------
+  # EMBEDDING Span - Embedding 操作
+  # Embedding 操作相关的字段
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.embedding
+    type: span
+    span_kind: client
+    brief: "EMBEDDING Span - 文本向量化操作"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: embedding.model_name
+        requirement_level: recommended
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.total_tokens
+        requirement_level: recommended
+
+  # --------------------------------------------------------------------------
+  # GUARDRAIL Span - 拦截服务
+  # 拦截服务调用相关的字段
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.guardrail
+    type: span
+    span_kind: internal
+    brief: "GUARDRAIL Span - 拦截服务，用于内容安全检查场景"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: guardrail.input
+        requirement_level: required
+      - ref: guardrail.result
+        requirement_level: required
+      - ref: guardrail.action
+        requirement_level: required
+
+  # --------------------------------------------------------------------------
+  # LLM Span - 模型服务调用
+  # 一次模型服务调用相关的字段
+  # --------------------------------------------------------------------------
+  - id: span.gen_ai.llm
+    type: span
+    span_kind: client
+    brief: "LLM Span - 模型服务调用，包含请求参数、响应信息和 Token 使用量"
+    stability: development
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+      - ref: gen_ai.system
+        requirement_level: required
+      - ref: gen_ai.request.model
+        requirement_level: required
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.request.temperature
+        requirement_level: recommended
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.response.time_to_first_token
+        requirement_level: recommended
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.total_tokens
+        requirement_level: recommended
+      - ref: http.response.status_code
+        requirement_level:
+          conditionally_required: "HTTP 调用必须填写"
+      # 缓存 Token 扩展
+      - ref: gen_ai.usage.details.cache_read_input_tokens
+        requirement_level: opt_in
+      - ref: gen_ai.usage.details.cache_creation_input_tokens
+        requirement_level: opt_in
+      - ref: gen_ai.usage.details.cache_hit_rate
+        requirement_level: opt_in

@@ -1,0 +1,584 @@
+#!/usr/bin/env python3
+"""Copy legacy worktree artifacts into the shared AiVision artifact tree safely."""
+
+from __future__ import annotations
+
+import argparse
+import errno
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import uuid
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Iterable, Sequence
+
+from aivision_artifacts import (
+    ARTIFACT_KINDS,
+    COMPONENTS,
+    aivision_home,
+    artifact_id,
+    artifact_path,
+    component_directory,
+)
+
+TOOL_VERSION = 1
+
+
+@dataclass(frozen=True)
+class SourceFile:
+    component: str
+    kind: str
+    source: Path
+    destination: Path
+    size: int
+    sha256: str
+
+
+@dataclass(frozen=True)
+class SourceDirectory:
+    component: str
+    kind: str
+    source: Path
+    destination: Path
+
+
+@dataclass(frozen=True)
+class CopyTask:
+    component: str
+    kind: str
+    sources: tuple[SourceFile, ...]
+    destination: Path
+    size: int
+    sha256: str
+    destination_identical: bool
+
+
+@dataclass(frozen=True)
+class DirectoryTask:
+    component: str
+    kind: str
+    sources: tuple[SourceDirectory, ...]
+    destination: Path
+    destination_identical: bool
+
+
+class MigrationError(RuntimeError):
+    pass
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def git_worktrees(repo_root: Path) -> list[Path]:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "worktree", "list", "--porcelain"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    worktrees = []
+    for line in result.stdout.splitlines():
+        if line.startswith("worktree "):
+            worktrees.append(Path(line.removeprefix("worktree ")).absolute())
+    return worktrees
+
+
+def selected_components(values: Sequence[str]) -> list[str]:
+    if not values:
+        return list(COMPONENTS)
+    selected = []
+    for value in values:
+        canonical = artifact_id(value)
+        if canonical not in selected:
+            selected.append(canonical)
+    return selected
+
+
+def source_files(
+    worktrees: Iterable[Path],
+    components: Sequence[str],
+    environ: dict[str, str],
+    directory_sink: list[SourceDirectory] | None = None,
+) -> list[SourceFile]:
+    worktree_paths = tuple(Path(worktree).absolute() for worktree in worktrees)
+    files: list[SourceFile] = []
+    seen_roots: set[tuple[str, str, Path]] = set()
+    for worktree in worktree_paths:
+        for component in components:
+            directory = component_directory(component)
+            for kind in ARTIFACT_KINDS:
+                source_root = worktree / directory / kind
+                if source_root.is_symlink():
+                    target = source_root.resolve()
+                    candidate_roots = (
+                        candidate / directory / kind for candidate in worktree_paths
+                    )
+                    managed_roots = {
+                        candidate.resolve()
+                        for candidate in candidate_roots
+                        if candidate.is_dir() and not candidate.is_symlink()
+                    }
+                    if target in managed_roots and target.is_dir() and not target.is_symlink():
+                        # Legacy worktree setup linked artifact roots to another
+                        # registered worktree. The real root is scanned directly;
+                        # do not follow or duplicate the managed alias.
+                        continue
+                    raise MigrationError(
+                        f"unsupported legacy artifact root symlink: {source_root}"
+                    )
+                if not source_root.exists():
+                    continue
+                if not source_root.is_dir():
+                    raise MigrationError(f"legacy source is not a directory: {source_root}")
+                actual_root = source_root.resolve()
+                root_key = (component, kind, actual_root)
+                if root_key in seen_roots:
+                    continue
+                seen_roots.add(root_key)
+
+                destination_root = artifact_path(component, kind, environ=environ)
+                try:
+                    destination_root.resolve().relative_to(actual_root)
+                except ValueError:
+                    pass
+                else:
+                    raise MigrationError(
+                        f"destination must not be nested inside legacy source: {destination_root}"
+                    )
+
+                for current_root, directories, names in os.walk(actual_root, followlinks=False):
+                    directories.sort()
+                    names.sort()
+                    current = Path(current_root)
+                    for name in directories:
+                        source_directory = current / name
+                        if source_directory.is_symlink():
+                            raise MigrationError(
+                                f"unsupported legacy artifact entry: {source_directory}"
+                            )
+                        if directory_sink is not None:
+                            relative = source_directory.relative_to(actual_root)
+                            directory_sink.append(
+                                SourceDirectory(
+                                    component=component,
+                                    kind=kind,
+                                    source=source_directory,
+                                    destination=destination_root / relative,
+                                )
+                            )
+                    for name in names:
+                        if name == ".gitkeep":
+                            continue
+                        source = current / name
+                        if source.is_symlink() or not source.is_file():
+                            raise MigrationError(f"unsupported legacy artifact entry: {source}")
+                        relative = source.relative_to(actual_root)
+                        stat = source.stat()
+                        files.append(
+                            SourceFile(
+                                component=component,
+                                kind=kind,
+                                source=source,
+                                destination=destination_root / relative,
+                                size=stat.st_size,
+                                sha256=sha256_file(source),
+                            )
+                        )
+    return files
+
+
+def build_directory_plan(
+    directories: Sequence[SourceDirectory],
+    files: Sequence[SourceFile],
+) -> tuple[list[DirectoryTask], list[str]]:
+    grouped: dict[Path, list[SourceDirectory]] = {}
+    for source in directories:
+        grouped.setdefault(source.destination, []).append(source)
+
+    file_destinations = {source.destination for source in files}
+    tasks: list[DirectoryTask] = []
+    collisions: list[str] = []
+    for destination in sorted(grouped, key=lambda value: (len(value.parts), str(value))):
+        sources = tuple(grouped[destination])
+        if destination in file_destinations:
+            collisions.append(
+                f"directory and file sources target the same path {destination}: "
+                + ", ".join(str(source.source) for source in sources)
+            )
+            continue
+
+        destination_identical = False
+        if destination.exists() or destination.is_symlink():
+            if destination.is_symlink() or not destination.is_dir():
+                collisions.append(f"directory destination is not a real directory: {destination}")
+                continue
+            destination_identical = True
+
+        representative = sources[0]
+        tasks.append(
+            DirectoryTask(
+                component=representative.component,
+                kind=representative.kind,
+                sources=sources,
+                destination=destination,
+                destination_identical=destination_identical,
+            )
+        )
+    return tasks, collisions
+
+
+def build_plan(files: Sequence[SourceFile]) -> tuple[list[CopyTask], list[str]]:
+    grouped: dict[Path, list[SourceFile]] = {}
+    for source in files:
+        grouped.setdefault(source.destination, []).append(source)
+
+    tasks = []
+    collisions = []
+    for destination in sorted(grouped, key=str):
+        sources = tuple(grouped[destination])
+        expected_hashes = {source.sha256 for source in sources}
+        expected_sizes = {source.size for source in sources}
+        if len(expected_hashes) != 1 or len(expected_sizes) != 1:
+            collisions.append(
+                f"different source contents target {destination}: "
+                + ", ".join(str(source.source) for source in sources)
+            )
+            continue
+
+        destination_identical = False
+        if destination.exists() or destination.is_symlink():
+            if destination.is_symlink() or not destination.is_file():
+                collisions.append(f"destination is not a regular file: {destination}")
+                continue
+            destination_hash = sha256_file(destination)
+            if destination_hash not in expected_hashes or destination.stat().st_size not in expected_sizes:
+                collisions.append(f"destination has different contents: {destination}")
+                continue
+            destination_identical = True
+
+        representative = sources[0]
+        tasks.append(
+            CopyTask(
+                component=representative.component,
+                kind=representative.kind,
+                sources=sources,
+                destination=destination,
+                size=representative.size,
+                sha256=representative.sha256,
+                destination_identical=destination_identical,
+            )
+        )
+    return tasks, collisions
+
+
+def event(task: CopyTask, state: str, migration_id: str, error: str | None = None) -> dict[str, object]:
+    value: dict[str, object] = {
+        "toolVersion": TOOL_VERSION,
+        "migrationId": migration_id,
+        "timestamp": utc_now(),
+        "state": state,
+        "component": task.component,
+        "kind": task.kind,
+        "sources": [str(source.source) for source in task.sources],
+        "destination": str(task.destination),
+        "size": task.size,
+        "sha256": task.sha256,
+    }
+    if error:
+        value["error"] = error
+    return value
+
+
+def directory_event(
+    task: DirectoryTask,
+    state: str,
+    migration_id: str,
+    error: str | None = None,
+) -> dict[str, object]:
+    value: dict[str, object] = {
+        "toolVersion": TOOL_VERSION,
+        "migrationId": migration_id,
+        "timestamp": utc_now(),
+        "state": state,
+        "entryType": "directory",
+        "component": task.component,
+        "kind": task.kind,
+        "sources": [str(source.source) for source in task.sources],
+        "destination": str(task.destination),
+    }
+    if error:
+        value["error"] = error
+    return value
+
+
+class Journal:
+    def __init__(self, path: Path):
+        self.path = path
+        descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        self.handle = os.fdopen(descriptor, "w", encoding="utf-8")
+
+    def append(self, value: dict[str, object]) -> None:
+        self.handle.write(json.dumps(value, sort_keys=True) + "\n")
+        self.handle.flush()
+        os.fsync(self.handle.fileno())
+
+    def close(self) -> None:
+        self.handle.close()
+
+
+def ensure_private_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+    path.chmod(0o700)
+
+
+def copy_exclusive(task: CopyTask) -> str:
+    source = task.sources[0].source
+    if sha256_file(source) != task.sha256:
+        raise MigrationError(f"source changed after preflight: {source}")
+
+    ensure_private_dir(task.destination.parent)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=".aivision-migrate-",
+        dir=task.destination.parent,
+    )
+    os.close(descriptor)
+    temporary = Path(temporary_name)
+    try:
+        shutil.copy2(source, temporary)
+        if sha256_file(temporary) != task.sha256 or sha256_file(source) != task.sha256:
+            raise MigrationError(f"source changed while copying: {source}")
+        try:
+            os.link(temporary, task.destination)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+            if not task.destination.is_file() or sha256_file(task.destination) != task.sha256:
+                raise MigrationError(f"destination appeared with different contents: {task.destination}")
+            return "identical"
+        if sha256_file(task.destination) != task.sha256:
+            raise MigrationError(f"post-copy verification failed: {task.destination}")
+        return "copied"
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def write_success_manifest(
+    path: Path,
+    migration_id: str,
+    tasks: Sequence[CopyTask],
+    directory_tasks: Sequence[DirectoryTask] = (),
+) -> None:
+    value = {
+        "toolVersion": TOOL_VERSION,
+        "migrationId": migration_id,
+        "completedAt": utc_now(),
+        "status": "complete",
+        "entries": [
+            {
+                "component": task.component,
+                "kind": task.kind,
+                "sources": [str(source.source) for source in task.sources],
+                "destination": str(task.destination),
+                "size": task.size,
+                "sha256": task.sha256,
+            }
+            for task in tasks
+        ],
+        "directories": [
+            {
+                "component": task.component,
+                "kind": task.kind,
+                "sources": [str(source.source) for source in task.sources],
+                "destination": str(task.destination),
+            }
+            for task in directory_tasks
+        ],
+    }
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        json.dump(value, handle, indent=2, sort_keys=True)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def apply_plan(
+    tasks: Sequence[CopyTask],
+    aivision_root: Path,
+    directory_tasks: Sequence[DirectoryTask] = (),
+) -> tuple[Path, Path]:
+    migration_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ") + f"-{os.getpid()}-{uuid.uuid4().hex[:8]}"
+    migration_root = aivision_root / ".migration"
+    ensure_private_dir(aivision_root)
+    ensure_private_dir(migration_root)
+    for component in COMPONENTS:
+        ensure_private_dir(aivision_root / component)
+        for kind in ARTIFACT_KINDS:
+            ensure_private_dir(aivision_root / component / kind)
+    journal_path = migration_root / f"migration-{migration_id}.jsonl"
+    manifest_path = migration_root / f"migration-{migration_id}.manifest.json"
+    journal = Journal(journal_path)
+    try:
+        for task in directory_tasks:
+            journal.append(directory_event(task, "planned", migration_id))
+        for task in tasks:
+            journal.append(event(task, "planned", migration_id))
+        for task in directory_tasks:
+            if task.destination_identical:
+                ensure_private_dir(task.destination)
+                journal.append(directory_event(task, "identical", migration_id))
+                continue
+            journal.append(directory_event(task, "started", migration_id))
+            try:
+                ensure_private_dir(task.destination)
+            except Exception as exc:
+                journal.append(directory_event(task, "failed", migration_id, str(exc)))
+                raise
+            journal.append(directory_event(task, "created", migration_id))
+        for task in tasks:
+            if task.destination_identical:
+                journal.append(event(task, "identical", migration_id))
+                continue
+            journal.append(event(task, "started", migration_id))
+            try:
+                state = copy_exclusive(task)
+            except Exception as exc:
+                journal.append(event(task, "failed", migration_id, str(exc)))
+                raise
+            journal.append(event(task, state, migration_id))
+
+        for task in tasks:
+            if not task.destination.is_file() or sha256_file(task.destination) != task.sha256:
+                raise MigrationError(f"final verification failed: {task.destination}")
+        for task in directory_tasks:
+            if not task.destination.is_dir() or task.destination.is_symlink():
+                raise MigrationError(f"final directory verification failed: {task.destination}")
+        write_success_manifest(manifest_path, migration_id, tasks, directory_tasks)
+    except Exception as exc:
+        journal.append(
+            {
+                "toolVersion": TOOL_VERSION,
+                "migrationId": migration_id,
+                "timestamp": utc_now(),
+                "state": "migration_failed",
+                "error": str(exc),
+            }
+        )
+        raise
+    finally:
+        journal.close()
+    return journal_path, manifest_path
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--apply", action="store_true", help="copy after a clean preflight")
+    mode.add_argument("--dry-run", action="store_true", help="only print the preflight plan (default)")
+    parser.add_argument("--component", action="append", default=[], help="component id/name; repeatable")
+    parser.add_argument("--source-worktree", action="append", default=[], help="explicit legacy worktree; repeatable")
+    parser.add_argument("--repo-root", default=".", help="repository used to enumerate worktrees")
+    parser.add_argument("--aivision-home", help="override the destination root")
+    parser.add_argument("--json", action="store_true", help="emit the preflight result as JSON")
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    env = dict(os.environ)
+    if args.aivision_home:
+        env["AIVISION_HOME"] = args.aivision_home
+    components = selected_components(args.component)
+    worktrees = (
+        [Path(value).expanduser().absolute() for value in args.source_worktree]
+        if args.source_worktree
+        else git_worktrees(Path(args.repo_root).expanduser().absolute())
+    )
+
+    try:
+        source_directories: list[SourceDirectory] = []
+        files = source_files(worktrees, components, env, source_directories)
+        directory_tasks, directory_collisions = build_directory_plan(source_directories, files)
+        tasks, collisions = build_plan(files)
+        collisions = directory_collisions + collisions
+    except (MigrationError, OSError, subprocess.CalledProcessError, ValueError) as exc:
+        print(f"migrate-artifacts: {exc}", file=sys.stderr)
+        return 2
+
+    destination_root = aivision_home(environ=env)
+    result = {
+        "mode": "apply" if args.apply else "dry-run",
+        "aivisionHome": str(destination_root),
+        "worktrees": [str(path) for path in worktrees],
+        "components": components,
+        "files": len(files),
+        "directories": len(source_directories),
+        "directoryDestinations": len(directory_tasks),
+        "destinations": len(tasks),
+        "collisions": collisions,
+        "actions": [
+            {
+                "action": "identical" if task.destination_identical else "copy",
+                "sources": [str(source.source) for source in task.sources],
+                "destination": str(task.destination),
+                "size": task.size,
+                "sha256": task.sha256,
+            }
+            for task in tasks
+        ],
+        "directoryActions": [
+            {
+                "action": "identical" if task.destination_identical else "create",
+                "sources": [str(source.source) for source in task.sources],
+                "destination": str(task.destination),
+            }
+            for task in directory_tasks
+        ],
+    }
+    if args.json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+    else:
+        for action in result["directoryActions"]:
+            print(f"{action['action']} directory: {action['sources'][0]} -> {action['destination']}")
+        for action in result["actions"]:
+            print(f"{action['action']}: {action['sources'][0]} -> {action['destination']}")
+
+    if collisions:
+        for collision in collisions:
+            print(f"collision: {collision}", file=sys.stderr)
+        return 3
+    if not args.apply:
+        if not args.json:
+            print(
+                f"dry-run: {len(files)} source files, {len(source_directories)} source directories, "
+                f"{len(tasks)} file destinations; no writes"
+            )
+        return 0
+
+    try:
+        journal, manifest = apply_plan(tasks, destination_root, directory_tasks)
+    except Exception as exc:
+        print(f"migrate-artifacts: apply failed: {exc}", file=sys.stderr)
+        return 4
+    if not args.json:
+        print(f"migration complete: journal={journal} manifest={manifest}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

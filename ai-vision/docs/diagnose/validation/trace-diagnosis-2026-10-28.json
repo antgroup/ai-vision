@@ -1,0 +1,1103 @@
+{
+  "schema": "ai-vision.trace-diagnosis.validation.v1",
+  "validation_date": "2026-10-28",
+  "evidence_status": "complete_with_stated_limitations",
+  "environment": "macOS local source runtime, isolated platform SQLite and AgentLens schema, real existing OceanBase telemetry and collector",
+  "source_identity": {
+    "base_commit": "historical-source-revision-redacted",
+    "tested_working_tree": true,
+    "production_files": {
+      "agentlens/src/agentlens/service/quick_runs.py": "dead8bbee193ad648158d9521d6f785bbcde3a8413b50876b49be53b4fb2662d",
+      "agentlens/src/agentlens/service/diagnosis_record_store.py": "b105e046e7471a9906297d8e4a08c7d9845e69f5b6d34e718fec2d9f35b76e4c",
+      "agentlens/src/agentlens/kernel/worker/runner.py": "effe40ff7ac4a95ac8243cbc5c3b4f8a60c4208f6b540e2d5f0e78d42988b1c3",
+      "agentlens/src/agentlens/service/datasource/record_snapshot.py": "2da4a8d88793ca114de4a78373ecf9c29f21f5ad81f3edf00425fe7fe072e6ab",
+      "ai-vision/aivision-py-be/apps/core/services/diagnosis_quick_run.py": "4c514b4a5565731187244db038853bc288b5e401d20486decb8a9f4fa8c33527",
+      "ai-vision/aivision-py-be/apps/core/services/diagnosis_quick_input.py": "c31ba7274624b0bc6c156bff87932cde0c91a604e66071f37380fc39f0323098",
+      "ai-vision/aivision-py-be/apps/core/views/agentlens_proxy.py": "58c55a6ad5bd912fcd0d574964eb531b4113c89d557ca107bc4227d5c37be085"
+    },
+    "frontend_files": {
+      "ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx": "42022547f138ac992437454ccf20e36de2f3af73e054544083e6af1c49f7d658",
+      "ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx": "a09edc47e87b0d33dc85e1d2ddfa5009dbe6756fbff773159749b72c3034074f",
+      "ai-vision/vfe/src/components/diagnose/QuickDiagnosisResult.tsx": "285478d32df570a2cc9353b8f088253c173241c6c3c602f1a0d57834c7ae1e13",
+      "ai-vision/vfe/src/components/diagnose/diagnosisRunApi.ts": "2c5c003b0b6b1bf2ac3bcfb095159c44952440aaff78c465c82269507dad6615",
+      "ai-vision/vfe/src/components/diagnose/diagnosisRunLabels.ts": "1dacd921f0263526ae8c55d0d9cceb5a17e298cec5f0e0f2ed7a2eb58c1341b9",
+      "ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx": "ea33640d8100f56b67949301de9a19efbbd6908366beb95a2db788209b37b2a1",
+      "ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx": "6ad0f6754fd639b66e4caae43803d159d0a8e099266884e04cf8a76630d3deaf",
+      "ai-vision/vfe/src/pages/diagnose/BadCasePage.tsx": "679dc1ec0fccf6d9308237adbc92f3aabcbb29f303651d583845eb3e026b62b9",
+      "ai-vision/vfe/src/i18n/locales/zh-CN.json": "23e2b46e3d1c76f82ca729d4ca41948dbb566f83c1e365e48fcec143be8afc89",
+      "ai-vision/vfe/src/i18n/locales/en-US.json": "d131b8721505e95f10211cecf105c903128cdf1155ac25b5b5c40881d80d93ac",
+      "ai-vision/vfe/src/i18n/locales/ja-JP.json": "d89ac9d1996da5a1dd8c271167e4333c7f12e92219edb57da69afac65dbb0e5e"
+    }
+  },
+  "source_preservation": {
+    "trace_count": 50,
+    "span_count": 1062,
+    "sha256": "2df002062c1d933c655d7244680b1ddc2b8ad0823f4d6be309490c9f220936e3",
+    "unchanged": true
+  },
+  "options": {
+    "diagnoser_count": 11,
+    "numeric_selectable": true,
+    "protected_selectable": true,
+    "missing_model_selectable": false,
+    "missing_model_reason": "QUICK_MODEL_UNAVAILABLE",
+    "contains_private_policy": false
+  },
+  "runs": {
+    "saved_builtin": {
+      "task_uuid": "55ffce27486c4400a248b812995f0e5e",
+      "job_uuid": "18d5f9ae5b704addafccdbc86b7c8039",
+      "selected_trace_count": 2,
+      "selected_diagnoser_count": 1,
+      "task_status": "succeeded",
+      "source_complete": true,
+      "source_stats": {
+        "total": 2,
+        "invalid": 0,
+        "projection_failed": 0
+      },
+      "record_count": 2,
+      "verdict_counts": {
+        "good": 1,
+        "bad": 1
+      },
+      "record_detail_bytes": [
+        2206,
+        2611
+      ],
+      "record_details_read_back": true
+    },
+    "saved_numeric": {
+      "task_uuid": "546f2144e9834a958958a54323817f40",
+      "job_uuid": "fed5184125234626a70562d0d33b4d3d",
+      "selected_trace_count": 2,
+      "selected_diagnoser_count": 1,
+      "task_status": "succeeded",
+      "source_complete": true,
+      "source_stats": {
+        "total": 2,
+        "invalid": 0,
+        "projection_failed": 0
+      },
+      "record_count": 2,
+      "verdict_counts": {
+        "good": 1,
+        "bad": 1
+      },
+      "record_detail_bytes": [
+        3791,
+        3800
+      ],
+      "record_details_read_back": true
+    },
+    "saved_protected": {
+      "task_uuid": "cbc1fc9f351d47eb87b50ca975502003",
+      "job_uuid": "055306b1c1974d8f8c7142f8c2c5e409",
+      "selected_trace_count": 1,
+      "selected_diagnoser_count": 1,
+      "task_status": "succeeded",
+      "source_complete": true,
+      "source_stats": {
+        "total": 1,
+        "invalid": 0,
+        "projection_failed": 0
+      },
+      "record_count": 1,
+      "verdict_counts": {
+        "good": 1
+      },
+      "record_detail_bytes": [
+        3436
+      ],
+      "record_details_read_back": true
+    },
+    "saved_historical": {
+      "task_uuid": "c52d5a1c7b8b414ca0ed8863525ab26a",
+      "job_uuid": "e6fcda6bc1764d8088ef12987e5e3163",
+      "selected_trace_count": 1,
+      "selected_diagnoser_count": 1,
+      "task_status": "succeeded",
+      "source_complete": true,
+      "source_stats": {
+        "total": 1,
+        "invalid": 0,
+        "projection_failed": 0
+      },
+      "record_count": 1,
+      "verdict_counts": {
+        "bad": 1
+      },
+      "record_detail_bytes": [
+        2628
+      ],
+      "record_details_read_back": true
+    },
+    "saved_large_source": {
+      "task_uuid": "74ca68097e8643cabe04716e0c58f70c",
+      "job_uuid": "1faf5509ec7343e59058be65f0a2f955",
+      "selected_trace_count": 2,
+      "selected_diagnoser_count": 1,
+      "task_status": "succeeded",
+      "source_complete": false,
+      "source_stats": {
+        "total": 2,
+        "invalid": 0,
+        "projection_failed": 1
+      },
+      "record_count": 2,
+      "verdict_counts": {
+        "failed": 1,
+        "good": 1
+      },
+      "record_detail_bytes": [
+        2142,
+        15662
+      ],
+      "record_details_read_back": true
+    },
+    "immediate_detail_after_fix": {
+      "task_uuid": "2af43d0fd3224ed7b7d9fb1790a6cb7a",
+      "job_uuid": "70fc855f38014463852808d2b9a8ad3e",
+      "selected_trace_count": 2,
+      "selected_diagnoser_count": 1,
+      "task_status": "succeeded",
+      "source_complete": true,
+      "source_stats": {
+        "total": 2,
+        "invalid": 0,
+        "projection_failed": 0
+      },
+      "record_count": 2,
+      "verdict_counts": {
+        "good": 1,
+        "bad": 1
+      },
+      "record_detail_bytes": [
+        3791,
+        3800
+      ],
+      "record_details_read_back": true
+    },
+    "same_second_detail_after_fix": {
+      "task_uuid": "020400a7c70e4271af5d7b9176202e5a",
+      "job_uuid": "28a94d5bf6714b7e98a23800b151f194",
+      "selected_trace_count": 1,
+      "selected_diagnoser_count": 1,
+      "task_status": "succeeded",
+      "source_complete": true,
+      "source_stats": {
+        "total": 1,
+        "invalid": 0,
+        "projection_failed": 0
+      },
+      "record_count": 1,
+      "verdict_counts": {
+        "good": 1
+      },
+      "record_detail_bytes": [
+        3791
+      ],
+      "record_details_read_back": true
+    }
+  },
+  "http_checks": [
+    {
+      "case": "saved_options",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "unknown_diagnoser",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "same_space_cross_agent_diagnoser",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "cross_space_diagnoser",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "model_configuration_missing",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "eleven_trace_ids",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "duplicate_trace_ids",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "missing_trace",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "foreign_scope_trace",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "missing_diagnoser",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "unknown_extra_configuration",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "unsupported_diagnoser_array",
+      "http_status": 422,
+      "business_code": 4220,
+      "observations": 1
+    },
+    {
+      "case": "cross_space_agent",
+      "http_status": 404,
+      "business_code": 4040,
+      "observations": 1
+    },
+    {
+      "case": "saved_builtin_accepted",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "saved_builtin_record_readback",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "saved_builtin_record_detail",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "idempotent_same_request",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "idempotent_changed_selection",
+      "http_status": 409,
+      "business_code": 4090,
+      "observations": 1
+    },
+    {
+      "case": "idempotent_changed_diagnoser",
+      "http_status": 409,
+      "business_code": 4090,
+      "observations": 1
+    },
+    {
+      "case": "saved_numeric_accepted",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "saved_numeric_record_readback",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "saved_numeric_record_detail",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "numeric_current_definition",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "change_numeric_after_acceptance",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "idempotence_after_saved_definition_changed",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "restore_owned_numeric_configuration",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "saved_protected_accepted",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "saved_protected_record_readback",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "saved_protected_record_detail",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "referenced_saved_diagnoser_delete_protected",
+      "http_status": 409,
+      "business_code": 4090,
+      "observations": 1
+    },
+    {
+      "case": "idempotence_after_rejected_delete",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "saved_historical_accepted",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "saved_historical_record_readback",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "saved_historical_record_detail",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "historical_fixed_task_without_time",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1,
+      "record_total": 1
+    },
+    {
+      "case": "historical_fixed_task_explicit_recent_window",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1,
+      "record_total": 0
+    },
+    {
+      "case": "historical_fixed_task_explicit_source_window",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1,
+      "record_total": 1
+    },
+    {
+      "case": "historical_fixed_task_start_only",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1,
+      "record_total": 0
+    },
+    {
+      "case": "historical_fixed_task_end_only",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1,
+      "record_total": 0
+    },
+    {
+      "case": "historical_ordinary_default_seven_days",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1,
+      "record_total": 0
+    },
+    {
+      "case": "historical_ordinary_explicit_source_window",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1,
+      "record_total": 1
+    },
+    {
+      "case": "saved_large_source_accepted",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "saved_large_source_record_readback",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "saved_large_source_record_detail",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "previous_large_task_still_has_three_records",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1,
+      "record_total": 3
+    },
+    {
+      "case": "immediate_detail_after_fix_accepted",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "immediate_detail_list",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "immediate_detail_after_fix_record_readback",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "immediate_detail_after_fix_record_detail",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "same_second_detail_after_fix_accepted",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "fresh_record_first_detail",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 1
+    },
+    {
+      "case": "final_immediate_detail_after_fix_task",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "final_same_second_detail_after_fix_task",
+      "http_status": 200,
+      "business_code": 0,
+      "observations": 2
+    },
+    {
+      "case": "developer_new_run_options_other_owner_agent_forbidden",
+      "http_status": 403,
+      "business_code": 4030,
+      "observations": 1
+    },
+    {
+      "case": "developer_new_run_submit_other_owner_agent_forbidden",
+      "http_status": 403,
+      "business_code": 4030,
+      "observations": 1
+    },
+    {
+      "case": "developer_new_run_task_other_owner_forbidden",
+      "http_status": 403,
+      "business_code": 4030,
+      "observations": 1
+    },
+    {
+      "case": "developer_new_run_record_other_owner_forbidden",
+      "http_status": 403,
+      "business_code": 4030,
+      "observations": 1
+    },
+    {
+      "case": "member_new_run_options_other_owner_agent_forbidden",
+      "http_status": 403,
+      "business_code": 4030,
+      "observations": 1
+    },
+    {
+      "case": "member_new_run_submit_other_owner_agent_forbidden",
+      "http_status": 403,
+      "business_code": 4030,
+      "observations": 1
+    },
+    {
+      "case": "member_new_run_task_other_owner_forbidden",
+      "http_status": 403,
+      "business_code": 4030,
+      "observations": 1
+    },
+    {
+      "case": "member_new_run_record_other_owner_forbidden",
+      "http_status": 403,
+      "business_code": 4030,
+      "observations": 1
+    }
+  ],
+  "http_check_case_count": 61,
+  "large_payload_regression": {
+    "earlier_two_diagnoser_request_bytes_before_fix": 35054814,
+    "earlier_before_http_status": 400,
+    "earlier_two_diagnoser_request_bytes_after_fix": 22162,
+    "earlier_after_http_status": 200,
+    "earlier_task_record_count_still_readable": 3,
+    "saved_single_diagnoser_collector_requests": [
+      {
+        "timestamp": "2026-10-28T08:10:40.777059037Z",
+        "http.request.size": 19572,
+        "http.response.status_code": 200
+      }
+    ],
+    "gateway_export_errors_in_window": 0,
+    "projection_failure_remains_visible": true
+  },
+  "same_second_detail_regression": {
+    "initial_platform_http_status": 503,
+    "initial_query_excluded_new_record": true,
+    "initial_direct_agentlens_status": "not_captured",
+    "after_fix_first_detail_http_status": 200,
+    "after_fix_request_started_at_utc": "2026-10-28T08:18:18.883147+00:00",
+    "after_fix_record_written_in_request_start_second": true,
+    "after_fix_stored_period_ns": "1793175498338979000",
+    "after_fix_request_floor_second_ns": "1793175498000000000"
+  },
+  "privacy": {
+    "protected_marker_in_public_responses": false,
+    "protected_marker_in_django_receipts": false,
+    "django_receipt_rows_checked": 5
+  },
+  "external_model_requests": 0,
+  "llm_execution": "not_run_no_configured_model",
+  "limitations": [
+    "Source runtime evidence on macOS; no cold-start, Linux, Kubernetes, released-image, or hosted CI claim.",
+    "The real large trace remains semantically ambiguous; failed projection stays failed and source_complete remains false.",
+    "Snapshot compaction covers supported-projector failure, not arbitrary large successful or CUSTOM snapshots.",
+    "Referenced saved-definition deletion returned the existing 409 protection; no database bypass was used.",
+    "Browser auth/refresh 401 was observed separately while sessions remained active; cause not established by this HTTP run.",
+    "Browser interaction and localization evidence is recorded separately."
+  ],
+  "cleanup_executed": false,
+  "contract": {
+    "endpoint": "POST /api/v1/spaces/{space_id}/diagnose/runs?agent_uuid={agent_uuid}",
+    "body_fields": [
+      "request_id",
+      "trace_ids",
+      "diagnoser_uuid"
+    ],
+    "selected_trace_limit": 10,
+    "saved_diagnosers_per_run": 1,
+    "execution_policy": "bounded_diagnosis_v1",
+    "model_request_budget": {
+      "total": 30,
+      "per_case": 3
+    },
+    "private_policy_location": "authorized AgentLens task snapshot only",
+    "new_task_can_retest": false,
+    "legacy_quick_runs_preserved": true
+  },
+  "earlier_regressions": {
+    "classification": "Historical regression receipts from earlier working-tree revisions; not final saved-diagnoser UI runs",
+    "large_input": {
+      "source_identity": {
+        "baseline_commit": "historical-source-revision-redacted",
+        "state": "working_tree_before_commit",
+        "backend_restart_utc": "2026-10-28T06:51:23.656085+00:00",
+        "sha256": {
+          "agentlens/src/agentlens/kernel/worker/runner.py": "fd3ba5bf289ae9fc88976134a610e6fb982e58e9f8b5fdad6484e2404ea65c83",
+          "agentlens/src/agentlens/service/datasource/record_snapshot.py": "2da4a8d88793ca114de4a78373ecf9c29f21f5ad81f3edf00425fe7fe072e6ab",
+          "agentlens/src/agentlens/service/quick_runs.py": "710855f00329745d74a96170a29c3a6ade6173b6dcc50dd1a575205decb0c956",
+          "ai-vision/aivision-py-be/apps/core/services/diagnosis_quick_run.py": "c755a83c89291e45350eee7f9ca26dba9b8da5817415441d11ce49a4bbfea385"
+        }
+      },
+      "classification": "Normalized native-source replay of an authorized application export; not original OTLP wire replay",
+      "selected_trace_span_counts": [
+        85,
+        66
+      ],
+      "before_two_diagnoser_run": {
+        "downstream_otlp_body_bytes": 35054814,
+        "downstream_http_status": 400,
+        "error": "read otlp body: http: request body too large",
+        "gateway_dropped_items": 4,
+        "persisted_records_read_back": 0
+      },
+      "after_two_diagnoser_run": {
+        "run_started_utc": "2026-10-28T06:51:58.964344+00:00",
+        "run_finished_utc": "2026-10-28T06:52:03.180925+00:00",
+        "downstream_otlp_body_bytes": 22162,
+        "downstream_http_status": 200,
+        "gateway_export_errors_in_run_window": 0,
+        "persisted_records_read_back": 3,
+        "record_verdicts": [
+          "failed",
+          "failed",
+          "good"
+        ],
+        "record_detail_http_statuses": [
+          200,
+          200,
+          200
+        ],
+        "record_detail_response_bytes": [
+          2142,
+          2162,
+          15662
+        ],
+        "task_status": "succeeded",
+        "source_stats": {
+          "total": 2,
+          "invalid": 0,
+          "projection_failed": 1
+        },
+        "source_complete": false,
+        "failed_snapshot": {
+          "count": 2,
+          "source_span_count": 85,
+          "spans_omitted": true,
+          "raw_spans_present": false
+        }
+      },
+      "original_rows_before_after_sha256": "2df002062c1d933c655d7244680b1ddc2b8ad0823f4d6be309490c9f220936e3",
+      "original_rows_unchanged": true
+    },
+    "fixed_task_history": {
+      "started_at_utc": "2026-10-28T07:22:54.134477+00:00",
+      "finished_at_utc": "2026-10-28T07:23:01.659783+00:00",
+      "source_age_hours_at_ingest": 190.0,
+      "source_started_at_utc": "2026-10-20T09:22:53.319875+00:00",
+      "synthetic_source_spans_read_back": 2,
+      "task_status": "succeeded",
+      "source_stats": {
+        "total": 1,
+        "invalid": 0,
+        "projection_failed": 0
+      },
+      "source_complete": true,
+      "checks": [
+        {
+          "case": "historical_fixed_task_no_time",
+          "http_status": 200,
+          "total": 2,
+          "verdicts": [
+            "good",
+            "bad"
+          ]
+        },
+        {
+          "case": "historical_fixed_task_explicit_recent_window",
+          "http_status": 200,
+          "total": 0,
+          "verdicts": []
+        },
+        {
+          "case": "historical_fixed_task_explicit_source_window",
+          "http_status": 200,
+          "total": 2,
+          "verdicts": [
+            "good",
+            "bad"
+          ]
+        },
+        {
+          "case": "historical_fixed_task_start_only_after_source",
+          "http_status": 200,
+          "total": 0,
+          "verdicts": []
+        },
+        {
+          "case": "historical_fixed_task_end_only_before_source",
+          "http_status": 200,
+          "total": 0,
+          "verdicts": []
+        },
+        {
+          "case": "historical_normal_list_default_seven_days",
+          "http_status": 200,
+          "total": 0,
+          "verdicts": []
+        },
+        {
+          "case": "historical_normal_list_explicit_source_window",
+          "http_status": 200,
+          "total": 2,
+          "verdicts": [
+            "good",
+            "bad"
+          ]
+        },
+        {
+          "case": "existing_large_task_no_time",
+          "http_status": 200,
+          "total": 3,
+          "verdicts": [
+            "failed",
+            "failed",
+            "good"
+          ]
+        },
+        {
+          "case": "agentlens_fixed_task_no_time",
+          "http_status": 200,
+          "total": 2
+        },
+        {
+          "case": "agentlens_normal_list_default_seven_days",
+          "http_status": 200,
+          "total": 0
+        }
+      ],
+      "original_source_span_count": 1062,
+      "original_source_sha256": "2df002062c1d933c655d7244680b1ddc2b8ad0823f4d6be309490c9f220936e3",
+      "original_source_unchanged": true,
+      "external_model_requests": 0,
+      "fresh_login_used": false,
+      "source": {
+        "head": "historical-source-revision-redacted",
+        "source_state": "working_tree_before_commit",
+        "started_at_utc": "2026-10-28T07:22:32.615668+00:00",
+        "files": {
+          "ai-vision/aivision-py-be/apps/core/views/agentlens_proxy.py": "58c55a6ad5bd912fcd0d574964eb531b4113c89d557ca107bc4227d5c37be085",
+          "agentlens/src/agentlens/service/diagnosis_record_store.py": "0781068fcc4776f4bd14c362ee181509b269cbbf5f5980e636e9b693d153346f",
+          "agentlens/src/agentlens/kernel/worker/runner.py": "fd3ba5bf289ae9fc88976134a610e6fb982e58e9f8b5fdad6484e2404ea65c83",
+          "agentlens/src/agentlens/service/datasource/record_snapshot.py": "2da4a8d88793ca114de4a78373ecf9c29f21f5ad81f3edf00425fe7fe072e6ab"
+        }
+      }
+    }
+  },
+  "automated_verification": {
+    "frontend_final": {
+      "status": "passed",
+      "passed": 1257,
+      "failed": 0,
+      "skipped": 0,
+      "cwd": "ai-vision/vfe",
+      "commands": [
+        "npm test",
+        "npm run typecheck",
+        "npm run build"
+      ],
+      "changed_typescript_and_tests_eslint": "passed",
+      "build_warning": "Existing large chunk warning, approximately 4.08 MB"
+    },
+    "agentlens_final": {
+      "passed": 685,
+      "skipped": 32,
+      "failed": 0,
+      "skip_reason": "Optional isolated OceanBase/seekdb test database fixture was not configured",
+      "duration_seconds": 36.52,
+      "warning": "Existing StarletteDeprecationWarning",
+      "cwd": "agentlens",
+      "command": ".venv/bin/pytest tests/unit/kernel/worker tests/unit/service/test_diagnosis_record_store.py tests/unit/service/test_quick_runs.py tests/unit/service/test_saved_diagnosis_runs.py tests/unit/service/test_authorized_diagnosis_input.py tests/unit/service/test_ingest_exporter.py tests/unit/infra/antcollector tests/unit/infra/signoz/test_input_marker_types.py tests/unit/infra/ob/test_judge_request_ledger.py tests/unit/diagnoser/test_core_execution_policy.py tests/unit/diagnoser/test_diagnoser_lifecycle.py tests/unit/diagnoser/test_specialist_executors.py tests/unit/diagnoser/test_specialist_policies.py tests/unit/diagnoser/test_retired_runtime_projection.py tests/unit/diagnoser/test_shared_evidence_projection.py tests/unit/web/routes/test_diagnosis_record_routes.py tests/unit/web/routes/test_specialist_routes.py -o addopts='' -q --tb=short"
+    },
+    "django_final": {
+      "passed": 39,
+      "skipped": 0,
+      "failed": 0,
+      "cwd": "ai-vision/aivision-py-be",
+      "command": ".venv/bin/python -m unittest apps.core.tests.test_diagnosis_quick_offline apps.core.tests.test_diagnosis_quick_input apps.core.tests.test_diagnosis_run_offline apps.core.tests.test_agentlens_proxy_scope.AgentLensProxyParameterTests apps.core.tests.test_agentlens_proxy_scope.TraceProjectionScopeTests apps.core.tests.test_agentlens_proxy_scope.DiagnosisResultScopeTests"
+    },
+    "backend_static_checks": {
+      "ruff_check": "passed",
+      "ruff_format_check": "passed",
+      "compileall": "passed",
+      "adr_check": "passed",
+      "diff_check": "passed"
+    },
+    "counting_rule": "Suites overlap; counts are not added to independent review or historical runs."
+  },
+  "independent_review": {
+    "scope": "Read-only integrated source review and local offline/mock tests",
+    "required_findings_remaining": 0,
+    "severity_statement": "No P1 or P2 findings at reviewed source manifest",
+    "base_commit": "historical-source-revision-redacted",
+    "source_and_tests_manifest_sha256": "0f7cbb8ce187b876ebf188606269d0397379f9ea37138a191c0d0d4d572808cb",
+    "full_manifest_sha256": "c5c1dabf2084e9b58f12e336c840e72fccb9bd56b93fe73eef63777ca55b87be",
+    "focused_checks": {
+      "frontend_passed": 129,
+      "agentlens_passed": 125,
+      "agentlens_skipped": 6,
+      "django_passed": 38
+    },
+    "limits": "Independent read-only source review and local offline/mock tests; no live external model, deployed stack, hosted CI or production validation. Draft validation reports recorded by hash only; their real-stack claims require author receipts.",
+    "post_formatting_review": "Reread QuickDiagnosisResult.tsx, TraceDiagnosisPanel.tsx and zh-CN.json: source-target routing, explicit new intent after nonretryable rejection, original-intent unknown recovery and copy remain as reviewed. Also reread changed quickDiagnosisDom.test.ts formatting and the added mocked custom-LLM frozen-prompt/scoped-hook test in test_saved_diagnosis_runs.py. No production logic change and no new P1/P2. Full tests were not repeated; later author test totals are not claimed as independently executed.",
+    "manifest_excludes_jpg": true
+  },
+  "browser_evidence": {
+    "status": "complete_with_stated_limitations",
+    "browser": "Codex built-in browser",
+    "backend": "Real local source Vite, Django and AgentLens with existing collector and telemetry storage",
+    "final_origin": "http://localhost:5175",
+    "confirmed_behavior": {
+      "options_endpoint": "GET /diagnose/runs/options",
+      "submit_endpoint": "POST /diagnose/runs",
+      "submitted_body_fields": [
+        "request_id",
+        "trace_ids",
+        "diagnoser_uuid"
+      ],
+      "dialog_candidate_queries": 0,
+      "source_navigation": "Numeric result without a span ID opens the exact source Trace detail with trace_from and trace_to",
+      "detail_selection": "Dialog received exactly its current Trace ID independently of the two list selections; this selection-only verification was not submitted again",
+      "quality_page": "Japanese quality page read back the real 50.0 score without a duplicate picker"
+    },
+    "screenshots": {
+      "detail-zh-dark.jpg": {
+        "sha256": "42d6c746a9c9a56f86c62f21e108c8f6e323571b3f152ef652c3441eee9d1dd0",
+        "width": 1440,
+        "height": 1000
+      },
+      "dialog-en-dark.jpg": {
+        "sha256": "1317c3b554dcf886e4c79b1b362713e328216e4858255206e70a93e0b90ca51f",
+        "width": 1440,
+        "height": 1000
+      },
+      "dialog-en-light.jpg": {
+        "sha256": "1d3b16f8a9d82dd8c5fc0c115ff7fec2851139aa5bd7a953bbf442a754961116",
+        "width": 1440,
+        "height": 1000
+      },
+      "dialog-ja-dark.jpg": {
+        "sha256": "a8175ad73d6644490585e1f6d71b79461e19d3f918b82f5d2b83562ef4d454b0",
+        "width": 1440,
+        "height": 1000
+      },
+      "dialog-ja-light-narrow.jpg": {
+        "sha256": "98cfb9f794d7bd200d4c211c44542dc6ac30b13b877ab7119c36fe484eeabd58",
+        "width": 390,
+        "height": 844
+      },
+      "dialog-ja-light.jpg": {
+        "sha256": "852bb73a4c7c319de04e2737981659fb53ce259ee0118bcb36ce123ec98a7ff9",
+        "width": 1440,
+        "height": 1000
+      },
+      "dialog-zh-light.jpg": {
+        "sha256": "dda403d1b3886cd240c9656ad59d068e3fe3ecc936544c25b95133623520c301",
+        "width": 1440,
+        "height": 1000
+      },
+      "history-en-dark.jpg": {
+        "sha256": "1f744e35b04d7b9b585ffddadaf470e5805760f509ffe6b9635203025a6ec5a1",
+        "width": 1440,
+        "height": 1000
+      },
+      "history-ja-light.jpg": {
+        "sha256": "5e1e532ac0acd482295160b98641e303fb8615657442acdf1da549428e2f8456",
+        "width": 1440,
+        "height": 1000
+      },
+      "history-zh-dark.jpg": {
+        "sha256": "c9b127e3c4f4f0d014e2dec4148bf409d046404c76a030948567a696e00086f2",
+        "width": 1440,
+        "height": 1000
+      },
+      "list-zh-light.jpg": {
+        "sha256": "477d61818d6ecf5911f2baf22caf3ae6edd7cffa4551e06ece8be17c15db0fdb",
+        "width": 1440,
+        "height": 1000
+      },
+      "quality-ja-light.jpg": {
+        "sha256": "1d6c514e919f7d92bbfa81d30af0a8a15f101c9249997ca1c9641546ace7bd08",
+        "width": 1440,
+        "height": 1000
+      },
+      "result-en-light.jpg": {
+        "sha256": "5a99fcc6e3c129c0c82351aac337a9e021349f70a2ce798317c838d6951d97aa",
+        "width": 1440,
+        "height": 1000
+      },
+      "result-ja-light-narrow.jpg": {
+        "sha256": "dd585a52d9db638944f137462d9420f6284ccc7dbbc371b278b8f624c966bd9b",
+        "width": 390,
+        "height": 844
+      },
+      "result-zh-dark.jpg": {
+        "sha256": "c35454e8865e72c13d8fabcb845b98ff90b0cf1995e36b591e599caff95488aa",
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    "session_observation": "At 127.0.0.1, auth/me and refresh intermittently returned 401 while the server session remained active and unrevoked. The cause was not established. Final browser evidence used localhost against the same Vite/backend services. No further 401 was observed in the final localhost pass; this does not establish the cause of the earlier 127.0.0.1 failures.",
+    "manual_runs": [
+      {
+        "locale": "zh-CN",
+        "classification": "Separate manual browser saved numeric-diagnoser run",
+        "task_uuid": "1d09ecb110bc479598f3e5f86776ff35",
+        "job_uuid": "4768b82e0eba45e3960a4c05c6374ac3",
+        "selected_trace_count": 2,
+        "record_count": 2,
+        "verdict_counts": {
+          "good": 1,
+          "bad": 1
+        },
+        "source_complete": true,
+        "external_model_requests": 0
+      },
+      {
+        "locale": "en-US",
+        "classification": "Separate manual browser saved numeric-diagnoser run",
+        "task_uuid": "195611c46e4049a988e0a5657784a011",
+        "job_uuid": "dafbb9d85e9e412d8124f49cead5b259",
+        "selected_trace_count": 2,
+        "record_count": 2,
+        "verdict_counts": {
+          "good": 1,
+          "bad": 1
+        },
+        "source_complete": true,
+        "external_model_requests": 0
+      },
+      {
+        "locale": "ja-JP",
+        "classification": "Separate manual browser saved numeric-diagnoser run",
+        "task_uuid": "d5ba811f633e42249b1df86704b6eeb7",
+        "job_uuid": "687aafbe139547c398bb52b8f42532f0",
+        "selected_trace_count": 2,
+        "record_count": 2,
+        "verdict_counts": {
+          "good": 1,
+          "bad": 1
+        },
+        "source_complete": true,
+        "external_model_requests": 0
+      }
+    ],
+    "desktop_viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "narrow_viewport": {
+      "width": 390,
+      "height": 844,
+      "dialog_width": 358,
+      "dialog_left": 16,
+      "dialog_client_width": 343,
+      "dialog_scroll_width": 343,
+      "horizontal_overflow": false,
+      "japanese_controls_visible": true,
+      "both_results_accessible_after_scroll": true,
+      "measurement": "After responsive resize settled"
+    },
+    "localization": {
+      "locales": [
+        "zh-CN",
+        "en-US",
+        "ja-JP"
+      ],
+      "official_saved_names_and_descriptions_localized": true,
+      "frozen_record_names_and_reasons_translated": false
+    },
+    "theme_matrix": {
+      "zh-CN": {
+        "light": [
+          "trace list",
+          "saved-diagnoser dialog"
+        ],
+        "dark": [
+          "result",
+          "source detail",
+          "historical fixed batch"
+        ]
+      },
+      "en-US": {
+        "light": [
+          "saved-diagnoser dialog",
+          "result"
+        ],
+        "dark": [
+          "saved-diagnoser dialog",
+          "historical fixed batch"
+        ]
+      },
+      "ja-JP": {
+        "light": [
+          "saved-diagnoser dialog",
+          "narrow dialog and results",
+          "quality overview",
+          "historical fixed batch"
+        ],
+        "dark": [
+          "saved-diagnoser dialog"
+        ]
+      }
+    },
+    "full_six_locale_theme_result_execution_matrix": false,
+    "historical_fixed_task": {
+      "task_uuid": "c52d5a1c7b8b414ca0ed8863525ab26a",
+      "job_uuid": "e6fcda6bc1764d8088ef12987e5e3163",
+      "source_date": "2026-10-20",
+      "global_time_window": "last 3 hours",
+      "records_displayed": 1,
+      "verdict": "bad",
+      "localized_batch_scope_notice_verified": [
+        "zh-CN",
+        "en-US",
+        "ja-JP"
+      ]
+    },
+    "unavailable_definition_browser_state": "Not separately exercised end to end; unavailable-model API rejection and offline UI regressions are recorded separately.",
+    "screenshot_count": 15
+  },
+  "compatibility": {
+    "ordinary_record_list_default_days": 7,
+    "fixed_task_without_explicit_time_bounds": "Reads retained fixed task records without injecting the ordinary seven-day default",
+    "explicit_time_bounds": "Honored, including one-sided bounds",
+    "physical_candidate_cap": 50000,
+    "retention_still_applies": true,
+    "snapshot_compaction": "Supported-projector projection failures only; no general guarantee for large successful CUSTOM snapshots",
+    "definition_retry": "Accepted retry returns the original task; a new request snapshots the current saved definition"
+  },
+  "runtime_public_receipt_sha256": "8b27616d48fe312f578758455b3ff43365366b19aeb612c73cef63ef1c2a87ec",
+  "ownership_scope": "Developer and member denials concern another owner's Agent, run and records; they do not establish blanket role denial or permission revocation.",
+  "cleanup": {
+    "executed": false,
+    "owned_tasks": 22,
+    "owned_result_spans": 85,
+    "synthetic_source_spans": 10,
+    "owned_diagnosers": 4,
+    "owned_agents": 1,
+    "scope": "Task-owned resources tracked as of the final runtime/browser receipt; original replay inputs excluded."
+  }
+}

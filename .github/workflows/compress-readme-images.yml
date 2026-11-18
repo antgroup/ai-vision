@@ -1,0 +1,50 @@
+name: Optimize README images
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - 'docs/assets/readme/**/*.jpg'
+      - 'docs/assets/readme/**/*.jpeg'
+      - 'docs/assets/readme/**/*.png'
+      - 'docs/assets/readme/**/*.webp'
+      - 'docs/assets/readme/**/*.avif'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: readme-images-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  optimize:
+    # Fork contributors use the local compression instructions instead.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out the exact PR image revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          # Also constrain the action's repository-scan fallback after API errors.
+          sparse-checkout: /docs/assets/readme/
+          sparse-checkout-cone-mode: false
+
+      - name: Compress changed README images
+        uses: calibreapp/image-actions@ff27d81cd56064db7beb7fa56946c0c3b3d15fbf
+        with:
+          ignorePaths: '!docs/assets/readme/**'
+          jpegQuality: '90'
+          pngQuality: '100'
+          webpQuality: '90'
+          avifQuality: '90'
+          minPctChange: '10'
+          minAbsChange: '10240'

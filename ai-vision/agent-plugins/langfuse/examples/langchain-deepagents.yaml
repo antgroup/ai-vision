@@ -1,0 +1,99 @@
+id: langchain-deepagents
+logo: /assets/frameworks/deep-agents.svg
+label: Deep Agents
+frontendSort: 1
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-..."
+- export OPENAI_MODEL="gpt-4o"
+- export OPENAI_BASE_URL="https://api.openai.com/v1"
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-..."
+- OPENAI_MODEL="gpt-4o"
+- OPENAI_BASE_URL="https://api.openai.com/v1"
+pipInstall: pip install "deepagents>=0.7.21,<0.8" "langchain>=1.4.3,<2" "langchain-core>=1.6.6,<2" "langgraph>=1.2.12,<2" "langchain-openai>=1.6.7,<2" "langfuse>=5.0.2,<6" "python-dotenv>=1.2.4,<2"
+officialDocs: https://langfuse.com/integrations/frameworks/langchain-deepagents
+integrationNotes: >-
+  Add a Langfuse callback to your existing Deep Agents invocation; installing the SDK or setting credentials alone does not record a request.
+  Keep existing callbacks, business configuration and checkpointer. Use the same session_id for turns in one conversation;
+  thread_id remains the framework's persistence key. Use one tracing integration per destination to avoid duplicate spans.
+  The complete example loads .env from the script directory; shell variables take precedence.
+existingExample: |-
+  from langchain_core.runnables.config import merge_configs
+  from langfuse import get_client, propagate_attributes
+  from langfuse.langchain import CallbackHandler
+
+  langfuse = get_client()  # Once at service startup, after loading the environment.
+
+  # Keep your existing agent/graph, tools, state, checkpointer and request config.
+  # existing_config must not already contain a Langfuse tracing callback.
+  config = merge_configs(existing_config, {"callbacks": [CallbackHandler()]})
+  with propagate_attributes(session_id=session_id, tags=["framework:deepagents"]):
+      with langfuse.start_as_current_observation(
+          name="deepagents-request", as_type="agent", input=existing_input
+      ) as request:
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          result = existing_agent.invoke(existing_input, config=config)
+          request.update(output=result["messages"][-1].content)
+
+  # Keep the shared client alive between requests. At service shutdown, after all
+  # requests finish, call langfuse.flush() and langfuse.shutdown() in finally.
+  # For a short script, use the complete example below for guaranteed cleanup.
+pipExample: |-
+  import os
+  from pathlib import Path
+
+  from dotenv import load_dotenv
+
+  load_dotenv(Path(__file__).with_name(".env"), override=False)
+  import uuid
+
+  from deepagents import create_deep_agent
+  from langfuse import get_client, propagate_attributes
+  from langfuse.langchain import CallbackHandler
+  from langchain_openai import ChatOpenAI
+
+
+  def main():
+      # This example uses the OpenAI Chat Completions protocol. For another
+      # provider, explicitly select its supported model and base URL above.
+      # No provider/model fallback is performed.
+      model = ChatOpenAI(
+          model=os.environ["OPENAI_MODEL"],
+          api_key=os.environ["OPENAI_API_KEY"],
+          base_url=os.environ["OPENAI_BASE_URL"],
+          use_responses_api=False,
+      )
+      agent = create_deep_agent(
+          model=model,
+      )
+      langfuse = get_client()
+      session_id = str(uuid.uuid4())
+      inputs = {"messages": [{"role": "user", "content": "What is deep agents?"}]}
+      try:
+          with propagate_attributes(session_id=session_id, tags=["framework:deepagents"]):
+              with langfuse.start_as_current_observation(name="deepagents-onboarding", as_type="agent", input=inputs) as root:
+                  print("AI Vision trace_id:", langfuse.get_current_trace_id())
+                  result = agent.invoke(
+                      inputs,
+                      config={"callbacks": [CallbackHandler()], "configurable": {"thread_id": session_id}},
+                  )
+                  output = result["messages"][-1].content
+                  root.update(output=output)
+                  print(output)
+      finally:
+          # Short scripts must flush even when the model/tool call raises.
+          # Long-running services keep the client alive until service shutdown.
+          try:
+              langfuse.flush()
+          finally:
+              langfuse.shutdown()
+
+
+  if __name__ == "__main__":
+      main()

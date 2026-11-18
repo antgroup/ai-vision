@@ -1,0 +1,13 @@
+# Test config for opencode-replay report CLI
+version = 1
+default_profile = "dev"
+
+[profiles.dev]
+host = "https://langfuse.dev.example.com/api/public/otel"
+public_key = "pk-test-dev"
+secret_key = "sk-test-dev"
+
+[profiles.prod]
+host = "https://langfuse.prod.example.com/api/public/otel"
+public_key_env = "LANGFUSE_PUBLIC_KEY"
+secret_key_env = "LANGFUSE_SECRET_KEY"

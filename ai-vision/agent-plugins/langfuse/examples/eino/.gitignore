@@ -1,0 +1,5 @@
+/eino-ledger*.json
+/eino-report*.json
+/.env
+/.env.*
+/eino

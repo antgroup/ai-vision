@@ -1,0 +1,2834 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "AI Vision 后端服务自观测：HTTP 请求、外部依赖、Trace 查询、数据适配器、认证事件",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 41200009,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "title": "概览 - HTTP Server",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "antmonitor-prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "y ellow",
+                "value": 100
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(http.server.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "QPM",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "当前 QPM",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(http.server.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\", http.response.status_code=~\"5..\"}[$interval])) / sum(rate(http.server.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) * 100 or vector (0)",
+          "instant": false,
+          "legendFormat": "Error %",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "错误率 (5xx)",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http.server.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "P95",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "P95 延迟",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 3
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http.server.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "P99",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "P99 延迟",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "antmonitor-prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 603,
+      "options": {
+        "legend": {
+          "calcs": [
+            "sum",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Last *",
+          "sortDesc": true,
+          "values": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum by (http.route, http.response.status_code) (rate(http.server.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) * 60",
+          "instant": false,
+          "legendFormat": "{{http.route}} {{http.response.status_code}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "API QPM 趋势（按路由,状态码）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum by (http.route) (rate(http.server.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) * 60",
+          "instant": false,
+          "legendFormat": "{{http.route}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "QPM 趋势（按路由）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "stack"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum by (http.response.status_code) (rate(http.server.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\", http.response.status_code=~\"4..|5..\"}[$interval])) or vector(0)) * 60",
+          "instant": false,
+          "legendFormat": "{{http.response.status_code}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "错误请求趋势（4xx/5xx）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 7,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http.server.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "P50",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.90, sum by (le) (rate(http.server.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "P90",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http.server.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "P95",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http.server.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "P99",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "HTTP Server 延迟百分位数",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le, http.route) (rate(http.server.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "{{http.route}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "每类 URL P95 耗时",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 42
+      },
+      "id": 300,
+      "title": "业务指标 - Trace 查询",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 43
+      },
+      "id": 11,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(aivision.trace_query.count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "QPM",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Trace 查询 QPM",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 43
+      },
+      "id": 12,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(aivision.trace_query.count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\", status=\"error\"}[$interval])) / sum(rate(aivision.trace_query.count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) * 100",
+          "instant": false,
+          "legendFormat": "Error %",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Trace 查询错误率",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 43
+      },
+      "id": 13,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(aivision.trace_query.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "P95",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Trace 查询 P95 延迟",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 43
+      },
+      "id": 14,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(aivision.auth.events{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\", result=\"failure\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "Auth Failures/s",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "认证失败速率",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 47
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le, provider) (rate(aivision.trace_query.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "{{provider}} P95",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, sum by (le, provider) (rate(aivision.trace_query.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "{{provider}} P50",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "Trace 查询耗时（按 Provider）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 47
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "sum by (provider, method) (rate(aivision.trace_query.count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "{{provider}} / {{method}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Trace 查询次数（按 Provider + Method）",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 55
+      },
+      "id": 200,
+      "title": "外部依赖 - HTTP Client",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 56
+      },
+      "id": 601,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum by (server.address) (rate(http.client.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) * 60",
+          "instant": false,
+          "legendFormat": "{{server.address}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "外部调用 QPM（按目标服务）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 56
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le, server.address) (rate(http.client.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "{{server.address}} P95",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "外部调用延迟 P95（按目标服务）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 64
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum by (server.address) (rate(http.client.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\", http.response.status_code=~\"5..\"}[$interval])) / sum by (server.address) (rate(http.client.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) * 100",
+          "instant": false,
+          "legendFormat": "{{server.address}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "外部调用错误率（按目标服务）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "antmonitor-prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cpm",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "pointSize": 5,
+            "showPoints": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 72
+      },
+      "id": 610,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "外部调用 QPM（按接口）",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum by (service, operation) (rate(aivision.external_call.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) * 60",
+          "instant": false,
+          "legendFormat": "{{service}} / {{operation}}",
+          "range": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "antmonitor-prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "pointSize": 5,
+            "showPoints": "auto"
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 72
+      },
+      "id": 611,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "外部调用 P95 耗时（按接口）",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le, service, operation) (rate(aivision.external_call.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "{{service}} / {{operation}}",
+          "range": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "datasource": {
+        "type": "antmonitor-prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "lineWidth": 2,
+            "fillOpacity": 15,
+            "pointSize": 5,
+            "showPoints": "auto"
+          },
+          "min": 0,
+          "max": 1
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 80
+      },
+      "id": 612,
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "mean",
+            "max"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "title": "外部调用错误率（按接口）",
+      "type": "timeseries",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum by (service, operation) (rate(aivision.external_call.errors{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) / (sum by (service, operation) (rate(aivision.external_call.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "{{service}} / {{operation}}",
+          "range": true,
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 88
+      },
+      "id": 400,
+      "title": "业务指标 - 数据适配器",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 89
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by (le, adapter_type) (rate(aivision.adapter.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))",
+          "instant": false,
+          "legendFormat": "{{adapter_type}} P95",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "适配器执行耗时 P95（按类型）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "stack"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 89
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "sum by (adapter_type, error_type) (rate(aivision.adapter.errors{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "{{adapter_type}} / {{error_type}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "适配器错误数（按类型 + 错误类型）",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 97
+      },
+      "id": 500,
+      "title": "业务指标 - 认证",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 98
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true,
+          "values": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "sum by (method, result) (rate(aivision.auth.events{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))",
+          "instant": false,
+          "legendFormat": "{{method}} / {{result}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "认证事件趋势（按方法 + 结果）",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "transparent",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 98
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(sum(rate(aivision.auth.events{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\", result=\"failure\"}[$interval])) / sum(rate(aivision.auth.events{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))) * 100",
+          "instant": false,
+          "legendFormat": "Auth Failure %",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "认证失败率",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 106
+      },
+      "id": 600,
+      "title": "详细指标 - 接口级别",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "http.route"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "接口路由"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "P95 延迟"
+              },
+              {
+                "id": "unit",
+                "value": "s"
+              },
+              {
+                "id": "decimals",
+                "value": 3
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 107
+      },
+      "id": 21,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "P95 延迟"
+          }
+        ]
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "topk(10, histogram_quantile(0.95, sum by (le, http.route) (rate(http.server.request.duration_bucket{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval]))))",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 最慢接口（P95 延迟）",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "le": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "cpm"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "http.route"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "接口路由"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "QPM"
+              },
+              {
+                "id": "unit",
+                "value": "cpm"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 107
+      },
+      "id": 22,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "QPM"
+          }
+        ]
+      },
+      "pluginVersion": "10.2.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+          },
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "editorMode": "code",
+          "expr": "(topk(10, sum by (http.route) (rate(http.server.request.duration_count{service.name=\"$service_name\", deployment.environment=\"$deployment_environment\"}[$interval])))) * 60",
+          "format": "table",
+          "instant": true,
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Top 10 高流量接口",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {},
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "tempo",
+        "uid": "ac0a5c07-861b-47e8-a745-4c86f145e2e3"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 115
+      },
+      "id": 602,
+      "targets": [
+        {
+          "datasource": {
+            "type": "tempo",
+            "uid": "ac0a5c07-861b-47e8-a745-4c86f145e2e3"
+          },
+          "limit": 20,
+          "query": "$traceId",
+          "queryType": "traceql",
+          "refId": "A",
+          "tableType": "traces"
+        }
+      ],
+      "title": "请求Trace详情",
+      "type": "traces"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": [
+    "aivision",
+    "self-observability",
+    "otel",
+    "django"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": "prod",
+          "value": "prod"
+        },
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "deployment_environment",
+        "label": "Environment",
+        "options": [
+          {
+            "selected": true,
+            "text": "prod",
+            "value": "prod"
+          },
+          {
+            "selected": false,
+            "text": "pre",
+            "value": "pre"
+          },
+          {
+            "selected": false,
+            "text": "dev",
+            "value": "dev"
+          },
+          {
+            "selected": false,
+            "text": "development",
+            "value": "development"
+          }
+        ],
+        "query": "prod,pre,dev,development",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "aivision-backend",
+          "value": "aivision-backend"
+        },
+        "datasource": {
+          "type": "prometheus",
+          "uid": "b64107d7-503b-46c3-97eb-eaf90ff92f66"
+        },
+        "definition": "query_result(http.server.request.duration_count)",
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "name": "service_name",
+        "options": [],
+        "query": {
+          "datasourceQuery": {
+            "bizDomainId": "4000005",
+            "dsId": "1400087",
+            "namespace": "aivision_product",
+            "type": "cloudStack"
+          },
+          "qryType": 3,
+          "query": "query_result(http.server.request.duration_count)",
+          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+        },
+        "refresh": 1,
+        "regex": "/.*service.name=\"([^\"]*).*/",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "auto": false,
+        "auto_count": 30,
+        "auto_min": "10s",
+        "current": {
+          "selected": false,
+          "text": "2m",
+          "value": "2m"
+        },
+        "hide": 0,
+        "name": "interval",
+        "options": [
+          {
+            "selected": false,
+            "text": "1m",
+            "value": "1m"
+          },
+          {
+            "selected": true,
+            "text": "2m",
+            "value": "2m"
+          },
+          {
+            "selected": false,
+            "text": "5m",
+            "value": "5m"
+          },
+          {
+            "selected": false,
+            "text": "10m",
+            "value": "10m"
+          },
+          {
+            "selected": false,
+            "text": "30m",
+            "value": "30m"
+          }
+        ],
+        "query": "1m,2m,5m,10m,30m",
+        "queryValue": "",
+        "refresh": 2,
+        "skipUrlSync": false,
+        "type": "interval"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "42ec92f7a4992534fda8eb69ff925885",
+          "value": "42ec92f7a4992534fda8eb69ff925885"
+        },
+        "hide": 0,
+        "name": "traceId",
+        "options": [
+          {
+            "selected": true,
+            "text": "42ec92f7a4992534fda8eb69ff925885",
+            "value": "42ec92f7a4992534fda8eb69ff925885"
+          }
+        ],
+        "query": "42ec92f7a4992534fda8eb69ff925885",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "timepicker": {
+    "refresh_intervals": [
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h"
+    ]
+  },
+  "timezone": "browser",
+  "title": "AI Vision",
+  "uid": "aivision",
+  "version": 14,
+  "weekStart": ""
+}

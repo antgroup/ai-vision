@@ -1,0 +1,498 @@
+列名	类型	可空	默认值	Parquet
+period
+键/排序
+TIMESTAMP	否	-	
+DELTA_BINARY_PACKED
+ZSTD(3)
+PAGE
+time_unix_nano
+TIMESTAMP	否	-	
+DELTA_BINARY_PACKED
+ZSTD(3)
+PAGE
+trace_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+span_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+body
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+severity_text
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+字典
+severity_number
+INT64	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+flags
+INT64	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+scope_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+scope_version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event.kind
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.duration_ms
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event.timestamp
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.conversation.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.app.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth_mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.originator
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.user.account_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.user.email
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.terminal.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.model
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.slug
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.telemetry.sdk.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.ant.agent.product
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.ant.agent.instance
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.service.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.telemetry.sdk.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.telemetry.sdk.language
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.ant.username
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.service.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.ant.agent.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.env
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.host.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tracenet.service.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.telemetry.sdk.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.ant.agent.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.ant.agent.product
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.ant.agent.instance
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.service.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.telemetry.sdk.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.env
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.telemetry.sdk.language
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.ant.username
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.service.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.host.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.success
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tool_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.call_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.arguments
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.output
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.mcp_server
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.mcp_server_origin
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.http.response.status_code
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.attempt
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.header_attached
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.auth.header_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.retry_after_unauthorized
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.endpoint
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.env_openai_api_key_present
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.auth.env_codex_api_key_present
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.auth.env_codex_api_key_enabled
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.auth.env_refresh_token_url_override_present
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.auth.mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.error.message
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.startup.phase
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.input_token_count
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.decision
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.output_token_count
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.source
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.cached_token_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.reasoning_token_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tool_token_count
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.connection_reused
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.startup.status
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.prompt_length
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.prompt
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.provider_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.reasoning_effort
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.reasoning_summary
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.approval_policy
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.sandbox_policy
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.mcp_servers
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.context_window
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auto_compact_token_limit
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.env_provider_key_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.env_provider_key_present
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.outcome
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.initial_duration_ms
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.cf_ray
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.request_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.error
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.step
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.outcome
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.state_changed
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.auth.recovery_mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.recovery_phase
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth.recovery_reason
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.escalated_duration_ms
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE

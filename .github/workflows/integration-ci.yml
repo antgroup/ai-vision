@@ -1,0 +1,15 @@
+name: Deployment and platform integration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  integration:
+    uses: ./.github/workflows/ci.yml
+    with:
+      tier: pr
+      profile: integration

@@ -1,0 +1,263 @@
+{
+  "id": "observ-kimi",
+  "name": "Kimi Observability",
+  "description": "OpenTelemetry-based observability for Kimi CLI with semantic conventions for AI agents (Ant Spec v2.0)",
+  "version": "0.4.1",
+  "uiHints": {
+    "enableTelemetry": {
+      "label": "Enable Telemetry (Master Switch)",
+      "help": "Must be enabled for any telemetry data collection. Env: KIMI_ENABLE_TELEMETRY=1"
+    },
+    "ant": {
+      "label": "Ant Identity Configuration",
+      "help": "User identity and agent metadata. Can also be set via AIVISION_ANT_USERNAME, AIVISION_AGENT_TYPE, etc."
+    },
+    "log": {
+      "label": "Content Logging Controls",
+      "help": "Fine-grained control over what content is recorded in spans and events. All default to off for privacy."
+    },
+    "otelExporter": {
+      "label": "OTel Exporter Configuration",
+      "help": "Base OTLP protocol configuration. Per-signal endpoints are configured in tracesConfig/metricsConfig/logsConfig/statusConfig."
+    },
+    "tracesConfig": {
+      "label": "Traces Configuration",
+      "help": "Trace export endpoint and headers. Env: KIMI_OTLP_TRACES_ENDPOINT, KIMI_OTLP_HEADERS"
+    },
+    "metricsConfig": {
+      "label": "Metrics Configuration",
+      "help": "Business metrics export endpoint and headers (e.g. agent.tool_call.count). Env: KIMI_OTLP_METRICS_ENDPOINT"
+    },
+    "logsConfig": {
+      "label": "Logs/Events Configuration",
+      "help": "Events/logs export endpoint and headers. Env: KIMI_OTLP_LOGS_ENDPOINT"
+    },
+    "statusConfig": {
+      "label": "Status Metrics Configuration",
+      "help": "Status/heartbeat metrics endpoint (e.g. aivision.agentic.up). Env: KIMI_OTLP_STATUS_ENDPOINT"
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enableTelemetry": {
+        "type": "boolean",
+        "description": "Enable telemetry collection (master switch). Env: KIMI_ENABLE_TELEMETRY",
+        "default": false
+      },
+      "serviceName": {
+        "type": "string",
+        "description": "OpenTelemetry service name. Env: OTEL_SERVICE_NAME",
+        "default": "kimi-cli"
+      },
+      "ant": {
+        "type": "object",
+        "description": "Ant identity configuration",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "User identifier. Env: AIVISION_ANT_USERNAME"
+          },
+          "agentType": {
+            "type": "string",
+            "description": "Agent engine type. Env: AIVISION_AGENT_TYPE",
+            "enum": ["kimicli", "claudecode", "opencode", "openclaw"],
+            "default": "kimicli"
+          },
+          "agentProduct": {
+            "type": "string",
+            "description": "Product name (e.g. Kimi). Env: AIVISION_AGENT_PRODUCT"
+          },
+          "agentInstance": {
+            "type": "string",
+            "description": "Instance identifier ({product}-{identifier}). Env: AIVISION_AGENT_INSTANCE"
+          }
+        }
+      },
+      "log": {
+        "type": "object",
+        "description": "Content logging controls with independent event/span configuration. Top-level shorthand (e.g. log.userPrompts) applies to both unless overridden.",
+        "properties": {
+          "userPrompts": {
+            "type": "boolean",
+            "description": "[Shorthand] Record user prompt text in both events and spans. Env: KIMI_LOG_USER_PROMPTS",
+            "default": false
+          },
+          "modelOutputs": {
+            "type": "boolean",
+            "description": "[Shorthand] Record model output text in both events and spans. Env: KIMI_LOG_MODEL_OUTPUTS",
+            "default": false
+          },
+          "toolDetails": {
+            "type": "boolean",
+            "description": "[Shorthand] Record tool call parameters in both events and spans. Env: KIMI_LOG_TOOL_DETAILS",
+            "default": false
+          },
+          "toolOutputs": {
+            "type": "boolean",
+            "description": "[Shorthand] Record tool execution result text in both events and spans. Env: KIMI_LOG_TOOL_OUTPUTS",
+            "default": false
+          },
+          "events": {
+            "type": "object",
+            "description": "Content logging controls for OTel event bodies. Overrides top-level shorthand.",
+            "properties": {
+              "userPrompts": {
+                "type": "boolean",
+                "description": "Record user prompt text in events. Env: KIMI_LOG_EVENTS_USER_PROMPTS",
+                "default": false
+              },
+              "modelOutputs": {
+                "type": "boolean",
+                "description": "Record model output text in events. Env: KIMI_LOG_EVENTS_MODEL_OUTPUTS",
+                "default": false
+              },
+              "toolDetails": {
+                "type": "boolean",
+                "description": "Record tool call parameters in events. Env: KIMI_LOG_EVENTS_TOOL_DETAILS",
+                "default": false
+              },
+              "toolOutputs": {
+                "type": "boolean",
+                "description": "Record tool execution result text in events. Env: KIMI_LOG_EVENTS_TOOL_OUTPUTS",
+                "default": false
+              }
+            }
+          },
+          "spans": {
+            "type": "object",
+            "description": "Content logging controls for span attributes. Overrides top-level shorthand.",
+            "properties": {
+              "userPrompts": {
+                "type": "boolean",
+                "description": "Record user prompt text in span attributes. Env: KIMI_LOG_SPANS_USER_PROMPTS",
+                "default": false
+              },
+              "modelOutputs": {
+                "type": "boolean",
+                "description": "Record model output text in span attributes. Env: KIMI_LOG_SPANS_MODEL_OUTPUTS",
+                "default": false
+              },
+              "toolDetails": {
+                "type": "boolean",
+                "description": "Record tool call parameters in span attributes. Env: KIMI_LOG_SPANS_TOOL_DETAILS",
+                "default": false
+              },
+              "toolOutputs": {
+                "type": "boolean",
+                "description": "Record tool execution result text in span attributes. Env: KIMI_LOG_SPANS_TOOL_OUTPUTS",
+                "default": false
+              }
+            }
+          }
+        }
+      },
+      "otelExporter": {
+        "type": "object",
+        "description": "OTel exporter configuration",
+        "properties": {
+          "protocol": {
+            "type": "string",
+            "description": "OTLP protocol. Env: OTEL_EXPORTER_OTLP_PROTOCOL",
+            "enum": ["grpc", "http/json", "http/protobuf"],
+            "default": "http/json"
+          }
+        }
+      },
+      "tracesConfig": {
+        "type": "object",
+        "description": "Trace-specific endpoint configuration",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable trace export",
+            "default": true
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP traces endpoint URL. Env: KIMI_OTLP_TRACES_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom headers for traces export. Env: KIMI_OTLP_HEADERS (JSON)"
+          }
+        }
+      },
+      "metricsConfig": {
+        "type": "object",
+        "description": "Metrics-specific endpoint configuration",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable metrics export",
+            "default": true
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP metrics endpoint URL. Env: KIMI_OTLP_METRICS_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom headers for metrics export. Env: KIMI_OTLP_METRICS_HEADERS (JSON)"
+          }
+        }
+      },
+      "logsConfig": {
+        "type": "object",
+        "description": "Events/logs-specific endpoint configuration",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable events/logs export",
+            "default": true
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP logs endpoint URL. Env: KIMI_OTLP_LOGS_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom headers for events/logs export. Env: KIMI_OTLP_LOGS_HEADERS (JSON)"
+          }
+        }
+      },
+      "statusConfig": {
+        "type": "object",
+        "description": "Status/heartbeat metrics endpoint configuration",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable status metrics export",
+            "default": true
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP status metrics endpoint URL. Env: KIMI_OTLP_STATUS_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom headers for status metrics export. Env: KIMI_OTLP_STATUS_HEADERS (JSON)"
+          }
+        }
+      },
+      "debug": {
+        "type": "boolean",
+        "description": "Enable debug dual-write mode (stderr + file + auto replay). Env: KIMI_DEBUG",
+        "default": false
+      }
+    }
+  }
+}

@@ -1,0 +1,110 @@
+# OpenClaw Events v4 — Attribute Keys
+# Generated from observ-openclaw hooks implementation
+
+## Common (all events)
+event.name
+event.sequence
+gen_ai.operation.name
+ant.username
+ant.agent.type
+ant.agent.product
+gen_ai.conversation.id
+agentic.runtime.name
+
+## user_prompt
+gen_ai.chat.id
+agentic.turn.number
+gen_ai.input.messages                          # opt-in
+
+## api_request
+gen_ai.chat.id
+agentic.turn.number
+gen_ai.request.model
+gen_ai.response.model
+gen_ai.provider.name
+duration_ms
+# error path (conditionally required)
+error.type
+error.message
+# L1 Normalized (conditionally required on success)
+gen_ai.usage.input_tokens                      # = raw.input + cache_read + cache_write
+gen_ai.usage.output_tokens
+gen_ai.usage.total_tokens                      # = input + output
+gen_ai.usage.cache_read.input_tokens
+gen_ai.usage.cache_creation.input_tokens
+# L2 Breakdown (recommended)
+agentic.usage.fresh_input_tokens               # = raw.input (Anthropic)
+agentic.usage.cache_read_tokens
+agentic.usage.cache_write_tokens
+agentic.usage.reasoning_tokens                 # null for Anthropic
+agentic.usage.tool_tokens                      # null for Anthropic
+# L3 Raw (opt-in, Anthropic provider)
+agentic.usage.raw.input_tokens
+agentic.usage.raw.output_tokens
+agentic.usage.raw.cache_read_input_tokens
+agentic.usage.raw.cache_creation_input_tokens
+# Content (opt-in)
+gen_ai.input.messages
+gen_ai.output.messages
+gen_ai.system_instructions
+
+## tool_result
+gen_ai.chat.id
+agentic.turn.number
+gen_ai.tool.name
+gen_ai.tool.call.id
+duration_ms
+agentic.tool.type
+agentic.tool.name
+agentic.tool.raw_name
+agentic.tool.id
+# error path (conditionally required)
+error.type
+error.message
+# content (opt-in)
+gen_ai.tool.call.arguments
+gen_ai.tool.call.result
+
+## tool_decision
+gen_ai.chat.id
+agentic.turn.number
+gen_ai.tool.name
+gen_ai.tool.call.id
+agentic.tool.decision
+agentic.tool.decision.source
+agentic.tool.type
+agentic.tool.name
+# content (opt-in)
+gen_ai.tool.call.arguments
+
+## session_start
+gen_ai.session.id                              # conditionally required
+
+## session_end
+gen_ai.session.id                              # conditionally required
+agentic.session.turn_count
+
+## subagent_spawned
+gen_ai.chat.id
+agentic.subagent.name
+agentic.subagent.session_key
+
+## subagent_ended
+agentic.subagent.session_key
+duration_ms
+# error path
+error.type
+error.message
+
+## compaction_result
+agentic.turn.number
+gen_ai.tool.name                               # = "compaction"
+agentic.tool.type                              # = "system"
+duration_ms
+agentic.compaction.tokens_before
+agentic.compaction.tokens_after
+agentic.compaction.tokens_saved
+agentic.compaction.messages_after
+# error path
+error.type
+error.message

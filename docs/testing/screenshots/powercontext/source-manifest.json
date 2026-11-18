@@ -1,0 +1,67 @@
+{
+  "data_plane_commit": "43a4ad8522d5c031248e4ef6c531b74465278ad8",
+  "trace_id": "c62c8ed6eee8a19733a5c88ce4eba397",
+  "business_calls": 2,
+  "search_calls": 1,
+  "hits": 1,
+  "left_chain_spans": 24,
+  "source_sha256": {
+    "ai-vision/aivision-py-be/apps/core/tests/test_labs_memory.py": "4ae9a6b8d5c2c085c1e07c10691b79561a7f2943c61e9b6bc136828a5109ec3c",
+    "ai-vision/aivision-py-be/apps/core/tests/test_native_memory.py": "e2315d65259409cd2cb2139458d476097f204efe763769e7bdb58cc9cd85979a",
+    "ai-vision/aivision-py-be/apps/core/views/labs_memory.py": "470ca5a9dd4c220b9bd66adf7842f070448d8a3463b384a4fe0ce57eeec0d7f2",
+    "ai-vision/aivision-py-be/apps/core/views/native_memory.py": "68cfd2395ba2ea335d18aca9f09bbc233850f072e8db51c10a59c3c4d67bc791",
+    "ai-vision/docs/native-memory-observability.md": "869de6f2e8ced9a44f807c3cfffcc29501e624a858071a4ce9641679746b0683",
+    "ai-vision/vfe/src/components/traces-otel/format.ts": "ed03c7e3633c5f946d2e0b6099b34ff24ff87e023c75b3d3fd669cbd8de52dec",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "c7ebd4c560597bc967b0b7821ace90d368b6e330679aada70a80ec540cce9e46",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "593b46803d5ca6f01637cf92eb0ab9c562cb8c4b8ba6677f5c5caa2681c4139c",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "3f1077b8d34a69ca7de6c82464c05f10f6d355c75e5cbb7bdd2227d123a02af9",
+    "ai-vision/vfe/src/labs/mcp/McpServerCard.tsx": "6b66559d7d0cda460b831934457ee6405ececd518ed3053a0784242783346686",
+    "ai-vision/vfe/src/labs/mcp/McpServerDrawer.tsx": "74e4f16285e17b35e7b6cb69d46b936907167e8b39438ec63a087c35fc1e1471",
+    "ai-vision/vfe/src/labs/mcp/McpSpanCard.tsx": "668ae9ff9d1d0b3def0bb58fdcf21ec14b11c5ceca695a3edc54bb425c03f2cd",
+    "ai-vision/vfe/src/labs/mcp/types.ts": "bea8fe4f035ef6dec88b1a5d20461bd16258227233ba23c2ebc326eaf07a84e4",
+    "ai-vision/vfe/src/labs/memory/MemoryActivity.tsx": "fde1cb1f3a1e45b5e24f7e7ac22676cadf1cf1d693f90ade54fe3624aa690e57",
+    "ai-vision/vfe/src/labs/memory/MemoryOverview.tsx": "a03d0551463011116b20cfeabe66183e830d0d377d7ad6d86460fe439270d796",
+    "ai-vision/vfe/src/labs/memory/MemoryServerCard.tsx": "d63a01dcef914a4a85d8b30157eecc254c668732d8dc5f31ca3fc877d65f46ac",
+    "ai-vision/vfe/src/labs/memory/MemoryTraceSummary.tsx": "8a76c3b480bbcd3df68e940677e0301ba0b266ab18777c8df9b5465fefeeef64",
+    "ai-vision/vfe/src/labs/memory/memoryApi.ts": "a0194ac4d8989413053fd3bc2a3b2ebabf50f4ebc68857763496fb820bd57be4",
+    "ai-vision/vfe/src/labs/memory/memoryMcpPresentation.ts": "a72b813f5da0824f63ca852d0f8d7f9f9f7b2f2be4a3dd0ebccf2f7b4189455d",
+    "ai-vision/vfe/src/labs/memory/nativeMemory.ts": "27205bd38ae0f0ddf8023e9dc0c5bf72799a58529c7b9b3683e658fd1ecc067a",
+    "ai-vision/vfe/src/labs/memory/powerContextSpans.ts": "fb7a631a05625da39e429acbcd5b570e0836aac265011f95b64228e877c7993d",
+    "ai-vision/vfe/src/labs/memory/types.ts": "9e9a6bf4a1b05d1720eadd641c399ed807ba1563039366cf41cf8c1e3d03601c",
+    "ai-vision/vfe/tests/mcpDom.test.ts": "2b2676109343c4aea13be72d6e2fab8724d52e35c7cc542f21f61bb803f4f30b",
+    "ai-vision/vfe/tests/nativeMemory.test.ts": "b7ed51b15007c343b8afc3a9432497a3f75ce0b421fefdac0abd9bc0e50b6872",
+    "ai-vision/vfe/tests/traceEvidence.test.ts": "02b317512eda8bb64a013ebec59f690a5bfb3160dacae19379dc8f7d91c4b446"
+  },
+  "screenshots": {
+    "mcp-memory-tools.png": "46afccfb009b6f460fc3e0218f484d2a2319a4e2cbda534ad6a5fd348edbf1c2",
+    "native-capture-run.png": "e6736f66dadacc4fd6c8173dba8cce4fa711b69022e9390c23c60ae534f5aac7",
+    "native-memory-calls.png": "0ad6e6a9359626c67353758aa12759a5c02a722f018bf48564a969d83e16dc30",
+    "native-memory-overview.png": "2a31f262e4613f3c606e6bbd5eeab5366105ff21139e1a69056b36687ad54af7",
+    "native-memory-tools.png": "3b9f07dbd7dd42bebb40e693d54acaf2f29d5c879ba11bc415438dbe31f82340",
+    "native-recall-run.png": "d5a5621d78ef3176b8ba1c4cba92aa2092b79887e5bbcac7cbcea2f1f033bfd8",
+    "native-trace-overview.png": "c1d3aa33b8d59a6d601834cc9f9155a7c951d9ac8c5f4e1babc2fe0575fd330c"
+  },
+  "runtime_source_commit": "historical-source-revision-redacted",
+  "data_plane_pr_head": "43a4ad8522d5c031248e4ef6c531b74465278ad8",
+  "data_plane_head_note": "Running production code includes the explicit MCP owner candidate fix.",
+  "canonical_sdk_duration_ms": {
+    "e7cd1c686d6e0185": 13.423,
+    "f79507edb2e78e02": 7.663
+  },
+  "trace_sum_ms": 21.086,
+  "window_p50_ms": 7.663,
+  "window_p95_ms": 13.423,
+  "image_source_commits": {
+    "mcp-memory-tools.png": "historical-source-revision-redacted",
+    "native-trace-overview.png": "historical-source-revision-redacted",
+    "native-memory-calls.png": "historical-source-revision-redacted",
+    "native-memory-tools.png": "historical-source-revision-redacted",
+    "native-capture-run.png": "historical-source-revision-redacted",
+    "native-recall-run.png": "historical-source-revision-redacted",
+    "native-memory-overview.png": "historical-source-revision-redacted"
+  },
+  "fixture_nature": {
+    "native": "Previously stored official FakeModel execution through actual HTTP SDK/ASGI/SQLite.",
+    "mcp": "Previously stored synthetic MCP metadata ownership regression, not a live MCP protocol run."
+  }
+}

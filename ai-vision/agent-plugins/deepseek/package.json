@@ -1,0 +1,20 @@
+{
+  "name": "deepseek-observability",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "AIVision observability packages for dsh (DeepSeek Harness)",
+  "workspaces": [
+    "observ-dsh",
+    "dsh-replay"
+  ],
+  "devDependencies": {
+    "@deepseek-ai/cordis": "4.0.4"
+  },
+  "scripts": {
+    "build": "npm run build -w observ-dsh && npm run build -w dsh-replay",
+    "typecheck": "npm run typecheck -w observ-dsh && npm run typecheck -w dsh-replay",
+    "test": "npm run test -w observ-dsh && npm run test -w dsh-replay",
+    "clean": "rm -rf observ-dsh/dist dsh-replay/dist"
+  }
+}

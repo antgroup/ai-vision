@@ -1,0 +1,84 @@
+name: seekdb CLI deployment
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      public_platform_images:
+        description: Pinned public candidate images from the current release attempt
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seekdb-deploy-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  deploy:
+    name: Real aiv cast (Linux amd64, seekdb)
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
+    env:
+      SEEKDB_IMAGE: oceanbase/seekdb@sha256:500910bda197c0bc5f8bbada10c6ad727807308826818c0ea0391844dedc5cc2
+      AIVISION_E2E_DEPLOY_IMAGES_JSON: ${{ inputs.public_platform_images || vars.AIVISION_E2E_DEPLOY_IMAGES_JSON }}
+      DOCKER_DEFAULT_PLATFORM: linux/amd64
+    steps:
+      - name: Require all five pinned service images
+        run: |
+          set -euo pipefail
+          if ! images=$(jq -ce 'del(.oceanbase) |
+              select(keys == ["agentlens","backend","frontend","gateway","signoz"]) |
+              select(all(.[]; type == "string" and test("^[^[:space:]@]+@sha256:[a-f0-9]{64}$")))' \
+              <<< "$AIVISION_E2E_DEPLOY_IMAGES_JSON") || [[ -z "$images" ]]; then
+            echo '::error::Supply pinned candidate images or configure AIVISION_E2E_DEPLOY_IMAGES_JSON.'
+            exit 1
+          fi
+          echo "AIVISION_SEEKDB_SMOKE_IMAGES_JSON=$images" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - name: Verify Linux amd64 runner
+        run: test "$(uname -s)/$(uname -m)" = Linux/x86_64
+      - name: Deploy, recast and probe external seekdb
+        run: |
+          set -euo pipefail
+          python deploy/tests/seekdb_deploy_smoke.py \
+            --runtime-base "$RUNNER_TEMP" \
+            --out "$RUNNER_TEMP/seekdb-deploy-evidence"
+      - name: Preserve sanitized deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: seekdb-deploy-linux-amd64-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/seekdb-deploy-evidence/*.json
+            ${{ runner.temp }}/seekdb-deploy-evidence/*.log
+          if-no-files-found: error
+          retention-days: 7
+
+  gate:
+    if: always()
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require actual deployment validation
+        env:
+          RESULT: ${{ needs.deploy.result }}
+        run: |
+          if [ "$RESULT" != success ]; then
+            echo '::error::Deployment validation failed or did not run. Fork PRs need a maintainer-run trusted validation; skipped is not passed.'
+            exit 1
+          fi

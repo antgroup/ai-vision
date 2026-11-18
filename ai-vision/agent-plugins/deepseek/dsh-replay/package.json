@@ -1,0 +1,47 @@
+{
+  "name": "dsh-replay",
+  "version": "0.1.0",
+  "description": "Offline replay tooling for observ-dsh: rebuilds AIVision OTLP spans from dsh canonical session JSONL transcripts",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "dsh-replay": "./dist/replay.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run typecheck && npm run build && node --test tests/*.test.mjs",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/api-logs": "0.220.0",
+    "@opentelemetry/core": "2.9.0",
+    "@opentelemetry/otlp-transformer": "0.220.0",
+    "@opentelemetry/sdk-logs": "0.220.0",
+    "@opentelemetry/sdk-metrics": "2.9.0",
+    "@opentelemetry/sdk-trace-base": "2.9.0",
+    "@opentelemetry/sdk-trace-node": "2.9.0",
+    "fzstd": "0.1.1",
+    "observ-dsh": "0.2.0",
+    "@deepseek-ai/dsh-session-format-v0-to-v1": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session-format-v1-to-v2": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session-format-v2-to-v3": "0.2.0-rc.2",
+    "@deepseek-ai/dsh-session-format-v3-to-v4": "0.2.0-rc.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "typescript": "5.7.2"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT"
+}

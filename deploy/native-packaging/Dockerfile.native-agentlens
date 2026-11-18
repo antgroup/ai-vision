@@ -1,0 +1,19 @@
+# Only use an images.py sanitized context, never the repository as context.
+ARG RUNTIME_BASE
+FROM ${RUNTIME_BASE}
+WORKDIR /app
+COPY runtime/ /app/
+COPY metadata/build-info.json /etc/aivision/build-info.json
+COPY aiv-http-probe /usr/local/bin/aiv-http-probe
+RUN mkdir -p /var/log/agentlens
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH=/app/src \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    AIVISION_ENV=dev \
+    AGENTLENS_PORT=8081 \
+    AGENTLENS_LOG_DIR=/var/log/agentlens \
+    AGENTLENS_LOG_STDOUT=true
+EXPOSE 8081
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 CMD exec /usr/local/bin/aiv-http-probe 127.0.0.1 "${AGENTLENS_PORT:-8081}" /internal/readyz 3
+ENTRYPOINT ["/app/agentlens-entrypoint"]

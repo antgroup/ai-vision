@@ -1,0 +1,69 @@
+id: anthropic
+logo: /assets/frameworks/anthropic.png
+logoInvertInDark: true
+label: Anthropic
+marketPreview: true
+marketSort: 6
+frontendSort: 8
+pipInstall: pip install opentelemetry-instrumentation-anthropic anthropic "langfuse>=4.16.0,<5"
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export ANTHROPIC_API_KEY="sk-ant-..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- ANTHROPIC_API_KEY="sk-ant-..."
+pipExample: |-
+  import os
+
+  from anthropic import Anthropic
+  from opentelemetry.instrumentation.anthropic import AnthropicInstrumentor
+  from langfuse import get_client, observe, propagate_attributes
+
+  langfuse = get_client()
+  AnthropicInstrumentor().instrument()
+
+  client = Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+
+
+  @observe(name="Retrieve Context")
+  def my_tool(question: str) -> str:
+      return "During this morning's meeting, we solved all world conflict."
+
+
+  @observe(name="Chat Pipeline")
+  def chat_pipeline(question: str):
+      print("AI Vision trace_id:", langfuse.get_current_trace_id())
+      context = my_tool(question)
+      messages = [
+          {
+              "role": "user",
+              "content": f"Question: {question}\nContext: {context}",
+          }
+      ]
+      message = client.messages.create(
+          model=os.environ.get("ANTHROPIC_MODEL", "claude-haiku-4-5"),
+          messages=messages,
+          max_tokens=1024,
+          system="You are a helpful assistant. Please respond to the user's request only based on the given context.",
+      )
+      return message
+
+
+  def main():
+      result = chat_pipeline("Can you summarize this morning's meetings?")
+      # The model may return a thinking block; take the first text block
+      text = next((b.text for b in result.content if getattr(b, "type", None) == "text"), "")
+      print(text)
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:anthropic"]):
+              main()
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

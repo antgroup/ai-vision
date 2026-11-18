@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: signoz-metastore
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: data-backend}
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: {{.STORAGE_CLASS | quote}}
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: signoz-ob
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: data-backend}
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  progressDeadlineSeconds: 720
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: signoz-ob}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/component: data-backend, app: signoz-ob, app.kubernetes.io/part-of: aivision}
+      annotations:
+        aivision.ob-labs.io/config: {{.ConfigHash | quote}}
+        aivision.ob-labs.io/rollout: {{.Rollout | quote}}
+    spec:
+      serviceAccountName: aivision
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: signoz-ob
+          image: {{.SIGNOZ_IMAGE | quote}}
+          imagePullPolicy: {{.IMAGE_PULL | quote}}
+          ports: [{containerPort: 8080, name: http}]
+          env:
+            - {name: SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED, value: {{.SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED | quote}}}
+            - {name: SIGNOZ_TELEMETRYSTORE_PROVIDER, value: oceanbase}
+            - {name: SIGNOZ_WEB_ENABLED, value: "false"}
+            - {name: SIGNOZ_ANALYTICS_ENABLED, value: "false"}
+            - {name: SIGNOZ_STATSREPORTER_ENABLED, value: "false"}
+            - {name: SIGNOZ_INSTRUMENTATION_METRICS_ENABLED, value: "false"}
+            - {name: SIGNOZ_USER_ROOT_ENABLED, value: "false"}
+          envFrom:
+            - secretRef: {name: aivision-signoz}
+          volumeMounts:
+            - {name: metastore, mountPath: /var/lib/signoz}
+          startupProbe:
+            httpGet: {path: /api/v1/ready, port: http}
+            periodSeconds: 5
+            failureThreshold: 120
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet: {path: /api/v1/ready, port: http}
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            # Keep process liveness independent of datastore readiness so a
+            # temporary database outage does not restart the SQLite writer.
+            tcpSocket: {port: http}
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "2", memory: {{.SIGNOZ_CONTAINER_MEMORY | memoryQuantity | quote}}}
+      volumes:
+        - name: metastore
+          persistentVolumeClaim: {claimName: signoz-metastore}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: signoz-ob
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: data-backend}
+spec:
+  selector: {app: signoz-ob}
+  ports: [{name: http, port: 8080, targetPort: http}]

@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: aivision-bootstrap
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: backend}
+spec:
+  parallelism: 1
+  completions: 1
+  podReplacementPolicy: Failed
+  backoffLimit: 2
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: aivision
+    spec:
+      serviceAccountName: aivision
+      automountServiceAccountToken: false
+      restartPolicy: Never
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: bootstrap
+          image: {{.BE_IMAGE | quote}}
+          imagePullPolicy: {{.IMAGE_PULL | quote}}
+          workingDir: /app
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              aiv_manage() {
+                /app/manage "$@"
+              }
+              for attempt in $(seq 1 12); do
+                if aiv_manage configure_third_party_agents --endpoint http://signoz-ob:8080; then
+                  break
+                fi
+                if [ "$attempt" -eq 12 ]; then exit 1; fi
+                sleep 5
+              done
+              aiv_manage bootstrap_signoz_integration
+              aiv_manage signoz_integration_status --require
+          envFrom:
+            - configMapRef: {name: aivision-backend}
+            - secretRef: {name: aivision-backend}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: "1", memory: 1Gi}

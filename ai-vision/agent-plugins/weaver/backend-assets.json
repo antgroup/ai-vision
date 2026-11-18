@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-08T03:18:24.082381+00:00",
+  "oss_prefix": "",
+  "oss_key_prefix": "aivision/signed/weaver-guard",
+  "sources": {
+    "jaeger": {
+      "repo": "jaegertracing/jaeger",
+      "version": "v1.76.0",
+      "selection": "latest v1.x release with jaeger-all-in-one"
+    },
+    "vmetrics": {
+      "repo": "VictoriaMetrics/VictoriaMetrics",
+      "version": "v1.147.0",
+      "selection": "latest community release"
+    },
+    "vlogs": {
+      "repo": "VictoriaMetrics/VictoriaLogs",
+      "version": "v1.51.0",
+      "selection": "latest community release"
+    }
+  },
+  "platforms": {
+    "macos": {
+      "amd64": {
+        "jaeger": {
+          "version": "v1.76.0",
+          "archive": "jaeger-all-in-one-1.76.0-darwin-amd64.tar.gz",
+          "upstream_archive": "jaeger-1.76.0-darwin-amd64.tar.gz",
+          "binary": "jaeger-all-in-one",
+          "package": "binary_only",
+          "source_platform": "darwin",
+          "source_arch": "amd64",
+          "source_url": "https://github.com/jaegertracing/jaeger/releases/download/v1.76.0/jaeger-1.76.0-darwin-amd64.tar.gz",
+          "source_size": 149491558,
+          "source_updated_at": "2025-12-03T16:51:41Z",
+          "local_candidates": [
+            ".backend-downloads/jaeger-1.76.0-darwin-amd64.tar.gz",
+            ".jaeger/downloads/jaeger-1.76.0-darwin-amd64.tar.gz"
+          ],
+          "oss_path": "backends/macos-amd64/jaeger/v1.76.0/jaeger-all-in-one-1.76.0-darwin-amd64.tar.gz"
+        },
+        "vmetrics": {
+          "version": "v1.147.0",
+          "archive": "victoria-metrics-darwin-amd64-v1.147.0.tar.gz",
+          "upstream_archive": "victoria-metrics-darwin-amd64-v1.147.0.tar.gz",
+          "binary": "victoria-metrics-prod",
+          "script_component": "metrics",
+          "source_platform": "darwin",
+          "source_arch": "amd64",
+          "source_url": "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.147.0/victoria-metrics-darwin-amd64-v1.147.0.tar.gz",
+          "source_size": 13471665,
+          "source_updated_at": "2026-07-06T12:57:35Z",
+          "local_candidates": [
+            ".backend-downloads/victoria-metrics-darwin-amd64-v1.147.0.tar.gz",
+            ".victoria/downloads/victoria-metrics-darwin-amd64-v1.147.0.tar.gz"
+          ],
+          "oss_path": "backends/macos-amd64/vmetrics/v1.147.0/victoria-metrics-darwin-amd64-v1.147.0.tar.gz"
+        },
+        "vlogs": {
+          "version": "v1.51.0",
+          "archive": "victoria-logs-darwin-amd64-v1.51.0.tar.gz",
+          "upstream_archive": "victoria-logs-darwin-amd64-v1.51.0.tar.gz",
+          "binary": "victoria-logs-prod",
+          "script_component": "logs",
+          "source_platform": "darwin",
+          "source_arch": "amd64",
+          "source_url": "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/v1.51.0/victoria-logs-darwin-amd64-v1.51.0.tar.gz",
+          "source_size": 11677906,
+          "source_updated_at": "2026-06-17T05:10:08Z",
+          "local_candidates": [
+            ".backend-downloads/victoria-logs-darwin-amd64-v1.51.0.tar.gz",
+            ".victoria/downloads/victoria-logs-darwin-amd64-v1.51.0.tar.gz"
+          ],
+          "oss_path": "backends/macos-amd64/vlogs/v1.51.0/victoria-logs-darwin-amd64-v1.51.0.tar.gz"
+        }
+      },
+      "arm64": {
+        "jaeger": {
+          "version": "v1.76.0",
+          "archive": "jaeger-all-in-one-1.76.0-darwin-arm64.tar.gz",
+          "upstream_archive": "jaeger-1.76.0-darwin-arm64.tar.gz",
+          "binary": "jaeger-all-in-one",
+          "package": "binary_only",
+          "source_platform": "darwin",
+          "source_arch": "arm64",
+          "source_url": "https://github.com/jaegertracing/jaeger/releases/download/v1.76.0/jaeger-1.76.0-darwin-arm64.tar.gz",
+          "source_size": 140590710,
+          "source_updated_at": "2025-12-03T16:51:32Z",
+          "local_candidates": [
+            ".backend-downloads/jaeger-1.76.0-darwin-arm64.tar.gz",
+            ".jaeger/downloads/jaeger-1.76.0-darwin-arm64.tar.gz"
+          ],
+          "oss_path": "backends/macos-arm64/jaeger/v1.76.0/jaeger-all-in-one-1.76.0-darwin-arm64.tar.gz"
+        },
+        "vmetrics": {
+          "version": "v1.147.0",
+          "archive": "victoria-metrics-darwin-arm64-v1.147.0.tar.gz",
+          "upstream_archive": "victoria-metrics-darwin-arm64-v1.147.0.tar.gz",
+          "binary": "victoria-metrics-prod",
+          "script_component": "metrics",
+          "source_platform": "darwin",
+          "source_arch": "arm64",
+          "source_url": "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.147.0/victoria-metrics-darwin-arm64-v1.147.0.tar.gz",
+          "source_size": 12635679,
+          "source_updated_at": "2026-07-06T12:57:42Z",
+          "local_candidates": [
+            ".backend-downloads/victoria-metrics-darwin-arm64-v1.147.0.tar.gz",
+            ".victoria/downloads/victoria-metrics-darwin-arm64-v1.147.0.tar.gz"
+          ],
+          "oss_path": "backends/macos-arm64/vmetrics/v1.147.0/victoria-metrics-darwin-arm64-v1.147.0.tar.gz"
+        },
+        "vlogs": {
+          "version": "v1.51.0",
+          "archive": "victoria-logs-darwin-arm64-v1.51.0.tar.gz",
+          "upstream_archive": "victoria-logs-darwin-arm64-v1.51.0.tar.gz",
+          "binary": "victoria-logs-prod",
+          "script_component": "logs",
+          "source_platform": "darwin",
+          "source_arch": "arm64",
+          "source_url": "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/v1.51.0/victoria-logs-darwin-arm64-v1.51.0.tar.gz",
+          "source_size": 10920068,
+          "source_updated_at": "2026-06-17T05:10:14Z",
+          "local_candidates": [
+            ".backend-downloads/victoria-logs-darwin-arm64-v1.51.0.tar.gz",
+            ".victoria/downloads/victoria-logs-darwin-arm64-v1.51.0.tar.gz"
+          ],
+          "oss_path": "backends/macos-arm64/vlogs/v1.51.0/victoria-logs-darwin-arm64-v1.51.0.tar.gz"
+        }
+      }
+    },
+    "linux": {
+      "amd64": {
+        "jaeger": {
+          "version": "v1.76.0",
+          "archive": "jaeger-all-in-one-1.76.0-linux-amd64.tar.gz",
+          "upstream_archive": "jaeger-1.76.0-linux-amd64.tar.gz",
+          "binary": "jaeger-all-in-one",
+          "package": "binary_only",
+          "source_platform": "linux",
+          "source_arch": "amd64",
+          "source_url": "https://github.com/jaegertracing/jaeger/releases/download/v1.76.0/jaeger-1.76.0-linux-amd64.tar.gz",
+          "source_size": 140998095,
+          "source_updated_at": "2025-12-03T16:51:24Z",
+          "local_candidates": [
+            ".backend-downloads/jaeger-1.76.0-linux-amd64.tar.gz",
+            ".jaeger/downloads/jaeger-1.76.0-linux-amd64.tar.gz"
+          ],
+          "oss_path": "backends/linux-amd64/jaeger/v1.76.0/jaeger-all-in-one-1.76.0-linux-amd64.tar.gz"
+        },
+        "vmetrics": {
+          "version": "v1.147.0",
+          "archive": "victoria-metrics-linux-amd64-v1.147.0.tar.gz",
+          "upstream_archive": "victoria-metrics-linux-amd64-v1.147.0.tar.gz",
+          "binary": "victoria-metrics-prod",
+          "script_component": "metrics",
+          "source_platform": "linux",
+          "source_arch": "amd64",
+          "source_url": "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.147.0/victoria-metrics-linux-amd64-v1.147.0.tar.gz",
+          "source_size": 13364099,
+          "source_updated_at": "2026-07-06T12:57:58Z",
+          "local_candidates": [
+            ".backend-downloads/victoria-metrics-linux-amd64-v1.147.0.tar.gz",
+            ".victoria/downloads/victoria-metrics-linux-amd64-v1.147.0.tar.gz"
+          ],
+          "oss_path": "backends/linux-amd64/vmetrics/v1.147.0/victoria-metrics-linux-amd64-v1.147.0.tar.gz"
+        },
+        "vlogs": {
+          "version": "v1.51.0",
+          "archive": "victoria-logs-linux-amd64-v1.51.0.tar.gz",
+          "upstream_archive": "victoria-logs-linux-amd64-v1.51.0.tar.gz",
+          "binary": "victoria-logs-prod",
+          "script_component": "logs",
+          "source_platform": "linux",
+          "source_arch": "amd64",
+          "source_url": "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/v1.51.0/victoria-logs-linux-amd64-v1.51.0.tar.gz",
+          "source_size": 11600864,
+          "source_updated_at": "2026-06-17T05:10:34Z",
+          "local_candidates": [
+            ".backend-downloads/victoria-logs-linux-amd64-v1.51.0.tar.gz",
+            ".victoria/downloads/victoria-logs-linux-amd64-v1.51.0.tar.gz"
+          ],
+          "oss_path": "backends/linux-amd64/vlogs/v1.51.0/victoria-logs-linux-amd64-v1.51.0.tar.gz"
+        }
+      },
+      "arm64": {
+        "jaeger": {
+          "version": "v1.76.0",
+          "archive": "jaeger-all-in-one-1.76.0-linux-arm64.tar.gz",
+          "upstream_archive": "jaeger-1.76.0-linux-arm64.tar.gz",
+          "binary": "jaeger-all-in-one",
+          "package": "binary_only",
+          "source_platform": "linux",
+          "source_arch": "arm64",
+          "source_url": "https://github.com/jaegertracing/jaeger/releases/download/v1.76.0/jaeger-1.76.0-linux-arm64.tar.gz",
+          "source_size": 129582509,
+          "source_updated_at": "2025-12-03T16:51:16Z",
+          "local_candidates": [
+            ".backend-downloads/jaeger-1.76.0-linux-arm64.tar.gz",
+            ".jaeger/downloads/jaeger-1.76.0-linux-arm64.tar.gz"
+          ],
+          "oss_path": "backends/linux-arm64/jaeger/v1.76.0/jaeger-all-in-one-1.76.0-linux-arm64.tar.gz"
+        },
+        "vmetrics": {
+          "version": "v1.147.0",
+          "archive": "victoria-metrics-linux-arm64-v1.147.0.tar.gz",
+          "upstream_archive": "victoria-metrics-linux-arm64-v1.147.0.tar.gz",
+          "binary": "victoria-metrics-prod",
+          "script_component": "metrics",
+          "source_platform": "linux",
+          "source_arch": "arm64",
+          "source_url": "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v1.147.0/victoria-metrics-linux-arm64-v1.147.0.tar.gz",
+          "source_size": 12785415,
+          "source_updated_at": "2026-07-06T12:58:08Z",
+          "local_candidates": [
+            ".backend-downloads/victoria-metrics-linux-arm64-v1.147.0.tar.gz",
+            ".victoria/downloads/victoria-metrics-linux-arm64-v1.147.0.tar.gz"
+          ],
+          "oss_path": "backends/linux-arm64/vmetrics/v1.147.0/victoria-metrics-linux-arm64-v1.147.0.tar.gz"
+        },
+        "vlogs": {
+          "version": "v1.51.0",
+          "archive": "victoria-logs-linux-arm64-v1.51.0.tar.gz",
+          "upstream_archive": "victoria-logs-linux-arm64-v1.51.0.tar.gz",
+          "binary": "victoria-logs-prod",
+          "script_component": "logs",
+          "source_platform": "linux",
+          "source_arch": "arm64",
+          "source_url": "https://github.com/VictoriaMetrics/VictoriaLogs/releases/download/v1.51.0/victoria-logs-linux-arm64-v1.51.0.tar.gz",
+          "source_size": 11166248,
+          "source_updated_at": "2026-06-17T05:10:50Z",
+          "local_candidates": [
+            ".backend-downloads/victoria-logs-linux-arm64-v1.51.0.tar.gz",
+            ".victoria/downloads/victoria-logs-linux-arm64-v1.51.0.tar.gz"
+          ],
+          "oss_path": "backends/linux-arm64/vlogs/v1.51.0/victoria-logs-linux-arm64-v1.51.0.tar.gz"
+        }
+      }
+    }
+  }
+}

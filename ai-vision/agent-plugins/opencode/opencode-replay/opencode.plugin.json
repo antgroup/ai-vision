@@ -1,0 +1,6 @@
+{
+  "id": "opencode-replay",
+  "name": "OpenCode Replay (Local Testing)",
+  "description": "Transcript-only local-test wrapper that coexists with observ-opencode",
+  "version": "0.3.3"
+}

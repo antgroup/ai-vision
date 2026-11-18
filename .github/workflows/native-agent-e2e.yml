@@ -1,0 +1,377 @@
+name: Native Agent E2E
+
+on:
+  workflow_call:
+    inputs:
+      public_platform_images:
+        description: Pinned public candidate images from the current release attempt
+        type: string
+        default: ''
+      tier:
+        description: Test tier (pr, daily or release)
+        required: true
+        type: string
+      units:
+        description: Production plugin and harness unit contracts only
+        type: boolean
+        default: false
+      unit_scope:
+        description: 'Native unit groups: all or a nonempty JSON list; full tiers/source retain all groups'
+        type: string
+        default: all
+      source:
+        description: Native fake49, production units and semantic validation
+        type: boolean
+        default: false
+      platform:
+        description: Owned native platform fake49
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Test tier
+        type: choice
+        options: [pr, daily, release]
+        default: release
+      units:
+        description: Production plugin and harness unit contracts only
+        type: boolean
+        default: false
+      unit_scope:
+        description: 'Native unit groups: all or a nonempty JSON list; full tiers/source retain all groups'
+        type: string
+        default: all
+      source:
+        description: Native fake49, production units and semantic validation
+        type: boolean
+        default: true
+      platform:
+        description: Owned native platform fake49
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: '1'
+
+concurrency:
+  group: native-agent-e2e-${{ github.workflow }}-${{ github.ref }}-${{ inputs.tier }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  native-source:
+    if: inputs.units || inputs.source
+    name: ${{ inputs.source && 'Native fake49 and units' || 'Native unit contracts' }} (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate native unit scope before installing toolchains
+        id: unit-scope
+        env:
+          NATIVE_UNIT_SCOPE: ${{ inputs.unit_scope }}
+          NATIVE_TIER: ${{ inputs.tier }}
+          NATIVE_SOURCE: ${{ inputs.source }}
+        run: python scripts/ci/native_unit_scope.py
+      - uses: actions/setup-node@v4
+        if: steps.unit-scope.outputs.node == 'true'
+        with:
+          node-version: '24'
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.unit-scope.outputs.rust == 'true'
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        if: inputs.source
+      - name: Install native harness dependencies
+        if: steps.unit-scope.outputs.python_deps == 'true'
+        run: |
+          python -m pip install -r ai-vision/agent-plugins/tests/native_agent_e2e/requirements.txt
+          python -m pip install opentelemetry-api==1.45.0 opentelemetry-sdk==1.45.0 opentelemetry-exporter-otlp-proto-http==1.45.0
+      - name: Codex production common-edition contracts
+        if: steps.unit-scope.outputs.codex == 'true'
+        env:
+          # These contracts share process environment and measure hook latency.
+          RUST_TEST_THREADS: '1'
+          NATIVE_SOURCE: ${{ inputs.source }}
+        run: |
+          # Match the shipped common edition without requiring embedded keys.
+          test_targets=(--lib --bins)
+          if [ "$NATIVE_SOURCE" = true ]; then test_targets=(--all-targets); fi
+          cargo build --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common --bins --jobs 2
+          cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2
+      - name: Claude production common-edition contracts
+        if: steps.unit-scope.outputs.claudecode == 'true'
+        env:
+          RUST_TEST_THREADS: '1'
+          NATIVE_SOURCE: ${{ inputs.source }}
+        run: |
+          test_targets=(--lib --bins)
+          if [ "$NATIVE_SOURCE" = true ]; then test_targets=(--all-targets); fi
+          cargo build --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common --bins --jobs 2
+          cargo test --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2
+      - name: Native production onboarding contracts
+        if: steps.unit-scope.outputs.onboarding == 'true'
+        run: make -C ai-vision/agent-plugins test-onboarding PLUGIN_PYTHON=python
+      - name: Build and test production Pi and Pireplay plugins
+        if: steps.unit-scope.outputs.pi == 'true'
+        run: |
+          npm install --prefix ai-vision/agent-plugins/pi/observ-pi --package-lock=false --workspaces=false
+          npm --prefix ai-vision/agent-plugins/pi/observ-pi run typecheck
+          npm --prefix ai-vision/agent-plugins/pi/observ-pi test
+          npm --prefix ai-vision/agent-plugins/pi/observ-pi run build
+          npm install --prefix ai-vision/agent-plugins/pi/pireplay --package-lock=false --workspaces=false
+          npm --prefix ai-vision/agent-plugins/pi/pireplay test
+      - name: Build and test production OpenCode plugin
+        if: steps.unit-scope.outputs.opencode == 'true'
+        run: |
+          npm install --prefix ai-vision/agent-plugins/opencode/observ-opencode --package-lock=false --workspaces=false
+          npm --prefix ai-vision/agent-plugins/opencode/observ-opencode run generate-keys
+          npm --prefix ai-vision/agent-plugins/opencode/observ-opencode test
+          npm --prefix ai-vision/agent-plugins/opencode/observ-opencode run build
+      - name: Build and test production DSH and replay plugins
+        if: steps.unit-scope.outputs.deepseek == 'true'
+        run: |
+          npm install --prefix ai-vision/agent-plugins/deepseek --package-lock=false
+          npm --prefix ai-vision/agent-plugins/deepseek test
+      - name: Hermes production contracts
+        if: steps.unit-scope.outputs.hermes == 'true'
+        working-directory: ai-vision/agent-plugins/hermes
+        run: >-
+          python -m unittest -v tests.test_config tests.test_config_migration tests.test_normalize
+          tests.test_privacy tests.test_semantic_state tests.test_hook_adapters tests.test_native_usage
+          tests.test_execution_usage tests.test_auxiliary_hooks tests.test_telemetry tests.test_privacy_boundary
+          tests.test_protocol_spike tests.test_diagnostics tests.test_security_config tests.test_common_schema_alignment
+          tests.test_metric_intervals tests.test_turn_numbers
+          tests.test_sdk_messages tests.test_live_replay_parity
+      - name: Kimi production and native transcript contracts
+        if: steps.unit-scope.outputs.kimi == 'true'
+        run: cargo test --manifest-path ai-vision/agent-plugins/kimi/kimihooks/Cargo.toml --jobs 2
+      - name: Native harness negative controls
+        if: steps.unit-scope.outputs.harness == 'true'
+        run: python -m unittest discover -s ai-vision/agent-plugins/tests/native_agent_e2e -p 'test_*.py' -v
+      - name: Install official pinned isolated Agent runtimes
+        if: inputs.source
+        run: >-
+          python ai-vision/agent-plugins/tests/native_agent_e2e/install_runtimes.py
+          --repo . --out "${{ runner.temp }}/native-runtimes"
+      - name: Real native processes with local LangChain fake provider
+        if: inputs.source
+        run: >-
+          python ai-vision/agent-plugins/tests/native_agent_e2e/run_suite.py
+          --repo . --out "${{ runner.temp }}/native-source"
+          --runtimes "${{ runner.temp }}/native-runtimes/runtimes.json" --mode fake
+      - name: Hermes turn numbering across three native processes
+        if: inputs.source
+        run: >-
+          python ai-vision/agent-plugins/tests/native_agent_e2e/hermes_turn_numbering.py
+          --repo . --out "${{ runner.temp }}/hermes-turn-numbering"
+          --runtimes "${{ runner.temp }}/native-runtimes/runtimes.json"
+      - name: Hermes native compression across resumed processes
+        if: inputs.source
+        run: >-
+          python ai-vision/agent-plugins/tests/native_agent_e2e/hermes_compression.py
+          --repo . --out "${{ runner.temp }}/hermes-compression"
+          --runtimes "${{ runner.temp }}/native-runtimes/runtimes.json"
+      - name: Preserve sanitized source evidence
+        if: always() && inputs.source
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-source-${{ matrix.os }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/native-source/summary.json
+            ${{ runner.temp }}/native-source/**/evidence.json
+            ${{ runner.temp }}/native-source/**/error.json
+            ${{ runner.temp }}/hermes-turn-numbering/report.json
+            ${{ runner.temp }}/hermes-compression/report.json
+          if-no-files-found: error
+          retention-days: 7
+
+  native-semantics:
+    if: inputs.source
+    needs: native-source
+    name: Weaver gate for selected native source matrices
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: native-source-*-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-source-artifacts
+      - name: Build the repository semantic validator
+        env:
+          CARGO_TARGET_DIR: ${{ runner.temp }}/native-weaver-target
+        run: |
+          cargo build --manifest-path ai-vision/agent-plugins/weaver/weaver-guard/Cargo.toml --bin weaver-guard --jobs 2
+          cargo test --manifest-path ai-vision/agent-plugins/weaver/weaver-guard/Cargo.toml --test unknown_usage_test --test validation_test --jobs 2
+      - name: Check policy documentation and every original OTLP sample
+        env:
+          TEST_TIER: ${{ inputs.tier }}
+        run: |
+          python -m pip install -r ai-vision/agent-plugins/tests/native_agent_e2e/requirements.txt
+          make -C ai-vision/agent-plugins/weaver spec-check
+          python ai-vision/agent-plugins/hermes/scripts/generate_contract_inventory.py --check
+          python ai-vision/agent-plugins/scripts/validate_capabilities.py --quiet
+          # Source and Hermes evidence share an artifact; the source matrix
+          # retains its native-source directory below the artifact root.
+          inputs=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-ubuntu-24.04-${{ github.run_attempt }}/native-source")
+          if [ "$TEST_TIER" = release ]; then
+            inputs+=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-macos-15-${{ github.run_attempt }}/native-source")
+            inputs+=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-windows-2025-${{ github.run_attempt }}/native-source")
+          fi
+          python ai-vision/agent-plugins/tests/native_agent_e2e/weaver_gate.py \
+            --repo . --out "${{ runner.temp }}/native-semantics" \
+            "${inputs[@]}" \
+            --weaver-command-json '["${{ runner.temp }}/native-weaver-target/debug/weaver-guard"]'
+      - name: Preserve semantic validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-semantics-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/native-semantics/weaver.json
+            ${{ runner.temp }}/native-semantics/weaver.log
+          if-no-files-found: error
+          retention-days: 7
+
+  docker-platform:
+    if: always() && !cancelled() && inputs.platform && (!(inputs.units || inputs.source) || needs.native-source.result == 'success') && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    needs: native-source
+    name: Native platform fake49 (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15-intel"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read
+    env:
+      AIVISION_E2E_PLATFORM_IMAGES_JSON: ${{ inputs.public_platform_images || vars.AIVISION_E2E_PLATFORM_IMAGES_JSON }}
+    steps:
+      - name: Require pinned platform fixtures
+        if: env.AIVISION_E2E_PLATFORM_IMAGES_JSON == ''
+        run: |
+          echo '::error::Supply pinned candidate images or configure AIVISION_E2E_PLATFORM_IMAGES_JSON.'
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reclaim unused Android SDK on the disposable hosted VM
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux' && runner.arch == 'X64'
+        run: python scripts/ci/prepare_platform_disk.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.7'
+      - name: Start Linux Docker on macOS Intel
+        if: runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/native-aivision-colima
+        run: |
+          brew install colima docker
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          config=Path(os.environ['COLIMA_HOME'])/'default/colima.yaml'
+          config.parent.mkdir(parents=True,exist_ok=True)
+          config.write_text('docker:\n  default-ulimits:\n    nofile:\n      Name: nofile\n      Soft: 65536\n      Hard: 65536\n')
+          PY
+          colima start --runtime docker --cpu 3 --memory 10 --disk 30
+          docker info
+      - name: Install harness and build production plugins
+        run: |
+          python -m pip install -r ai-vision/agent-plugins/tests/native_agent_e2e/requirements.txt
+          npm install --prefix ai-vision/agent-plugins/pi/observ-pi --package-lock=false --workspaces=false
+          npm --prefix ai-vision/agent-plugins/pi/observ-pi run build
+          npm install --prefix ai-vision/agent-plugins/opencode/observ-opencode --package-lock=false --workspaces=false
+          npm --prefix ai-vision/agent-plugins/opencode/observ-opencode run build
+          npm install --prefix ai-vision/agent-plugins/deepseek --package-lock=false
+          npm --prefix ai-vision/agent-plugins/deepseek run build --workspace observ-dsh
+          python ai-vision/agent-plugins/tests/native_agent_e2e/install_runtimes.py --repo . --out "${{ runner.temp }}/native-runtimes"
+      - name: Deploy fresh local platform and reconcile native three-signal data
+        run: >-
+          python ai-vision/agent-plugins/tests/native_agent_e2e/docker_platform.py
+          --repo . --out "${{ runner.temp }}/native-platform"
+          --runtimes "${{ runner.temp }}/native-runtimes/runtimes.json"
+      - name: Preserve sanitized deployment and readback evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-platform-${{ matrix.os }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/native-platform/*.json
+            ${{ runner.temp }}/native-platform/*.log
+            ${{ runner.temp }}/native-platform/blueprint.redacted.yaml
+            ${{ runner.temp }}/native-platform/cases/summary.json
+            ${{ runner.temp }}/native-platform/cases/**/evidence.json
+            ${{ runner.temp }}/native-platform/cases/**/error.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Stop Colima
+        if: always() && runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/native-aivision-colima
+        run: colima delete --data --force
+
+  result:
+    name: Selected checks passed
+    if: always()
+    needs: [native-source, native-semantics, docker-platform]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify every selected check completed
+        env:
+          TIER: ${{ inputs.tier }}
+          SELECTED_JSON: >-
+            {"native-source": ${{ inputs.units || inputs.source }}, "native-semantics": ${{ inputs.source }}, "docker-platform": ${{ inputs.platform }}}
+          RESULTS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PYRESULT'
+          import json
+          import os
+          from pathlib import Path
+
+          selected = json.loads(os.environ['SELECTED_JSON'])
+          results = json.loads(os.environ['RESULTS_JSON'])
+          failures = []
+          tier = os.environ['TIER']
+          if tier not in {'pr', 'daily', 'release'}:
+              failures.append('Unknown test tier: ' + tier)
+          lines = ['## Selected checks', '', '| Check | Selected | Result |', '| --- | --- | --- |']
+          for job, required in selected.items():
+              result = results.get(job, {}).get('result', 'missing')
+              lines.append(f'| {job} | {required} | {result} |')
+              if required and result != 'success':
+                  failures.append(f'{job}: required check {result}')
+          lines += ['', 'Selected platform checks require trusted access to the pinned images.',
+                    'A skipped selected check is a failure, including an unavailable fork platform check.']
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as summary:
+              summary.write('\n'.join(lines) + '\n')
+          if failures:
+              raise SystemExit('\n'.join(failures))
+          PYRESULT

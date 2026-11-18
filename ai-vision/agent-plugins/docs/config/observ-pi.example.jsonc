@@ -1,0 +1,81 @@
+// piagent 完整配置示例
+// 全局路径: ~/.pi/agent/observ-pi.json
+// 如果设置 PI_CODING_AGENT_DIR，则读取 $PI_CODING_AGENT_DIR/observ-pi.json。
+// 受信任项目还会读取 .pi/observ-pi.json，项目配置覆盖全局配置。
+// 环境变量优先级最高。
+{
+  // ─── 主开关 ──────────────────────────────────────────────────────
+  // env: AGENT_ENABLE_TELEMETRY, OBSERV_PI_ENABLE_TELEMETRY
+  "enableTelemetry": true,
+
+  // env: OTEL_SERVICE_NAME
+  "serviceName": "pi",
+
+  // env: AIVISION_COLLECTION_MODE, OBSERV_PI_COLLECTION_MODE
+  "collectionMode": "full",
+
+  // 启用 DEBUG 级别插件日志；env OBSERV_PI_DEBUG 的优先级更高
+  "debug": false,
+
+  // 每次记录信号时从 AIVISION_ANT_USERNAME / AIVISION_ANT_UID 读取动态身份
+  "dynamicUsername": false,
+  "dynamicUid": false,
+
+  "otelExporter": {
+    // 与 common.schema.json 保持一致
+    "endpoint": "",
+    "protocol": "http/json",
+
+    // env: OTEL_EXPORTER_OTLP_HEADERS
+    "headers": {},
+
+    // 注入每个 span、event 和 metric
+    // env: OBSERV_PI_OTEL_ATTRIBUTES
+    // _internal.meta.root 为仓库保留键，会被忽略；其他 _internal.* 键不受影响
+    "attributes": {
+      "ant.username": ""
+    },
+
+    // env 合并顺序:
+    // config < OTEL_RESOURCE_ATTRIBUTES < AIVISION_OTEL_RESOURCE_ATTRIBUTES
+    //        < OBSERV_PI_OTEL_RESOURCE_ATTRIBUTES
+    // ant.meta.trigger 还可由最高优先级 AIVISION_META_TRIGGER 覆盖；它表示外部任务归因，
+    // 不从 transcript 推断。可选值: automation | interactive | unknown；未配置时 Resource 输出空字符串，
+    // 显式空值或非法值规范化为 unknown
+    "resourceAttributes": {
+      // "ant.meta.trigger": "automation",
+      "ant.agent.type": "pi",
+      "ant.agent.product": "Pi",
+      "ant.agent.instance": "",
+      "ant.agent.env": "Default",
+      "ant.agent.scene": "default"
+    },
+
+    "metricsTemporalityPreference": "delta"
+  },
+
+  "tracesConfig": {
+    "endpoint": "http://localhost:4318/v1/traces",
+    "headers": {},
+    "enabled": true
+  },
+
+  "metricsConfig": {
+    "endpoint": "http://localhost:4318/v1/metrics",
+    "headers": {},
+    "enabled": true
+  },
+
+  "eventsConfig": {
+    "endpoint": "http://localhost:4318/v1/logs",
+    "headers": {},
+    "enabled": true
+  },
+
+  "metricExportInterval": 60000,
+  "logsExportInterval": 5000,
+
+  // 插件自身诊断日志目录；写入 observ-pi.log
+  // env: AIVISION_LOG_DIR, OBSERV_PI_LOG_DIR
+  "logDir": ""
+}

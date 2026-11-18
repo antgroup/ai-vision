@@ -1,0 +1,10 @@
+node_modules/
+dist/
+
+# Embedded keys (sensitive, not committed)
+aivision.keys.json
+cowork.keys.json
+
+# Generated modules (build artifacts)
+src/keys.generated.ts
+src/edition-config.generated.ts

@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "components": [
+    {
+      "id": "database",
+      "displayName": "AI Vision Database",
+      "implementation": "OceanBase CE or seekdb; Kubernetes uses OB Operator",
+      "legacyName": "oceanbase",
+      "aliases": ["oceanbase", "seekdb"],
+      "dockerName": "oceanbase",
+      "kubernetes": {"kind": "obcluster", "name": "oceanbase", "logSelector": "ref-obcluster=oceanbase"},
+      "configAliases": {"DATABASE_IMAGE": "OB_IMAGE", "DATABASE_CONTAINER": "OB_CONTAINER", "DATABASE_BACKEND": "OB_BACKEND", "DATABASE_HOST": "OB_HOST", "DATABASE_HOST_PORT": "OB_HOST_PORT", "DATABASE_PORT": "OB_PORT", "DATABASE_USER": "OB_USER", "DATABASE_MANAGED": "OB_MANAGED"}
+    },
+    {
+      "id": "data-backend",
+      "displayName": "AI Vision Data Backend",
+      "implementation": "External SigNoz OceanBase distribution",
+      "legacyName": "signoz-ob",
+      "aliases": ["signoz", "signoz-ob"],
+      "dockerName": "signoz-ob",
+      "kubernetes": {"kind": "deployment", "name": "signoz-ob"},
+      "configAliases": {"DATA_BACKEND_IMAGE": "SIGNOZ_IMAGE", "DATA_BACKEND_CONTAINER": "SIGNOZ_CONTAINER", "DATA_BACKEND_PORT": "SIGNOZ_PORT", "DATA_BACKEND_METASTORE_DIR": "SIGNOZ_METASTORE_DIR", "DATA_BACKEND_PROJECTION_MAINTENANCE_ENABLED": "SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED"}
+    },
+    {
+      "id": "ingest-gateway",
+      "displayName": "AI Vision Ingest Gateway",
+      "implementation": "AntCollector",
+      "legacyName": "antcollector-gw",
+      "aliases": ["gateway", "antcollector-gw"],
+      "dockerName": "antcollector-gw",
+      "kubernetes": {"kind": "deployment", "name": "antcollector-gw"},
+      "configAliases": {"INGEST_GATEWAY_IMAGE": "GATEWAY_IMAGE", "INGEST_GATEWAY_CONTAINER": "GATEWAY_CONTAINER", "INGEST_GATEWAY_HTTP_PORT": "GATEWAY_HTTP_PORT", "INGEST_GATEWAY_GRPC_PORT": "GATEWAY_GRPC_PORT", "INGEST_GATEWAY_HEALTH_PORT": "GATEWAY_HEALTH_PORT"}
+    },
+    {
+      "id": "backend",
+      "displayName": "AI Vision API",
+      "implementation": "Django",
+      "legacyName": "be",
+      "aliases": ["be", "aivision-be"],
+      "dockerName": "aivision-be",
+      "kubernetes": {"kind": "deployment", "name": "aivision-be"},
+      "configAliases": {"BACKEND_IMAGE": "BE_IMAGE", "BACKEND_CONTAINER": "BE_CONTAINER", "BACKEND_PORT": "BE_PORT", "BACKEND_QUERY_MODE": "AIVISION_QUERY_MODE"}
+    },
+    {
+      "id": "diagnosis",
+      "displayName": "AI Vision Diagnosis",
+      "implementation": "AgentLens",
+      "legacyName": "agentlens",
+      "aliases": ["agentlens"],
+      "dockerName": "agentlens",
+      "kubernetes": {"kind": "deployment", "name": "agentlens"},
+      "configAliases": {"DIAGNOSIS_IMAGE": "AGENTLENS_IMAGE", "DIAGNOSIS_CONTAINER": "AGENTLENS_CONTAINER", "DIAGNOSIS_PORT": "AGENTLENS_PORT"}
+    },
+    {
+      "id": "frontend",
+      "displayName": "AI Vision Web",
+      "implementation": "React and Nginx",
+      "legacyName": "fe",
+      "aliases": ["fe", "aivision-fe"],
+      "dockerName": "aivision-fe",
+      "kubernetes": {"kind": "deployment", "name": "aivision-fe"},
+      "configAliases": {"FRONTEND_IMAGE": "FE_IMAGE", "FRONTEND_CONTAINER": "FE_CONTAINER", "FRONTEND_PORT": "FE_PORT"}
+    }
+  ]
+}

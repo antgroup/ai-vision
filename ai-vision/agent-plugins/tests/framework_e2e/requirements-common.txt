@@ -1,0 +1,11 @@
+# Deterministic models run in-process; no provider keys or calls are needed.
+# Onboarding assets import the OpenAI adapter before tests replace it with fakes.
+langchain==1.4.3
+langchain-core==1.6.6
+langchain-openai==1.6.7
+langgraph==1.2.12
+deepagents==0.7.21
+nemo-relay==0.9.3
+numpy==2.5.3
+PyYAML==6.0.3
+python-dotenv==1.2.4

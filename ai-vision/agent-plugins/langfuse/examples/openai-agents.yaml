@@ -1,0 +1,53 @@
+id: openai-agents
+logo: /assets/frameworks/openai-agents.svg
+logoInvertInDark: true
+label: OpenAI Agents SDK
+frontendSort: 6
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+pipInstall: pip install openai-agents "langfuse>=4.16.0,<5" nest_asyncio openinference-instrumentation-openai-agents
+pipExample: |-
+  import asyncio
+  import os
+
+  import nest_asyncio
+  from agents import Agent, Runner
+  from langfuse import get_client, propagate_attributes
+  from openinference.instrumentation.openai_agents import OpenAIAgentsInstrumentor
+
+  nest_asyncio.apply()
+  OpenAIAgentsInstrumentor().instrument()
+  langfuse = get_client()
+
+
+  async def main():
+      agent = Agent(
+          name="Captain Obvious",
+          model=os.environ.get("OPENAI_MODEL", "gpt-4o"),
+          instructions="You are Captain Obvious, the world's most literal technical support agent.",
+      )
+
+      question = "Why is my code failing when I try to divide by zero? I keep getting this error message."
+      with langfuse.start_as_current_observation(
+          as_type="span", name="openai-agents-request"
+      ):
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          result = await Runner.run(agent, question)
+          print(result.final_output)
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:openai-agents"]):
+              asyncio.run(main())
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

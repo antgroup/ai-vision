@@ -1,0 +1,236 @@
+{
+  "id": "observ-openclaw",
+  "name": "OpenClaw Observability",
+  "description": "OpenTelemetry-based observability for OpenClaw with semantic conventions for AI agents (Ant Spec v2.0)",
+  "version": "0.5.3",
+  "uiHints": {
+    "enableTelemetry": {
+      "label": "Enable Telemetry (Master Switch)",
+      "help": "Must be enabled for any telemetry data collection. Env: AGENT_ENABLE_TELEMETRY=1"
+    },
+    "collectionMode": {
+      "label": "Collection Mode",
+      "help": "Content collection mode. Env: AIVISION_COLLECTION_MODE=full|privacy"
+    },
+    "debug": {
+      "label": "Debug Logging",
+      "help": "Enable verbose plugin diagnostic logging. Does not enable transcript capture or offline replay. Env: OBSERV_OPENCLAW_DEBUG"
+    },
+    "dynamicUsername": {
+      "label": "Dynamic Username",
+      "help": "Read ant.username from AIVISION_ANT_USERNAME whenever telemetry is recorded"
+    },
+    "dynamicUid": {
+      "label": "Dynamic UID",
+      "help": "Read ant.uid from AIVISION_ANT_UID whenever telemetry is recorded"
+    },
+    "otelExporter": {
+      "label": "OTel Exporter Configuration",
+      "help": "Base OTLP endpoint, protocol, and headers. Can also be set via OTEL_EXPORTER_OTLP_* env vars."
+    },
+    "tracesConfig": {
+      "label": "Traces Configuration",
+      "help": "Signal-specific configuration for trace export"
+    },
+    "metricsConfig": {
+      "label": "Metrics Configuration",
+      "help": "Signal-specific configuration for metrics export"
+    },
+    "eventsConfig": {
+      "label": "Events/Logs Configuration",
+      "help": "Signal-specific configuration for events/logs export"
+    },
+    "logDir": {
+      "label": "Plugin Log Directory",
+      "help": "Directory for the plugin-owned observ-openclaw.log file. Defaults to the OpenClaw runtime logs directory for common edition or ~/.aivision/ocw/logs for AIVision. Env: AIVISION_LOG_DIR or OBSERV_OPENCLAW_LOG_DIR"
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enableTelemetry": {
+        "type": "boolean",
+        "description": "Enable telemetry collection (master switch). Env: AGENT_ENABLE_TELEMETRY",
+        "default": true
+      },
+      "serviceName": {
+        "type": "string",
+        "description": "OpenTelemetry service name. Env: OTEL_SERVICE_NAME",
+        "default": "openclaw"
+      },
+      "collectionMode": {
+        "type": "string",
+        "description": "Content collection mode. full records raw content; privacy redacts content. Env: AIVISION_COLLECTION_MODE",
+        "enum": [
+          "full",
+          "privacy"
+        ],
+        "default": "full"
+      },
+      "debug": {
+        "type": "boolean",
+        "description": "Enable verbose plugin diagnostic logging. Env: OBSERV_OPENCLAW_DEBUG",
+        "default": false
+      },
+      "dynamicUsername": {
+        "type": "boolean",
+        "description": "Resolve ant.username from AIVISION_ANT_USERNAME whenever a span, event/log, or metric is recorded",
+        "default": false
+      },
+      "dynamicUid": {
+        "type": "boolean",
+        "description": "Resolve ant.uid from AIVISION_ANT_UID whenever a span, event/log, or metric is recorded",
+        "default": false
+      },
+      "otelExporter": {
+        "type": "object",
+        "description": "OTel exporter configuration",
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "Base OTLP endpoint URL. Env: OTEL_EXPORTER_OTLP_ENDPOINT"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "OTLP protocol. Env: OTEL_EXPORTER_OTLP_PROTOCOL",
+            "enum": [
+              "grpc",
+              "http/json",
+              "http/protobuf"
+            ],
+            "default": "http/json"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Attached headers (key=value). Env: OTEL_EXPORTER_OTLP_HEADERS"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Common span/event/metric attributes, including ant.username and ant.uid. Env: OBSERV_OPENCLAW_OTEL_ATTRIBUTES",
+            "default": {}
+          },
+          "resourceAttributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Resource attribute overrides, including ant.agent.* metadata. Env: OTEL_RESOURCE_ATTRIBUTES, AIVISION_OTEL_RESOURCE_ATTRIBUTES, OBSERV_OPENCLAW_OTEL_RESOURCE_ATTRIBUTES. ant.uid is signal-only; agentic.collection.mode is forced from collectionMode.",
+            "default": {}
+          },
+          "metricsTemporalityPreference": {
+            "type": "string",
+            "description": "Metrics temporality preference. Env: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE",
+            "enum": [
+              "delta",
+              "cumulative"
+            ],
+            "default": "delta"
+          }
+        }
+      },
+      "tracesConfig": {
+        "type": "object",
+        "description": "Trace-specific endpoint configuration",
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP traces endpoint URL. Env: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom headers for traces export"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable trace export",
+            "default": true
+          }
+        }
+      },
+      "metricsConfig": {
+        "type": "object",
+        "description": "Metrics-specific endpoint configuration",
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP metrics endpoint URL. Env: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom headers for metrics export"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable metrics export",
+            "default": true
+          }
+        }
+      },
+      "eventsConfig": {
+        "type": "object",
+        "description": "Events/logs-specific endpoint configuration",
+        "additionalProperties": false,
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP logs endpoint URL. Env: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Custom headers for events/logs export"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable events/logs export",
+            "default": true
+          }
+        }
+      },
+      "metricExportInterval": {
+        "type": "number",
+        "description": "Metrics export interval in milliseconds. Env: OTEL_METRIC_EXPORT_INTERVAL",
+        "default": 60000
+      },
+      "logsExportInterval": {
+        "type": "number",
+        "description": "Logs/Events export interval in milliseconds. Env: OTEL_LOGS_EXPORT_INTERVAL",
+        "default": 5000
+      },
+      "businessAppId": {
+        "type": "string",
+        "description": "[DEPRECATED] No longer used. Kept for backward compatibility with existing configs."
+      },
+      "businessScene": {
+        "type": "string",
+        "description": "[DEPRECATED] No longer used. Kept for backward compatibility with existing configs."
+      },
+      "logDir": {
+        "type": "string",
+        "description": "Directory for the plugin-owned observ-openclaw.log file. Priority: this value, AIVISION_LOG_DIR/OBSERV_OPENCLAW_LOG_DIR, then the edition default."
+      },
+      "ingestConfig": {
+        "type": "string",
+        "description": "Path to the private AI Vision ingest configuration"
+      }
+    }
+  }
+}

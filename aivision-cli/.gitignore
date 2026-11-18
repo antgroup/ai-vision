@@ -1,0 +1,28 @@
+# Built binary (rebuild with: make build)
+/aivision
+/aiv
+# Ignore binaries left by earlier releases.
+/aivforge
+/dist/
+
+# Local blueprint overrides & runtime state (never commit a deployment's state)
+/blueprint.yaml
+*.local.yaml
+.aivision/
+
+# Generated deployment material (aiv generate --target ...); reproducible
+# from the blueprint, and may embed host paths — never commit it.
+/pours/
+
+# User credential/config home (SpaceKey profiles, env.sh). Never commit.
+# (Also ignored globally at ~/.aivision, but guard against in-repo copies.)
+**/.aivision/
+
+# Skill workspace dependencies
+skills/**/node_modules/
+
+# OS / editor noise
+.DS_Store
+*.swp
+.idea/
+.vscode/

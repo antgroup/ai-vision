@@ -1,0 +1,9 @@
+// Developer-only hermes-replay configuration.
+// This file cannot enable or redirect observ-hermes production telemetry.
+{
+  "captureEnabled": false,
+  "collectionMode": "privacy",
+  "sessionDir": "~/.aivision/hermes/transcripts",
+  "sessionName": "local-development",
+  "debug": false
+}

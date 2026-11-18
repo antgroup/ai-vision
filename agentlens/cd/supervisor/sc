@@ -1,0 +1,6 @@
+if [ "$#" = "0" ]; then
+  sudo supervisorctl status
+  exit 0
+fi
+
+sudo supervisorctl "$@"

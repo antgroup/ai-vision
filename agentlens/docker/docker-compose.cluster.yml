@@ -1,0 +1,84 @@
+services:
+  ob:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: agentlens
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    networks: [agentlens-net]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-prootpw"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migration:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      ob:
+        condition: service_healthy
+    environment:
+      AIVISION_ENV: dev
+      AGENTLENS_OB_URL: "mysql+pymysql://root:rootpw@ob:3306/agentlens"
+    networks: [agentlens-net]
+    entrypoint: ["python3", "-m", "alembic", "-c", "obschema/alembic.ini", "upgrade", "head"]
+    restart: "no"
+
+  agentlens-1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    hostname: agentlens-1
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    environment: &agentlens-env
+      AIVISION_ENV: dev
+      AGENTLENS_OB_URL: "mysql+pymysql://root:rootpw@ob:3306/agentlens"
+      MASTER_EXECUTE_TASKS: "false"
+      MASTER_EXECUTE_CONCURRENCY: "10"
+      WORKER_EXECUTE_CONCURRENCY: "10"
+      MAX_TASK_ATTEMPTS: "2"
+    ports:
+      - "8080:8080"
+    networks: [agentlens-net]
+    logging: &agentlens-logging
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  agentlens-2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    hostname: agentlens-2
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    environment: *agentlens-env
+    ports:
+      - "8081:8080"
+    networks: [agentlens-net]
+    logging: *agentlens-logging
+
+  agentlens-3:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    hostname: agentlens-3
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+    environment: *agentlens-env
+    ports:
+      - "8082:8080"
+    networks: [agentlens-net]
+    logging: *agentlens-logging
+
+networks:
+  agentlens-net:

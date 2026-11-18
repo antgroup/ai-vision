@@ -1,0 +1,819 @@
+# AI Vision Agent Semantic Conventions - Spans
+# Source: docs/standard/aivision/agent-spans.md + docs/standard/aivision/model-spans.md
+# Version: v2.0
+# All attributes use ref references to attribute_groups.yaml definitions.
+
+groups:
+  # ============================================================
+  # OTel Standard Agent Spans (from agent-spans.md)
+  # ============================================================
+
+  - id: span.gen_ai.create_agent
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Describes the creation of a GenAI Agent. Typically used for remote agent service scenarios.
+    note: >
+      Span Name: `create_agent {gen_ai.agent.name}`
+    attributes:
+      # Required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `create_agent`"
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: gen_ai.agent.description
+        requirement_level:
+          conditionally_required: "When provided by the application"
+      - ref: gen_ai.agent.id
+        requirement_level:
+          conditionally_required: "When applicable"
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: "When provided by the application"
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: "When provided by the application"
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: server.port
+        requirement_level:
+          conditionally_required: "When server.address is set"
+      # Recommended
+      - ref: server.address
+        requirement_level: recommended
+      # Opt-In
+      - ref: gen_ai.provider.name
+        requirement_level: opt_in
+      - ref: gen_ai.system_instructions
+        requirement_level: opt_in
+
+  - id: span.gen_ai.invoke_agent
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Describes the invocation of a GenAI Agent.
+    note: >
+      Span Name: `invoke_agent {gen_ai.agent.name}` (or `invoke_agent` if name unavailable).
+      Span Kind: CLIENT for remote agents, INTERNAL MAY be used for in-process agents.
+    attributes:
+      # Required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `invoke_agent`"
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: gen_ai.agent.description
+        requirement_level:
+          conditionally_required: "When provided by the application"
+      - ref: gen_ai.agent.id
+        requirement_level:
+          conditionally_required: "When applicable"
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: "When provided by the application"
+      - ref: gen_ai.agent.version
+        requirement_level:
+          conditionally_required: "When provided by the application"
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.data_source.id
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.output.type
+        requirement_level:
+          conditionally_required: "When the request specifies output format"
+      - ref: gen_ai.request.choice.count
+        requirement_level:
+          conditionally_required: "When available and != 1"
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.request.seed
+        requirement_level:
+          conditionally_required: "When the request includes a seed"
+      - ref: server.port
+        requirement_level:
+          conditionally_required: "When server.address is set"
+      # Recommended
+      - ref: gen_ai.request.frequency_penalty
+        requirement_level: recommended
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.request.presence_penalty
+        requirement_level: recommended
+      - ref: gen_ai.request.stop_sequences
+        requirement_level: recommended
+      - ref: gen_ai.request.temperature
+        requirement_level: recommended
+      - ref: gen_ai.request.top_p
+        requirement_level: recommended
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+      - ref: gen_ai.response.id
+        requirement_level: opt_in
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.usage.cache_creation.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.cache_read.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.reasoning.output_tokens
+        requirement_level: opt_in
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        requirement_level: recommended
+      - ref: server.address
+        requirement_level: recommended
+      # Opt-In
+      - ref: gen_ai.input.messages
+        requirement_level: opt_in
+      - ref: gen_ai.output.messages
+        requirement_level: opt_in
+      - ref: gen_ai.provider.name
+        requirement_level: opt_in
+      - ref: gen_ai.system_instructions
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions
+        requirement_level: opt_in
+
+  # ============================================================
+  # OTel Standard Model Spans (from model-spans.md)
+  # ============================================================
+
+  - id: span.gen_ai.inference
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Describes a client inference call to a GenAI model.
+      The model generates a response or requests tool calls based on input prompt.
+    note: >
+      Span Name: `{gen_ai.operation.name} {gen_ai.request.model}`.
+      Span Kind: CLIENT for remote models, INTERNAL MAY be used for in-process models.
+    attributes:
+      # Required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: gen_ai.conversation.id
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.output.type
+        requirement_level:
+          conditionally_required: "When the request specifies output format"
+      - ref: gen_ai.request.choice.count
+        requirement_level:
+          conditionally_required: "When available and != 1"
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.request.seed
+        requirement_level:
+          conditionally_required: "When the request includes a seed"
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: server.port
+        requirement_level:
+          conditionally_required: "When server.address is set"
+      # Recommended
+      - ref: gen_ai.request.frequency_penalty
+        requirement_level: recommended
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.request.presence_penalty
+        requirement_level: recommended
+      - ref: gen_ai.request.stop_sequences
+        requirement_level: recommended
+      - ref: gen_ai.request.temperature
+        requirement_level: recommended
+      - ref: gen_ai.request.top_k
+        requirement_level: recommended
+      - ref: gen_ai.request.top_p
+        requirement_level: recommended
+      - ref: gen_ai.response.finish_reasons
+        requirement_level: recommended
+      - ref: gen_ai.response.id
+        requirement_level: opt_in
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.usage.cache_creation.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.cache_read.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.reasoning.output_tokens
+        requirement_level: opt_in
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        requirement_level: recommended
+      - ref: server.address
+        requirement_level: recommended
+      # Opt-In
+      - ref: gen_ai.input.messages
+        requirement_level: opt_in
+      - ref: gen_ai.output.messages
+        requirement_level: opt_in
+      - ref: gen_ai.provider.name
+        requirement_level: opt_in
+      - ref: gen_ai.system_instructions
+        requirement_level: opt_in
+      - ref: gen_ai.tool.definitions
+        requirement_level: opt_in
+      - ref: aivision.billing.mode
+      - ref: aivision.billing.estimate_list_price
+
+  - id: span.gen_ai.embeddings
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Describes an embeddings request - generating embedding vectors from input.
+    note: >
+      Span Name: `embeddings {gen_ai.request.model}`
+    attributes:
+      # Required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `embeddings`"
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: server.port
+        requirement_level:
+          conditionally_required: "When server.address is set"
+      # Recommended
+      - ref: gen_ai.embeddings.dimension.count
+        requirement_level: recommended
+      - ref: gen_ai.request.encoding_formats
+        requirement_level: recommended
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: server.address
+        requirement_level: recommended
+      # Opt-In
+      - ref: gen_ai.provider.name
+        requirement_level: opt_in
+      - ref: aivision.billing.mode
+      - ref: aivision.billing.estimate_list_price
+
+  - id: span.gen_ai.retrieval
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Describes a retrieval request - retrieving relevant information from vector databases
+      or search systems.
+    note: >
+      Span Name: `retrieval {gen_ai.data_source.id}`
+    attributes:
+      # Required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `retrieval`"
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: gen_ai.data_source.id
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: server.port
+        requirement_level:
+          conditionally_required: "When server.address is set"
+      # Recommended
+      - ref: gen_ai.request.top_k
+        requirement_level: recommended
+      - ref: server.address
+        requirement_level: recommended
+      # Opt-In
+      - ref: gen_ai.provider.name
+        requirement_level: opt_in
+      - ref: gen_ai.retrieval.documents
+        requirement_level: opt_in
+      - ref: gen_ai.retrieval.query.text
+        requirement_level: opt_in
+
+  - id: span.gen_ai.execute_tool
+    type: span
+    span_kind: internal
+    stability: experimental
+    brief: >
+      Describes a tool execution call or an explicitly marked derived Skill-load observation.
+    note: >
+      Span Name: `execute_tool {gen_ai.tool.name}`. A runtime may emit a
+      zero-duration derived Skill activation after a successful source tool;
+      it uses `agentic.tool.derived=true`, a distinct synthetic call id, shares
+      the Turn parent, and links to the completed source span. It is not a
+      second physical tool execution and must not produce tool events/metrics.
+    attributes:
+      # Required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `execute_tool`"
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: agentic.tool.type
+        requirement_level:
+          conditionally_required: "When the tool is classified as Skill/MCP from raw name or runtime-specific evidence"
+      - ref: agentic.tool.name
+        requirement_level:
+          conditionally_required: "When the tool is classified as Skill/MCP from raw name or runtime-specific evidence"
+      - ref: agentic.tool.id
+        requirement_level:
+          conditionally_required: "When the tool is classified as Skill/MCP from raw name or runtime-specific evidence"
+      # Recommended
+      - ref: gen_ai.tool.call.id
+        requirement_level: recommended
+      - ref: gen_ai.tool.description
+        requirement_level: recommended
+      - ref: gen_ai.tool.name
+        requirement_level: recommended
+      - ref: gen_ai.tool.type
+        requirement_level: recommended
+      - ref: agentic.tool.raw_name
+        requirement_level: recommended
+        note: "Original tool name from agent runtime before display-friendly parsing."
+      - ref: agentic.tool.derived
+        requirement_level:
+          conditionally_required: "When the span is a derived Skill-load observation"
+      - ref: agentic.tool.call_id.synthetic
+        requirement_level:
+          conditionally_required: "When gen_ai.tool.call.id is synthesized locally"
+      - ref: agentic.tool.duration_ms
+        requirement_level: recommended
+      - ref: code.tool.name
+        requirement_level: recommended
+      - ref: code.tool.exit_code
+        requirement_level: recommended
+      - ref: code.file.operation
+        requirement_level: recommended
+      - ref: code.file.path
+        requirement_level: recommended
+      # Opt-In
+      - ref: gen_ai.tool.call.arguments
+        requirement_level: opt_in
+      - ref: gen_ai.tool.call.result
+        requirement_level: opt_in
+
+  # ============================================================
+  # Ant Extended Span Types (from agent-spans.md Section 3)
+  # Differentiated by gen_ai.span.kind attribute
+  # ============================================================
+
+  - id: span.ant.chat
+    type: span
+    span_kind: server
+    stability: experimental
+    brief: >
+      Chat entry point span. Records a complete user conversation.
+    note: >
+      gen_ai.span.kind = CHAT. This is the root span for a conversation session.
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `CHAT`"
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: http.response.status_code
+        requirement_level:
+          conditionally_required: "For HTTP-based calls"
+      # Recommended
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.output_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.total_tokens
+        requirement_level: recommended
+      - ref: gen_ai.response.time_to_first_token
+        requirement_level: recommended
+      - ref: response.total_packets
+        requirement_level: recommended
+      - ref: response.duration
+        requirement_level: recommended
+      - ref: gen_ai.input.messages
+        requirement_level: recommended
+      - ref: gen_ai.output.messages
+        requirement_level: recommended
+      - ref: input.intent
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: _internal.meta.root
+        requirement_level: opt_in
+        note: >
+          Logical Turn-root marker for trace indexing. Currently emitted by
+          Claude Code, Codex, OpenCode, OpenClaw, and Pi owned Turn
+          roots; it remains `1` when an upstream OTel parent exists and must not
+          be copied to borrowed subagent AGENT spans, synthetic compaction CHAT
+          spans, LLM `chat` generations, or other non-Turn spans.
+      - ref: agentic.runtime.cwd
+        requirement_level: recommended
+      - ref: agentic.turn.number
+        requirement_level: recommended
+      - ref: agentic.turn.trigger
+        requirement_level:
+          conditionally_required: "For ClaudeCode and Codex Turn root spans"
+        note: "Host-observed Turn trigger; only on the logical Turn root and independent from Resource ant.meta.trigger."
+
+  - id: span.ant.agent
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Agent service invocation span. Extends OTel Invoke Agent for Ant business scenarios.
+    note: >
+      gen_ai.span.kind = AGENT. Span Kind may be CLIENT (remote) or INTERNAL (in-process).
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `AGENT`"
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: gen_ai.agent.id
+        requirement_level: required
+      - ref: gen_ai.agent.name
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.response.time_to_first_token
+        requirement_level: required
+      # Conditionally Required
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: http.response.status_code
+        requirement_level:
+          conditionally_required: "For HTTP-based calls"
+      # Recommended
+      - ref: gen_ai.agent.version
+        requirement_level: recommended
+      - ref: traffic.source
+        requirement_level: recommended
+      - ref: business.scene
+        requirement_level: recommended
+      - ref: business.app_id
+        requirement_level: recommended
+      - ref: agentic.runtime.name
+        requirement_level: recommended
+      - ref: agentic.runtime.version
+        requirement_level: recommended
+      - ref: agentic.runtime.cwd
+        requirement_level: recommended
+      - ref: agentic.turn.id
+        requirement_level: recommended
+      # Conditionally Required - Evaluation pipeline
+      - ref: eval.trace_source
+        requirement_level:
+          conditionally_required: "Required for evaluation scenarios"
+      - ref: eval.dataset.id
+        requirement_level:
+          conditionally_required: "Required for evaluation scenarios"
+      - ref: eval.prompt.id
+        requirement_level:
+          conditionally_required: "Required for evaluation scenarios"
+      - ref: eval.case.id
+        requirement_level:
+          conditionally_required: "Required for evaluation scenarios"
+      - ref: eval.case.type
+        requirement_level:
+          conditionally_required: "Required for evaluation scenarios"
+
+  - id: span.ant.llm
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Model service invocation span. Records a single LLM API call.
+    note: >
+      gen_ai.span.kind = LLM.
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `LLM`"
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: gen_ai.request.model
+        requirement_level: required
+      # Conditionally Required
+      - ref: http.response.status_code
+        requirement_level:
+          conditionally_required: "For HTTP-based calls"
+      # Recommended
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: gen_ai.request.temperature
+        requirement_level: recommended
+      - ref: gen_ai.request.max_tokens
+        requirement_level: recommended
+      - ref: gen_ai.response.time_to_first_token
+        requirement_level: recommended
+      - ref: gen_ai.usage.input_tokens
+        requirement_level:
+          conditionally_required: "Unless agentic.usage.input_tokens.missing is the exact string 'true'"
+        note: "Preserve reported zero. Unknown input may be omitted only with its own missing marker, never an output marker."
+      - ref: gen_ai.usage.output_tokens
+        requirement_level:
+          conditionally_required: "Unless agentic.usage.output_tokens.missing is the exact string 'true'"
+        note: "Preserve reported zero. Unknown output may be omitted only with its own missing marker, never an input marker."
+      - ref: gen_ai.usage.total_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.details.cache_read_input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.details.cache_creation_input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.details.cache_hit_rate
+        requirement_level: recommended
+      - ref: agentic.turn.index
+        requirement_level: recommended
+      - ref: agentic.response.index
+        requirement_level: recommended
+      - ref: agentic.tool.count
+        requirement_level: recommended
+      # Opt-In
+      - ref: agentic.llm.auxiliary
+        requirement_level: opt_in
+        note: "Only runtime-observed native auxiliary calls; retain standalone LLM context and an aux:<agent>:<official message id> chat identifier."
+      - ref: gen_ai.agent.name
+        requirement_level:
+          conditionally_required: "When agentic.llm.auxiliary is true"
+      - ref: agentic.input.delta
+        requirement_level: opt_in
+      - ref: agentic.usage.input_tokens.missing
+        requirement_level: opt_in
+        note: "Exact string 'true' only; marks input unknown without waiving output or non-usage fields."
+      - ref: agentic.usage.output_tokens.missing
+        requirement_level: opt_in
+        note: "Exact string 'true' only; marks output unknown without waiving input or non-usage fields."
+
+  - id: span.ant.tool
+    type: span
+    span_kind: internal
+    stability: experimental
+    brief: >
+      Tool invocation span. Corresponds to OTel Execute Tool span.
+      Covers all tool types: builtin, MCP server calls, and Skill invocations,
+      plus explicitly marked derived Skill-load observations.
+      Use `agentic.tool.type` to distinguish.
+    note: >
+      gen_ai.span.kind = TOOL. Span Name: `execute_tool {gen_ai.tool.name}`.
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `TOOL`"
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      # Conditionally Required - agentic.tool classification
+      - ref: agentic.tool.type
+        requirement_level:
+          conditionally_required: "When the tool is classified as Skill/MCP from raw name or runtime-specific evidence"
+        note: >
+          Inferred from raw name or runtime-specific evidence:
+          `mcp__*` → mcp, literal `Skill` → skill. A successful catalog-correlated
+          `SKILL.md` read remains builtin and is followed by a linked,
+          zero-duration derived `Skill` span; otherwise → builtin.
+      - ref: agentic.tool.name
+        requirement_level:
+          conditionally_required: "When the tool is classified as Skill/MCP from raw name or runtime-specific evidence"
+        note: >
+          Parsed logical name. Examples:
+          builtin: `Read`; mcp: `code_search.query_code_with_keyword`;
+          skill: `eve-beta-skill`.
+      - ref: agentic.tool.id
+        requirement_level:
+          conditionally_required: "When the tool is classified as Skill/MCP from raw name or runtime-specific evidence"
+        note: >
+          Usually equals `gen_ai.tool.call.id`.
+          For skill without real id, synthetic `skill-{name}`.
+      # Recommended
+      - ref: gen_ai.tool.call.id
+        requirement_level: recommended
+      - ref: gen_ai.tool.name
+        requirement_level: recommended
+      - ref: gen_ai.tool.type
+        requirement_level: recommended
+      - ref: agentic.tool.raw_name
+        requirement_level: recommended
+        note: "Original tool name from agent runtime before display-friendly parsing; a derived Skill load records its source name such as `read`."
+      - ref: agentic.tool.derived
+        requirement_level:
+          conditionally_required: "When the span is a derived Skill-load observation"
+      - ref: agentic.tool.call_id.synthetic
+        requirement_level:
+          conditionally_required: "When gen_ai.tool.call.id is synthesized locally"
+      - ref: code.tool.name
+        requirement_level: recommended
+      - ref: code.tool.exit_code
+        requirement_level: recommended
+      - ref: code.file.operation
+        requirement_level: recommended
+      - ref: code.file.path
+        requirement_level: recommended
+
+  - id: span.ant.mcp
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      MCP protocol invocation span.
+    note: >
+      gen_ai.span.kind = MCP.
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `MCP`"
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: mcp.server_id
+        requirement_level: required
+      - ref: mcp.request_type
+        requirement_level: required
+      # Conditionally Required
+      - ref: mcp.tool_name
+        requirement_level:
+          conditionally_required: "Required for tools/call requests"
+
+  - id: span.ant.retriever
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Retrieval operation span. Queries vector databases or search systems.
+    note: >
+      gen_ai.span.kind = RETRIEVER.
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `RETRIEVER`"
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: retrieval.kind
+        requirement_level: required
+      - ref: retrieval.system
+        requirement_level: required
+      - ref: retrieval.request.top_k
+        requirement_level: required
+      # Recommended
+      - ref: retrieval.query
+        requirement_level: recommended
+
+  - id: span.ant.reranker
+    type: span
+    span_kind: internal
+    stability: experimental
+    brief: >
+      Reranking operation span.
+    note: >
+      gen_ai.span.kind = RERANKER.
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `RERANKER`"
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: reranker.model_name
+        requirement_level: required
+      # Recommended
+      - ref: reranker.top_k
+        requirement_level: recommended
+
+  - id: span.ant.embedding
+    type: span
+    span_kind: client
+    stability: experimental
+    brief: >
+      Embedding operation span. Text vectorization.
+    note: >
+      gen_ai.span.kind = EMBEDDING.
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `EMBEDDING`"
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      # Recommended
+      - ref: gen_ai.usage.input_tokens
+        requirement_level: recommended
+      - ref: gen_ai.usage.total_tokens
+        requirement_level: recommended
+      - ref: embedding.model_name
+        requirement_level: recommended
+
+  - id: span.ant.guardrail
+    type: span
+    span_kind: internal
+    stability: experimental
+    brief: >
+      Content safety guardrail span.
+    note: >
+      gen_ai.span.kind = GUARDRAIL.
+    attributes:
+      # Required
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `GUARDRAIL`"
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: guardrail.input
+        requirement_level: required
+      - ref: guardrail.result
+        requirement_level: required
+      - ref: guardrail.action
+        requirement_level: required
+
+  - id: span.ant.compaction
+    type: span
+    span_kind: internal
+    stability: experimental
+    brief: >
+      Explicit context compaction operation observed from an agent runtime.
+      History-size heuristics alone must not create this span.
+    note: >
+      gen_ai.span.kind = COMPACTION. Emit only when the runtime provides an
+      explicit compaction lifecycle signal.
+    attributes:
+      - ref: gen_ai.span.kind
+        requirement_level: required
+        note: "Fixed value: `COMPACTION`"
+      - ref: user.id
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: required
+      - ref: gen_ai.chat.id
+        requirement_level: required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+        note: "Fixed value: `execute_tool`"
+      - ref: agentic.compaction.trigger
+        requirement_level: recommended
+      - ref: agentic.compaction.tokens.before
+        requirement_level: recommended
+      - ref: agentic.compaction.tokens.after
+        requirement_level: recommended

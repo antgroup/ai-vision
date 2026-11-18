@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-03-29T09:26:25.196174",
+  "input_file": "weaver/testdata/invalid_spans.json",
+  "total_spans": 2,
+  "passed": 0,
+  "failed": 2,
+  "total_violations": 4,
+  "total_warnings": 3,
+  "results": [
+    {
+      "index": 0,
+      "span_name": "invalid_root_span",
+      "span_id": "dddddddddddddddd",
+      "parent_span_id": "",
+      "validation": {
+        "violations": [
+          "Span 'invalid_root_span': Invalid source value 'invalid-source'",
+          "Span 'invalid_root_span': Missing required attribute 'user.name' (or 'ant.username') on root span"
+        ],
+        "warnings": [
+          "Span 'invalid_root_span': Missing telemetry SDK identification"
+        ],
+        "pass": false
+      }
+    },
+    {
+      "index": 1,
+      "span_name": "invalid_generation",
+      "span_id": "eeeeeeeeeeeeeeee",
+      "parent_span_id": "dddddddddddddddd",
+      "validation": {
+        "violations": [
+          "Span 'invalid_generation': Invalid gen_ai.system value 'unknown-provider'",
+          "Span 'invalid_generation': Negative gen_ai.usage.input_tokens value"
+        ],
+        "warnings": [
+          "Span 'invalid_generation': Missing recommended attribute 'gen_ai.request.model' on generation span",
+          "Span 'invalid_generation': Missing telemetry SDK identification"
+        ],
+        "pass": false
+      }
+    }
+  ]
+}

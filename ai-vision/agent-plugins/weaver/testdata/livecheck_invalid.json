@@ -1,0 +1,22 @@
+[
+    {
+        "span": {
+            "name": "ai_agent.turn",
+            "kind": "server",
+            "attributes": [
+                {"name": "session.id", "value": "sess_xyz456"},
+                {"name": "source", "value": "invalid-source"}
+            ]
+        }
+    },
+    {
+        "span": {
+            "name": "ai_agent.generation",
+            "kind": "client",
+            "attributes": [
+                {"name": "gen_ai.system", "value": "unknown-provider"},
+                {"name": "gen_ai.usage.input_tokens", "value": -100}
+            ]
+        }
+    }
+]

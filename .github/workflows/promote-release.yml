@@ -1,0 +1,90 @@
+name: Promote qualified Daily or Dev
+
+# Explicit promotion reuses a successful frozen candidate; it never rebuilds.
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: Successful Release images workflow run ID from the current default branch head
+        type: string
+        required: true
+      candidate_run_attempt:
+        description: Exact successful candidate attempt (a newer rerun supersedes older acceptance)
+        type: string
+        required: true
+        default: '1'
+      recover_dev_publication:
+        description: Recover an exact Dev candidate whose only failure was publication
+        type: boolean
+        default: false
+
+concurrency:
+  group: release-images
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  promote:
+    if: >-
+      github.repository == 'antgroup/ai-vision' &&
+      github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Download the selected candidate assets and frozen acceptance
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          RECOVER_DEV_PUBLICATION: ${{ inputs.recover_dev_publication }}
+        run: |
+          set -euo pipefail
+          if [[ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')" != public ]]; then
+            echo '::error::Public image promotion requires a public product repository.'
+            exit 1
+          fi
+          recovery=()
+          if [[ "$RECOVER_DEV_PUBLICATION" == true ]]; then recovery+=(--recover-dev-publication); fi
+          [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
+          [[ "$CANDIDATE_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
+          gh run download "$CANDIDATE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "release-assets-$CANDIDATE_RUN_ATTEMPT" --dir release
+          gh run download "$CANDIDATE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "release-acceptance-$CANDIDATE_RUN_ATTEMPT" --dir acceptance
+          python3 scripts/ci/release_candidate.py verify --directory release \
+            --acceptance acceptance/candidate-acceptance.json \
+            --candidate-run-id "$CANDIDATE_RUN_ID" --candidate-run-attempt "$CANDIDATE_RUN_ATTEMPT" \
+            --output "$RUNNER_TEMP/promotion/candidate-verification.json" "${recovery[@]}"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish exact accepted bytes and read back before moving aliases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+          CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
+          RECOVER_DEV_PUBLICATION: ${{ inputs.recover_dev_publication }}
+        run: |
+          set -euo pipefail
+          recovery=()
+          if [[ "$RECOVER_DEV_PUBLICATION" == true ]]; then recovery+=(--recover-dev-publication); fi
+          python3 scripts/ci/release_publish.py publish --directory release \
+            --candidate-acceptance acceptance/candidate-acceptance.json \
+            --candidate-run-id "$CANDIDATE_RUN_ID" --candidate-run-attempt "$CANDIDATE_RUN_ATTEMPT" \
+            --receipt "$RUNNER_TEMP/promotion/publication-receipt.json" "${recovery[@]}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: promotion-receipts-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/promotion/*.json
+          if-no-files-found: error
+          retention-days: 30

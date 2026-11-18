@@ -1,0 +1,83 @@
+{
+  "source_sha": "historical-source-revision-redacted",
+  "baseline_sha": "historical-source-revision-redacted",
+  "captured_on": "2026-11-11",
+  "environment": {
+    "os": "macOS",
+    "node": "24.18.0",
+    "playwright": "1.58.2",
+    "browser": "Chrome 149.0.7827.156",
+    "viewport": "1440x1000",
+    "locale": "zh-CN",
+    "theme": "light"
+  },
+  "data": "Synthetic local API fixtures from ai-vision/vfe/tests/e2e/productGuide.fixtures.ts; no live services or real evaluations.",
+  "checks": {
+    "build": "passed (includes TypeScript compilation); existing large-chunk advisory",
+    "scoped_eslint": "passed, zero warnings",
+    "scoped_prettier": "passed",
+    "unit_dom_tests": {
+      "onboarding": 79,
+      "diagnosis_i18n_framework_lifecycle": 146,
+      "failed": 0
+    },
+    "playwright": {
+      "passed": 22,
+      "failed": 0
+    },
+    "visual_probe": {
+      "page_errors": 0,
+      "unexpected_requests": 0,
+      "automatic_diagnosis_runs": 0,
+      "explicit_fixture_diagnosis_runs": 1
+    },
+    "i18n_after_copy_review": {
+      "passed": 11,
+      "failed": 0
+    }
+  },
+  "images": {
+    "before-dashboard.png": {
+      "sha256": "a730130ac16169687d2d1cfcf36f4b8ce9873e0a9bcd78480a01a11ea83e103c",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "after-connect.png": {
+      "sha256": "2bb85dfa973d9e97619a1b558610f78b84a06165524eb6c9adc84ea7a05864ef",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "after-verification.png": {
+      "sha256": "b2e998725258829afa92cd47cbbe9b9428b3c3db2095aa98348c91d72402f444",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "after-open-diagnosis.png": {
+      "sha256": "c4637f33a04936a0c3d22c8d4edc8179daab932930abc4f98f49ca46e82e49b3",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "after-run-diagnosis.png": {
+      "sha256": "0d66432f2673252938d6adb28fadcb893a47d7f7d14ccdc400428e4ed48ddccb",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "after-result.png": {
+      "sha256": "a4d7b7436048223e8c37de6ac8c4fd298de5e0f203581f3b487c84284a7165cc",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "dashboard-01-metrics.png": {
+      "sha256": "5f624676f3cf798c70b16554606a8a5ab8eb0d13acacdfbfd8c7f80816d586e9",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "dashboard-02-usage.png": {
+      "sha256": "cc3804ceed31c71ff864acebe1eeaeadce51715187fdfeecab5cc5998d3de0cd",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "dashboard-03-trend.png": {
+      "sha256": "1313f11e8c4865cf29deef834dada3edabc5a979b33f60f972cf60b76b03e3b2",
+      "source_sha": "historical-source-revision-redacted"
+    },
+    "dashboard-04-operations.png": {
+      "sha256": "5111f2c065dfe45b00eb047d3868fe0975d15e23ab7265392c74763bcb6c0a5d",
+      "source_sha": "historical-source-revision-redacted"
+    }
+  },
+  "initial_source_sha": "historical-source-revision-redacted",
+  "dashboard_scope": "The selected framework application needs a successful positive Trace count for the current time window. Only populated/ready panels are narrated; empty or failed panels are skipped. Test data is synthetic. Help > Dashboard walkthrough replays the flow."
+}

@@ -1,0 +1,408 @@
+# Generated from deploy/blueprints/aivision.yaml; run renderproduct to refresh.
+name: ${NAMESPACE:-aivision}
+networks:
+    stack:
+        name: ${DOCKER_NETWORK:-aivision-net}
+services:
+    backend:
+        container_name: ${BACKEND_CONTAINER:-${BE_CONTAINER:-${NAMESPACE:-aivision}-backend}}
+        depends_on:
+            data-backend-ready:
+                condition: service_completed_successfully
+            database-init:
+                condition: service_completed_successfully
+        environment:
+            AGENTLENS_BASE_URL: http://${DIAGNOSIS_CONTAINER:-${AGENTLENS_CONTAINER:-${NAMESPACE:-aivision}-diagnosis}}:${DIAGNOSIS_PORT:-${AGENTLENS_PORT:-8081}}
+            AGENTLENS_TOKEN: ${AGENTLENS_TOKEN:?set AGENTLENS_TOKEN in the private env file}
+            AIVISION_INGEST_SECRET: ${AIVISION_INGEST_SECRET:?set AIVISION_INGEST_SECRET in the private env file}
+            AIVISION_LOG_DIR: ${AIV_LOG_DIR:?set absolute AIV_LOG_DIR}/be-runtime
+            AIVISION_NATIVE_TRACE_FUTURE_SKEW_SECONDS: ${AIVISION_NATIVE_TRACE_FUTURE_SKEW_SECONDS:-300}
+            AIVISION_NATIVE_TRACE_HISTORY_START: ${AIVISION_NATIVE_TRACE_HISTORY_START:?set fixed UTC retained-history bound}
+            AIVISION_NATIVE_TRACE_MAX_WINDOWS: ${AIVISION_NATIVE_TRACE_MAX_WINDOWS:-120}
+            AIVISION_OTLP_INGEST_ENDPOINT: http://${PUBLIC_HOST:-127.0.0.1}:${INGEST_GATEWAY_HTTP_PORT:-${GATEWAY_HTTP_PORT:-4318}}
+            AIVISION_OTLP_UPSTREAM_ENDPOINT: http://${INGEST_GATEWAY_CONTAINER:-${GATEWAY_CONTAINER:-${NAMESPACE:-aivision}-ingest-gateway}}:4318
+            AIVISION_PUBLIC_BASE_URL: http://${PUBLIC_HOST:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+            AIVISION_QUERY_MODE: ${BACKEND_QUERY_MODE:-${AIVISION_QUERY_MODE:-auto}}
+            AIVISION_RELEASE_MANIFEST_BASE64: ${AIVISION_RELEASE_MANIFEST_BASE64:-}
+            AIVISION_TRACE_QUERY_CONCURRENCY: ${AIVISION_TRACE_QUERY_CONCURRENCY:-2}
+            AIVISION_TRACE_REQUEST_MAX_BYTES: ${AIVISION_TRACE_REQUEST_MAX_BYTES:-67108864}
+            AIVISION_TRACE_RESPONSE_MAX_BYTES: ${AIVISION_TRACE_RESPONSE_MAX_BYTES:-33554432}
+            ALLOWED_HOSTS: localhost,127.0.0.1,${PUBLIC_HOST:-127.0.0.1},${BACKEND_CONTAINER:-${BE_CONTAINER:-${NAMESPACE:-aivision}-backend}}
+            BE_PORT: ${BACKEND_PORT:-${BE_PORT:-8001}}
+            CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-${FE_PORT:-5174}},http://127.0.0.1:${FRONTEND_PORT:-${FE_PORT:-5174}},http://${PUBLIC_HOST:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+            CSRF_TRUSTED_ORIGINS: http://localhost:${FRONTEND_PORT:-${FE_PORT:-5174}},http://127.0.0.1:${FRONTEND_PORT:-${FE_PORT:-5174}},http://${PUBLIC_HOST:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+            DB_ENGINE: aivision_backend.db_backends.mysql_connector_oceanbase
+            DB_HOST: ${DATABASE_HOST:-${OB_HOST:-${DATABASE_CONTAINER:-${OB_CONTAINER:-${NAMESPACE:-aivision}-database}}}}
+            DB_NAME: aivision
+            DB_PASSWORD: ${OB_TENANT_PASSWORD:?set OB_TENANT_PASSWORD in the private env file}
+            DB_PORT: ${DATABASE_HOST_PORT:-${OB_HOST_PORT:-2881}}
+            DB_USER: ${DATABASE_USER:-${OB_USER:-root@${OB_TENANT:-aivision}}}
+            SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in the private env file}
+            SIGNOZ_INTERNAL_URL: http://${DATA_BACKEND_CONTAINER:-${SIGNOZ_CONTAINER:-${NAMESPACE:-aivision}-data-backend}}:8080
+            SIGNOZ_ROOT_EMAIL: ${SIGNOZ_ROOT_EMAIL:-main-local-test@example.com}
+            SIGNOZ_ROOT_ORG_NAME: ${SIGNOZ_ROOT_ORG_NAME:-OceanBase main local verification}
+            SIGNOZ_USER_ROOT_PASSWORD: ${SIGNOZ_USER_ROOT_PASSWORD:?set SIGNOZ_USER_ROOT_PASSWORD in the private env file}
+            SITE_URL: http://${PUBLIC_HOST:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+        healthcheck:
+            interval: 10s
+            retries: 3
+            start_period: 600s
+            test:
+                - CMD
+                - python
+                - -c
+                - import urllib.request; r=urllib.request.urlopen("http://127.0.0.1:${BACKEND_PORT:-${BE_PORT:-8001}}/api/v1/ready",timeout=3); assert r.status==200
+            timeout: 8s
+        image: ${BACKEND_IMAGE:-${BE_IMAGE:-${IMAGE_REGISTRY:-ghcr.io/antgroup/ai-vision/backend}${IMAGE_REGISTRY:+/aivision-be}:${IMAGE_TAG:-latest}}}
+        labels:
+            io.aivision.component: backend
+            io.aivision.product: aivision
+        mem_limit: ${BE_CONTAINER_MEMORY:-2G}
+        networks:
+            stack:
+                aliases:
+                    - backend
+                    - be
+        ports:
+            - 127.0.0.1:${BACKEND_PORT:-${BE_PORT:-8001}}:${BACKEND_PORT:-${BE_PORT:-8001}}
+        pull_policy: ${IMAGE_PULL:-missing}
+        restart: unless-stopped
+        stop_grace_period: 60s
+        volumes:
+            - ${AIV_LOG_DIR:?set absolute AIV_LOG_DIR}:${AIV_LOG_DIR:?set absolute AIV_LOG_DIR}
+    backend-bootstrap:
+        depends_on:
+            backend:
+                condition: service_healthy
+        entrypoint:
+            - /bin/sh
+            - -ec
+            - if [ -x /app/backend-bootstrap ]; then exec /app/backend-bootstrap "$@"; fi; exec python /opt/aivision/bootstrap/backend-bootstrap.py "$@"
+            - aiv-bootstrap
+        environment:
+            AGENTLENS_BASE_URL: http://${DIAGNOSIS_CONTAINER:-${AGENTLENS_CONTAINER:-${NAMESPACE:-aivision}-diagnosis}}:${DIAGNOSIS_PORT:-${AGENTLENS_PORT:-8081}}
+            AGENTLENS_TOKEN: ${AGENTLENS_TOKEN:?set AGENTLENS_TOKEN in the private env file}
+            AIVISION_INGEST_SECRET: ${AIVISION_INGEST_SECRET:?set AIVISION_INGEST_SECRET in the private env file}
+            AIVISION_LOG_DIR: ${AIV_LOG_DIR:?set absolute AIV_LOG_DIR}/be-runtime
+            AIVISION_NATIVE_TRACE_FUTURE_SKEW_SECONDS: ${AIVISION_NATIVE_TRACE_FUTURE_SKEW_SECONDS:-300}
+            AIVISION_NATIVE_TRACE_HISTORY_START: ${AIVISION_NATIVE_TRACE_HISTORY_START:?set fixed UTC retained-history bound}
+            AIVISION_NATIVE_TRACE_MAX_WINDOWS: ${AIVISION_NATIVE_TRACE_MAX_WINDOWS:-120}
+            AIVISION_OTLP_INGEST_ENDPOINT: http://${PUBLIC_HOST:-127.0.0.1}:${INGEST_GATEWAY_HTTP_PORT:-${GATEWAY_HTTP_PORT:-4318}}
+            AIVISION_OTLP_UPSTREAM_ENDPOINT: http://${INGEST_GATEWAY_CONTAINER:-${GATEWAY_CONTAINER:-${NAMESPACE:-aivision}-ingest-gateway}}:4318
+            AIVISION_PUBLIC_BASE_URL: http://${PUBLIC_HOST:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+            AIVISION_QUERY_MODE: ${BACKEND_QUERY_MODE:-${AIVISION_QUERY_MODE:-auto}}
+            AIVISION_RELEASE_MANIFEST_BASE64: ${AIVISION_RELEASE_MANIFEST_BASE64:-}
+            AIVISION_TRACE_QUERY_CONCURRENCY: ${AIVISION_TRACE_QUERY_CONCURRENCY:-2}
+            AIVISION_TRACE_REQUEST_MAX_BYTES: ${AIVISION_TRACE_REQUEST_MAX_BYTES:-67108864}
+            AIVISION_TRACE_RESPONSE_MAX_BYTES: ${AIVISION_TRACE_RESPONSE_MAX_BYTES:-33554432}
+            ALLOWED_HOSTS: localhost,127.0.0.1,${PUBLIC_HOST:-127.0.0.1},${BACKEND_CONTAINER:-${BE_CONTAINER:-${NAMESPACE:-aivision}-backend}}
+            BE_PORT: ${BACKEND_PORT:-${BE_PORT:-8001}}
+            CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-${FE_PORT:-5174}},http://127.0.0.1:${FRONTEND_PORT:-${FE_PORT:-5174}},http://${PUBLIC_HOST:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+            CSRF_TRUSTED_ORIGINS: http://localhost:${FRONTEND_PORT:-${FE_PORT:-5174}},http://127.0.0.1:${FRONTEND_PORT:-${FE_PORT:-5174}},http://${PUBLIC_HOST:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+            DB_ENGINE: aivision_backend.db_backends.mysql_connector_oceanbase
+            DB_HOST: ${DATABASE_HOST:-${OB_HOST:-${DATABASE_CONTAINER:-${OB_CONTAINER:-${NAMESPACE:-aivision}-database}}}}
+            DB_NAME: aivision
+            DB_PASSWORD: ${OB_TENANT_PASSWORD:?set OB_TENANT_PASSWORD in the private env file}
+            DB_PORT: ${DATABASE_HOST_PORT:-${OB_HOST_PORT:-2881}}
+            DB_USER: ${DATABASE_USER:-${OB_USER:-root@${OB_TENANT:-aivision}}}
+            SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in the private env file}
+            SIGNOZ_INTERNAL_URL: http://${DATA_BACKEND_CONTAINER:-${SIGNOZ_CONTAINER:-${NAMESPACE:-aivision}-data-backend}}:8080
+            SIGNOZ_ROOT_EMAIL: ${SIGNOZ_ROOT_EMAIL:-main-local-test@example.com}
+            SIGNOZ_ROOT_ORG_NAME: ${SIGNOZ_ROOT_ORG_NAME:-OceanBase main local verification}
+            SIGNOZ_USER_ROOT_PASSWORD: ${SIGNOZ_USER_ROOT_PASSWORD:?set SIGNOZ_USER_ROOT_PASSWORD in the private env file}
+            SITE_URL: http://${PUBLIC_HOST:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+        image: ${BACKEND_IMAGE:-${BE_IMAGE:-${IMAGE_REGISTRY:-ghcr.io/antgroup/ai-vision/backend}${IMAGE_REGISTRY:+/aivision-be}:${IMAGE_TAG:-latest}}}
+        labels:
+            io.aivision.component: backend-bootstrap
+            io.aivision.product: aivision
+        networks:
+            - stack
+        restart: "no"
+        volumes:
+            - ../bootstrap:/opt/aivision/bootstrap:ro
+            - runtime:/run/aivision
+    data-backend:
+        container_name: ${DATA_BACKEND_CONTAINER:-${SIGNOZ_CONTAINER:-${NAMESPACE:-aivision}-data-backend}}
+        depends_on:
+            database-init:
+                condition: service_completed_successfully
+        environment:
+            SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED: ${DATA_BACKEND_PROJECTION_MAINTENANCE_ENABLED:-${SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED:-true}}
+            SIGNOZ_ANALYTICS_ENABLED: "false"
+            SIGNOZ_INGEST_INTERNAL_KEY: ${SIGNOZ_INGEST_INTERNAL_KEY:?set SIGNOZ_INGEST_INTERNAL_KEY in the private env file}
+            SIGNOZ_INSTRUMENTATION_METRICS_ENABLED: "false"
+            SIGNOZ_STATSREPORTER_ENABLED: "false"
+            SIGNOZ_TELEMETRYSTORE_OCEANBASE_DSN: ${OCEANBASE_DSN:-${DATABASE_USER:-${OB_USER:-root@${OB_TENANT:-aivision}}}:${OB_TENANT_PASSWORD:?set OB_TENANT_PASSWORD in the private env file}@tcp(${DATABASE_HOST:-${OB_HOST:-${DATABASE_CONTAINER:-${OB_CONTAINER:-${NAMESPACE:-aivision}-database}}}}:${DATABASE_HOST_PORT:-${OB_HOST_PORT:-2881}})/signoz?charset=utf8mb4}
+            SIGNOZ_TELEMETRYSTORE_PROVIDER: oceanbase
+            SIGNOZ_USER_ROOT_ENABLED: "false"
+            SIGNOZ_WEB_ENABLED: "false"
+        healthcheck:
+            interval: 10s
+            retries: 3
+            start_period: 60s
+            test:
+                - CMD
+                - /app/signoz
+                - healthcheck
+                - --ready
+            timeout: 8s
+        image: ${DATA_BACKEND_IMAGE:-${SIGNOZ_IMAGE:-${IMAGE_REGISTRY:-ghcr.io/antgroup/ai-vision/data-backend}${IMAGE_REGISTRY:+/signoz-ob}:${IMAGE_TAG:-latest}}}
+        labels:
+            io.aivision.component: data-backend
+            io.aivision.product: aivision
+        mem_limit: ${SIGNOZ_CONTAINER_MEMORY:-2G}
+        networks:
+            stack:
+                aliases:
+                    - data-backend
+                    - signoz-ob
+        ports:
+            - 127.0.0.1:${DATA_BACKEND_PORT:-${SIGNOZ_PORT:-18091}}:8080
+        pull_policy: ${IMAGE_PULL:-missing}
+        restart: unless-stopped
+        stop_grace_period: 60s
+        volumes:
+            - ${DATA_BACKEND_METASTORE_DIR:-${SIGNOZ_METASTORE_DIR:-${AIV_STATE_DIR:?set absolute AIV_STATE_DIR}/signoz-metastore}}:/var/lib/signoz
+    data-backend-ready:
+        command:
+            - http://${DATA_BACKEND_CONTAINER:-${SIGNOZ_CONTAINER:-${NAMESPACE:-aivision}-data-backend}}:8080/api/v1/ready
+        depends_on:
+            data-backend:
+                condition: service_started
+        entrypoint:
+            - /bin/sh
+            - -ec
+            - if [ -x /app/wait-http ]; then exec /app/wait-http "$@"; fi; exec python /opt/aivision/bootstrap/wait-http.py "$@"
+            - aiv-bootstrap
+        image: ${BACKEND_IMAGE:-${BE_IMAGE:-${IMAGE_REGISTRY:-ghcr.io/antgroup/ai-vision/backend}${IMAGE_REGISTRY:+/aivision-be}:${IMAGE_TAG:-latest}}}
+        labels:
+            io.aivision.component: data-backend-ready
+            io.aivision.product: aivision
+        networks:
+            - stack
+        restart: "no"
+        volumes:
+            - ../bootstrap:/opt/aivision/bootstrap:ro
+    database:
+        container_name: ${DATABASE_CONTAINER:-${OB_CONTAINER:-${NAMESPACE:-aivision}-database}}
+        entrypoint:
+            - /bin/sh
+            - /opt/aivision/bootstrap/oceanbase.sh
+        environment:
+            MODE: ${OB_MODE:-mini}
+            OB_DATAFILE_SIZE: ${OB_DATAFILE_SIZE:-}
+            OB_LOG_DISK_SIZE: ${OB_LOG_DISK_SIZE:-}
+            OB_MEMORY_LIMIT: ${OB_MEMORY_LIMIT:-}
+            OB_SYS_PASSWORD: ${OB_SYS_PASSWORD:?set OB_SYS_PASSWORD in the private env file}
+            OB_TENANT_NAME: ${OB_TENANT:-aivision}
+            OB_TENANT_PASSWORD: ${OB_TENANT_PASSWORD:?set OB_TENANT_PASSWORD in the private env file}
+        healthcheck:
+            interval: 10s
+            retries: 3
+            start_period: 600s
+            test:
+                - CMD-SHELL
+                - MYSQL_PWD="$$OB_TENANT_PASSWORD" timeout --signal=TERM --kill-after=1s 3s obclient -h127.0.0.1 -P2881 -u"root@$$OB_TENANT_NAME" -e 'SELECT 1' >/dev/null 2>&1
+            timeout: 8s
+        image: ${DATABASE_IMAGE:-${OB_IMAGE:-oceanbase/oceanbase-ce:latest}}
+        labels:
+            io.aivision.component: database
+            io.aivision.product: aivision
+        networks:
+            stack:
+                aliases:
+                    - database
+                    - oceanbase
+        ports:
+            - 127.0.0.1:${DATABASE_PORT:-${OB_PORT:-2881}}:2881
+        pull_policy: ${IMAGE_PULL:-missing}
+        restart: unless-stopped
+        stop_grace_period: 120s
+        volumes:
+            - database-data-0:/root/ob
+            - database-data-1:/root/.obd/cluster
+            - ../bootstrap:/opt/aivision/bootstrap:ro
+    database-init:
+        depends_on:
+            database:
+                condition: service_healthy
+        entrypoint:
+            - /bin/sh
+            - -ec
+            - if [ -x /app/database-init ]; then exec /app/database-init "$@"; fi; exec python /opt/aivision/bootstrap/database-init.py "$@"
+            - aiv-bootstrap
+        environment:
+            OB_ATTEMPTS: "200"
+            OB_HOST: ${DATABASE_HOST:-${OB_HOST:-${DATABASE_CONTAINER:-${OB_CONTAINER:-${NAMESPACE:-aivision}-database}}}}
+            OB_HOST_PORT: ${DATABASE_HOST_PORT:-${OB_HOST_PORT:-2881}}
+            OB_TENANT_PASSWORD: ${OB_TENANT_PASSWORD:?set OB_TENANT_PASSWORD in the private env file}
+            OB_USER: ${DATABASE_USER:-${OB_USER:-root@${OB_TENANT:-aivision}}}
+        image: ${DIAGNOSIS_IMAGE:-${AGENTLENS_IMAGE:-${IMAGE_REGISTRY:-ghcr.io/antgroup/ai-vision/diagnosis}${IMAGE_REGISTRY:+/agentlens}:${IMAGE_TAG:-latest}}}
+        labels:
+            io.aivision.component: database-init
+            io.aivision.product: aivision
+        networks:
+            - stack
+        restart: "no"
+        volumes:
+            - ../bootstrap:/opt/aivision/bootstrap:ro
+    diagnosis:
+        container_name: ${DIAGNOSIS_CONTAINER:-${AGENTLENS_CONTAINER:-${NAMESPACE:-aivision}-diagnosis}}
+        depends_on:
+            backend-bootstrap:
+                condition: service_completed_successfully
+            ingest-gateway:
+                condition: service_healthy
+        environment:
+            AGENTLENS_LOG_DIR: ${AIV_LOG_DIR:?set absolute AIV_LOG_DIR}/agentlens
+            AGENTLENS_LOG_STDOUT: "true"
+            AGENTLENS_OB_URL: mysql+pymysql://${OB_USER_URL:-root%40${OB_TENANT:-aivision}}:${OB_TENANT_PASSWORD:?set OB_TENANT_PASSWORD in the private env file}@${DATABASE_HOST:-${OB_HOST:-${DATABASE_CONTAINER:-${OB_CONTAINER:-${NAMESPACE:-aivision}-database}}}}:${DATABASE_HOST_PORT:-${OB_HOST_PORT:-2881}}/agentlens?charset=utf8mb4
+            AGENTLENS_PORT: ${DIAGNOSIS_PORT:-${AGENTLENS_PORT:-8081}}
+            AGENTLENS_TOKEN: ${AGENTLENS_TOKEN:?set AGENTLENS_TOKEN in the private env file}
+            AIVISION_INGEST_TOKEN_URL: http://${BACKEND_CONTAINER:-${BE_CONTAINER:-${NAMESPACE:-aivision}-backend}}:${BACKEND_PORT:-${BE_PORT:-8001}}/api/internal/agentlens/ingest-tokens
+            ANTCOLLECTOR_ENDPOINT: http://${INGEST_GATEWAY_CONTAINER:-${GATEWAY_CONTAINER:-${NAMESPACE:-aivision}-ingest-gateway}}:4318/v1/traces
+            SIGNOZ_OB_URL: mysql+pymysql://${OB_USER_URL:-root%40${OB_TENANT:-aivision}}:${OB_TENANT_PASSWORD:?set OB_TENANT_PASSWORD in the private env file}@${DATABASE_HOST:-${OB_HOST:-${DATABASE_CONTAINER:-${OB_CONTAINER:-${NAMESPACE:-aivision}-database}}}}:${DATABASE_HOST_PORT:-${OB_HOST_PORT:-2881}}/signoz?charset=utf8mb4
+            SIGNOZ_ORG_ID_FILE: /run/aivision/org-id
+        healthcheck:
+            interval: 10s
+            retries: 3
+            start_period: 180s
+            test:
+                - CMD
+                - python
+                - -c
+                - import urllib.request; r=urllib.request.urlopen("http://127.0.0.1:${DIAGNOSIS_PORT:-${AGENTLENS_PORT:-8081}}/internal/readyz",timeout=3); assert r.status==200
+            timeout: 8s
+        image: ${DIAGNOSIS_IMAGE:-${AGENTLENS_IMAGE:-${IMAGE_REGISTRY:-ghcr.io/antgroup/ai-vision/diagnosis}${IMAGE_REGISTRY:+/agentlens}:${IMAGE_TAG:-latest}}}
+        labels:
+            io.aivision.component: diagnosis
+            io.aivision.product: aivision
+        networks:
+            stack:
+                aliases:
+                    - diagnosis
+                    - agentlens
+        ports:
+            - 127.0.0.1:${DIAGNOSIS_PORT:-${AGENTLENS_PORT:-8081}}:${DIAGNOSIS_PORT:-${AGENTLENS_PORT:-8081}}
+        pull_policy: ${IMAGE_PULL:-missing}
+        restart: unless-stopped
+        stop_grace_period: 300s
+        volumes:
+            - ${AIV_LOG_DIR:?set absolute AIV_LOG_DIR}:${AIV_LOG_DIR:?set absolute AIV_LOG_DIR}
+            - runtime:/run/aivision:ro
+    frontend:
+        container_name: ${FRONTEND_CONTAINER:-${FE_CONTAINER:-${NAMESPACE:-aivision}-frontend}}
+        depends_on:
+            backend:
+                condition: service_healthy
+            backend-bootstrap:
+                condition: service_completed_successfully
+        environment:
+            BE_UPSTREAM: http://${BACKEND_CONTAINER:-${BE_CONTAINER:-${NAMESPACE:-aivision}-backend}}:${BACKEND_PORT:-${BE_PORT:-8001}}
+            FE_PORT: ${FRONTEND_PORT:-${FE_PORT:-5174}}
+        healthcheck:
+            interval: 10s
+            retries: 3
+            start_period: 30s
+            test:
+                - CMD
+                - curl
+                - -fsS
+                - -o
+                - /dev/null
+                - http://127.0.0.1:${FRONTEND_PORT:-${FE_PORT:-5174}}/
+            timeout: 8s
+        image: ${FRONTEND_IMAGE:-${FE_IMAGE:-${IMAGE_REGISTRY:-ghcr.io/antgroup/ai-vision/frontend}${IMAGE_REGISTRY:+/aivision-fe}:${IMAGE_TAG:-latest}}}
+        labels:
+            io.aivision.component: frontend
+            io.aivision.product: aivision
+        networks:
+            stack:
+                aliases:
+                    - frontend
+                    - fe
+        ports:
+            - ${BIND_ADDR:-127.0.0.1}:${FRONTEND_PORT:-${FE_PORT:-5174}}:${FRONTEND_PORT:-${FE_PORT:-5174}}
+        pull_policy: ${IMAGE_PULL:-missing}
+        restart: unless-stopped
+        stop_grace_period: 30s
+        stop_signal: SIGQUIT
+    ingest-gateway:
+        container_name: ${INGEST_GATEWAY_CONTAINER:-${GATEWAY_CONTAINER:-${NAMESPACE:-aivision}-ingest-gateway}}
+        depends_on:
+            data-backend-ready:
+                condition: service_completed_successfully
+        environment:
+            AIVISION_INGEST_SECRET: ${AIVISION_INGEST_SECRET:?set AIVISION_INGEST_SECRET in the private env file}
+            GOMEMLIMIT: 576MiB
+            SIGNOZ_INGEST_ENDPOINT: http://${DATA_BACKEND_CONTAINER:-${SIGNOZ_CONTAINER:-${NAMESPACE:-aivision}-data-backend}}:8080
+            SIGNOZ_INGEST_INTERNAL_KEY: ${SIGNOZ_INGEST_INTERNAL_KEY:?set SIGNOZ_INGEST_INTERNAL_KEY in the private env file}
+        healthcheck:
+            interval: 10s
+            retries: 3
+            start_period: 60s
+            test:
+                - CMD
+                - /app/collector
+                - healthcheck
+                - --ready
+            timeout: 8s
+        image: ${INGEST_GATEWAY_IMAGE:-${GATEWAY_IMAGE:-${IMAGE_REGISTRY:-ghcr.io/antgroup/ai-vision/ingest-gateway}${IMAGE_REGISTRY:+/antcollector-gw}:${IMAGE_TAG:-latest}}}
+        labels:
+            io.aivision.component: ingest-gateway
+            io.aivision.product: aivision
+        networks:
+            stack:
+                aliases:
+                    - ingest-gateway
+                    - antcollector-gw
+        ports:
+            - ${BIND_ADDR:-127.0.0.1}:${INGEST_GATEWAY_GRPC_PORT:-${GATEWAY_GRPC_PORT:-4317}}:4317
+            - ${BIND_ADDR:-127.0.0.1}:${INGEST_GATEWAY_HTTP_PORT:-${GATEWAY_HTTP_PORT:-4318}}:4318
+            - 127.0.0.1:${INGEST_GATEWAY_HEALTH_PORT:-${GATEWAY_HEALTH_PORT:-13133}}:13133
+        pull_policy: ${IMAGE_PULL:-missing}
+        restart: unless-stopped
+        stop_grace_period: 60s
+volumes:
+    database-data-0:
+        labels:
+            io.aivision.namespace: ${NAMESPACE:-aivision}
+            io.aivision.product: aivision
+            io.aivision.state-dir: ${AIV_STATE_DIR:?set absolute AIV_STATE_DIR}
+        name: aivforge-ob-data-${NAMESPACE:-aivision}
+    database-data-1:
+        labels:
+            io.aivision.namespace: ${NAMESPACE:-aivision}
+            io.aivision.product: aivision
+            io.aivision.state-dir: ${AIV_STATE_DIR:?set absolute AIV_STATE_DIR}
+        name: aivforge-ob-config-${NAMESPACE:-aivision}
+    runtime:
+        labels:
+            io.aivision.namespace: ${NAMESPACE:-aivision}
+            io.aivision.product: aivision
+            io.aivision.state-dir: ${AIV_STATE_DIR:?set absolute AIV_STATE_DIR}
+        name: aivforge-runtime-${NAMESPACE:-aivision}
+x-aivision:
+    backend: oceanbase
+    component_aliases:
+        agentlens: diagnosis
+        aivision-be: backend
+        aivision-fe: frontend
+        antcollector-gw: ingest-gateway
+        backend: backend
+        be: backend
+        data-backend: data-backend
+        database: database
+        diagnosis: diagnosis
+        fe: frontend
+        frontend: frontend
+        gateway: ingest-gateway
+        ingest-gateway: ingest-gateway
+        oceanbase: database
+        seekdb: database
+        signoz: data-backend
+        signoz-ob: data-backend
+    history_start: ${AIVISION_NATIVE_TRACE_HISTORY_START:?set fixed UTC retained-history bound}
+    managed: true
+    namespace: ${NAMESPACE:-aivision}
+    state_dir: ${AIV_STATE_DIR:?set absolute AIV_STATE_DIR}

@@ -1,0 +1,1754 @@
+openapi: "3.0.3"
+info:
+  title: AI Vision External Trace and Session Query API
+  version: "1.0.0"
+  description: |
+    External API for querying SigNoz / Langfuse trace and session data.
+    Clients use this API to query observability data in Spaces where they hold
+    an external API credential.
+
+    ## Authentication
+    All endpoints use the standard `Authorization` header for external API
+    authentication. Send SpaceKeys as `Authorization: Bearer sk-aiv-...`.
+    The public external contract only documents Bearer Space API Keys. Other
+    internal compatibility authentication paths are not part of this contract.
+
+    ## Agent product isolation
+    The `{agent_product}` path parameter selects the AgentType/DataSource
+    configuration. The product filter applied to SigNoz queries comes from
+    `DataSource.config.agent_product_filter`; clients must not rely on request
+    payload values to override datasource-level isolation.
+
+    ## Rate Limiting
+    All endpoints are rate-limited to **1000 requests per minute** per external API credential.
+    Exceeding the limit returns HTTP 429 with `code: 4029`.
+
+servers:
+  - url: /openapi/v1
+
+security:
+  - BearerAuth: []
+
+paths:
+  /spaces/{space_id}/agents:
+    get:
+      summary: List agents in a space
+      description: |
+        Returns all active and pending agents registered under the given space.
+        Use the returned agent_product values as the path parameter for trace,
+        session, and event endpoints.
+      operationId: listSpaceAgents
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+      responses:
+        "200":
+          description: Agent list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/SpaceAgent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Space not found or disabled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                code: 3001
+                message: "Space not found"
+                data: null
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/metadata/events:
+    get:
+      summary: Get event table field metadata
+      description: |
+        Returns all fields and types discovered from the configured event/log
+        datasource schema for this Space and Agent Product. The response is
+        sanitized and does not expose datasource table names, endpoints, access
+        ids, access tokens, or query templates.
+      operationId: getAgentEventsMetadata
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/AgentUuid"
+      responses:
+        "200":
+          description: Event table field metadata
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TableMetadataResponse"
+              example:
+                code: 0
+                message: success
+                data:
+                  agentProduct: ClaudeCode
+                  kind: events
+                  source:
+                    sourceSystem: signoz
+                    default: true
+                    protocol: native
+                    responseFormat: table
+                  fields:
+                    - name: period
+                      type: timestamp
+                    - name: trace_id
+                      type: string
+                  totalFields: 2
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/metadata/traces:
+    get:
+      summary: Get trace table field metadata
+      description: |
+        Returns all fields and types discovered from the configured trace
+        datasource schema for this Space and Agent Product. The response is
+        sanitized and does not expose datasource table names, endpoints, access
+        ids, access tokens, or query templates.
+      operationId: getAgentTracesMetadata
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/AgentUuid"
+      responses:
+        "200":
+          description: Trace table field metadata
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TableMetadataResponse"
+              example:
+                code: 0
+                message: success
+                data:
+                  agentProduct: ClaudeCode
+                  kind: traces
+                  source:
+                    sourceSystem: signoz
+                    default: true
+                    protocol: native
+                    responseFormat: table
+                  fields:
+                    - name: period
+                      type: timestamp
+                    - name: span_id
+                      type: string
+                  totalFields: 2
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/events/list:
+    post:
+      summary: List events using fieldsJson
+      description: Queries event/log rows using canonical public fields and server-side datasource, time, scope, and agent-product isolation.
+      operationId: listEvents
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EventFieldsJsonRequest"
+      responses:
+        "200":
+          description: Paginated event rows
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/EventListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/events/facets:
+    post:
+      summary: List event facets
+      description: Returns bounded buckets for canonical event dimensions.
+      operationId: listEventFacets
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from, to]
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+                dimensions:
+                  type: array
+                  items:
+                    type: string
+                filters:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: object
+                    - type: object
+                      additionalProperties: true
+                limit:
+                  type: integer
+                  maximum: 100
+      responses:
+        "200":
+          description: Facet buckets
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/EventFacetsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/events/query:
+    post:
+      summary: Query events with fieldsJson or restricted rawSql
+      description: Defaults to `fieldsJson`. `rawSql` uses SpaceKey authentication and must use mandatory server-rendered macros for table, time, space, and agent-product isolation.
+      operationId: queryEvents
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/EventFieldsJsonRequest"
+                - $ref: "#/components/schemas/EventRawSqlRequest"
+      responses:
+        "200":
+          description: Event query response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - $ref: "#/components/schemas/EventListResponse"
+                          - $ref: "#/components/schemas/RawSqlResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /grafana/spaces/{space_id}/agents/{agent_product}/query:
+    post:
+      summary: Grafana event query alias
+      description: Grafana datasource alias for restricted `rawSql` targets. Uses SpaceKey authentication and strips standard Grafana transport metadata before strict rawSql validation.
+      operationId: queryGrafanaEvents
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/GrafanaRawSqlRequest"
+                - $ref: "#/components/schemas/GrafanaTargetsRequest"
+      responses:
+        "200":
+          description: Grafana query response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        oneOf:
+                          - $ref: "#/components/schemas/RawSqlResponse"
+                          - $ref: "#/components/schemas/GrafanaMultiResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/traces/list:
+    post:
+      summary: List traces
+      description: |
+        Paginated trace listing with filters. Supports optional inline
+        enrichment of I/O and provider-supported usage data via query parameters.
+      operationId: listTraces
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - name: io
+          in: query
+          description: Set to `true` to inline input/output data in each trace item (max 50 traces enriched).
+          schema:
+            type: boolean
+            default: false
+        - name: usage
+          in: query
+          description: Set to `true` to inline token usage data when supported by the provider (max 50 traces enriched).
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fields:
+                  type: array
+                  items:
+                    type: string
+                  description: Fields to include in the response.
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 20
+                  maximum: 100
+                from:
+                  type: string
+                  description: Start time (ISO 8601 or Unix milliseconds).
+                to:
+                  type: string
+                  description: End time (ISO 8601 or Unix milliseconds).
+                orderBy:
+                  type: string
+                  description: "Sort field and direction, e.g. `start_time_unix_nano desc`."
+                filters:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: object
+                        properties:
+                          field:
+                            type: string
+                          op:
+                            type: string
+                            default: "="
+                          value: {}
+                    - type: object
+                      additionalProperties: true
+                  description: |
+                    Filter conditions. Prefer the WebAPI-compatible array form
+                    (`[{field, op, value}]`). A key-value object is also accepted
+                    and is normalized to equality filters.
+                env:
+                  type: string
+                  description: Shortcut for `resource.attributes.ant.agent.env` equality filter.
+                scene:
+                  type: string
+                  description: Shortcut for `resource.attributes.ant.agent.scene` equality filter.
+                username:
+                  type: string
+                  description: Shortcut for `attributes.ant.username` equality filter.
+                keyword:
+                  type: string
+                  description: Full-text search keyword.
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: Filter by tags.
+                entry_only:
+                  type: boolean
+                  description: If true, only return root/entry spans.
+      responses:
+        "200":
+          description: Paginated trace list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TraceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/trace/{trace_id}/detail:
+    get:
+      summary: Get trace detail
+      description: |
+        Returns full trace detail including span tree. Supports optional
+        inline I/O enrichment via `?io=true`.
+      operationId: getTraceDetail
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/TraceId"
+        - name: io
+          in: query
+          description: Set to `true` to inline input/output data in the response.
+          schema:
+            type: boolean
+            default: false
+        - name: from
+          in: query
+          schema:
+            type: string
+          description: Start time hint for query optimization.
+        - name: to
+          in: query
+          schema:
+            type: string
+          description: End time hint for query optimization.
+      responses:
+        "200":
+          description: Trace detail with span tree
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TraceDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Trace not found
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/trace/{trace_id}/spans:
+    post:
+      summary: Batch get spans
+      description: Fetch multiple spans by span IDs within a trace.
+      operationId: batchGetSpans
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/TraceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - spanIds
+              properties:
+                spanIds:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  maxItems: 200
+                  description: List of span IDs to fetch.
+                from:
+                  type: string
+                to:
+                  type: string
+      responses:
+        "200":
+          description: List of span data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SpanBatchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/trace/{trace_id}/span/{span_id}:
+    get:
+      summary: Get span detail
+      description: Returns full detail for a single span.
+      operationId: getSpanDetail
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/TraceId"
+        - name: span_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Span detail
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Span"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+
+  /spaces/{space_id}/agents/{agent_product}/sessions/list:
+    post:
+      summary: List sessions
+      description: |
+        Paginated session listing with filters. Uses the same SigNoz / Langfuse
+        session query implementation as the WebAPI. SigNoz/native rows always
+        include canonical usage, coverage and nullable compatibility token totals,
+        without `?usage=true`. Totals include all traces in each returned session
+        within the frozen `[from, to)` and resolved Agent UUID scope; session-list
+        raw-span filters use AND to select sessions and their metadata but do not
+        narrow their usage. Native UUID selection, session metadata/facets,
+        ordering and pagination are evaluated locally over a verified physical
+        Space/product window. Every native page, including an empty page,
+        requires a complete scan capped at 10,000 traces before UUID selection;
+        incomplete data or an exceeded cap fails the request. With a selected
+        UUID, every physical trace must have one nonempty Agent UUID shared by
+        all spans; missing or mixed identities fail the scan. Consistent traces
+        from other Agents are excluded locally. I/O enrichment
+        remains optional. External Langfuse usage enrichment uses `?usage=true`
+        when supported by the provider.
+      operationId: listSessions
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/AgentUuid"
+        - name: io
+          in: query
+          description: Set to `true` to inline input/output data in each session item (max 50 sessions enriched).
+          schema:
+            type: boolean
+            default: false
+        - name: usage
+          in: query
+          description: Optional usage enrichment for external Langfuse when supported. SigNoz/native session rows always include canonical usage and coverage.
+          schema:
+            type: boolean
+            default: false
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fields:
+                  type: array
+                  items:
+                    type: string
+                  description: SigNoz/native validates supported session fields but returns the fixed full row shape, including usage and coverage.
+                page:
+                  type: integer
+                  default: 1
+                limit:
+                  type: integer
+                  default: 50
+                  maximum: 200
+                  description: SigNoz/native default is 50 sessions, maximum 200. External Langfuse retains provider-specific limits.
+                from:
+                  type: string
+                to:
+                  type: string
+                fromTimestamp:
+                  type: string
+                toTimestamp:
+                  type: string
+                orderBy:
+                  type: string
+                  description: SigNoz/native defaults to descending last_activity.
+                filters:
+                  oneOf:
+                    - type: array
+                      items:
+                        type: object
+                        properties:
+                          field:
+                            type: string
+                          op:
+                            type: string
+                            default: "="
+                          value: {}
+                    - type: object
+                      additionalProperties: true
+                  description: WebAPI-compatible filter array or key-value equality map. SigNoz/native requires all predicates to match the same raw span to select sessions and their metadata; usage includes all related traces in the selected window. Unsupported native fields and operators fail explicitly.
+                env:
+                  type: string
+                  description: Shortcut for `resource.attributes.ant.agent.env` equality filter.
+                scene:
+                  type: string
+                  description: Shortcut for `resource.attributes.ant.agent.scene` equality filter.
+                username:
+                  type: string
+                  description: Shortcut for `attributes.ant.username` equality filter. Personal spaces are still scoped to the resolved Space owner/user context.
+                keyword:
+                  type: string
+                sessionId:
+                  type: string
+                session_id:
+                  type: string
+                agent_uuid:
+                  type: string
+                  format: uuid
+                  description: SigNoz/native Agent instance selector; may also be supplied as a query parameter.
+                detail:
+                  type: string
+                  description: Set to `1` to request provider-specific full-detail session list fields.
+      responses:
+        "200":
+          description: Paginated session list
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SessionListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/sessions/io:
+    post:
+      summary: Batch get session I/O
+      description: Fetch input/output data for multiple sessions.
+      operationId: batchGetSessionIO
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionIds
+              properties:
+                sessionIds:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  maxItems: 100
+                from:
+                  type: string
+                to:
+                  type: string
+                fromTimestamp:
+                  type: string
+                toTimestamp:
+                  type: string
+      responses:
+        "200":
+          description: List of session I/O payloads
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/IOBatchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/sessions/usage:
+    post:
+      summary: Batch get session usage
+      description: |
+        Fetch usage data for multiple sessions when supported by the provider.
+        SigNoz/native totals use the same canonical aggregation as session-list
+        rows for the same `[from, to)` and resolved Agent UUID scope. Missing or
+        ambiguous usage is null; reported zero remains zero.
+      operationId: batchGetSessionUsage
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/AgentUuid"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionIds
+              properties:
+                sessionIds:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  maxItems: 100
+                from:
+                  type: string
+                to:
+                  type: string
+                fromTimestamp:
+                  type: string
+                toTimestamp:
+                  type: string
+      responses:
+        "200":
+          description: List of session usage payloads
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/UsageBatchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/session/{session_id}/detail:
+    get:
+      summary: Get session detail
+      description: Returns session detail and related trace IDs. Supports optional inline I/O enrichment via `?io=true` and related span loading via `?include_spans=true` when supported by the provider.
+      operationId: getSessionDetail
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/SessionId"
+        - name: io
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: include_spans
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+        - name: fromTimestamp
+          in: query
+          schema:
+            type: string
+        - name: toTimestamp
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Session detail
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/SessionDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Session not found
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /spaces/{space_id}/agents/{agent_product}/session/{session_id}/io:
+    post:
+      summary: Get session I/O
+      description: Fetch input/output data for one session.
+      operationId: getSessionIO
+      parameters:
+        - $ref: "#/components/parameters/SpaceId"
+        - $ref: "#/components/parameters/AgentProduct"
+        - $ref: "#/components/parameters/SessionId"
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                from:
+                  type: string
+                to:
+                  type: string
+                fromTimestamp:
+                  type: string
+                toTimestamp:
+                  type: string
+      responses:
+        "200":
+          description: Session I/O payload
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/IOBatchItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: SpaceKey
+      description: |
+        Public OpenAPI authentication. Send SpaceKeys as
+        `Authorization: Bearer sk-aiv-...`. SpaceKeys are space-scoped, not
+        agent-scoped.
+
+  parameters:
+    SpaceId:
+      name: space_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Space UUID
+    AgentProduct:
+      name: agent_product
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Agent product identifier used for DataSource config resolution. The SigNoz product isolation value comes from DataSource.config.agent_product_filter.
+    AgentUuid:
+      name: agent_uuid
+      in: query
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Select a Normal or Pending Agent in this Space and product. Required when multiple instances exist; inaccessible, Disabled or ambiguous selections return HTTP 400.
+    TraceId:
+      name: trace_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Trace ID
+    SessionId:
+      name: session_id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Session ID
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 0
+        message:
+          type: string
+          example: success
+        data:
+          description: Response payload (structure varies by endpoint).
+
+
+    EventFieldsJsonRequest:
+      type: object
+      required: [from, to]
+      properties:
+        mode:
+          type: string
+          enum: [fieldsJson]
+          default: fieldsJson
+        from:
+          type: string
+        to:
+          type: string
+        fields:
+          type: array
+          items:
+            type: string
+        filters:
+          oneOf:
+            - type: array
+              items:
+                type: object
+            - type: object
+              additionalProperties: true
+        orderBy:
+          type: string
+          example: "-time"
+        page:
+          type: integer
+          default: 1
+        limit:
+          type: integer
+          default: 50
+          maximum: 200
+
+    EventRawSqlRequest:
+      type: object
+      required: [mode, from, to, rawSql]
+      properties:
+        mode:
+          type: string
+          enum: [rawSql]
+        from:
+          type: string
+        to:
+          type: string
+        rawSql:
+          type: string
+          description: Must include {{table}}, {{time_filter}}, {{scope_filter}}, and {{agent_product_filter}} macros.
+        format:
+          type: string
+          enum: [table]
+          default: table
+        refId:
+          type: string
+          default: A
+
+    GrafanaRawSqlRequest:
+      type: object
+      required: [rawSql]
+      properties:
+        mode:
+          type: string
+          enum: [rawSql]
+          default: rawSql
+          description: Optional on the Grafana alias; omitted mode is treated as rawSql.
+        from:
+          type: string
+          description: Optional when Grafana `range.from` is present.
+        to:
+          type: string
+          description: Optional when Grafana `range.to` is present.
+        range:
+          type: object
+          additionalProperties: true
+          description: Standard Grafana range object; `from` and `to` are normalized into the rawSql time range.
+        maxDataPoints:
+          type: integer
+          description: Standard Grafana metadata; accepted and ignored by rawSql validation.
+        intervalMs:
+          type: integer
+          description: Standard Grafana metadata; accepted and ignored by rawSql validation.
+        scopedVars:
+          type: object
+          additionalProperties: true
+          description: Standard Grafana metadata; accepted and ignored by rawSql validation.
+        rawSql:
+          type: string
+          description: Must include {{table}}, {{time_filter}}, {{scope_filter}}, and {{agent_product_filter}} macros.
+        format:
+          type: string
+          enum: [table]
+          default: table
+        refId:
+          type: string
+          default: A
+
+    GrafanaTargetsRequest:
+      type: object
+      required: [targets]
+      properties:
+        from:
+          type: string
+          description: Optional when Grafana `range.from` is present.
+        to:
+          type: string
+          description: Optional when Grafana `range.to` is present.
+        range:
+          type: object
+          additionalProperties: true
+          description: Standard Grafana range object shared by targets.
+        maxDataPoints:
+          type: integer
+          description: Standard Grafana metadata; accepted and ignored by rawSql validation.
+        intervalMs:
+          type: integer
+          description: Standard Grafana metadata; accepted and ignored by rawSql validation.
+        targets:
+          type: array
+          items:
+            $ref: "#/components/schemas/GrafanaRawSqlRequest"
+
+    SpaceAgent:
+      type: object
+      properties:
+        agent_product:
+          type: string
+          description: Agent product identifier, used as path parameter in other endpoints.
+        agent_name:
+          type: string
+          description: Agent type name.
+        display_name:
+          type: string
+          nullable: true
+          description: Human-readable display name.
+        description:
+          type: string
+          nullable: true
+          description: Agent description.
+        status:
+          type: integer
+          enum: [1, 2]
+          description: "1: Active, 2: Pending"
+        last_active_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last activity timestamp.
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+        data:
+          nullable: true
+
+    PaginationMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+
+    FacetBucket:
+      type: object
+      properties:
+        value:
+          type: string
+        count:
+          type: integer
+        label:
+          type: string
+          nullable: true
+
+    SpanStatus:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [UNSET, OK, ERROR]
+        message:
+          type: string
+
+    Span:
+      type: object
+      properties:
+        trace_id:
+          type: string
+        span_id:
+          type: string
+        parent_span_id:
+          type: string
+          nullable: true
+        name:
+          type: string
+        kind:
+          type: integer
+        start_time_unix_nano:
+          type: string
+        end_time_unix_nano:
+          type: string
+        status:
+          $ref: "#/components/schemas/SpanStatus"
+        attributes:
+          type: object
+          additionalProperties: true
+        resource:
+          type: object
+          additionalProperties: true
+        events:
+          type: array
+          items:
+            type: object
+        links:
+          type: array
+          items:
+            type: object
+
+    TraceListItem:
+      type: object
+      description: Flat row with requested fields. Default fields include trace_id, span_id, name, kind, timestamps.
+      properties:
+        trace_id:
+          type: string
+        span_id:
+          type: string
+        parent_span_id:
+          type: string
+          nullable: true
+        name:
+          type: string
+        kind:
+          type: integer
+        status_code:
+          type: string
+        status_message:
+          type: string
+          nullable: true
+        start_time_unix_nano:
+          type: string
+        end_time_unix_nano:
+          type: string
+        span_count:
+          type: integer
+          nullable: true
+        input:
+          type: string
+          nullable: true
+          description: Present when ?io=true
+        output:
+          type: string
+          nullable: true
+          description: Present when ?io=true
+        usage:
+          type: object
+          nullable: true
+          description: Present when ?usage=true
+      additionalProperties: true
+
+    TraceListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/TraceListItem"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    TraceDetailResponse:
+      type: object
+      properties:
+        traceId:
+          type: string
+        sofaTraceId:
+          type: string
+          nullable: true
+          description: Legacy trace identifier when present in the source data.
+        sessionId:
+          type: string
+          nullable: true
+        spans:
+          type: array
+          items:
+            $ref: "#/components/schemas/Span"
+        input:
+          type: string
+          nullable: true
+          description: Present when ?io=true
+        output:
+          type: string
+          nullable: true
+          description: Present when ?io=true
+
+    SpanBatchResponse:
+      type: object
+      properties:
+        spans:
+          type: array
+          items:
+            $ref: "#/components/schemas/Span"
+
+    SessionListItem:
+      type: object
+      description: |
+        SigNoz/native rows always include the canonical usage, coverage and
+        compatibility token fields. External Langfuse fields retain their
+        provider-specific behavior.
+      properties:
+        session_id:
+          type: string
+          description: SigNoz/native uses canonical observation session identity (gen_ai.conversation.id, langfuse.session.id, session.id, then storage session_id), matching session usage reads.
+        created_at:
+          type: string
+          format: date-time
+        last_activity:
+          type: string
+          format: date-time
+          nullable: true
+        start_time_unix_nano:
+          type: string
+          description: SigNoz/native uses RFC3339Nano text despite the historical field name.
+        end_time_unix_nano:
+          type: string
+          nullable: true
+          description: SigNoz/native uses RFC3339Nano text; absent end timestamps remain null.
+        trace_count:
+          type: integer
+          description: SigNoz/native distinct traces in the matching span subset; usage includes all session-associated traces in the selected window.
+        span_count:
+          type: integer
+          description: SigNoz/native distinct matching spans.
+        user_id:
+          type: string
+          nullable: true
+        space_id:
+          type: string
+          nullable: true
+        agent_product:
+          type: string
+          nullable: true
+        input_tokens:
+          type: integer
+          nullable: true
+          description: SigNoz/native canonical inclusive input total for the full session in the selected window; null means unknown.
+        output_tokens:
+          type: integer
+          nullable: true
+          description: SigNoz/native canonical inclusive output total for the full session in the selected window; null means unknown.
+        total_tokens:
+          type: integer
+          nullable: true
+          description: SigNoz/native canonical total for the full session in the selected window; null means unknown, zero is reported zero.
+        environment:
+          type: string
+          nullable: true
+          description: SigNoz/native maximum non-null environment among matching spans.
+        scene:
+          type: string
+          nullable: true
+          description: SigNoz/native maximum non-null scene among matching spans.
+        scenes:
+          type: array
+          items:
+            type: string
+          description: SigNoz/native selected scene as a one-item array, or empty when absent.
+        username:
+          type: string
+          nullable: true
+          description: SigNoz/native maximum non-null username among matching spans.
+        input:
+          type: string
+          nullable: true
+          description: Present when ?io=true
+        output:
+          type: string
+          nullable: true
+          description: Present when ?io=true
+        usage:
+          allOf:
+            - $ref: "#/components/schemas/UsageDetail"
+          nullable: true
+          description: Always present for SigNoz/native with canonical aggregation. Optional provider-supported enrichment for external Langfuse when ?usage=true.
+        coverage:
+          $ref: "#/components/schemas/NativeUsageCoverage"
+      additionalProperties: true
+
+    SessionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionListItem"
+        meta:
+          allOf:
+            - $ref: "#/components/schemas/PaginationMeta"
+            - type: object
+              properties:
+                complete:
+                  type: boolean
+                  description: Every successful SigNoz/native list, including an empty page, confirms a complete verified Space/product window before local UUID selection.
+                from:
+                  type: integer
+                  format: int64
+                  description: Exact frozen native window start in epoch milliseconds, inclusive.
+                to:
+                  type: integer
+                  format: int64
+                  description: Exact frozen native window end in epoch milliseconds, exclusive.
+                timeBoundary:
+                  type: string
+                  enum: [fromInclusiveToExclusive]
+                agent_uuid:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: Resolved native Agent scope.
+                agent_product:
+                  type: string
+                  description: Native Agent product scope.
+        facets:
+          type: object
+          nullable: true
+          description: SigNoz/native env, scene and username facets count distinct sessions and omit their own dimension's filters.
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/FacetBucket"
+
+    SessionDetailResponse:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        traceCount:
+          type: integer
+        traceIds:
+          type: array
+          items:
+            type: string
+        timeRange:
+          type: object
+          properties:
+            from:
+              type: string
+              format: date-time
+            to:
+              type: string
+              format: date-time
+        spans:
+          type: array
+          items:
+            $ref: "#/components/schemas/Span"
+          nullable: true
+          description: Present when ?include_spans=true
+        input:
+          type: string
+          nullable: true
+          description: Present when ?io=true
+        output:
+          type: string
+          nullable: true
+          description: Present when ?io=true
+
+    IOBatchItem:
+      type: object
+      properties:
+        id:
+          type: string
+        input:
+          type: string
+          nullable: true
+        output:
+          type: string
+          nullable: true
+
+    IOBatchResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/IOBatchItem"
+
+    UsageDetail:
+      type: object
+      description: |
+        SigNoz/native canonical usage aggregates unique billable calls with full
+        ancestry. Input and output totals are inclusive. Null means unknown;
+        zero is a reported zero. External Langfuse retains its provider payload.
+      properties:
+        input:
+          type: integer
+          nullable: true
+        output:
+          type: integer
+          nullable: true
+        total:
+          type: integer
+          nullable: true
+        input_tokens:
+          type: integer
+          nullable: true
+        output_tokens:
+          type: integer
+          nullable: true
+        total_tokens:
+          type: integer
+          nullable: true
+        cacheReadInput:
+          type: integer
+          nullable: true
+        cacheWriteInput:
+          type: integer
+          nullable: true
+        reasoning:
+          type: integer
+          nullable: true
+        inputIncludesCache:
+          type: boolean
+          nullable: true
+        unknownReason:
+          type: string
+          nullable: true
+          description: SigNoz/native aggregate reason. ambiguous_nested_generations keeps totals unknown even when every billable call reports usage.
+        cost:
+          type: object
+          description: SigNoz/native canonical cost; unknown amounts stay null.
+          properties:
+            total:
+              type: string
+              nullable: true
+              description: Decimal amount.
+            input:
+              type: string
+              nullable: true
+            output:
+              type: string
+              nullable: true
+            source:
+              type: string
+              nullable: true
+            currency:
+              type: string
+            reason:
+              type: string
+              nullable: true
+      additionalProperties: true
+
+    NativeUsageCoverage:
+      type: object
+      description: |
+        SigNoz/native reported measurement coverage using the trace-metrics
+        semantics. knownTokens is a reported subtotal, not complete session usage
+        or a provider invoice. Full call coverage does not override usage.unknownReason.
+      properties:
+        billableCalls:
+          type: integer
+          description: Number of GENERATION and EMBEDDING observations.
+        knownUsageCalls:
+          type: integer
+          description: Billable observations with a reported or derived total.
+        knownTokens:
+          type: integer
+          description: Sum of known per-call totals; may overlap when nested generation usage is ambiguous.
+        knownCostCalls:
+          type: integer
+          description: Billable observations with a known canonical cost total.
+
+    UsageBatchItem:
+      type: object
+      properties:
+        id:
+          type: string
+        inputTokens:
+          type: integer
+          nullable: true
+        outputTokens:
+          type: integer
+          nullable: true
+        totalTokens:
+          type: integer
+          nullable: true
+        usage:
+          $ref: "#/components/schemas/UsageDetail"
+
+    UsageBatchResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsageBatchItem"
+
+    EventRow:
+      type: object
+      description: Event row with dynamic fields based on the request's fields parameter.
+      additionalProperties: true
+
+    EventListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/EventRow"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    EventFacetsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/FacetBucket"
+        meta:
+          type: object
+          properties:
+            limit:
+              type: integer
+
+    RawSqlMeta:
+      type: object
+      properties:
+        mode:
+          type: string
+          example: rawSql
+        refId:
+          type: string
+        format:
+          type: string
+        rowCount:
+          type: integer
+        sqlHash:
+          type: string
+          description: SHA-256 hex of the rendered SQL
+
+    RawSqlResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        meta:
+          $ref: "#/components/schemas/RawSqlMeta"
+
+    GrafanaResultItem:
+      type: object
+      properties:
+        refId:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        meta:
+          $ref: "#/components/schemas/RawSqlMeta"
+
+    GrafanaMultiResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/GrafanaResultItem"
+
+    TableMetadataField:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Datasource schema field/column name.
+        type:
+          type: string
+          description: Datasource-reported field type.
+        comment:
+          type: string
+        description:
+          type: string
+        nullable:
+          type: boolean
+
+    TableMetadataSource:
+      type: object
+      properties:
+        sourceSystem:
+          type: string
+          example: signoz
+        default:
+          type: boolean
+        protocol:
+          type: string
+          example: native
+        responseFormat:
+          type: string
+          example: table
+
+    TableMetadataResponse:
+      type: object
+      properties:
+        agentProduct:
+          type: string
+        kind:
+          type: string
+          enum: [events, traces]
+        source:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/TableMetadataSource"
+        fields:
+          type: array
+          items:
+            $ref: "#/components/schemas/TableMetadataField"
+        totalFields:
+          type: integer
+
+
+  responses:
+    BadRequest:
+      description: Request validation failed, such as invalid batch ID list.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 3026
+            message: "sessionIds must be a non-empty array"
+            data: null
+    Unauthorized:
+      description: Missing, invalid, or disabled external API credential
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 4001
+            message: "Invalid external API credential"
+            data: null
+    Forbidden:
+      description: External API credential does not match the requested space or scope
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 4003
+            message: "External API credential does not match the requested space"
+            data: null
+    TooManyRequests:
+      description: Rate limit exceeded (1000 requests/minute per external API credential)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            code: 4029
+            message: "Request throttled. Retry after 30 seconds."
+            data: null

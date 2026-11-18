@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="cache-control" content="no-store" />
+  <meta http-equiv="pragma" content="no-cache" />
+  <meta http-equiv="expires" content="0" />
+  <title>AiVision Weaver Guard</title>
+  <link rel="stylesheet" href="/dashboard/assets/dashboard.css?v=20260707-metric-red-display" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <h1>AiVision Weaver Guard</h1>
+      </div>
+      <div class="hero-actions">
+        <div class="updated" id="updated">loading…</div>
+        <button class="btn btn-primary" id="openPromptEngineeringBtn" type="button">AI 工作流</button>
+        <button class="btn btn-secondary" id="openApiDocsBtn" type="button">API 文档</button>
+        <button class="btn btn-secondary" id="openGuideBtn" type="button">接入/修复指南</button>
+        <button class="btn btn-outline" id="refreshBtn" type="button">刷新</button>
+        <button class="btn btn-danger" id="clearDataBtn" type="button">清理数据</button>
+      </div>
+    </header>
+
+    <section class="metric-grid" aria-label="Telemetry summary">
+      <article class="metric-card"><span>Requests</span><strong id="total">0</strong></article>
+      <article class="metric-card danger"><span>Violations</span><strong id="violations">0</strong></article>
+      <article class="metric-card warning"><span>Improvements</span><strong id="improvements">0</strong></article>
+      <article class="metric-card info"><span>Semconv Issues</span><strong id="semconv">0</strong></article>
+      <article class="metric-card"><span>Forwarded</span><strong id="forwarded">0</strong></article>
+      <article class="metric-card muted"><span>Skipped</span><strong id="skipped">0</strong></article>
+    </section>
+
+    <section class="policy-strip" aria-label="Policy summary">
+      <div>
+        <div class="section-kicker">Rego Policy Rules / Policy Groups</div>
+        <div id="rulesSummary" class="policy-summary">loading…</div>
+      </div>
+      <div class="strip-actions">
+        <label class="field-inline" title="控制校验后的数据是否写入 Victoria endpoint">
+          <span>Forward</span>
+          <select id="forwardPolicySelect" class="select">
+            <option value="always">Always：全部写入</option>
+            <option value="pass-or-improvement">No rejected violation</option>
+            <option value="pass-only">Pass only</option>
+            <option value="never">Never</option>
+          </select>
+        </label>
+        <span id="forwardPolicyHint" class="policy-hint">默认全部写入 Victoria。</span>
+        <button class="btn btn-outline" id="copyReportBtn" type="button">复制 Live Report</button>
+      </div>
+    </section>
+
+    <nav class="tabs primary-tabs" aria-label="Signal sections">
+      <button class="tab active primary-tab" type="button" data-primary-tab="traces">Traces</button>
+      <button class="tab primary-tab" type="button" data-primary-tab="events">Events</button>
+      <button class="tab primary-tab" type="button" data-primary-tab="metrics">Metrics</button>
+    </nav>
+
+    <main>
+      <section class="signal-panel active" id="signal-traces" data-signal-panel="traces">
+        <div class="signal-head"><div><h2>Traces</h2><p>Trace/span 上报、finding、span.kind 语义约束与 payload。</p></div></div>
+        <nav class="tabs secondary-tabs" aria-label="Traces details">
+          <button class="tab active" type="button" data-signal-tab="traces" data-secondary-tab="overview">Overview</button>
+          <button class="tab" type="button" data-signal-tab="traces" data-secondary-tab="findings">Findings</button>
+          <button class="tab" type="button" data-signal-tab="traces" data-secondary-tab="diagnostics">Diagnostics</button>
+          <button class="tab" type="button" data-signal-tab="traces" data-secondary-tab="rules">语义约束</button>
+          <button class="tab" type="button" data-signal-tab="traces" data-secondary-tab="payloads">Payloads</button>
+        </nav>
+        <section class="secondary-panel active" id="traces-overview"><div id="tracesOverview" class="stack"></div></section>
+        <section class="secondary-panel" id="traces-findings"><article class="card"><div class="card-head"><div><h2>Trace Findings 分类</h2><p>按 level / 问题归因 / 命中规则分类展示 trace/span findings。</p></div><button class="btn btn-primary" type="button" data-copy-signal-finding-prompts="traces">复制全部 Prompt</button></div><div id="tracesFindingsList" class="finding-groups"></div></article></section>
+        <section class="secondary-panel" id="traces-diagnostics"><article class="card"><div class="card-head"><div><h2>Trace Diagnostics</h2><p>只展示 trace/span 请求。</p></div></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Status</th><th>Endpoint</th><th>Agent</th><th>Samples</th><th>Findings</th><th>Forward</th><th>Actions</th></tr></thead><tbody id="tracesDiagnosticRows"><tr><td colspan="8">loading…</td></tr></tbody></table></div></article></section>
+        <section class="secondary-panel" id="traces-rules"><article class="card"><div class="card-head"><div><h2>Trace 语义约束</h2><p>按 span.kind 组织；每个对象内展示通用约束、必须字段、推荐字段和禁止字段。</p></div><button class="btn btn-outline" type="button" data-refresh-rules>刷新规则</button></div><div id="tracesRulesInline" class="rules-layout"></div></article></section>
+        <section class="secondary-panel" id="traces-payloads"><article class="card"><div class="card-head"><div><h2>Trace Payloads</h2><p>完整 raw payload 通过 modal 打开。</p></div></div><div id="tracesPayloadList" class="stack"></div></article></section>
+      </section>
+
+      <section class="signal-panel" id="signal-events" data-signal-panel="events">
+        <div class="signal-head"><div><h2>Events / Logs</h2><p>Events/logs 上报、finding、event.name 语义约束与 payload。</p></div></div>
+        <nav class="tabs secondary-tabs" aria-label="Events details">
+          <button class="tab active" type="button" data-signal-tab="events" data-secondary-tab="overview">Overview</button>
+          <button class="tab" type="button" data-signal-tab="events" data-secondary-tab="findings">Findings</button>
+          <button class="tab" type="button" data-signal-tab="events" data-secondary-tab="diagnostics">Diagnostics</button>
+          <button class="tab" type="button" data-signal-tab="events" data-secondary-tab="rules">语义约束</button>
+          <button class="tab" type="button" data-signal-tab="events" data-secondary-tab="payloads">Payloads</button>
+        </nav>
+        <section class="secondary-panel active" id="events-overview"><div id="eventsOverview" class="stack"></div></section>
+        <section class="secondary-panel" id="events-findings"><article class="card"><div class="card-head"><div><h2>Event Findings 分类</h2><p>按 level / 问题归因 / 命中规则分类展示 events/logs findings。</p></div><button class="btn btn-primary" type="button" data-copy-signal-finding-prompts="events">复制全部 Prompt</button></div><div id="eventsFindingsList" class="finding-groups"></div></article></section>
+        <section class="secondary-panel" id="events-diagnostics"><article class="card"><div class="card-head"><div><h2>Event Diagnostics</h2><p>只展示 events/logs 请求。</p></div></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Status</th><th>Endpoint</th><th>Agent</th><th>Samples</th><th>Findings</th><th>Forward</th><th>Actions</th></tr></thead><tbody id="eventsDiagnosticRows"><tr><td colspan="8">loading…</td></tr></tbody></table></div></article></section>
+        <section class="secondary-panel" id="events-rules"><article class="card"><div class="card-head"><div><h2>Event 语义约束</h2><p>按 event.name 组织；api_request 会拆分正确请求、错误请求和通用约束。</p></div><button class="btn btn-outline" type="button" data-refresh-rules>刷新规则</button></div><div id="eventsRulesInline" class="rules-layout"></div></article></section>
+        <section class="secondary-panel" id="events-payloads"><article class="card"><div class="card-head"><div><h2>Event Payloads</h2><p>完整 raw payload 通过 modal 打开。</p></div></div><div id="eventsPayloadList" class="stack"></div></article></section>
+      </section>
+
+      <section class="signal-panel" id="signal-metrics" data-signal-panel="metrics">
+        <div class="signal-head"><div><h2>Metrics</h2><p>Metric 上报、finding、Rego metric rules 与 payload。</p></div></div>
+        <nav class="tabs secondary-tabs" aria-label="Metrics details">
+          <button class="tab active" type="button" data-signal-tab="metrics" data-secondary-tab="overview">Overview</button>
+          <button class="tab" type="button" data-signal-tab="metrics" data-secondary-tab="findings">Findings</button>
+          <button class="tab" type="button" data-signal-tab="metrics" data-secondary-tab="diagnostics">Diagnostics</button>
+          <button class="tab" type="button" data-signal-tab="metrics" data-secondary-tab="rules">语义约束</button>
+          <button class="tab" type="button" data-signal-tab="metrics" data-secondary-tab="payloads">Payloads</button>
+        </nav>
+        <section class="secondary-panel active" id="metrics-overview"><div id="metricsOverview" class="stack"></div></section>
+        <section class="secondary-panel" id="metrics-findings"><article class="card"><div class="card-head"><div><h2>Metric Findings 分类</h2><p>按 level / 问题归因 / 命中规则分类展示 metric findings。</p></div><button class="btn btn-primary" type="button" data-copy-signal-finding-prompts="metrics">复制全部 Prompt</button></div><div id="metricsFindingsList" class="finding-groups"></div></article></section>
+        <section class="secondary-panel" id="metrics-diagnostics"><article class="card"><div class="card-head"><div><h2>Metric Diagnostics</h2><p>只展示 metric 请求。</p></div></div><div class="table-wrap"><table><thead><tr><th>Time</th><th>Status</th><th>Endpoint</th><th>Agent</th><th>Samples</th><th>Findings</th><th>Forward</th><th>Actions</th></tr></thead><tbody id="metricsDiagnosticRows"><tr><td colspan="8">loading…</td></tr></tbody></table></div></article></section>
+        <section class="secondary-panel" id="metrics-rules"><article class="card"><div class="card-head"><div><h2>Metric 语义约束</h2><p>按 metric 语义对象组织；缺少注释的规则会进入未归类。</p></div><button class="btn btn-outline" type="button" data-refresh-rules>刷新规则</button></div><div id="metricsRulesInline" class="rules-layout"></div></article></section>
+        <section class="secondary-panel" id="metrics-payloads"><article class="card"><div class="card-head"><div><h2>Metric Payloads</h2><p>完整 raw payload 通过 modal 打开。</p></div></div><div id="metricsPayloadList" class="stack"></div></article></section>
+      </section>
+    </main>
+  </div>
+
+  <div id="findingBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="findingTitle">
+    <section class="modal modal-wide">
+      <header class="modal-head">
+        <div><h2 id="findingTitle">Finding Detail</h2><p id="findingSubtitle"></p></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="copyPromptBtn" type="button">复制 AI Prompt</button>
+          <button class="btn btn-outline" id="copyPromptPayloadBtn" type="button">复制 Prompt + Payload</button>
+          <button class="btn btn-outline" id="copyFindingBtn" type="button">复制 Finding</button>
+          <button class="btn btn-ghost" id="closeFindingBtn" type="button">关闭</button>
+        </div>
+      </header>
+      <div class="modal-body finding-detail">
+        <aside class="diagnosis-panel">
+          <div class="section-kicker">Diagnosis</div>
+          <button class="diagnosis active" type="button" data-diagnosis="trace">Trace / instrumentation bug</button>
+          <button class="diagnosis" type="button" data-diagnosis="rule">Rule / semconv bug</button>
+          <button class="diagnosis" type="button" data-diagnosis="exception">Expected exception</button>
+          <div id="promptPreview" class="prompt-preview"></div>
+        </aside>
+        <div id="findingBody" class="detail-grid"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="payloadBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="payloadTitle">
+    <section class="modal modal-wide">
+      <header class="modal-head">
+        <div><h2 id="payloadTitle">Payload</h2><p id="payloadSubtitle"></p></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="copyPayloadBtn" type="button">复制全部 Payload</button>
+          <button class="btn btn-outline" id="copyPayloadSelectedBtn" type="button">复制选中文本</button>
+          <button class="btn btn-ghost" id="closePayloadBtn" type="button">关闭</button>
+        </div>
+      </header>
+      <div class="modal-body"><pre id="payloadBody" class="payload-pre"></pre></div>
+    </section>
+  </div>
+
+
+
+
+
+  <div id="promptEngineeringBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="promptEngineeringTitle">
+    <section class="modal modal-wide">
+      <header class="modal-head">
+        <div><h2 id="promptEngineeringTitle">AI 工作流</h2><p>选择场景、信号类型和策略，生成可复制给 AI 的工作流提示词。</p></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="copyPromptEngineeringBtn" type="button">复制 Prompt</button>
+          <button class="btn btn-ghost" id="closePromptEngineeringBtn" type="button">关闭</button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <nav class="tabs prompt-eng-tabs" aria-label="Prompt engineering tabs">
+          <button class="tab active prompt-eng-tab" type="button" data-prompt-tab="bootstrap"><span>新项目接入</span><small>首次接入 OTLP 上报，生成给 AI 的接入提示词</small></button>
+          <button class="tab prompt-eng-tab" type="button" data-prompt-tab="loop"><span>语义修正</span><small>已有上报数据，循环修复 violation 和字段问题</small></button>
+          <button class="tab prompt-eng-tab" type="button" data-prompt-tab="golden"><span>Golden Replay</span><small>在真实 agent session 中执行场景提示词，采集全覆盖基线</small></button>
+          <button class="tab prompt-eng-tab" type="button" data-prompt-tab="superloop"><span>Superloop</span><small>一键生成全流程 golden 采集 + 校验提示词，交给 AI 自动执行</small></button>
+        </nav>
+
+        <div class="prompt-tab-panel active" id="prompt-panel-bootstrap">
+          <div class="loop-prompt-body">
+            <section class="loop-options" aria-label="Bootstrap prompt options">
+              <fieldset class="loop-option loop-signal-option">
+                <legend>接入信号类型</legend>
+                <div class="loop-signal-choices">
+                  <label class="loop-checkbox"><input type="checkbox" id="bootstrapSignalTraces" value="traces" checked /> Traces</label>
+                  <label class="loop-checkbox"><input type="checkbox" id="bootstrapSignalEvents" value="events" checked /> Events</label>
+                  <label class="loop-checkbox"><input type="checkbox" id="bootstrapSignalMetrics" value="metrics" checked /> Metrics</label>
+                </div>
+              </fieldset>
+              <label class="loop-option" for="bootstrapLevelSelect">
+                <span>接入等级</span>
+                <select class="select" id="bootstrapLevelSelect">
+                  <option value="lightweight">轻量级接入</option>
+                  <option value="standard">标准 Agent 接入（含 replay/transcript/report）</option>
+                </select>
+              </label>
+              <label class="loop-option" for="bootstrapConfirmSelect">
+                <span>用户确认</span>
+                <select class="select" id="bootstrapConfirmSelect">
+                  <option value="risk">高风险前确认</option>
+                  <option value="always">每轮修改前确认</option>
+                  <option value="never">无需确认</option>
+                </select>
+              </label>
+            </section>
+            <pre id="bootstrapPromptPreview" class="guide-code loop-prompt-preview"></pre>
+          </div>
+        </div>
+
+        <div class="prompt-tab-panel" id="prompt-panel-loop">
+          <div class="loop-prompt-body">
+            <section class="loop-options" aria-label="Loop prompt options">
+              <fieldset class="loop-option loop-signal-option">
+                <legend>修复信号类型</legend>
+                <div class="loop-signal-choices">
+                  <label class="loop-checkbox"><input type="checkbox" id="loopSignalTraces" value="traces" checked /> Traces</label>
+                  <label class="loop-checkbox"><input type="checkbox" id="loopSignalEvents" value="events" checked /> Events</label>
+                  <label class="loop-checkbox"><input type="checkbox" id="loopSignalMetrics" value="metrics" checked /> Metrics</label>
+                </div>
+              </fieldset>
+              <label class="loop-option" for="loopFixLevelSelect">
+                <span>修复等级</span>
+                <select class="select" id="loopFixLevelSelect">
+                  <option value="blocking">Violation + Semconv</option>
+                  <option value="violation">Violation only</option>
+                  <option value="all">All levels</option>
+                </select>
+              </label>
+              <label class="loop-option" for="loopConfirmSelect">
+                <span>用户确认</span>
+                <select class="select" id="loopConfirmSelect">
+                  <option value="risk">高风险前确认</option>
+                  <option value="always">每轮修复前确认</option>
+                  <option value="never">无需确认</option>
+                </select>
+              </label>
+              <label class="loop-option" for="loopReportModeSelect">
+                <span>重新触发上报方式</span>
+                <select class="select" id="loopReportModeSelect">
+                  <option value="manual">等待用户手动触发后继续校验</option>
+                  <option value="command">自动执行命令</option>
+                  <option value="report-check">约定 make report-check</option>
+                </select>
+              </label>
+              <label class="loop-option loop-report-option" id="loopReportInputOption" for="loopReportInput" hidden>
+                <span>自定义上报命令</span>
+                <textarea id="loopReportInput" class="loop-report-input" rows="3" placeholder="例如：make replay-all；或 CCHOOKS_DEBUG=true <agent command>。命令必须产生真实 OTLP 上报到 127.0.0.1:4319。"></textarea>
+              </label>
+              <label class="loop-checkbox loop-option">
+                <input type="checkbox" id="loopIncludeSemanticDoc" />
+                包含语义说明文档
+              </label>
+            </section>
+            <pre id="loopPromptPreview" class="guide-code loop-prompt-preview"></pre>
+          </div>
+        </div>
+
+        <div class="prompt-tab-panel" id="prompt-panel-golden">
+          <div class="loop-prompt-body">
+            <section class="loop-options" aria-label="Golden replay options">
+              <fieldset class="loop-option loop-signal-option">
+                <legend>生成信号类型</legend>
+                <div class="loop-signal-choices">
+                  <label class="loop-checkbox"><input type="checkbox" id="goldenSignalTraces" value="traces" checked /> Traces</label>
+                  <label class="loop-checkbox"><input type="checkbox" id="goldenSignalEvents" value="events" checked /> Events</label>
+                  <label class="loop-checkbox"><input type="checkbox" id="goldenSignalMetrics" value="metrics" checked /> Metrics</label>
+                </div>
+              </fieldset>
+            </section>
+            <p class="meta-line">按顺序逐步复制，每步喂给 AI 生成一个 replay 文件。</p>
+            <div id="goldenReplayStepList" class="golden-step-list"></div>
+          </div>
+        </div>
+
+        <div class="prompt-tab-panel" id="prompt-panel-superloop">
+          <div class="loop-prompt-body">
+            <section class="loop-options" aria-label="Superloop options">
+              <fieldset class="loop-option loop-signal-option">
+                <legend>采集信号类型</legend>
+                <div class="loop-signal-choices">
+                  <label class="loop-checkbox"><input type="checkbox" id="superloopSignalTraces" value="traces" checked /> Traces</label>
+                  <label class="loop-checkbox"><input type="checkbox" id="superloopSignalEvents" value="events" checked /> Events</label>
+                  <label class="loop-checkbox"><input type="checkbox" id="superloopSignalMetrics" value="metrics" checked /> Metrics</label>
+                </div>
+              </fieldset>
+              <label class="loop-option" for="superloopAgentSelect">
+                <span>目标 Agent</span>
+                <select class="select" id="superloopAgentSelect">
+                  <option value="claudecode">Claude Code</option>
+                  <option value="openclaw">OpenClaw</option>
+                </select>
+              </label>
+            </section>
+            <pre id="superloopPromptPreview" class="guide-code loop-prompt-preview"></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="apiDocsBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="apiDocsTitle">
+    <section class="modal modal-wide">
+      <header class="modal-head">
+        <div><h2 id="apiDocsTitle">AiVision API 文档</h2><p>用于 agent 或脚本读取最近语义问题，并清理本地 dashboard 诊断数据。</p></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="copyApiDocsBtn" type="button">复制 API 文档</button>
+          <button class="btn btn-ghost" id="closeApiDocsBtn" type="button">关闭</button>
+        </div>
+      </header>
+      <div class="modal-body guide-body">
+        <section class="guide-card">
+          <div class="section-kicker">1. 获取 violations / findings</div>
+          <h3>GET <code>/api/violations</code></h3>
+          <p>返回最近诊断中的 finding 列表。默认只返回 violation，默认最多 10 条；响应同时提供 <code>findings</code> 和兼容字段 <code>violations</code>。</p>
+          <table class="api-doc-table">
+            <thead><tr><th>Query</th><th>说明</th><th>示例</th></tr></thead>
+            <tbody>
+              <tr><td><code>limit</code></td><td>返回条数，默认 10，最大 100。</td><td><code>limit=10</code></td></tr>
+              <tr><td><code>signal</code></td><td>按信号过滤：traces / events / metrics；也兼容 span/log 等别名。</td><td><code>signal=events</code></td></tr>
+              <tr><td><code>level</code></td><td>按等级过滤：violation / improvement / information / semconv；支持逗号分隔。</td><td><code>level=violation,improvement</code></td></tr>
+              <tr><td><code>levels</code></td><td><code>level</code> 的复数别名；也支持 <code>all</code>。</td><td><code>levels=all</code></td></tr>
+              <tr><td><code>include_payload</code></td><td>是否返回原始 payload；默认 false，避免接口默认暴露 prompt/tool payload。</td><td><code>include_payload=true</code></td></tr>
+            </tbody>
+          </table>
+          <pre class="guide-code">curl 'http://127.0.0.1:4319/api/violations?limit=10'
+curl 'http://127.0.0.1:4319/api/violations?signal=events&level=violation,improvement&limit=20'
+curl 'http://127.0.0.1:4319/api/violations?levels=all&include_payload=true&limit=5'</pre>
+          <p class="meta-line">兼容历史拼写：<code>/api/voilations</code> 也会路由到同一个接口；新脚本应使用 <code>/api/violations</code>。</p>
+        </section>
+
+        <section class="guide-card">
+          <div class="section-kicker">2. 清理本地诊断数据</div>
+          <h3>POST / DELETE <code>/api/clear</code></h3>
+          <p>清空当前进程内保存的 recent diagnostics、findings 和 payload 记录。不会删除 Rego 规则、semconv 文件，也不会清理 Jaeger/Victoria 后端数据。</p>
+          <pre class="guide-code">curl -X POST 'http://127.0.0.1:4319/api/clear'
+curl -X DELETE 'http://127.0.0.1:4319/api/clear'</pre>
+          <p>响应示例：</p>
+          <pre class="guide-code">{
+  "cleared_records": 12,
+  "remaining_records": 0,
+  "scope": "recent_diagnostics"
+}</pre>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div id="rulesBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <section class="modal modal-wide">
+      <header class="modal-head">
+        <div><h2 id="rulesTitle">Rego 语义约束</h2><p>按 policy group、signal、event.name/span.kind/metric 语义对象组织；Rego 注释提供页面展示信息，Rego 规则仍是唯一执行源。</p></div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" id="refreshRulesModalBtn" type="button">刷新规则</button>
+          <button class="btn btn-ghost" id="closeRulesBtn" type="button">关闭</button>
+        </div>
+      </header>
+      <div class="modal-body"><div id="rulesModalBody" class="rules-layout"></div></div>
+    </section>
+  </div>
+
+  <div id="guideBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+    <section class="modal modal-wide">
+      <header class="modal-head">
+        <div><h2 id="guideTitle">AiVision 接入/修复指南</h2><p>新项目先用 Bootstrap 接入，本地上报后用语义修正 Loop 校验、诊断和修复，再转发到本地观测后端。</p></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="copyGuideBtn" type="button">复制接入/修复指南</button>
+          <button class="btn btn-ghost" id="closeGuideBtn" type="button">关闭</button>
+        </div>
+      </header>
+      <div class="modal-body guide-body">
+        <section class="guide-card">
+          <div class="section-kicker">1. 作用</div>
+          <h3>本地语义校验网关</h3>
+          <p>AiVision 作为本地 OTLP HTTP 接收端，接收 agent 上报的 traces、events/logs 和 metrics，加载 Rego 规则与语义约定后生成 diagnostics，并把通过策略允许的数据写入本地 Jaeger / Victoria 后端。</p>
+          <ul>
+            <li>实时发现缺字段、废弃字段、非法枚举、span/event/metric 结构问题。</li>
+            <li>在页面中查看最近上报、命中规则、完整 payload 和修复 prompt。</li>
+            <li>顶级按信号类型切换：Traces / Events / Metrics；每个信号内部再查看 Overview、Findings、Diagnostics、语义约束与 Payloads。</li>
+            <li>语义约束来自 Rego 注释，支持按 policy group（默认 aivision）单独展示和启用/关闭。</li>
+            <li>默认转发策略为 Always：即使存在 violation，也保留样本方便排查。</li>
+          </ul>
+        </section>
+
+        <section class="guide-card">
+          <div class="section-kicker">2. 接入配置</div>
+          <h3>把 agent 的 OTLP endpoint 指向 AiVision</h3>
+          <ol>
+            <li>启动本地服务：<code>make -C weaver serve</code>。</li>
+            <li>新项目或新 agent 优先点击 <b>AI 工作流</b>，在"新项目接入"标签页选择接入等级和信号类型后复制 prompt 给 AI 完成第一版上报。</li>
+            <li>将 agent 的 OTLP HTTP endpoint 改为 AiVision 地址，默认：<code>http://127.0.0.1:4319</code>。</li>
+            <li>按信号上报到标准路径：<code>/v1/traces</code>、<code>/v1/logs</code>、<code>/v1/metrics</code>。</li>
+            <li>回到本页面查看 Traces / Events / Metrics 的 Overview、Diagnostics、Findings 和 Payloads。</li>
+          </ol>
+          <pre class="guide-code">OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4319
+OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+# 或按信号分别配置：
+OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://127.0.0.1:4319/v1/traces
+OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://127.0.0.1:4319/v1/logs
+OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://127.0.0.1:4319/v1/metrics</pre>
+        </section>
+
+        <section class="guide-card">
+          <div class="section-kicker">3. 语义出现问题后的操作</div>
+          <h3>复制问题上下文，让 AI 修上报或规则</h3>
+          <ol>
+            <li>已有真实上报后，优先点击 <b>AI 工作流</b>，切换到"语义修正"标签页，选择修复等级和确认策略，复制 prompt 给 AI 执行 validate / clear / re-report 循环。</li>
+            <li>进入对应信号的 <b>Findings</b> 或 <b>Diagnostics</b>，点击 <b>诊断</b>。</li>
+            <li>如果是上报缺字段/字段名错误，选择 <b>Trace / instrumentation bug</b>，复制 AI Prompt 交给 AI 修改 agent 上报逻辑。</li>
+            <li>如果怀疑规则误报，选择 <b>Rule / semconv bug</b>，复制 rule prompt 给 AI 修改 Rego 规则和测试样例。</li>
+            <li>需要完整证据时，点击 <b>复制 Prompt + Payload</b> 或打开 <b>Payload</b> modal 复制原始上报。</li>
+          </ol>
+        </section>
+
+        <section class="guide-card">
+          <div class="section-kicker">4. 忽略语义</div>
+          <h3>只在确认是预期偏差时忽略</h3>
+          <p>如果某个 finding 是兼容期、灰度期或特定 agent 的预期偏差，可以临时忽略，但建议保留原因和范围，避免全局关闭重要规则。</p>
+          <ul>
+            <li>单次诊断：在 Finding modal 选择 <b>Expected exception</b>，复制例外说明给 AI 生成有范围的 suppression/说明。</li>
+            <li>规则开关：进入 <b>语义约束</b>，优先关闭单条规则；必要时再关闭规则组。</li>
+            <li>继续写入后端：Forward 策略保持 <b>Always</b>，可以让不合规样本仍进入 Jaeger / Victoria 便于对比。</li>
+            <li>长期忽略：应在规则注释、README 或报告中记录 owner、原因、过期时间和恢复条件。</li>
+          </ul>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <div id="confirmBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <section class="modal modal-confirm">
+      <header class="modal-head">
+        <div>
+          <h2 id="confirmTitle">确认操作</h2>
+          <p id="confirmSubtitle">请确认后继续。</p>
+        </div>
+      </header>
+      <div class="modal-body">
+        <p id="confirmMessage" class="confirm-message"></p>
+      </div>
+      <footer class="modal-foot">
+        <button class="btn btn-ghost" id="confirmCancelBtn" type="button">取消</button>
+        <button class="btn btn-danger" id="confirmOkBtn" type="button">确认</button>
+      </footer>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/dashboard/assets/dashboard.js?v=20260709-loop-semantic-doc"></script>
+</body>
+</html>

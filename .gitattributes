@@ -1,0 +1,3 @@
+ai-vision/agent-plugins/tests/framework_e2e/fixtures/signoz-native-nanos.patch -text -whitespace
+
+ai-vision/vfe/tests/fixtures/trace-media/sample.pdf binary

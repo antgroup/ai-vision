@@ -1,0 +1,3 @@
+# Shared pinned dependencies for the native drivers, OTLP capture and fake models.
+# AgentLens and platform service dependencies stay in their own projects.
+-r ../native_agent_e2e/requirements.txt

@@ -1,0 +1,234 @@
+{
+  "classification": "Final cumulative PR review; fresh tests and CE serving smoke, historical runtime images explicitly retained. No benchmark timing replacement.",
+  "product_runtime_head": "6cf3ab413ff98969173ee84028531c19860d866d",
+  "provider_runtime_head": "c09caf048445e29c47781387d53fea6ce3b58690",
+  "tests": {
+    "python": {
+      "passed": 198,
+      "receipt_sha256": "2e7ca25a8bcb302565b4a8cb3f19d11b1e18a7e7079d0aa3ea8482802e89d75d",
+      "log_sha256": "9d4a89f7545a74f7df0fe8d26fe8b8bfa72aca95633607d66e493651af8cc740"
+    },
+    "frontend": {
+      "node_summary_passed": 1040,
+      "failed": 0,
+      "skipped": 0,
+      "production_build_passed": true,
+      "receipt_sha256": "8c2a8b57e17f84d6a44ae9d2510231ec7485a927cd832c2daad10a2320f0a2dd"
+    },
+    "retry_red": {
+      "exit_code": 1,
+      "wall_seconds": 2.238
+    },
+    "retry_focused_green": {
+      "exit_code": 0,
+      "wall_seconds": 1.949,
+      "events": {
+        "pass": 8
+      },
+      "top_level_tests": {
+        "pass": 8
+      },
+      "log_sha256": "7b9e49f4171664a28e1ed5da2fade088bc1584ab23902873663b51ec0647f112"
+    },
+    "go_affected_packages": {
+      "exit_code": 0,
+      "wall_seconds": 6.008,
+      "events": {
+        "pass": 503,
+        "skip": 9
+      },
+      "top_level_tests": {
+        "pass": 204,
+        "skip": 9
+      },
+      "log_sha256": "d8a8b687d1356ed674a17646f502337f7d248d1d30ecb6b0dd54963c11f8b86f"
+    }
+  },
+  "ce_serving_smoke": {
+    "count": 15,
+    "all_passed": true,
+    "runtime_binding_sha256": "c672ca47430db12e57062ab20f9ffabe16283e738a24c275b089f30a5a12f1a0",
+    "build_receipt_sha256": "c707df6fe43cd07f95ab8c116d8c838730196c281f0e427598bc63f7b790c5d3",
+    "receipt_sha256": "eb098a7712311d5eadcda81f9af60934e9977403d0ad01b244db2f244bb4a261",
+    "oracle_files": {
+      "outputs/ob-ap-metrics-20261026/candidate-final-generation-row-sequence-0.json": "8a2d626b4a38ef3457b63e574dcd9ee0181f73af5caefb2ae2dd102098834d32",
+      "outputs/ob-ap-metrics-20261026/candidate-final-generation-operation.json": "8631b6cbd958a05abc33e403667da68e8a2e3f47c66b3c82fdf5207357e10817"
+    },
+    "samples": [
+      {
+        "group": "eino",
+        "case": "dashboard_metrics",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "expected_business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "business_equal": true
+      },
+      {
+        "group": "deepagents",
+        "case": "dashboard_metrics",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "dab0f3b2e9e23b8f46f8084b5a4618e4f17ec47bfbae644e090f4ca2ade66296",
+        "expected_business_sha256": "dab0f3b2e9e23b8f46f8084b5a4618e4f17ec47bfbae644e090f4ca2ade66296",
+        "business_equal": true
+      },
+      {
+        "group": "dsh",
+        "case": "dashboard_metrics",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "21dba256c8f4d8a486231086438762c331d8b0e9215dee083b4cacfbb766254f",
+        "expected_business_sha256": "21dba256c8f4d8a486231086438762c331d8b0e9215dee083b4cacfbb766254f",
+        "business_equal": true
+      },
+      {
+        "group": "codex",
+        "case": "dashboard_metrics",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "784e7749ba37df0b0653eca545b5e953fa6afbf6a6002c4b77893d3dd9b164ae",
+        "expected_business_sha256": "784e7749ba37df0b0653eca545b5e953fa6afbf6a6002c4b77893d3dd9b164ae",
+        "business_equal": true
+      },
+      {
+        "group": "scale-10000x3",
+        "case": "dashboard_metrics",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be",
+        "expected_business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be",
+        "business_equal": true
+      },
+      {
+        "group": "eino",
+        "case": "framework.overview.event_stream",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "expected_business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "business_equal": true
+      },
+      {
+        "group": "eino",
+        "case": "framework.events.timeseries",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "69fc654abb5a3f3233ce631d2ac5fc629c4a136c16348cc3f0f3df008407aa59",
+        "expected_business_sha256": "69fc654abb5a3f3233ce631d2ac5fc629c4a136c16348cc3f0f3df008407aa59",
+        "business_equal": true
+      },
+      {
+        "group": "deepagents",
+        "case": "framework.overview.event_stream",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "32e6d63bece9bd65652ae5495e8e8ef3d8afaf8f90e074ad294a7f52e7370b01",
+        "expected_business_sha256": "32e6d63bece9bd65652ae5495e8e8ef3d8afaf8f90e074ad294a7f52e7370b01",
+        "business_equal": true
+      },
+      {
+        "group": "deepagents",
+        "case": "framework.events.timeseries",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "2a80e78ecb630acc93c6f262beab8f8798c26b62a102b7c66198d0581efc5e6d",
+        "expected_business_sha256": "2a80e78ecb630acc93c6f262beab8f8798c26b62a102b7c66198d0581efc5e6d",
+        "business_equal": true
+      },
+      {
+        "group": "dsh",
+        "case": "framework.overview.event_stream",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "7c6e1f1847e8305531a1c07e62067037b97c40022eef44244254ad253bb93c2e",
+        "expected_business_sha256": "7c6e1f1847e8305531a1c07e62067037b97c40022eef44244254ad253bb93c2e",
+        "business_equal": true
+      },
+      {
+        "group": "dsh",
+        "case": "framework.events.timeseries",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "9820c72d759b796479de0cacfabedabc3bce2046de55108513923d9acc669086",
+        "expected_business_sha256": "9820c72d759b796479de0cacfabedabc3bce2046de55108513923d9acc669086",
+        "business_equal": true
+      },
+      {
+        "group": "codex",
+        "case": "framework.overview.event_stream",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "d01ef0fc43d6e7a8a715e25c30959047a18e867e26ea02f2d721ccd3556fdeff",
+        "expected_business_sha256": "d01ef0fc43d6e7a8a715e25c30959047a18e867e26ea02f2d721ccd3556fdeff",
+        "business_equal": true
+      },
+      {
+        "group": "codex",
+        "case": "framework.events.timeseries",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "3e8b339bdc5b936374d00ef2f3246e994427c143bb1ca31c01c00c915ddea4ab",
+        "expected_business_sha256": "3e8b339bdc5b936374d00ef2f3246e994427c143bb1ca31c01c00c915ddea4ab",
+        "business_equal": true
+      },
+      {
+        "group": "scale-10000x3",
+        "case": "framework.overview.event_stream",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+        "expected_business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+        "business_equal": true
+      },
+      {
+        "group": "scale-10000x3",
+        "case": "framework.events.timeseries",
+        "status": 200,
+        "api_code": 0,
+        "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312",
+        "expected_business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312",
+        "business_equal": true
+      }
+    ]
+  },
+  "preservation": {
+    "original_engines_unchanged": true,
+    "nine_services_unchanged": true,
+    "ap26_fingerprints_unchanged": true,
+    "only_task_runtime_stopped": true,
+    "cleanup_receipt_sha256": "e005812e2ca45c7e17d292edc7f746d0c37056b7561bc54ce0e28b8649f2107b"
+  },
+  "browser": {
+    "fresh_integrated_ui_check": "blocked_by_saved_browser_permission_policy_after_explicit_user_authorization_and_settings_retry",
+    "alternate_surface_used": false,
+    "retained_stage": "initial compact-window prepared runtime; earlier actual pagination/keyboard/focus/size-reset/native checks",
+    "unchanged_source_sha256": {
+      "ai-vision/vfe/src/agents/dashboards/DashboardEntry.tsx": "cac36f7ca8f7928650f4479e0dd8be339b323add10e06f31dc2897ee39c6f8e0",
+      "ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx": "55ea502068d0a5b9890f975e9788322639cf96ab322f6370f9d4d3c37c85e811",
+      "ai-vision/vfe/src/components/bizcharts/datatable/DataTable.tsx": "77b7abc38e5694beb53c200808e55b1ba0caef1d5572a452476f1a549305fac8"
+    },
+    "images": {
+      "dashboard-pagination-before.jpg": {
+        "sha256": "0a20b77cc4364a90f908d169d8a96a8b2ad563ce5189319a9adf353c5248aaa9",
+        "bytes": 124287
+      },
+      "dashboard-pagination-after.jpg": {
+        "sha256": "10116f61b2a556c767e75d637318f1be0b10051d566ffa214f2edd7cf11ec4df",
+        "bytes": 150094
+      },
+      "dashboard-eino-runtime.jpg": {
+        "sha256": "0e072f8250a8b7e30082626685aa41a7ad2c8639fffce1da1d76939959d708bc",
+        "bytes": 153041
+      }
+    }
+  },
+  "reviews": {
+    "product_cumulative_sha256": "3c99adf25d6ef6780b05437db8edb44185358affa36ab491b66eee7b2fc17b79",
+    "provider_cumulative_sha256": "515fa7dc2c56163d6cbfebb169d79dc9e2581405c029fe8fe8dd4ae3a1afac72",
+    "provider_fix_sha256": "52e22f4cef5037b91e711cb86dea988092f46d37966f4593b027b9c84bfc81b2",
+    "evidence_sha256": "eaafcc309c1e8850ffee9af227a24d63da209826243034225ad5c8b70801e72f",
+    "blocking_issue": "optional statistics retry lost after durable-OFF startup and transient resume DDL failure",
+    "resolution": "c09caf048445e29c47781387d53fea6ce3b58690; no remaining material finding"
+  }
+}

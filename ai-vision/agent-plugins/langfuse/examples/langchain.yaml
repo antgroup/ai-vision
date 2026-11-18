@@ -1,0 +1,111 @@
+id: langchain
+logo: /assets/frameworks/langchain-brand.svg
+label: LangChain
+marketLabel: LangChain & Deep Agents
+marketSort: 1
+marketPreview: true
+frontendSort: 2
+pipInstall: pip install "langchain>=1.4.3,<2" "langchain-core>=1.6.6,<2" "langchain-openai>=1.6.7,<2" "langfuse>=5.0.2,<6" "python-dotenv>=1.2.4,<2"
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+- export OPENAI_MODEL="gpt-4o"
+- export OPENAI_BASE_URL="https://api.openai.com/v1"
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+- OPENAI_MODEL="gpt-4o"
+- OPENAI_BASE_URL="https://api.openai.com/v1"
+officialDocs: https://langfuse.com/integrations/frameworks/langchain
+integrationNotes: >-
+  To opt in to inline media, set LANGFUSE_MEDIA_UPLOAD_ENABLED=false before initializing the SDK. Media becomes part of telemetry; assess privacy and ingestion limits first.
+  Add a Langfuse callback to your existing LangChain invocation; installing the SDK or setting credentials alone does not record a request.
+  Keep existing callbacks, business configuration and checkpointer. Use the same session_id for turns in one conversation;
+  thread_id remains the framework's persistence key. Use one tracing integration per destination to avoid duplicate spans.
+  The complete example loads .env from the script directory; shell variables take precedence.
+existingExample: |-
+  from langchain_core.runnables.config import merge_configs
+  from langfuse import get_client, propagate_attributes
+  from langfuse.langchain import CallbackHandler
+
+  langfuse = get_client()  # Once at service startup, after loading the environment.
+
+  # Keep your existing agent/graph, tools, state, checkpointer and request config.
+  # existing_config must not already contain a Langfuse tracing callback.
+  config = merge_configs(existing_config, {"callbacks": [CallbackHandler()]})
+  with propagate_attributes(session_id=session_id, tags=["framework:langchain"]):
+      with langfuse.start_as_current_observation(
+          name="langchain-request", as_type="agent", input=existing_input
+      ) as request:
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          result = existing_agent.invoke(existing_input, config=config)
+          request.update(output=result["messages"][-1].content)
+
+  # Keep the shared client alive between requests. At service shutdown, after all
+  # requests finish, call langfuse.flush() and langfuse.shutdown() in finally.
+  # For a short script, use the complete example below for guaranteed cleanup.
+pipExample: |-
+  import os
+  from pathlib import Path
+
+  from dotenv import load_dotenv
+
+  load_dotenv(Path(__file__).with_name(".env"), override=False)
+
+  import uuid
+
+  from langchain.agents import create_agent
+  from langchain_openai import ChatOpenAI
+  from langfuse import get_client, propagate_attributes
+  from langfuse.langchain import CallbackHandler
+
+
+  def main():
+      # Initialize Langfuse client
+      langfuse = get_client()
+
+      # Initialize Langfuse CallbackHandler for LangChain (tracing)
+      langfuse_handler = CallbackHandler()
+
+      def get_weather(city: str) -> str:
+          """Get weather for a given city."""
+          return f"It's always sunny in {city}!"
+
+      agent = create_agent(
+          model=ChatOpenAI(
+              model=os.environ["OPENAI_MODEL"],
+              api_key=os.environ["OPENAI_API_KEY"],
+              base_url=os.environ["OPENAI_BASE_URL"],
+              use_responses_api=False,
+          ),
+          tools=[get_weather],
+          system_prompt="You are a helpful assistant",
+      )
+
+      session_id = str(uuid.uuid4())
+      inputs = {"messages": [{"role": "user", "content": "Use the weather tool for San Francisco."}]}
+      try:
+          with propagate_attributes(session_id=session_id, tags=["framework:langchain"]):
+              with langfuse.start_as_current_observation(
+                  name="langchain-onboarding", as_type="agent", input=inputs
+              ) as request:
+                  print("AI Vision trace_id:", langfuse.get_current_trace_id())
+                  result = agent.invoke(inputs, config={"callbacks": [langfuse_handler]})
+                  output = result["messages"][-1].content
+                  request.update(output=output)
+                  print(output)
+      finally:
+          # Short script: export even if the model or tool raises.
+          # In a service, keep the client alive until all requests finish.
+          try:
+              langfuse.flush()
+          finally:
+              langfuse.shutdown()
+
+
+  if __name__ == "__main__":
+      main()

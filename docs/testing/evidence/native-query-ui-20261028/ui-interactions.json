@@ -1,0 +1,34 @@
+{
+  "invalidRestoredToken": {
+    "url": "http://127.0.0.1:32407/trace?spaceId=5af73e76-87f3-4a98-b8ec-686b658c5115&agent=langfuse&agent_uuid=fda49f61-f1d6-478d-aeb3-544be9dd0c8f&source_system=signoz&range=custom&from=1792886400000&to=1792898399999&view=session&min_total_tokens=0",
+    "input": "0",
+    "ariaInvalid": "true",
+    "listRequests": 0,
+    "alerts": [
+      "总 Token：请输入 100 至 9007199254740991 之间的整数。 请修改或清除此条件后加载结果。清除全部",
+      "请输入 100 至 9007199254740991 之间的整数。"
+    ]
+  },
+  "correctedToken": {
+    "url": "http://127.0.0.1:32407/trace?spaceId=5af73e76-87f3-4a98-b8ec-686b658c5115&agent=langfuse&agent_uuid=fda49f61-f1d6-478d-aeb3-544be9dd0c8f&source_system=signoz&range=custom&from=1792886400000&to=1792898399999&view=session&min_total_tokens=100",
+    "input": "100",
+    "ariaInvalid": "false",
+    "listRequests": [
+      {
+        "url": "http://127.0.0.1:32407/api/v1/spaces/5af73e76-87f3-4a98-b8ec-686b658c5115/signoz/sessions/list",
+        "body": {
+          "page": 1,
+          "limit": 20,
+          "from": "1792886400000",
+          "to": "1792898399999",
+          "agent_product": "langfuse",
+          "agent_uuid": "fda49f61-f1d6-478d-aeb3-544be9dd0c8f",
+          "session_semantics": "canonical-trace-v1",
+          "min_total_tokens": 100
+        }
+      }
+    ],
+    "tableRows": 21,
+    "costBasisButtons": 0
+  }
+}

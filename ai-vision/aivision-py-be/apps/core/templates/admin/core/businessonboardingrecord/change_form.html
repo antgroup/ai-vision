@@ -1,0 +1,9 @@
+{% extends "admin/change_form.html" %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  {% if admin_review_available and has_change_permission %}
+    <li><a href="{{ admin_approve_url }}">接受并开通</a></li>
+    <li><a href="{{ admin_reject_url }}">拒绝申请</a></li>
+  {% endif %}
+{% endblock %}

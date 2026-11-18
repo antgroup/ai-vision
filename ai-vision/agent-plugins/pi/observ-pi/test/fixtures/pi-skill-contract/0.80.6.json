@@ -1,0 +1,21 @@
+{
+  "metadata": {
+    "package": "@earendil-works/pi-coding-agent",
+    "version": "0.80.6",
+    "integrity": "sha512-vcfD6tOk402isLl3Cm/qbn2O10TvgroMp1+/fEGM24ZdvETFCdOYv5VZ7m59EI5fPsjfSJh+CpQ5bhBrhfOg7g==",
+    "shasum": "8892736a2c7d01b5b95ac3dbc1752a5dbd517ba1",
+    "generatorRevision": 1,
+    "sourceHash": "f51f1dbf5d8acc9fc96dbf9a6fc89e312c2d3dbce9e9cb137d0e3b53c1c8e8e1"
+  },
+  "command": {
+    "input": "/skill:weather Hangzhou",
+    "expanded": "<skill name=\"weather\" location=\"/opt/pi-contract/skills/weather/SKILL.md\">\nReferences are relative to /opt/pi-contract/skills/weather.\n\nFollow the weather workflow.\n</skill>\n\nHangzhou",
+    "expectedName": "weather",
+    "expectedLocation": "/opt/pi-contract/skills/weather/SKILL.md"
+  },
+  "catalog": {
+    "systemPrompt": "\n\nThe following skills provide specialized instructions for specific tasks.\nUse the read tool to load a skill's file when the task matches its description.\nWhen a skill file references a relative path, resolve it against the skill directory (parent of SKILL.md / dirname of the path) and use that absolute path in tool commands.\n\n<available_skills>\n  <skill>\n    <name>weather</name>\n    <description>Weather workflow</description>\n    <location>/opt/pi-contract/skills/weather/SKILL.md</location>\n  </skill>\n</available_skills>",
+    "expectedName": "weather",
+    "expectedLocation": "/opt/pi-contract/skills/weather/SKILL.md"
+  }
+}

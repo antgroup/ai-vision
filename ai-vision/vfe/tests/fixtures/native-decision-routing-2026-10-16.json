@@ -1,0 +1,73 @@
+{
+  "provenance": {
+    "source": "Sanitized platform trace API read-back from the 2026-10-16 deployed dev image QA. Native decision has no gen_ai.span.kind.",
+    "originalDecisionSpanId": "6b348ff483ecd184",
+    "note": "Only span structure, decision metadata and usage are retained; replay makes no provider calls."
+  },
+  "spans": [
+    {
+      "span_id": "8e9bb806eb9993e7",
+      "parent_span_id": "",
+      "name": "Real native model routing jev-latest",
+      "start_time_unix_nano": "2026-10-16T14:36:12.021374Z",
+      "end_time_unix_nano": "2026-10-16T14:36:13.795129Z",
+      "status": {
+        "code": "UNSET",
+        "message": ""
+      },
+      "trace_id": "captured-native-routing",
+      "attributes": {
+        "gen_ai.span.kind": "AGENT"
+      }
+    },
+    {
+      "span_id": "6b348ff483ecd184",
+      "parent_span_id": "8e9bb806eb9993e7",
+      "name": "Select actual downstream response model",
+      "start_time_unix_nano": "2026-10-16T14:36:12.021429Z",
+      "end_time_unix_nano": "2026-10-16T14:36:12.858138Z",
+      "status": {
+        "code": "UNSET",
+        "message": ""
+      },
+      "trace_id": "captured-native-routing",
+      "attributes": {
+        "agentic.decision.choice": "Qwen/Qwen2.5-7B-Instruct",
+        "agentic.decision.confidence": 1,
+        "agentic.decision.latency_ms": 825.783625,
+        "agentic.decision.model": "jev-latest",
+        "agentic.decision.options": "{\"Qwen/Qwen2.5-7B-Instruct\":1.0,\"Qwen/Qwen2.5-14B-Instruct\":0.0}",
+        "agentic.decision.provider": "typesafe",
+        "agentic.decision.type": "model_routing",
+        "agentic.response.index": 0,
+        "gen_ai.provider.name": "typesafe",
+        "gen_ai.request.model": "jev-latest",
+        "gen_ai.response.model": "jev-1.13.0",
+        "gen_ai.usage.input_tokens": 356,
+        "gen_ai.usage.output_tokens": 34
+      }
+    },
+    {
+      "span_id": "e3cfee911cca3021",
+      "parent_span_id": "8e9bb806eb9993e7",
+      "name": "Actual routed chat completion Qwen/Qwen2.5-7B-Instruct",
+      "start_time_unix_nano": "2026-10-16T14:36:12.951006Z",
+      "end_time_unix_nano": "2026-10-16T14:36:13.75198Z",
+      "status": {
+        "code": "UNSET",
+        "message": ""
+      },
+      "trace_id": "captured-native-routing",
+      "attributes": {
+        "agentic.response.index": 0,
+        "gen_ai.provider.name": "siliconflow",
+        "gen_ai.request.model": "Qwen/Qwen2.5-7B-Instruct",
+        "gen_ai.response.model": "Qwen/Qwen2.5-7B-Instruct",
+        "gen_ai.span.kind": "LLM",
+        "gen_ai.usage.input_tokens": 70,
+        "gen_ai.usage.output_tokens": 20,
+        "gen_ai.usage.total_tokens": 90
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+# This file intentionally overrides .gitignore for npm publishing.
+# npm uses .gitignore as a fallback when .npmignore is absent, which would
+# exclude the dist/ directory. By providing this file, we let the "files"
+# field in package.json act as the sole whitelist for published content.
+#
+# Published files are controlled by package.json "files":
+#   - dist/
+#   - openclaw.plugin.json
+
+node_modules/
+*.tsbuildinfo
+.DS_Store
+*.log
+src/

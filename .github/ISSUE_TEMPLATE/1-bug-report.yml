@@ -1,0 +1,49 @@
+name: Bug report
+description: Help us reproduce a problem in AI Vision.
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Reports may be in English or Chinese. You do not need to contribute code to report a problem.
+        Remove credentials and private data. For vulnerabilities, follow the [private-reporting guidance](https://github.com/antgroup/ai-vision/blob/main/SECURITY.md) instead of posting details here.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem, expected and actual behavior
+      description: Describe what you were trying to do, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the commands, actions, inputs, or conditions needed to reproduce the problem. If you cannot reproduce it reliably, describe what you observed.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and actual version
+      description: Include the affected component or integration, deployment method, operating system, and actual version or image tag/digest. If the version is unknown, write unknown and explain why.
+      placeholder: |
+        Component or integration:
+        Deployment method and OS:
+        Actual version or image tag/digest:
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Optionally add relevant logs, error output, screenshots, or a small example. Remove credentials, personal information, private traces, and business prompts.
+    validations:
+      required: false
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you like to help?
+      description: Optional; this does not affect whether maintainers accept the report.
+      options:
+        - label: I would like to help investigate, test a fix, improve documentation, or contribute code.

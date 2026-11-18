@@ -1,0 +1,32 @@
+# Optional image only. Supply a freshly assembled native AgentLens runtime image
+# containing compiled agentlens.sandbox_plugin modules from the central producer.
+# Build context: agentlens/. This Dockerfile never copies owned implementation.
+# Example: docker build -f docker/Dockerfile.sandbox-plugin \
+#   --build-arg AGENTLENS_NATIVE_IMAGE=<qualified-native-image@sha256:...> .
+ARG AGENTLENS_NATIVE_IMAGE
+FROM ${AGENTLENS_NATIVE_IMAGE} AS runtime
+
+USER root
+COPY docker/requirements-sandbox-plugin.txt /tmp/requirements-sandbox-plugin.txt
+# The native venv deliberately omits pip; use the pristine upstream base pip to
+# install reviewed provider-only packages into that venv, without base upgrades.
+RUN /usr/local/bin/python -m pip install --no-cache-dir --no-deps --upgrade \
+      --target /app/.venv/lib/python3.11/site-packages \
+      -r /tmp/requirements-sandbox-plugin.txt \
+    && rm /tmp/requirements-sandbox-plugin.txt \
+    && /app/.venv/bin/python -c 'import agentlens.sandbox_plugin.main; import openshell' \
+    && mkdir -p /work \
+    && chown 1000:1000 /work \
+    && chmod 755 /work
+
+ENV PYTHONPATH=/app/src \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+WORKDIR /work
+EXPOSE 8091
+# Operator token, gateway credentials and the persistent journal are mounted by
+# explicit installation; none is copied into this image. Exactly one worker owns
+# each journal. Liveness does not claim gateway/workload readiness.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD ["/usr/local/bin/aiv-http-probe", "127.0.0.1", "8091", "/health/live", "3"]
+ENTRYPOINT ["/app/.venv/bin/python", "-m", "uvicorn", "agentlens.sandbox_plugin.main:app", "--host", "0.0.0.0", "--port", "8091", "--workers", "1"]

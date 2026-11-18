@@ -1,0 +1,2 @@
+{"hook_event_name":"PreToolUse","session_id":"session-redacted","turn_id":"turn-redacted","tool_name":"Bash","tool_use_id":"exec-redacted","cwd":"/repo","tool_input":{"cmd":"true"}}
+{"hook_event_name":"PostToolUse","session_id":"session-redacted","turn_id":"turn-redacted","tool_name":"Bash","tool_use_id":"exec-redacted","cwd":"/repo","transcript_path":"/redacted/session.jsonl","tool_input":{"cmd":"true"},"tool_response":"{\"chunk_id\":\"redacted\",\"wall_time_seconds\":1.0,\"exit_code\":0,\"output\":\"\"}"}

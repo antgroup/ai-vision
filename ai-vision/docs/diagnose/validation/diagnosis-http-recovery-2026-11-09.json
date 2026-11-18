@@ -1,0 +1,881 @@
+{
+  "schema": "diagnosis-http-recovery/v1",
+  "verified_at_utc": "2026-11-09T07:31:25.374078+00:00",
+  "baseline_commit": "historical-source-revision-redacted",
+  "tested_frontend_patch_sha256": "e79e8a70fe0d9b6f313f98adbdbde0b8396e2f6bed9002596f5339e5fdc0cca5",
+  "tested_files_sha256": {
+    "ai-vision/vfe/src/components/diagnose/quickDiagnosis.ts": "8ae79acf3b4fd2e14547825587052a00764d7d34310b79996c7324d081be9fcf",
+    "ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx": "3354bf5c1c312c188708fc05905e54eff84d37282f9d4d2e373d47eb89d2434e",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "f521d50b8d15b9d934faab324449e1f444461740edfb4010268b8b6b9a7d3fd2",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "7180d6b9e9704e0562dba78301143e0d602a18bc004f12effdf738ada761532e",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "a39fe96fc0fd9d2b21832c2cd147d88145422cc0613b0d975a41716cb10e1dba",
+    "ai-vision/vfe/tests/quickDiagnosis.test.ts": "fa09bb5193d7e1bc31fa4deca4829d83fc7bcef819c56fc480a0e0d21f26b533",
+    "ai-vision/vfe/tests/quickDiagnosisDom.test.ts": "709a25ea47f214f9b269b7506494de39d6d7c1c90c81d416852483478922a5a4"
+  },
+  "checks": {
+    "full_frontend_suite": {
+      "tests": 1681,
+      "pass": 1681,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "diagnosis_suite": {
+      "passed": 96,
+      "failed": 0,
+      "skipped": 0
+    },
+    "i18n_suite": {
+      "passed": 11,
+      "failed": 0
+    },
+    "modified_file_eslint": "passed",
+    "typescript_typecheck": "passed",
+    "production_build": "passed; existing chunk-size warning",
+    "diff_check": "passed"
+  },
+  "browser": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36",
+    "origin": "http://0.0.0.0:18317",
+    "isSecureContext": false,
+    "randomUUID": "undefined",
+    "getRandomValues": "function",
+    "viewport": {
+      "width": 1440,
+      "height": 960,
+      "devicePixelRatio": 1
+    }
+  },
+  "runtime": {
+    "baseline_commit": "historical-source-revision-redacted",
+    "host_platform": "Darwin/arm64",
+    "container_platform": "linux/arm64",
+    "docker_server": "29.4.0",
+    "source_mounts_read_only": true,
+    "backend_source_tree": "35f07a8ad1b4a8dcaeb47d50e531d09cdd3732a1",
+    "agentlens_source_tree": "42747d097997a000b92e25b2fa475388e0233bbd",
+    "backend_and_agentlens_tracked_sources_clean": true,
+    "runtime_versions": {
+      "python": "3.11.14",
+      "django": "5.2.12",
+      "djangorestframework": "3.15.2",
+      "fastapi": "0.139.0",
+      "sqlalchemy": "2.0.51",
+      "httpx": "0.28.1",
+      "pymysql": "2.2.8",
+      "database": "5.7.25-OceanBase seekdb-v1.4.0.0",
+      "collector": "otelcorecol 0.96.0-dev",
+      "signoz": "local custom test build; exact image identity recorded; no version subcommand exposed"
+    },
+    "images": {
+      "aiv-http-backend-20261109-b015": {
+        "image": "aiv-local010/aivision-be:0.1.0-daily.20261101-arm64",
+        "image_id": "sha256:b5c13921227a50f21b136c8278d8f0ef3188c055f9c3c2f041b223d8eac14884",
+        "platform": "linux/arm64"
+      },
+      "aiv-http-diagnosis-20261109-b015": {
+        "image": "aiv-sandbox-native-worker:20261102",
+        "image_id": "sha256:7dff2af3e605f4c488aa7d38428d6fb53adcc2db4911020f7f21141738c9d63d",
+        "platform": "linux/arm64"
+      },
+      "aiv-local-review-data-20261106": {
+        "image": "aiv-local-review/signoz-ob:mcp-owner-3ba06bbd-df594d7b",
+        "image_id": "sha256:878ca44fad8d4b2821d93a9fe72869441904e3b9768d58f8769cbc2a90aed3ef",
+        "platform": "linux/arm64"
+      },
+      "aiv-local-review-collector-20261106": {
+        "image": "aiv-local010/antcollector-gw:0.1.0-daily.20261101-arm64",
+        "image_id": "sha256:660be5fd8b6a8fa9cea6233174813576606768ad8f4f0cd963cd5089fc478586",
+        "platform": "linux/arm64"
+      },
+      "aiv-openshell-web-db-20261103": {
+        "image": "aiv-local010-deps/seekdb:approved-arm64",
+        "image_id": "sha256:39a950d4caf63489638ff9aa9b7028b5dd2a896e8fc5d77ae6145fa60fd3b59d",
+        "platform": "linux/arm64"
+      }
+    },
+    "boundaries": [
+      "Current Django and AgentLens source mounted read-only into existing Python dependency images.",
+      "Real local seekdb, collector and SigNoz services were reused with isolated platform and AgentLens schemas and owned synthetic Space.",
+      "No external model connections, model requests, or real Shell command execution.",
+      "This is prepared local linux/arm64 container integration; not a cold install or released-image qualification."
+    ]
+  },
+  "browser_runs": [
+    {
+      "case": "zh-http-rule-no-model",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12",
+              "e88d3b9c5f274086b8f68698cd5db8cb",
+              "ef1fdae142594bc3a3af0499d38a6115"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "12856a09-8e99-4faf-8f8a-4bef9d966cc4"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "12856a09-8e99-4faf-8f8a-4bef9d966cc4",
+            "dataset_uuid": "6f5a3e97828a4c458bda588d2a8819fe",
+            "job_uuid": "a5354f98bbb64a16906364ef6574855a",
+            "task_uuid": "f148a71545dd4290977ba0e077e2284a"
+          }
+        }
+      ],
+      "capabilities": {
+        "isSecureContext": false,
+        "randomUUID": "undefined",
+        "getRandomValues": "function"
+      }
+    },
+    {
+      "case": "zh-local-preparation-retry",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12",
+              "e88d3b9c5f274086b8f68698cd5db8cb",
+              "ef1fdae142594bc3a3af0499d38a6115"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "2f74414c-abdb-4b4e-8397-124f38bcb2cf"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "2f74414c-abdb-4b4e-8397-124f38bcb2cf",
+            "dataset_uuid": "51638dd7ca864b6e84b6d67abef7d124",
+            "job_uuid": "e75c8cfa677f49f1823fd662503c34d2",
+            "task_uuid": "37a4aee009a14ebab227c90be582f513"
+          }
+        }
+      ],
+      "localFailureRequests": 0
+    },
+    {
+      "case": "en-US-http-local-retry",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12",
+              "e88d3b9c5f274086b8f68698cd5db8cb",
+              "ef1fdae142594bc3a3af0499d38a6115"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "7b5190a4-7277-4c8d-aae6-cdd5f5da99c5"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "7b5190a4-7277-4c8d-aae6-cdd5f5da99c5",
+            "dataset_uuid": "48575cdebcde441caf548acce66aa0e8",
+            "job_uuid": "7fa89a78d21943fd82034a924e6c4318",
+            "task_uuid": "57ad4c3dd39545c3980eb3799510a9e4"
+          }
+        }
+      ],
+      "capabilities": {
+        "isSecureContext": false,
+        "randomUUID": "undefined",
+        "getRandomValues": "function",
+        "language": "en-US",
+        "theme": "light"
+      },
+      "localFailureRequests": 0,
+      "localFailureText": "Run diagnosis\nDiagnoser or specialist check\nSelect a configured diagnoser\nRisky Operation Notice\nRepeated Edit Clues\nCredential Exposure Clues\nRepeated Call Clues\nVerification After Changes\nTool Execution Results\nRun Duration\nUser Interruption Events\n文本回应检查 — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.\n实际交付检查 — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.\n执行声明核对 — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.\n资料支持检查 — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.\nRun diagnosis\nSelected Traces (3)\nManage checks\nCheck detailsSaved diagnoser · Rule\n\nYour browser could not create the diagnosis request. It was not sent. Retry, or use another browser.\n\nRetry submission\n\nNo diagnosis has run"
+    },
+    {
+      "case": "ja-JP-http-local-retry",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12",
+              "e88d3b9c5f274086b8f68698cd5db8cb",
+              "ef1fdae142594bc3a3af0499d38a6115"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "fc89fa92-dac1-40c2-89de-489f805e5678"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "fc89fa92-dac1-40c2-89de-489f805e5678",
+            "dataset_uuid": "13fc28ae26e54bc7b4868ae2f19c6e70",
+            "job_uuid": "02ae7641203148a1a2b33929a8f4b19a",
+            "task_uuid": "144272d8d8e741599410a07b23fdcb59"
+          }
+        }
+      ],
+      "capabilities": {
+        "isSecureContext": false,
+        "randomUUID": "undefined",
+        "getRandomValues": "function",
+        "language": "ja-JP",
+        "theme": "dark"
+      },
+      "localFailureRequests": 0,
+      "localFailureText": "診断を実行\n診断器または個別チェック\n設定済みの診断器を選択\nリスクのある操作への注意\n繰り返し編集の手がかり\n認証情報露出の手がかり\n繰り返し呼び出しの手がかり\n変更後の検証\nツールの実行結果\n実行時間\nユーザーによる中断イベント\n文本回应检查 — この診断器のモデル接続が未設定または利用できません。診断器ページで設定を確認してください。\n实际交付检查 — この診断器のモデル接続が未設定または利用できません。診断器ページで設定を確認してください。\n执行声明核对 — この診断器のモデル接続が未設定または利用できません。診断器ページで設定を確認してください。\n资料支持检查 — この診断器のモデル接続が未設定または利用できません。診断器ページで設定を確認してください。\n診断を実行\n選択済みトレース 3 件\n設定を管理\nチェックの説明と設定保存済みの診断器 · ルール\n\nブラウザーで診断リクエストを作成できませんでした。まだ送信されていません。再試行するか、別のブラウザーを使用してください。\n\n送信を再試行\n\n診断はまだ実行されていません"
+    },
+    {
+      "case": "en-accepted-original-request-recovery",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12",
+              "e88d3b9c5f274086b8f68698cd5db8cb",
+              "ef1fdae142594bc3a3af0499d38a6115"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "16dab434-de89-46c5-b935-73874e1aca70"
+          },
+          "status": 503,
+          "result": {
+            "error_key": "QUICK_UPSTREAM_UNAVAILABLE",
+            "retryable": true
+          }
+        },
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12",
+              "e88d3b9c5f274086b8f68698cd5db8cb",
+              "ef1fdae142594bc3a3af0499d38a6115"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "16dab434-de89-46c5-b935-73874e1aca70"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "16dab434-de89-46c5-b935-73874e1aca70",
+            "dataset_uuid": "43d7225f68d841f8a7f26dac3fd1e211",
+            "job_uuid": "1d9e4bb15b0f4e8298855fa79bf49ad6",
+            "task_uuid": "6242dd0fefbd4c21888e9e90c31e47a9"
+          }
+        }
+      ],
+      "uncertainText": "Run diagnosis\nDiagnoser or specialist check\nSelect a configured diagnoser\nRisky Operation Notice\nRepeated Edit Clues\nCredential Exposure Clues\nRepeated Call Clues\nVerification After Changes\nTool Execution Results\nRun Duration\nUser Interruption Events\n文本回应检查 — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.\n实际交付检查 — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.\n执行声明核对 — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.\n资料支持检查 — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.\nRun diagnosis\nSelected Traces (3)\nManage checks\nCheck detailsSaved diagnoser · Rule\n\nStatus could not be confirmed. Recover the original request to avoid duplicates.\n\nRecover this request",
+      "same_request_body_on_recovery": true,
+      "same_resource_ids_as_withheld_response": true,
+      "not_run_message_absent_during_unknown": true
+    },
+    {
+      "case": "zh-trace-detail-one-click",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "76cdec02-3f09-4a97-a85b-06cb590529dd"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "76cdec02-3f09-4a97-a85b-06cb590529dd",
+            "dataset_uuid": "8a7d10b496ea419c92381316885298b0",
+            "job_uuid": "d7dcf7b4ddf34f11a0295ca8c60d681a",
+            "task_uuid": "f10518072d04470d9060c9d48c24ecd7"
+          }
+        }
+      ]
+    }
+  ],
+  "real_backend": {
+    "baseline_commit": "historical-source-revision-redacted",
+    "browser_runs": [
+      {
+        "request_id": "12856a09-8e99-4faf-8f8a-4bef9d966cc4",
+        "task_uuid": "f148a71545dd4290977ba0e077e2284a",
+        "job_uuid": "a5354f98bbb64a16906364ef6574855a",
+        "dataset_uuid": "6f5a3e97828a4c458bda588d2a8819fe",
+        "provisioning_step": "accepted",
+        "safe_error_code": "",
+        "status": "succeeded",
+        "resource_counts": {
+          "Dataset": 1,
+          "Job": 1,
+          "Task": 1
+        },
+        "stats": {
+          "source": {
+            "total": 3,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 1,
+                "total": 2,
+                "failed": 0,
+                "skipped": 1,
+                "evaluate": 2
+              }
+            }
+          },
+          "skip_reasons": {
+            "dg-yn6yhhsq": {
+              "not_applicable": 1
+            }
+          },
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "judge_request_ledger": null
+      },
+      {
+        "request_id": "2f74414c-abdb-4b4e-8397-124f38bcb2cf",
+        "task_uuid": "37a4aee009a14ebab227c90be582f513",
+        "job_uuid": "e75c8cfa677f49f1823fd662503c34d2",
+        "dataset_uuid": "51638dd7ca864b6e84b6d67abef7d124",
+        "provisioning_step": "accepted",
+        "safe_error_code": "",
+        "status": "succeeded",
+        "resource_counts": {
+          "Dataset": 1,
+          "Job": 1,
+          "Task": 1
+        },
+        "stats": {
+          "source": {
+            "total": 3,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 1,
+                "total": 2,
+                "failed": 0,
+                "skipped": 1,
+                "evaluate": 2
+              }
+            }
+          },
+          "skip_reasons": {
+            "dg-yn6yhhsq": {
+              "not_applicable": 1
+            }
+          },
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "judge_request_ledger": null
+      },
+      {
+        "request_id": "7b5190a4-7277-4c8d-aae6-cdd5f5da99c5",
+        "task_uuid": "57ad4c3dd39545c3980eb3799510a9e4",
+        "job_uuid": "7fa89a78d21943fd82034a924e6c4318",
+        "dataset_uuid": "48575cdebcde441caf548acce66aa0e8",
+        "provisioning_step": "accepted",
+        "safe_error_code": "",
+        "status": "succeeded",
+        "resource_counts": {
+          "Dataset": 1,
+          "Job": 1,
+          "Task": 1
+        },
+        "stats": {
+          "source": {
+            "total": 3,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 1,
+                "total": 2,
+                "failed": 0,
+                "skipped": 1,
+                "evaluate": 2
+              }
+            }
+          },
+          "skip_reasons": {
+            "dg-yn6yhhsq": {
+              "not_applicable": 1
+            }
+          },
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "judge_request_ledger": null
+      },
+      {
+        "request_id": "fc89fa92-dac1-40c2-89de-489f805e5678",
+        "task_uuid": "144272d8d8e741599410a07b23fdcb59",
+        "job_uuid": "02ae7641203148a1a2b33929a8f4b19a",
+        "dataset_uuid": "13fc28ae26e54bc7b4868ae2f19c6e70",
+        "provisioning_step": "accepted",
+        "safe_error_code": "",
+        "status": "succeeded",
+        "resource_counts": {
+          "Dataset": 1,
+          "Job": 1,
+          "Task": 1
+        },
+        "stats": {
+          "source": {
+            "total": 3,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 1,
+                "total": 2,
+                "failed": 0,
+                "skipped": 1,
+                "evaluate": 2
+              }
+            }
+          },
+          "skip_reasons": {
+            "dg-yn6yhhsq": {
+              "not_applicable": 1
+            }
+          },
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "judge_request_ledger": null
+      },
+      {
+        "request_id": "16dab434-de89-46c5-b935-73874e1aca70",
+        "task_uuid": "6242dd0fefbd4c21888e9e90c31e47a9",
+        "job_uuid": "1d9e4bb15b0f4e8298855fa79bf49ad6",
+        "dataset_uuid": "43d7225f68d841f8a7f26dac3fd1e211",
+        "provisioning_step": "accepted",
+        "safe_error_code": "",
+        "status": "succeeded",
+        "resource_counts": {
+          "Dataset": 1,
+          "Job": 1,
+          "Task": 1
+        },
+        "stats": {
+          "source": {
+            "total": 3,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 1,
+                "total": 2,
+                "failed": 0,
+                "skipped": 1,
+                "evaluate": 2
+              }
+            }
+          },
+          "skip_reasons": {
+            "dg-yn6yhhsq": {
+              "not_applicable": 1
+            }
+          },
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "judge_request_ledger": null
+      },
+      {
+        "request_id": "76cdec02-3f09-4a97-a85b-06cb590529dd",
+        "task_uuid": "f10518072d04470d9060c9d48c24ecd7",
+        "job_uuid": "d7dcf7b4ddf34f11a0295ca8c60d681a",
+        "dataset_uuid": "8a7d10b496ea419c92381316885298b0",
+        "provisioning_step": "accepted",
+        "safe_error_code": "",
+        "status": "succeeded",
+        "resource_counts": {
+          "Dataset": 1,
+          "Job": 1,
+          "Task": 1
+        },
+        "stats": {
+          "source": {
+            "total": 1,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 0,
+                "total": 1,
+                "failed": 0,
+                "evaluate": 1
+              }
+            }
+          },
+          "skip_reasons": {},
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "judge_request_ledger": null
+      }
+    ],
+    "browser_run_count": 6,
+    "backend_positive": {
+      "authenticated": true,
+      "request_id": "1ee1da55-b354-4b64-9575-899541a46aec",
+      "diagnoser_uuid": "dg-yn6yhhsq",
+      "task_uuid": "bbee7ebd487c4b7dbdb8518499d08e3c",
+      "job_uuid": "0a67dfd79ce649159880914145628b90",
+      "state": "succeeded",
+      "records_total": 2,
+      "verdicts": [
+        "bad",
+        "good"
+      ],
+      "same_request_replay_same_resource_ids": true,
+      "source_fixture_count": 3,
+      "stats": {
+        "source": {
+          "total": 3,
+          "invalid": 0,
+          "projection_failed": 0
+        },
+        "diagnosers": {
+          "dg-yn6yhhsq": {
+            "high_risk_command_execution": {
+              "bad": 1,
+              "good": 1,
+              "total": 2,
+              "failed": 0,
+              "skipped": 1,
+              "evaluate": 2
+            }
+          }
+        },
+        "skip_reasons": {
+          "dg-yn6yhhsq": {
+            "not_applicable": 1
+          }
+        },
+        "schema_version": 3,
+        "source_complete": true,
+        "score_policy_version": "lightweight-v1",
+        "diagnoser_definitions": {
+          "dg-yn6yhhsq": {
+            "key": "high_risk_command",
+            "name": "风险操作提醒",
+            "uuid": "dg-yn6yhhsq",
+            "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+            "weight": 1.0,
+            "metrics": [
+              {
+                "desc": "风险操作提醒",
+                "name": "high_risk_command_execution"
+              }
+            ],
+            "version": "3.0.0",
+            "category": "safety",
+            "revision": "1.6.0",
+            "score_role": "signal"
+          }
+        }
+      }
+    },
+    "backend_negative": {
+      "cases": [
+        {
+          "case": "llm_without_model",
+          "status": 422,
+          "error_key": "QUICK_MODEL_UNAVAILABLE",
+          "retryable": false
+        },
+        {
+          "case": "trace_outside_scope",
+          "status": 422,
+          "error_key": "QUICK_TRACE_SCOPE_REJECTED",
+          "retryable": false
+        },
+        {
+          "case": "invalid_request_id",
+          "status": 422,
+          "error_key": "QUICK_INPUT_INVALID",
+          "retryable": false
+        },
+        {
+          "case": "same_id_changed_intent",
+          "status": 409,
+          "error_key": "QUICK_REQUEST_CONFLICT",
+          "retryable": false
+        }
+      ],
+      "new_receipts": 0,
+      "llm_selectable": false
+    },
+    "model_connections": 0,
+    "total_owned_receipts_before_cleanup": 8,
+    "resource_totals_before_cleanup": {
+      "agentlens_dataset": 8,
+      "agentlens_job": 8,
+      "agentlens_task": 8
+    },
+    "source_integrity": {
+      "owned_source_rows": 5,
+      "sha256": "bacb70ee3a04a0cb422c3b2bb8a0a4c5415b26051f831b6df52d2ea1e49aaf5d",
+      "unchanged": true
+    },
+    "setup_correction": "An initial synthetic trial used unsupported fixture runtime langfuse and produced projection_unavailable records. The owned test Agent runtime was corrected to the registered langchain projector; all reported acceptance runs used that runtime. No product code changed for this correction.",
+    "validation_boundaries": [
+      "Current Django and AgentLens source mounted read-only into existing Python dependency images.",
+      "Real local seekdb, collector and SigNoz services were reused with isolated platform and AgentLens schemas and owned synthetic Space.",
+      "No external model connections, model requests, or real Shell command execution.",
+      "This is prepared local linux/arm64 container integration; not a cold install or released-image qualification."
+    ]
+  },
+  "fault_injection": {
+    "fault": "accepted upstream response withheld; typed HTTP 503 injected",
+    "request_id": "16dab434-de89-46c5-b935-73874e1aca70",
+    "request_body_sha256": "1495997c856cde5f13c38db6ad43b624f7de7931931a08606c3aa56302e0053a",
+    "upstream_status": 200,
+    "accepted": {
+      "state": "accepted",
+      "request_id": "16dab434-de89-46c5-b935-73874e1aca70",
+      "dataset_uuid": "43d7225f68d841f8a7f26dac3fd1e211",
+      "job_uuid": "1d9e4bb15b0f4e8298855fa79bf49ad6",
+      "task_uuid": "6242dd0fefbd4c21888e9e90c31e47a9"
+    }
+  },
+  "screenshots": [
+    {
+      "path": "assets/diagnosis-http-recovery/en-local-failure.png",
+      "width": 1440,
+      "height": 960,
+      "sha256": "956a0ae74f4431f175c7064e451db6c4312c592028c2213fe96733342cb3976b"
+    },
+    {
+      "path": "assets/diagnosis-http-recovery/en-unknown-response.png",
+      "width": 1440,
+      "height": 960,
+      "sha256": "f8e5c781d6a78c860be069e8bb897e331fe4e4b0bdc83f20d52a30e58c28141a"
+    },
+    {
+      "path": "assets/diagnosis-http-recovery/ja-local-failure.png",
+      "width": 1440,
+      "height": 960,
+      "sha256": "c8595df0ba93b95dce6522cbfabfcb76d704ac6df090bdeac8a7ac18c5806611"
+    },
+    {
+      "path": "assets/diagnosis-http-recovery/zh-detail-one-click.png",
+      "width": 1440,
+      "height": 960,
+      "sha256": "84f1ed493d5d9ce98983cbcf2bb1e97d4d3c325334748fdbc5ab2e45119a1194"
+    },
+    {
+      "path": "assets/diagnosis-http-recovery/zh-local-failure.png",
+      "width": 1440,
+      "height": 960,
+      "sha256": "d792e3eb9c268b35a94e0283b6bd1a9711aa29374ab1fc4281ad1c8508c31de8"
+    },
+    {
+      "path": "assets/diagnosis-http-recovery/zh-rule-success.png",
+      "width": 1440,
+      "height": 960,
+      "sha256": "c5894e24ef87e5ef41c5d5ad4c426ba148f39e91095a466aff1440acbce2f1a6"
+    }
+  ],
+  "review": {
+    "blocking_findings": 0,
+    "reviewed_patch_sha256": "e79e8a70fe0d9b6f313f98adbdbde0b8396e2f6bed9002596f5339e5fdc0cca5",
+    "scope": "Independent source/API-contract review plus 96 diagnosis and 11 locale tests"
+  },
+  "boundaries": [
+    "Local current-source integration on prepared macOS/arm64 host and linux/arm64 containers; no released-artifact or cold-install claim.",
+    "Browser runs used Chromium only, ordinary HTTP, 1440x960; Chinese/English light and Japanese dark views were inspected.",
+    "One-time entropy exceptions and one accepted response replaced with HTTP 503 were deliberate test faults. All successful submissions and diagnostic results used real backend/storage/source services.",
+    "No external models were configured or called. No represented Shell command was executed.",
+    "Generic unclassified JSON HTTP 500 and explicit retryable=false cases were verified in component/API regression tests, not injected into the real service run.",
+    "No Python source changed. Full Python unit suites, Firefox/Safari/Windows, and the original reported deployment were not tested."
+  ],
+  "backend_cleanup": {
+    "owned_space_uuid": "589d30df-9309-4869-b2b1-b37ed1b1327a",
+    "scope": "Exact telemetry org_id + fresh owned space_id only",
+    "tables": [
+      {
+        "table": "signoz_trace_sources",
+        "before": 27
+      },
+      {
+        "table": "signoz_traces",
+        "before": 29
+      }
+    ],
+    "status": "deletion_not_performed",
+    "reason": "Automatic approval review rejected irreversible cleanup because no direct user authorization for deletion was established. The rejected command never executed.",
+    "owned_containers": [
+      {
+        "name": "aiv-http-backend-20261109-b015",
+        "state": "exited",
+        "removed": false
+      },
+      {
+        "name": "aiv-http-diagnosis-20261109-b015",
+        "state": "exited",
+        "removed": false
+      }
+    ],
+    "shared_dependencies": [
+      {
+        "name": "aiv-local-review-data-20261106",
+        "state": "running"
+      },
+      {
+        "name": "aiv-local-review-collector-20261106",
+        "state": "running"
+      },
+      {
+        "name": "aiv-openshell-web-db-20261103",
+        "state": "running"
+      }
+    ],
+    "schemas_retained": [
+      "aiv_http_agentlens_20261109_b015",
+      "aiv_http_platform_20261109_b015"
+    ],
+    "deleted_rows": 0,
+    "private_credentials_retained_for_root_review": true
+  }
+}

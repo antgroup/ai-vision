@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <p>将以下 AgentTypeConfig 的 agent_product 重命名：</p>
+  <ul>
+    {% for obj in queryset %}
+      <li>{{ obj.agent_name }} — 当前值: <strong>{{ obj.agent_product }}</strong></li>
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />
+    {% endfor %}
+  </ul>
+  <p>
+    <label for="new_agent_product">新的 agent_product：</label>
+    <input type="text" name="new_agent_product" id="new_agent_product" required style="padding:4px 8px;" />
+  </p>
+  <input type="hidden" name="action" value="rename_agent_product" />
+  <input type="submit" value="确认重命名" style="margin-top:8px;padding:6px 16px;" />
+</form>
+{% endblock %}

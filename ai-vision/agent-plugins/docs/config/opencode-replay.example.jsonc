@@ -1,0 +1,16 @@
+// opencode-replay 开发者配置示例
+// 默认路径: ~/.config/opencode/opencode-replay.json
+// 与 observ-opencode 生产配置完全独立。
+{
+  "captureEnabled": true,
+  "collectionMode": "full",
+
+  // Hook transcript JSONL 输出目录
+  // env: OPENCODE_REPLAY_SESSION_DIR
+  // 替换为本机绝对路径；省略此项时使用 ~/.aivision/ocd/transcripts。
+  "sessionDir": "/path/to/opencode/transcripts",
+
+  // replay 自有诊断日志；不会开启 HTTP 或本地 OTLP 双写
+  // env: OPENCODE_REPLAY_DEBUG
+  "debug": false
+}

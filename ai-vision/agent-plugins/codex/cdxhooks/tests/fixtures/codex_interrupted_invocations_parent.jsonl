@@ -1,0 +1,59 @@
+{"timestamp":"2026-07-18T08:00:00.000Z","type":"session_meta","payload":{"id":"parent-interrupted-fixture","cli_version":"0.144.0-alpha.4","source":"cli","thread_source":"user","multi_agent_version":"v2"}}
+{"timestamp":"2026-07-18T08:00:00.100Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-failed-spawn"}}
+{"timestamp":"2026-07-18T08:00:00.200Z","type":"event_msg","payload":{"type":"user_message","message":"try a child that fails to spawn"}}
+{"timestamp":"2026-07-18T08:00:01.000Z","type":"response_item","payload":{"type":"function_call","name":"spawn_agent","namespace":"collaboration","arguments":"{\"task_name\":\"failed_spawn\",\"message\":\"start\"}","call_id":"call-failed-spawn"}}
+{"timestamp":"2026-07-18T08:00:01.100Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-failed-spawn","output":"{\"error\":\"spawn failed\"}"}}
+{"timestamp":"2026-07-18T08:00:02.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-failed-spawn","last_agent_message":"spawn failed"}}
+{"timestamp":"2026-07-18T09:00:00.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-gibbs-spawn"}}
+{"timestamp":"2026-07-18T09:00:00.100Z","type":"event_msg","payload":{"type":"user_message","message":"start Gibbs and interrupt it"}}
+{"timestamp":"2026-07-18T09:00:01.000Z","type":"response_item","payload":{"type":"function_call","name":"spawn_agent","namespace":"collaboration","arguments":"{\"task_name\":\"gibbs\",\"message\":\"review alpha\"}","call_id":"call-gibbs-spawn"}}
+{"timestamp":"2026-07-18T09:00:01.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-gibbs-spawn","occurred_at_ms":1784365201100,"agent_thread_id":"child-gibbs","agent_path":"/root/gibbs","kind":"started"}}
+{"timestamp":"2026-07-18T09:00:01.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-gibbs-spawn","output":"{\"task_name\":\"/root/gibbs\"}"}}
+{"timestamp":"2026-07-18T09:00:02.000Z","type":"response_item","payload":{"type":"function_call","name":"wait_agent","namespace":"collaboration","arguments":"{\"timeout_ms\":1000}","call_id":"call-gibbs-wait-1"}}
+{"timestamp":"2026-07-18T09:00:03.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-gibbs-wait-1","output":"{\"timed_out\":true}"}}
+{"timestamp":"2026-07-18T09:00:04.000Z","type":"response_item","payload":{"type":"function_call","name":"interrupt_agent","namespace":"collaboration","arguments":"{\"target\":\"/root/gibbs\"}","call_id":"call-gibbs-interrupt-1"}}
+{"timestamp":"2026-07-18T09:00:04.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-gibbs-interrupt-1","occurred_at_ms":1784365204100,"agent_thread_id":"child-gibbs","agent_path":"/root/gibbs","kind":"interrupted"}}
+{"timestamp":"2026-07-18T09:00:04.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-gibbs-interrupt-1","output":"{\"interrupted\":true}"}}
+{"timestamp":"2026-07-18T09:00:05.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-gibbs-spawn","last_agent_message":"Gibbs interrupted"}}
+{"timestamp":"2026-07-18T10:00:00.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-gibbs-followup"}}
+{"timestamp":"2026-07-18T10:00:00.100Z","type":"event_msg","payload":{"type":"user_message","message":"resume Gibbs and interrupt again"}}
+{"timestamp":"2026-07-18T10:00:01.000Z","type":"response_item","payload":{"type":"function_call","name":"followup_task","namespace":"collaboration","arguments":"{\"target\":\"/root/gibbs\",\"message\":\"review beta\"}","call_id":"call-gibbs-followup"}}
+{"timestamp":"2026-07-18T10:00:01.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-gibbs-followup","occurred_at_ms":1784368801100,"agent_thread_id":"child-gibbs","agent_path":"/root/gibbs","kind":"interacted"}}
+{"timestamp":"2026-07-18T10:00:01.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-gibbs-followup","output":"{\"delivered\":true}"}}
+{"timestamp":"2026-07-18T10:00:02.000Z","type":"response_item","payload":{"type":"function_call","name":"wait_agent","namespace":"collaboration","arguments":"{\"timeout_ms\":1000}","call_id":"call-gibbs-wait-2"}}
+{"timestamp":"2026-07-18T10:00:03.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-gibbs-wait-2","output":"{\"timed_out\":true}"}}
+{"timestamp":"2026-07-18T10:00:04.000Z","type":"response_item","payload":{"type":"function_call","name":"interrupt_agent","namespace":"collaboration","arguments":"{\"target\":\"/root/gibbs\"}","call_id":"call-gibbs-interrupt-2"}}
+{"timestamp":"2026-07-18T10:00:04.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-gibbs-interrupt-2","occurred_at_ms":1784368804100,"agent_thread_id":"child-gibbs","agent_path":"/root/gibbs","kind":"interrupted"}}
+{"timestamp":"2026-07-18T10:00:04.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-gibbs-interrupt-2","output":"{\"interrupted\":true}"}}
+{"timestamp":"2026-07-18T10:00:05.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-gibbs-followup","last_agent_message":"Gibbs interrupted again"}}
+{"timestamp":"2026-07-18T11:00:00.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-lagrange-spawn"}}
+{"timestamp":"2026-07-18T11:00:00.100Z","type":"event_msg","payload":{"type":"user_message","message":"start Lagrange and interrupt it"}}
+{"timestamp":"2026-07-18T11:00:01.000Z","type":"response_item","payload":{"type":"function_call","name":"spawn_agent","namespace":"collaboration","arguments":"{\"task_name\":\"lagrange\",\"message\":\"derive alpha\"}","call_id":"call-lagrange-spawn"}}
+{"timestamp":"2026-07-18T11:00:01.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-lagrange-spawn","occurred_at_ms":1784372401100,"agent_thread_id":"child-lagrange","agent_path":"/root/lagrange","kind":"started"}}
+{"timestamp":"2026-07-18T11:00:01.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-lagrange-spawn","output":"{\"task_name\":\"/root/lagrange\"}"}}
+{"timestamp":"2026-07-18T11:00:02.000Z","type":"response_item","payload":{"type":"function_call","name":"wait_agent","namespace":"collaboration","arguments":"{\"timeout_ms\":1000}","call_id":"call-lagrange-wait-1"}}
+{"timestamp":"2026-07-18T11:00:03.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-lagrange-wait-1","output":"{\"timed_out\":true}"}}
+{"timestamp":"2026-07-18T11:00:04.000Z","type":"response_item","payload":{"type":"function_call","name":"interrupt_agent","namespace":"collaboration","arguments":"{\"target\":\"/root/lagrange\"}","call_id":"call-lagrange-interrupt-1"}}
+{"timestamp":"2026-07-18T11:00:04.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-lagrange-interrupt-1","occurred_at_ms":1784372404100,"agent_thread_id":"child-lagrange","agent_path":"/root/lagrange","kind":"interrupted"}}
+{"timestamp":"2026-07-18T11:00:04.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-lagrange-interrupt-1","output":"{\"interrupted\":true}"}}
+{"timestamp":"2026-07-18T11:00:05.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-lagrange-spawn","last_agent_message":"Lagrange interrupted"}}
+{"timestamp":"2026-07-18T12:00:00.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-lagrange-followup"}}
+{"timestamp":"2026-07-18T12:00:00.100Z","type":"event_msg","payload":{"type":"user_message","message":"resume Lagrange and interrupt again"}}
+{"timestamp":"2026-07-18T12:00:01.000Z","type":"response_item","payload":{"type":"function_call","name":"followup_task","namespace":"collaboration","arguments":"{\"target\":\"/root/lagrange\",\"message\":\"derive beta\"}","call_id":"call-lagrange-followup"}}
+{"timestamp":"2026-07-18T12:00:01.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-lagrange-followup","occurred_at_ms":1784376001100,"agent_thread_id":"child-lagrange","agent_path":"/root/lagrange","kind":"interacted"}}
+{"timestamp":"2026-07-18T12:00:01.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-lagrange-followup","output":"{\"delivered\":true}"}}
+{"timestamp":"2026-07-18T12:00:02.000Z","type":"response_item","payload":{"type":"function_call","name":"wait_agent","namespace":"collaboration","arguments":"{\"timeout_ms\":1000}","call_id":"call-lagrange-wait-2"}}
+{"timestamp":"2026-07-18T12:00:03.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-lagrange-wait-2","output":"{\"timed_out\":true}"}}
+{"timestamp":"2026-07-18T12:00:04.000Z","type":"response_item","payload":{"type":"function_call","name":"interrupt_agent","namespace":"collaboration","arguments":"{\"target\":\"/root/lagrange\"}","call_id":"call-lagrange-interrupt-2"}}
+{"timestamp":"2026-07-18T12:00:04.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-lagrange-interrupt-2","occurred_at_ms":1784376004100,"agent_thread_id":"child-lagrange","agent_path":"/root/lagrange","kind":"interrupted"}}
+{"timestamp":"2026-07-18T12:00:04.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-lagrange-interrupt-2","output":"{\"interrupted\":true}"}}
+{"timestamp":"2026-07-18T12:00:05.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-lagrange-followup","last_agent_message":"Lagrange interrupted again"}}
+{"timestamp":"2026-07-18T13:00:00.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-popper-spawn"}}
+{"timestamp":"2026-07-18T13:00:00.100Z","type":"event_msg","payload":{"type":"user_message","message":"start Popper and wait for completion"}}
+{"timestamp":"2026-07-18T13:00:01.000Z","type":"response_item","payload":{"type":"function_call","name":"spawn_agent","namespace":"collaboration","arguments":"{\"task_name\":\"popper\",\"message\":\"falsify\"}","call_id":"call-popper-spawn"}}
+{"timestamp":"2026-07-18T13:00:01.100Z","type":"event_msg","payload":{"type":"sub_agent_activity","event_id":"call-popper-spawn","occurred_at_ms":1784379601100,"agent_thread_id":"child-popper","agent_path":"/root/popper","kind":"started"}}
+{"timestamp":"2026-07-18T13:00:01.200Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-popper-spawn","output":"{\"task_name\":\"/root/popper\"}"}}
+{"timestamp":"2026-07-18T13:00:02.000Z","type":"response_item","payload":{"type":"function_call","name":"wait_agent","namespace":"collaboration","arguments":"{\"timeout_ms\":1000}","call_id":"call-popper-wait"}}
+{"timestamp":"2026-07-18T13:00:03.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"call-popper-wait","output":"{\"timed_out\":false}"}}
+{"timestamp":"2026-07-18T13:00:03.100Z","type":"response_item","payload":{"type":"agent_message","author":"/root/popper","recipient":"/root","content":[{"type":"input_text","text":"Message Type: FINAL_ANSWER\nTask name: /root\nSender: /root/popper\nPayload:\nconjecture rejected"}]}}
+{"timestamp":"2026-07-18T13:00:04.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-popper-spawn","last_agent_message":"Popper completed"}}

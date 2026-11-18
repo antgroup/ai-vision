@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: antcollector-gw
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: ingest-gateway}
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  progressDeadlineSeconds: 420
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: antcollector-gw}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/component: ingest-gateway, app: antcollector-gw, app.kubernetes.io/part-of: aivision, aivision.ob-labs.io/managed-by: aiv-kubernetes}
+      annotations:
+        aivision.ob-labs.io/config: {{.ConfigHash | quote}}
+        aivision.ob-labs.io/rollout: {{.Rollout | quote}}
+    spec:
+      serviceAccountName: aivision
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: antcollector-gw
+          image: {{.GATEWAY_IMAGE | quote}}
+          imagePullPolicy: {{.IMAGE_PULL | quote}}
+          ports:
+            - {containerPort: 4318, name: otlp-http}
+            - {containerPort: 4317, name: otlp-grpc}
+            - {containerPort: 13133, name: health}
+          env:
+            - {name: SIGNOZ_INGEST_ENDPOINT, value: "http://signoz-ob:8080"}
+            - {name: GOMEMLIMIT, value: 576MiB}
+          envFrom:
+            - secretRef: {name: aivision-gateway}
+          startupProbe:
+            exec:
+              command: [/app/collector, healthcheck]
+            failureThreshold: 60
+            periodSeconds: 5
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command: [/app/collector, healthcheck, --ready]
+            periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: [/app/collector, healthcheck]
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 768Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: antcollector-gw
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: ingest-gateway}
+spec:
+  type: ClusterIP
+  selector: {app: antcollector-gw}
+  ports:
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: antcollector-grpc
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: ingest-gateway}
+spec:
+  selector: {app: antcollector-gw}
+  ports: [{name: otlp-grpc, port: 4317, targetPort: otlp-grpc}]

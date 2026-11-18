@@ -1,0 +1,268 @@
+{
+  "date": "2026-11-12",
+  "base_commit": "historical-source-revision-redacted",
+  "status": "uncommitted working tree",
+  "source_diff_sha256": "70869b486386580a3d5102af71bbee7ddccd52647fcde7a220577c66d04242d6",
+  "source_files": {
+    "ai-vision/aivision-py-be/apps/core/services/onboarding_demo.py": "46b4c078156cff10bb15adc06585770c8cbece67db7ddb825549b8ac78bac9f0",
+    "ai-vision/aivision-py-be/apps/core/views/onboarding_demo.py": "febea6eb74daddc38887d9e94518b43a9931d68a7a48735218ae1643a378758d",
+    "ai-vision/vfe/src/components/product-guide/DemoConsentDialog.tsx": "613fe00cb9a6284e588428f82e549568c766f454bb4d7f0557a30f239a751912",
+    "ai-vision/vfe/src/components/product-guide/ProductGuide.tsx": "6253ac13b9a1c2ecd23bd4a4072b2b5a78e119c736837eeb66770b31a236dd79",
+    "ai-vision/vfe/src/components/product-guide/product-guide.css": "6e7165ad48668afccc70b5105578763d12bf7d9ed8c46e71d3c9190fb06d098f",
+    "ai-vision/vfe/src/components/product-guide/state.ts": "90842a7556839e22592a974da6fb910f0b1ab8b48ab973d8433a3bf9cd2da5d3",
+    "ai-vision/vfe/src/i18n/index.ts": "c9ed0a2b9627a091258eef963467fd981c069f3cac5530e9b3b53f170cf288f1",
+    "ai-vision/vfe/src/i18n/locales.ts": "0157977e2c6c3aad11f25fd0faf2ef91065188996c88f9b7d8e31481d8228397",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "5b0246dd2ef2b87541079eb5dcef8f8f212ee6ce70f98092c2220c5a0d98e8e0",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "cc5b810c1d772fef4bef38200d8dbfff5a489051560b046e90fad6fce5a59a04",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "20eb5c28ae1da7a7ee196695cafa506f4ba6d65885ecfcec78522aaaf1bc241b",
+    "ai-vision/vfe/src/labs/mcp/McpConfigImportDialog.tsx": "b86502f93e375d35712751a7df2ff0f8a92aaeead7789a031222b62e3fc8454e",
+    "ai-vision/vfe/src/labs/mcp/McpImportRegistryPanel.tsx": "c54d9ff7d7f54f979727ae160de5f36a50dcde24e4dec7343eb7306e782f448a",
+    "ai-vision/vfe/src/labs/mcp/McpServerDrawer.tsx": "c2cfa4a2f9614decb45f57edc47295aadab4640d192ca6bc764860967f83c718",
+    "ai-vision/vfe/src/labs/mcp/McpSpanCard.tsx": "1bd2bcce6c46be0f1f17529b90fa38dbc19a093f9b7b3b9602e9a960f246b401",
+    "ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx": "0a16accc0c9698024d3546124ef5da9c479493619e0032aea04aab499ff72243"
+  },
+  "platform": "macOS arm64; Playwright Chromium; 1440x1000; source Vite, Django, AgentLens; cached isolated SigNoz/OTLP and OceanBase seekdb 1.4.0.0",
+  "services": "actual application APIs and official MCP registry; no route mocks in platform test",
+  "space_id": "1dbc13e3-8a63-487a-a245-072178f62ecb",
+  "before": {
+    "agents": 0,
+    "model_connections": 0
+  },
+  "platform_test": {
+    "file": "ai-vision/vfe/tests/e2e-platform/onboardingDemo.spec.ts",
+    "status": {
+      "startTime": "2026-11-12T07:52:30.891Z",
+      "duration": 25494.731,
+      "expected": 1,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    }
+  },
+  "screenshots": {
+    "01-consent.png": "b13dfc6185f66c5c55454de43a998ca82eb31e8a83c0984f93bd893045fd1c2e",
+    "02-dashboard.png": "7033491f68bbfff1f156da55a27f51dfa23c02aeb31b787c17a01d70041e84d6",
+    "03-mcp-summary.png": "393af23392f5b3dda404dbaf45e492a861a7c14daffb0f6f1a03317965a0ea10",
+    "04-mcp-call.png": "31e0e6afbdc0be0fb82508c50011fabe229a8b958f194d662edd19dce40fc11e",
+    "05-rule-result.png": "f2ad56f5d23295236d9523c740dda95c87560d013892225d7ce6a80a16850bf6",
+    "06-failed-span.png": "ae310c64545422ee7727398a5c4b08ba21c5dfe2280c09cf88842ddc4b8d8075",
+    "07-mcp-replay.png": "6f943192fea100dcd036bc2168799d9e93bff1694b8cda085ea7b1b9e2cd70d6",
+    "08-mcp-import-preview.png": "32781218f55e8bb508d5422ad59639b1fa8a767afc784c52cc70f1988e7f4974",
+    "08a-mcp-registry-search.png": "2efe3eaa566e8917677938a0ad653878eb078ea490a70b7a2c1bcfb8b4029151",
+    "08b-mcp-registry-configure.png": "0753c81a599e5b9aff4b84948b5258c7d8d617abe261cc8193789173743a5558",
+    "09-mcp-config-linked.png": "6f755cd4f804e8af702a182716e467324e2027689742beef32d9c7048ea98e16",
+    "10-trace-comparison.png": "1ab63bb7baf91681c2282d29eff34e1ecec57b3271e01f0db5f34da929bb5b8a",
+    "11-comparison-failed-call.png": "e137b9ce32dd406bc179217db44caff90e84225f9813b93b69734a54638f8959"
+  },
+  "browser_readback": {
+    "agent_uuid": "fc1700e3-66ac-5918-8fcd-b2eb70edcc87",
+    "trace_id": "8bb18d9d4b34fb2426f213bf2d436ed7",
+    "span_count": 21,
+    "failed_span_id": "38ee1962defd1b48",
+    "comparison_trace_id": "c365c13ac8045ce1448d0a7939d32311",
+    "mcp_config_imported": true,
+    "mcp_stdio_sync_requests": 0,
+    "model_connections": 0,
+    "replay_reused_agent_trace_and_rule": true
+  },
+  "sql_readback": {
+    "space_id": "1dbc13e3-8a63-487a-a245-072178f62ecb",
+    "database": {
+      "vendor": "mysql",
+      "version": "5.7.25-OceanBase seekdb-v1.4.0.0",
+      "comment": "OceanBase 4.3.5.3 seekdb (r1.4.0.0) (Built 100000172026082615-0003f8d4b32a2cfe3b75ae8f4dbe26fcee994541 Aug 26 2026)"
+    },
+    "agent_count": 1,
+    "agents": [
+      {
+        "uuid": "fc1700e3-66ac-5918-8fcd-b2eb70edcc87",
+        "name": "示例 Agent",
+        "agent_product": "langfuse",
+        "status": 1
+      }
+    ],
+    "model_connection_count": 0,
+    "source_traces": [
+      {
+        "trace_id": "8bb18d9d4b34fb2426f213bf2d436ed7",
+        "span_count": 21,
+        "mcp_calls": [
+          {
+            "span_id": "38ee1962defd1b48",
+            "name": "retrieve_policy",
+            "status_code": 2
+          },
+          {
+            "span_id": "f340cf8504c4979e",
+            "name": "retrieve_policy",
+            "status_code": 1
+          }
+        ]
+      },
+      {
+        "trace_id": "c365c13ac8045ce1448d0a7939d32311",
+        "span_count": 15,
+        "mcp_calls": [
+          {
+            "span_id": "2d11bc1a9d7dfd7b",
+            "name": "retrieve_policy",
+            "status_code": 1
+          }
+        ]
+      }
+    ],
+    "rules": [
+      {
+        "uuid": "dg-adnirov0",
+        "type": "builtin",
+        "mode": "rule"
+      },
+      {
+        "uuid": "dg-a2nvt21v",
+        "type": "builtin",
+        "mode": "rule"
+      },
+      {
+        "uuid": "dg-wwxi9jp5",
+        "type": "builtin",
+        "mode": "rule"
+      },
+      {
+        "uuid": "dg-fiqlr5g1",
+        "type": "builtin",
+        "mode": "rule"
+      },
+      {
+        "uuid": "dg-axzey994",
+        "type": "builtin",
+        "mode": "rule"
+      },
+      {
+        "uuid": "dg-va4okpqc",
+        "type": "builtin",
+        "mode": "rule"
+      },
+      {
+        "uuid": "dg-w0vnc2gd",
+        "type": "builtin",
+        "mode": "rule"
+      },
+      {
+        "uuid": "dg-tu20tnqk",
+        "type": "builtin",
+        "mode": "rule"
+      }
+    ],
+    "tasks": [
+      {
+        "uuid": "8f37b7048f174a58985e69b40441bdcc",
+        "status": "succeeded",
+        "attempt": 1
+      }
+    ],
+    "records": [
+      {
+        "uuid": "r-1bcd37153e0cef00",
+        "task_uuid": "8f37b7048f174a58985e69b40441bdcc",
+        "target_id": "8bb18d9d4b34fb2426f213bf2d436ed7",
+        "verdict": "bad",
+        "execution": "succeeded",
+        "metrics": [
+          {
+            "name": "tool_success_rate",
+            "verdict": "bad",
+            "counts": {
+              "success": 2,
+              "failure": 1,
+              "unknown": 0
+            },
+            "findings": [
+              {
+                "type": "tool_failure",
+                "category": "工具失败",
+                "channel": "tool_output",
+                "recovery": "matching_success_observed",
+                "location_status": "available",
+                "source_span_id": "38ee1962defd1b48"
+              }
+            ],
+            "bad_spans": [
+              {
+                "span_id": "38ee1962defd1b48",
+                "findings": [
+                  {
+                    "type": "tool_failure",
+                    "category": "工具失败",
+                    "channel": "tool_output",
+                    "recovery": "matching_success_observed"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "mcp_configs": [
+      {
+        "server_id": "defuddle-fetch-mcp-server",
+        "transport": "stdio",
+        "env_keys": [],
+        "header_keys": [],
+        "tools": [],
+        "tools_synced_at": null
+      }
+    ],
+    "synthetic_storage_policy_config_count": 0,
+    "stdio_synced_config_count": 0
+  },
+  "checks": {
+    "full_frontend_suite": {
+      "command": "npm test",
+      "test_blocks": 32,
+      "passed": 1730,
+      "failed": 0
+    },
+    "modified_file_eslint": "passed",
+    "typecheck": "passed",
+    "production_build": "passed; existing chunk-size advisory",
+    "browser_fixture_tests": {
+      "passed": 29,
+      "scope": "real frontend; synthetic APIs; latest Spotlight animation tracking source"
+    },
+    "backend_tests": {
+      "passed": 10,
+      "database": "seekdb; SQLite explicitly disabled",
+      "downstream": "mocked OTLP/query responses in focused tests"
+    },
+    "platform_browser": {
+      "passed": 1,
+      "duration_seconds": 23.4,
+      "screenshots": 13,
+      "api_mocks": false,
+      "registry": "actual Official MCP Registry search/detail",
+      "theme": "light and actual in-product dark theme switch"
+    }
+  },
+  "cleanup": {
+    "namespace": "aiv167-db8762ac4",
+    "teardown": "verified",
+    "removed_owned_network_ids": [
+      "71ccf25ad54e2324847f4b1ea6f46e3a1f8e15b3590bead1b7c6012401e3d53f"
+    ],
+    "remaining_listeners": {
+      "OB_PORT": false,
+      "SIGNOZ_PORT": false,
+      "GATEWAY_GRPC_PORT": false,
+      "GATEWAY_HTTP_PORT": false,
+      "GATEWAY_HEALTH_PORT": false,
+      "BE_PORT": false,
+      "AGENTLENS_PORT": false,
+      "FE_PORT": false
+    },
+    "containers_remaining": [],
+    "networks_remaining": [],
+    "volumes_remaining": [],
+    "private_runtime_and_credentials_removed": true
+  }
+}

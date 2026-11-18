@@ -1,0 +1,21 @@
+<!doctype html>
+<!--
+  Browser translation (Chrome / Edge) rewrites React-managed text nodes and makes
+  React's removeChild / insertBefore throw NotFoundError. Translation is
+  intentionally disabled app-wide: the UI ships its own zh-CN / en-US / ja-JP copy
+  (src/i18n) with an in-app language switcher. Do not remove translate="no" /
+  notranslate. Regression guard: tests/browserDomProtection.test.ts
+-->
+<html lang="zh-CN" translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
+    <link rel="icon" type="image/svg+xml" href="/assets/aivision.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Vision</title>
+  </head>
+  <body>
+    <div id="root" translate="no"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

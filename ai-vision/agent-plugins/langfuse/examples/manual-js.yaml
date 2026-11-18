@@ -1,0 +1,128 @@
+id: manual-js
+frameworkId: custom-sdk
+label: Custom SDK
+logo: /assets/frameworks/nodejs.svg
+language: typescript
+runtime: Node.js 22+
+requiresModel: false
+frontendSort: 100
+marketPreview: false
+npmInstall: npm install "@langfuse/tracing@6.0.0" "@langfuse/otel@6.0.0" "@opentelemetry/sdk-node@~0.223.0"
+  "@opentelemetry/exporter-trace-otlp-proto@~0.223.0" "@opentelemetry/otlp-exporter-base@~0.223.0"
+  "dotenv@^17" "tsx@^4"
+exampleFilename: test_manual_js.ts
+runCommand: npx tsx test_manual_js.ts
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+officialDocs: https://langfuse.com/docs/observability/sdk/instrumentation
+integrationNotes: Node.js server-side only. Initialize one OpenTelemetry SDK before handling requests; add the Langfuse
+  span processor to your existing SDK if one is already configured. Run the complete example from the directory
+  containing .env; existing shell variables take precedence. Keep a stable session_id across turns in the same conversation.
+  Keep shared telemetry alive between requests and shut it down after all requests finish. The complete example
+  records a local tool step without a model provider; add observations around your real agent, tool and model calls.
+existingExample: |-
+  import "dotenv/config";
+  import { NodeSDK } from "@opentelemetry/sdk-node";
+  import { LangfuseSpanProcessor } from "@langfuse/otel";
+  import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+  import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+  import {
+    getActiveTraceId,
+    propagateAttributes,
+    startActiveObservation,
+  } from "@langfuse/tracing";
+
+  // Start once, before the first instrumented request.
+  // If your service already has an OpenTelemetry SDK, add this processor there.
+  // AI Vision's ingest endpoint accepts OTLP HTTP/protobuf.
+  // Langfuse's default JS exporter uses JSON, so configure protobuf explicitly.
+  const exporter = new OTLPTraceExporter({
+    url: `${process.env.LANGFUSE_BASE_URL?.replace(/\/$/, "")}/api/public/otel/v1/traces`,
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${process.env.LANGFUSE_PUBLIC_KEY}:${process.env.LANGFUSE_SECRET_KEY}`).toString("base64")}`,
+    },
+    compression: process.env.LANGFUSE_OTEL_COMPRESSION === "none"
+      ? CompressionAlgorithm.NONE : CompressionAlgorithm.GZIP,
+  });
+  const processor = new LangfuseSpanProcessor({ exporter });
+  const sdk = new NodeSDK({ spanProcessors: [processor] });
+  sdk.start();
+
+  // Add the following to your async request handler.
+  // Wrap your existing workflow; only explicit observations are captured.
+  const result = await propagateAttributes(
+    { sessionId: session_id, tags: ["integration:manual"] },
+    () => startActiveObservation("custom-agent-request", async (request) => {
+      request.update({ input: existing_input });
+      console.log("AI Vision trace_id:", getActiveTraceId());
+      const result = await existing_workflow(existing_input);
+      request.update({ output: result });
+      return result;
+    }, { asType: "agent" }),
+  );
+
+  // At service shutdown, after all requests finish: await sdk.shutdown().
+  // Do not close the shared SDK after each request.
+npmExample: |-
+  import "dotenv/config";
+  import { NodeSDK } from "@opentelemetry/sdk-node";
+  import { LangfuseSpanProcessor } from "@langfuse/otel";
+  import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+  import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+  import {
+    getActiveTraceId,
+    propagateAttributes,
+    startActiveObservation,
+  } from "@langfuse/tracing";
+  import { randomUUID } from "node:crypto";
+
+  // Start once, before the first instrumented request.
+  // If your service already has an OpenTelemetry SDK, add this processor there.
+  // AI Vision's ingest endpoint accepts OTLP HTTP/protobuf.
+  // Langfuse's default JS exporter uses JSON, so configure protobuf explicitly.
+  const exporter = new OTLPTraceExporter({
+    url: `${process.env.LANGFUSE_BASE_URL?.replace(/\/$/, "")}/api/public/otel/v1/traces`,
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${process.env.LANGFUSE_PUBLIC_KEY}:${process.env.LANGFUSE_SECRET_KEY}`).toString("base64")}`,
+    },
+    compression: process.env.LANGFUSE_OTEL_COMPRESSION === "none"
+      ? CompressionAlgorithm.NONE : CompressionAlgorithm.GZIP,
+  });
+  const processor = new LangfuseSpanProcessor({ exporter });
+  const sdk = new NodeSDK({ spanProcessors: [processor] });
+  sdk.start();
+
+  async function main() {
+    try {
+      const input = { text: "Hello from my agent" };
+      await propagateAttributes(
+        { sessionId: randomUUID(), tags: ["integration:manual"] },
+        () => startActiveObservation("custom-agent-onboarding", async (request) => {
+          request.update({ input });
+          console.log("AI Vision trace_id:", getActiveTraceId());
+          const output = await startActiveObservation("normalize-input", async (step) => {
+            const normalized = input.text.trim().toLowerCase();
+            step.update({ input: input.text, output: normalized });
+            return normalized;
+          }, { asType: "tool" });
+          request.update({ output });
+          console.log(output);
+        }, { asType: "agent" }),
+      );
+    } finally {
+      // Short script: export completed spans even if the request fails.
+      // In a service, shut down only after all active requests have finished.
+      await sdk.shutdown();
+    }
+  }
+
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });

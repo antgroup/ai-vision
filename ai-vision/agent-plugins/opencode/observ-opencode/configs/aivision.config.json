@@ -1,0 +1,37 @@
+{
+  "enableTelemetry": true,
+  "serviceName": "opencode",
+  "collectionMode": "full",
+  "debug": false,
+  "dynamicUsername": false,
+  "dynamicUid": false,
+  "otelExporter": {
+    "protocol": "http/json",
+    "attributes": {
+      "ant.username": ""
+    },
+    "resourceAttributes": {
+      "ant.agent.type": "opencode",
+      "ant.agent.product": "OpenCode",
+      "ant.agent.instance": "",
+      "ant.agent.env": "Default",
+      "ant.agent.scene": "default"
+    },
+    "metricsTemporalityPreference": "delta"
+  },
+  "tracesConfig": {
+    "endpoint": "http://localhost:4318/v1/traces",
+    "headers": {},
+    "enabled": true
+  },
+  "metricsConfig": {
+    "endpoint": "http://localhost:4318/v1/metrics",
+    "headers": {},
+    "enabled": true
+  },
+  "eventsConfig": {
+    "endpoint": "http://localhost:4318/v1/logs",
+    "headers": {},
+    "enabled": true
+  }
+}

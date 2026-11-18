@@ -1,0 +1,50 @@
+{
+  "baseline_commit": "historical-source-revision-redacted",
+  "unchanged_runtime_src_tree": "923ac763cc643beb1ce9a9a1f53b324dab5b4019",
+  "test_path": "ai-vision/vfe/tests/e2e/sdkValueContract.spec.ts",
+  "before_test_sha256": "f7cbede03a290d6940b93140f4c8b805072ef4fde3b87c7f6a8b0fc92858debc",
+  "after_test_sha256": "c7c04122e8097d4c7006494a9c8554c71582be3fb836519056c5c2756ea6dfbc",
+  "cause_commit": "historical-source-revision-redacted",
+  "classification": "Outdated browser assertions; no runtime code changes",
+  "cases_reproduced": [
+    "JSON-looking string",
+    "nested object",
+    "nested array"
+  ],
+  "results": {
+    "baseline_failures": 3,
+    "production_sdk_passed": 27,
+    "related_dom_passed": 38,
+    "full_browser_passed": 435,
+    "full_browser_failed": 0,
+    "full_browser_duration": "6.2m",
+    "retries": 0
+  },
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "data_source": "Synthetic SDK-shaped API fixtures; real compiled frontend and Chromium clipboard",
+  "new_provider_calls": 0,
+  "screenshot_sha256": {
+    "desktop-nested-object.png": "dec5b84923bb401f2b4a096339317a99befb400902c04d80fa98238c6bff297d",
+    "phone-nested-object.png": "4df9e4a67e0c6906e15d5f869d4e4eb86b7df635236777760448f7d6fc4597f3"
+  },
+  "log_sha256": {
+    "before.log": "a3ac58619c16f44cac6619bf279052b0f171881052994c2f8ca23243ec0f7119",
+    "after-production.log": "db7ff0dd23a56f10ab2c07ea5b448dcb0b6735c9a00ffee27b888af69996be5b",
+    "dom-contract.log": "0296eccb0e08f57c73bb54ee463b27048c080c5e7b8cfa1bf5503a046f074277",
+    "lint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "typecheck.log": "de482370a88496e78a4c09a05fe54d4d972f35f55892f42e2192e6a853b1829f",
+    "build-before.log": "6a27d87d25edefa5b1e92474c9d3db85b8a866e01e2d07df7fb7c88a72e3bf46",
+    "build-production.log": "969239cb74e63f8dd349c413a248c792dcf37a55d9923bf363971175f16e8bea",
+    "build-fixture.log": "2efd5e617a3475c891332c499eaa69a34470e657bba30420b024d02fd1a5c1ef",
+    "full.log": "2a2e017aec5656a557ca97c180fe36c1808c85c487cd9b17f3fee374c0e8ef85"
+  }
+}

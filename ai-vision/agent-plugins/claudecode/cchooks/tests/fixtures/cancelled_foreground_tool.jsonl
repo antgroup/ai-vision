@@ -1,0 +1,4 @@
+{"type":"user","uuid":"prompt-cancelled-tool","message":{"role":"user","content":"Run a foreground command and cancel it."},"timestamp":"2026-08-24T10:10:00.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_cancelled_foreground","name":"Bash","input":{"command":"sleep 60 && echo should-not-complete"}}],"id":"msg_tool_use_cancelled","model":"claude-sonnet-4-20250514","usage":{"input_tokens":12,"output_tokens":8},"stop_reason":"tool_use"},"timestamp":"2026-08-24T10:10:01.000Z"}
+{"type":"user","toolDenialKind":"user-rejected","toolUseResult":"User rejected tool use","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_cancelled_foreground","is_error":true,"content":"User rejected tool use"}]},"timestamp":"2026-08-24T10:10:02.000Z"}
+{"type":"system","content":"[Request interrupted by user for tool use]","interruptedMessageId":"msg_tool_use_cancelled","timestamp":"2026-08-24T10:10:02.100Z"}

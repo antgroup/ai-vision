@@ -1,0 +1,19 @@
+{
+  "name": "claude-code-demo",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Demo: call Claude Code via spawn process and SDK",
+  "scripts": {
+    "spawn": "tsx src/spawn.ts",
+    "sdk": "tsx src/sdk.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.3.153",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}

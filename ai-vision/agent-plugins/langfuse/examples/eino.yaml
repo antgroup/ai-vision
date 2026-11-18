@@ -1,0 +1,214 @@
+id: eino
+frameworkId: eino
+label: Eino
+logo: /assets/frameworks/eino.png
+logoLayout: wide
+language: go
+runtime: Go 1.23+
+marketLabel: Go / Eino
+marketSort: 9
+marketPreview: true
+frontendSort: 1
+requiresModel: true
+install: |-
+  # Run in your Go module, or initialize a new example directory once.
+  test -f go.mod || go mod init example.com/eino-onboarding
+  go get github.com/cloudwego/eino@v0.9.22 github.com/cloudwego/eino-ext/callbacks/langfuse/v2@v2.0.2 github.com/cloudwego/eino-ext/components/model/openai@v0.1.13 go.opentelemetry.io/otel/trace@v1.38.0
+exampleFilename: main.go
+runCommand: go run main.go
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+- export OPENAI_MODEL="gpt-4o"
+- export OPENAI_BASE_URL="https://api.openai.com/v1"
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+- OPENAI_MODEL="gpt-4o"
+- OPENAI_BASE_URL="https://api.openai.com/v1"
+officialDocs: https://github.com/cloudwego/eino-ext/blob/main/callbacks/langfuse/v2/README.md
+integrationNotes: >-
+  Go currently supports Eino through its official Langfuse v2 callback; no separate Langfuse Go SDK is needed.
+  The /v2 import is the callback module version, not the Langfuse query API version.
+  Use the AI Vision base URL for Config.Host, the Agent UUID for PublicKey, and the SpaceKey for SecretKey.
+  Initialize one handler per service, keep existing graph/model/tool configuration and callbacks, and shut down
+  after all requests finish. Do not attach the same tracing handler both globally and per invocation.
+  The complete example makes one non-streaming model request and calls an echo tool; the model must support tool calling.
+  It reads shell environment variables; when using .env, load it with the run command before starting Go.
+  Official callback v2.0.2 omits token counters whose value is zero; missing usage stays unknown.
+existingExample: |-
+  import (
+      "context"
+      "encoding/json"
+      "fmt"
+      "os"
+      "time"
+
+      langfuse "github.com/cloudwego/eino-ext/callbacks/langfuse/v2"
+      "github.com/cloudwego/eino/compose"
+      "github.com/cloudwego/eino/schema"
+      "go.opentelemetry.io/otel/trace"
+  )
+
+  // Initialize once at service startup, after loading the environment.
+  func newTracing(ctx context.Context) (*langfuse.CallbackHandler, error) {
+      return langfuse.NewHandler(ctx, &langfuse.Config{
+          Host:        os.Getenv("LANGFUSE_BASE_URL"),
+          PublicKey:   os.Getenv("LANGFUSE_PUBLIC_KEY"),
+          SecretKey:   os.Getenv("LANGFUSE_SECRET_KEY"),
+          ServiceName: "eino-application",
+      })
+  }
+
+  // Call this from your request handler with your existing compiled graph.
+  // Keep the same sessionID across turns in the same conversation.
+  func invokeWithTracing(ctx context.Context, handler *langfuse.CallbackHandler,
+      runnable compose.Runnable[[]*schema.Message, []*schema.Message],
+      input []*schema.Message, sessionID string, existingOptions ...compose.Option,
+  ) ([]*schema.Message, error) {
+      inputJSON, err := json.Marshal(input)
+      if err != nil {
+          return nil, err
+      }
+      traceCtx := handler.StartTrace(ctx, langfuse.WithName("eino-request"),
+          langfuse.WithSessionID(sessionID), langfuse.WithInput(string(inputJSON)),
+          langfuse.WithObservationType(langfuse.ObservationTypeChain))
+      fmt.Println("AI Vision trace_id:", trace.SpanContextFromContext(traceCtx).TraceID())
+      outputJSON := ""
+      defer func() { handler.EndTrace(traceCtx, outputJSON) }()
+
+      // Preserve business options and callbacks; add tracing only once.
+      options := append(append([]compose.Option{}, existingOptions...), compose.WithCallbacks(handler))
+      output, err := runnable.Invoke(traceCtx, input, options...)
+      if err != nil {
+          return nil, err
+      }
+      encoded, err := json.Marshal(output)
+      if err != nil {
+          return nil, err
+      }
+      outputJSON = string(encoded)
+      return output, nil
+  }
+
+  // Call at service shutdown, after active requests finish (not per request).
+  func stopTracing(handler *langfuse.CallbackHandler) error {
+      ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+      defer cancel()
+      return handler.Shutdown(ctx)
+  }
+code: |-
+  package main
+
+  import (
+      "context"
+      "errors"
+      "fmt"
+      "os"
+      "time"
+
+      langfuse "github.com/cloudwego/eino-ext/callbacks/langfuse/v2"
+      "github.com/cloudwego/eino-ext/components/model/openai"
+      "github.com/cloudwego/eino/components/model"
+      "github.com/cloudwego/eino/components/tool"
+      "github.com/cloudwego/eino/components/tool/utils"
+      "github.com/cloudwego/eino/compose"
+      "github.com/cloudwego/eino/schema"
+      "go.opentelemetry.io/otel/trace"
+  )
+
+  func main() {
+      if err := run(); err != nil {
+          fmt.Fprintln(os.Stderr, err)
+          os.Exit(1)
+      }
+  }
+
+  func run() (runErr error) {
+      for _, name := range []string{"LANGFUSE_BASE_URL", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY",
+          "OPENAI_BASE_URL", "OPENAI_API_KEY", "OPENAI_MODEL"} {
+          if os.Getenv(name) == "" {
+              return fmt.Errorf("set %s before running", name)
+          }
+      }
+      ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+      defer cancel()
+      handler, err := langfuse.NewHandler(ctx, &langfuse.Config{
+          Host:        os.Getenv("LANGFUSE_BASE_URL"),
+          PublicKey:   os.Getenv("LANGFUSE_PUBLIC_KEY"),
+          SecretKey:   os.Getenv("LANGFUSE_SECRET_KEY"),
+          ServiceName: "eino-onboarding",
+      })
+      if err != nil {
+          return errors.New("could not initialize Eino tracing; check the AI Vision credentials and URL")
+      }
+      defer func() {
+          // Cleanup must still run if the request times out or fails.
+          cleanup, done := context.WithTimeout(context.Background(), 20*time.Second)
+          defer done()
+          if err := handler.Shutdown(cleanup); err != nil {
+              runErr = errors.Join(runErr, errors.New("trace export failed; check AI Vision connectivity"))
+          }
+      }()
+
+      maxTokens := 256
+      chatModel, err := openai.NewChatModel(ctx, &openai.ChatModelConfig{
+          APIKey: os.Getenv("OPENAI_API_KEY"), BaseURL: os.Getenv("OPENAI_BASE_URL"),
+          Model: os.Getenv("OPENAI_MODEL"), MaxTokens: &maxTokens,
+      })
+      if err != nil {
+          return errors.New("could not initialize the model; check its configuration")
+      }
+      type echoInput struct {
+          Text string `json:"text" jsonschema:"description=The text to echo"`
+      }
+      echoTool, err := utils.InferTool("echo", "Echo the supplied text",
+          func(ctx context.Context, input *echoInput) (string, error) {
+              return "Eino tool received: " + input.Text, nil
+          })
+      if err != nil {
+          return err
+      }
+      toolInfo, err := echoTool.Info(ctx)
+      if err != nil {
+          return err
+      }
+      boundModel, err := chatModel.WithTools([]*schema.ToolInfo{toolInfo})
+      if err != nil {
+          return err
+      }
+      tools, err := compose.NewToolNode(ctx, &compose.ToolsNodeConfig{Tools: []tool.BaseTool{echoTool}})
+      if err != nil {
+          return err
+      }
+      runnable, err := compose.NewChain[[]*schema.Message, []*schema.Message]().
+          AppendChatModel(boundModel, compose.WithNodeName("model"), compose.WithNodeKey("model")).
+          AppendToolsNode(tools, compose.WithNodeName("tools")).
+          Compile(ctx, compose.WithGraphName("eino-workflow"))
+      if err != nil {
+          return err
+      }
+
+      const prompt = `Call the echo tool once with text "hello-eino".`
+      traceCtx := handler.StartTrace(ctx, langfuse.WithName("eino-onboarding"),
+          langfuse.WithInput(prompt), langfuse.WithObservationType(langfuse.ObservationTypeChain))
+      fmt.Println("AI Vision trace_id:", trace.SpanContextFromContext(traceCtx).TraceID())
+      output := ""
+      defer func() { handler.EndTrace(traceCtx, output) }()
+      result, err := runnable.Invoke(traceCtx, []*schema.Message{schema.UserMessage(prompt)},
+          compose.WithCallbacks(handler),
+          compose.WithChatModelOption(model.WithToolChoice(schema.ToolChoiceForced, "echo")).DesignateNode("model"))
+      if err != nil {
+          return errors.New("model or tool invocation failed; check provider configuration and the trace")
+      }
+      if len(result) != 1 {
+          return errors.New("expected one tool response; check the trace")
+      }
+      output = result[0].Content
+      fmt.Println(output)
+      return nil
+  }

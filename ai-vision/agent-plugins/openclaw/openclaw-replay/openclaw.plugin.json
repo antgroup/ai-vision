@@ -1,0 +1,41 @@
+{
+  "id": "openclaw-replay",
+  "name": "OpenClaw Replay",
+  "description": "Records correlated OpenClaw hook transcripts and provides replay/report tooling.",
+  "version": "0.2.2",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "captureEnabled": {
+        "type": "boolean",
+        "description": "Explicitly enable developer raw callback capture. Env: OPENCLAW_REPLAY_CAPTURE_ENABLED.",
+        "default": false
+      },
+      "sessionDir": {
+        "type": "string",
+        "description": "Directory for correlated runtime hook transcript JSONL files. Env: OPENCLAW_REPLAY_SESSION_DIR."
+      },
+      "sessionName": {
+        "type": "string",
+        "description": "Optional fixed transcript basename. Env: OPENCLAW_REPLAY_SESSION_NAME."
+      },
+      "debug": {
+        "type": "boolean",
+        "description": "Enable replay-owned diagnostic logging only. Env: OPENCLAW_REPLAY_DEBUG.",
+        "default": false
+      },
+      "collectionMode": {
+        "type": "string",
+        "enum": ["full", "privacy"],
+        "description": "Replay transcript content mode. Env: OPENCLAW_REPLAY_COLLECTION_MODE.",
+        "default": "full"
+      },
+      "stdout": {
+        "type": "boolean",
+        "description": "Whether to also print transcript records to stdout.",
+        "default": false
+      }
+    }
+  }
+}

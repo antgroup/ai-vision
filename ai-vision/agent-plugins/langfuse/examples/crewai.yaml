@@ -1,0 +1,104 @@
+id: crewai
+logo: /assets/frameworks/crewai.svg
+label: CrewAI
+frontendSort: 20
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+pipInstall: pip install crewai "langfuse>=4.16.0,<5" openinference-instrumentation-crewai openinference-instrumentation-openai
+pipExample: |-
+  from crewai import Agent, Task, Crew
+  from langfuse import get_client, propagate_attributes
+  from openinference.instrumentation.crewai import CrewAIInstrumentor
+  from openinference.instrumentation.openai import OpenAIInstrumentor
+
+  langfuse = get_client()
+
+  # CrewAI instrumentation covers the crew/task/agent layer; OpenAI instrumentation
+  # adds the underlying model-level generation span (tokens, model I/O).
+  CrewAIInstrumentor().instrument(skip_dep_check=True)
+  OpenAIInstrumentor().instrument(skip_dep_check=True)
+
+  MODEL = "gpt-4o"
+
+  market_researcher = Agent(
+      role="Senior Market Researcher",
+      goal="Analyze market trends and consumer behavior in the tech industry",
+      backstory="""You are an experienced market researcher with 10+ years of experience
+  analyzing technology markets. You excel at identifying emerging trends and
+  understanding consumer needs.""",
+      verbose=True,
+      allow_delegation=False,
+      llm=MODEL,
+  )
+
+  content_strategist = Agent(
+      role="Content Marketing Strategist",
+      goal="Create compelling marketing content based on research insights",
+      backstory="""You are a creative content strategist who transforms complex market
+  research into engaging marketing materials. You understand how to communicate
+  technical concepts to different audiences.""",
+      verbose=True,
+      allow_delegation=False,
+      llm=MODEL,
+  )
+
+  research_task = Task(
+      description="""Conduct comprehensive research on the current state of AI adoption
+  in small to medium businesses. Focus on:
+  1. Current adoption rates and trends
+  2. Main barriers to adoption
+  3. Most popular AI tools and use cases
+  4. ROI and business impact metrics
+
+  Provide a detailed analysis with supporting data and statistics.
+  Keep the answer concise (a short bulleted summary is enough for this demo).""",
+      agent=market_researcher,
+      expected_output="A concise market research summary on AI adoption in SMBs.",
+  )
+
+  content_task = Task(
+      description="""Based on the research, create a short marketing
+  strategy outline that includes:
+  1. Executive summary of key findings
+  2. Target audience personas
+  3. Key messaging framework
+
+  Keep it brief (a short outline is enough for this demo).""",
+      agent=content_strategist,
+      expected_output="A brief marketing strategy outline with personas and messaging.",
+      context=[research_task],
+  )
+
+  crew = Crew(
+      agents=[market_researcher, content_strategist],
+      tasks=[research_task, content_task],
+      verbose=True,
+      process="sequential",
+  )
+
+
+  def main():
+      with langfuse.start_as_current_observation(
+          as_type="span", name="crewai-index-trace", input=research_task.description
+      ) as obs:
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          result = crew.kickoff()
+          obs.update(output=str(result))
+      print(result)
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:crewai"]):
+              main()
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

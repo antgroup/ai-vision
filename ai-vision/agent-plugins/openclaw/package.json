@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@aivision/observ-openclaw": "file:./observ-openclaw"
+  }
+}

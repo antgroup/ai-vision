@@ -1,0 +1,13 @@
+{"type":"metadata","protocol_version":"1.9"}
+{"timestamp":1700000000,"message":{"type":"TurnBegin","payload":{"user_input":[{"type":"text","text":"legacy contract prompt"}]}}}
+{"timestamp":1700000001,"message":{"type":"CompactionBegin","payload":{"trigger":"auto","token_count":100}}}
+{"timestamp":1700000002,"message":{"type":"CompactionEnd","payload":{"estimated_token_count":40}}}
+{"timestamp":1700000003,"message":{"type":"StepBegin","payload":{"n":1}}}
+{"timestamp":1700000004,"message":{"type":"StepRetry","payload":{"n":1,"next_attempt":2,"max_attempts":3,"wait_s":1.25,"error_type":"APIStatusError","status_code":429}}}
+{"timestamp":1700000005,"message":{"type":"ToolCall","payload":{"id":"legacy-agent","function":{"name":"Agent","arguments":"{\"prompt\":\"child work\"}"}}}}
+{"timestamp":1700000006,"message":{"type":"StatusUpdate","payload":{"token_usage":{"input_other":10,"output":5,"input_cache_read":0,"input_cache_creation":0},"message_id":"legacy-message"}}}
+{"timestamp":1700000007,"message":{"type":"SubagentEvent","payload":{"parent_tool_call_id":"legacy-agent","agent_id":"child-1","subagent_type":"coder","event":{"type":"StepBegin","payload":{"n":1}}}}}
+{"timestamp":1700000008,"message":{"type":"SubagentEvent","payload":{"parent_tool_call_id":"legacy-agent","agent_id":"child-1","subagent_type":"coder","event":{"type":"ContentPart","payload":{"type":"text","text":"child answer"}}}}}
+{"timestamp":1700000009,"message":{"type":"SubagentEvent","payload":{"parent_tool_call_id":"legacy-agent","agent_id":"child-1","subagent_type":"coder","event":{"type":"StatusUpdate","payload":{"token_usage":{"input_other":4,"output":2},"message_id":"child-message"}}}}}
+{"timestamp":1700000010,"message":{"type":"ToolResult","payload":{"tool_call_id":"legacy-agent","return_value":{"is_error":false,"output":"child answer","message":""}}}}
+{"timestamp":1700000011,"message":{"type":"TurnEnd","payload":{}}}

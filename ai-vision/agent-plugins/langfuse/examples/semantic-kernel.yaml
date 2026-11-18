@@ -1,0 +1,89 @@
+id: semantic-kernel
+logo: /assets/frameworks/semantic-kernel.svg
+label: Semantic Kernel
+frontendSort: 16
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+- export OPENAI_CHAT_MODEL_ID="gpt-4o"
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+- OPENAI_CHAT_MODEL_ID="gpt-4o"
+pipInstall: pip install semantic-kernel opentelemetry-instrumentation-openai "langfuse>=4.16.0,<5"
+pipExample: |-
+  import asyncio
+  import os
+
+  from langfuse import get_client, propagate_attributes
+  from opentelemetry.instrumentation.openai import OpenAIInstrumentor
+  from semantic_kernel import Kernel
+  from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion
+  from semantic_kernel.prompt_template import InputVariable, PromptTemplateConfig
+
+  # Langfuse client: registers the global provider and attaches its OTLP export
+  langfuse = get_client()
+
+  # Instrument OpenAI calls (produces generation spans)
+  OpenAIInstrumentor().instrument()
+
+  # Configure Semantic Kernel
+  kernel = Kernel()
+  kernel.add_service(
+      OpenAIChatCompletion(ai_model_id=os.environ.get("OPENAI_MODEL", "gpt-4o"))
+  )
+
+  # Create a prompt template
+  code_analysis_prompt = """Analyze the following code and provide insights:
+
+  Code:
+  {{$code}}
+
+  Please provide:
+  1. A brief summary of what the code does
+  2. Any potential improvements
+  3. Code quality assessment"""
+
+  prompt_template_config = PromptTemplateConfig(
+      template=code_analysis_prompt,
+      name="code_analyzer",
+      template_format="semantic-kernel",
+      input_variables=[
+          InputVariable(name="code", description="The code to analyze", is_required=True),
+      ],
+  )
+
+  # Add the function to the kernel
+  code_analyzer = kernel.add_function(
+      function_name="analyzeCode",
+      plugin_name="codeAnalysisPlugin",
+      prompt_template_config=prompt_template_config,
+  )
+
+
+  async def main():
+      sample_code = """def fibonacci(n):
+      if n <= 1:
+          return n
+      return fibonacci(n-1) + fibonacci(n-2)"""
+
+      with langfuse.start_as_current_observation(
+          as_type="span", name="semantic-kernel-request"
+      ):
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          result = await kernel.invoke(code_analyzer, code=sample_code)
+          print("Code Analysis:")
+          print(result)
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:semantic-kernel"]):
+              asyncio.run(main())
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

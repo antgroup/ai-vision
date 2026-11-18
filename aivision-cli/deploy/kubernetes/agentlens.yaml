@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agentlens
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: diagnosis}
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  progressDeadlineSeconds: 720
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: agentlens}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/component: diagnosis, app: agentlens, app.kubernetes.io/part-of: aivision}
+      annotations:
+        aivision.ob-labs.io/config: {{.ConfigHash | quote}}
+        aivision.ob-labs.io/rollout: {{.Rollout | quote}}
+        aivision.ob-labs.io/org: {{.OrgID | quote}}
+    spec:
+      serviceAccountName: aivision
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 300
+      containers:
+        - name: agentlens
+          image: {{.AGENTLENS_IMAGE | quote}}
+          imagePullPolicy: {{.IMAGE_PULL | quote}}
+          ports: [{containerPort: 8081, name: http}]
+          env:
+            - {name: AGENTLENS_PORT, value: "8081"}
+            - {name: ANTCOLLECTOR_ENDPOINT, value: "http://antcollector-gw:4318/v1/traces"}
+            - {name: AIVISION_INGEST_TOKEN_URL, value: "http://aivision-be:8001/api/internal/agentlens/ingest-tokens"}
+            - {name: AGENTLENS_LOG_DIR, value: /var/log/agentlens}
+            - {name: AGENTLENS_LOG_STDOUT, value: "true"}
+            - name: SIGNOZ_ORG_ID
+              valueFrom:
+                configMapKeyRef: {name: aivision-runtime, key: SIGNOZ_ORG_ID}
+          envFrom:
+            - secretRef: {name: aivision-agentlens}
+          startupProbe:
+            httpGet: {path: /internal/healthz, port: http}
+            failureThreshold: 120
+            periodSeconds: 5
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet: {path: /internal/readyz, port: http}
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /internal/healthz, port: http}
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 250m, memory: 512Mi}
+            limits: {cpu: "2", memory: 2Gi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agentlens
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: diagnosis}
+spec:
+  selector: {app: agentlens}
+  ports: [{name: http, port: 8081, targetPort: http}]

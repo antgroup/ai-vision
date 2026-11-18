@@ -1,0 +1,41 @@
+# Copy to aivision.vars.yaml in your deployment directory and fill in your database settings.
+# Docker only: oceanbase (default) or seekdb. seekdb requires a CLI with OB_BACKEND support.
+OB_BACKEND: "oceanbase"
+OB_MANAGED: "false" # Keep false to reuse existing OB.
+OB_HOST: "YOUR_OB_HOST"
+OB_HOST_PORT: "2881"
+OB_TENANT: "aivision" # OceanBase CE only; ignored for seekdb.
+# For seekdb: set OB_BACKEND to seekdb, use its host/password, and omit OB_TENANT.
+# The seekdb user defaults to root. For an existing custom account:
+# OB_USER: "aivision"
+# For a bundled datastore: set OB_MANAGED to "true" and remove OB_HOST/OB_HOST_PORT.
+# Optional seekdb image override: OB_IMAGE: "oceanbase/seekdb:YOUR_PINNED_TAG"
+OB_TENANT_PASSWORD: "REPLACE_WITH_TENANT_PASSWORD"
+
+# Copy from the selected verified Release vars; leave empty for source builds.
+AIVISION_RELEASE_MANIFEST_BASE64: ""
+
+# Native Langfuse v1 reads: set once to the earliest retained UTC trace time.
+# For a fresh datastore use its bootstrap start day, e.g. 2026-10-02T00:00:00Z.
+# Do not advance this value during upgrades. Blank keeps native v1 SDK reads disabled.
+AIVISION_NATIVE_TRACE_HISTORY_START: ""
+AIVISION_NATIVE_TRACE_FUTURE_SKEW_SECONDS: "300"
+AIVISION_NATIVE_TRACE_MAX_WINDOWS: "120"
+
+# Native Trace/Session acceleration and automatic projection maintenance are standard.
+# Emergency reader recovery (preserves filters): auto | raw.
+# Legacy application key AIVISION_QUERY_MODE remains accepted.
+BACKEND_QUERY_MODE: "auto"
+# false durably suspends derived maintenance across instances; explicitly resume after repair.
+# Legacy application key SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED remains accepted.
+DATA_BACKEND_PROJECTION_MAINTENANCE_ENABLED: "true"
+
+# seekdb 1.4 cache budget and independent container RSS ceiling.
+SEEKDB_MEMORY_BUDGET: "2G"
+SEEKDB_CONTAINER_MEMORY: "4G"
+BE_CONTAINER_MEMORY: "2G"
+SIGNOZ_CONTAINER_MEMORY: "2G"
+# Per backend worker; replicas multiply the total admission budget.
+AIVISION_TRACE_RESPONSE_MAX_BYTES: "33554432"
+AIVISION_TRACE_REQUEST_MAX_BYTES: "67108864"
+AIVISION_TRACE_QUERY_CONCURRENCY: "2"

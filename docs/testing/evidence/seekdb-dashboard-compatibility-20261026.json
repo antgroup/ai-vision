@@ -1,0 +1,1182 @@
+{
+  "status": "complete",
+  "measured_at_utc": "2026-10-26T13:30:27.850288+00:00",
+  "scope": "Lightweight seekdb1.4 adaptation; same seekdb data and same frozen product consumer. Not a cross-engine or resource-isolated capacity comparison.",
+  "heads": {
+    "product_consumer": "48abd55f4eda73a75dd57edb6f163e543e157e5f",
+    "signoz_baseline": "bf1d85382a77917be1ed313a094e04092a78eb18",
+    "candidate": "Uncommitted seven-file patch bound by source_sha256"
+  },
+  "source_sha256": {
+    "pkg/ingest/trace_statistics.go": "1082343d793cc438bb73f02f054f1c2e7aab101d9f2c7b32a6ae68392825647b",
+    "pkg/modules/aivision/trace_statistics_partitions.go": "ef98a6116f0f9f6868c979cca80d96cb1f5639343b560881b2aaa7c0341bb938",
+    "pkg/modules/aivision/trace_statistics_aggregate.go": "6d8967c7ff85ee29e5c1253a262a46d6bded27291fdbea21155dccbbfcbcbc19",
+    "pkg/modules/aivision/trace_statistics_seekdb_test.go": "4bf79c4e75d05474754608688d646e0977f95006582627e6d652aa79cc1c3f4c",
+    "pkg/telemetrystore/oceanbasetelemetrystore/provider.go": "cf1a96ffda9da08320508282d0c9b4759220f952055ee557a4f45a610eaf32dc",
+    "pkg/telemetrystore/oceanbasetelemetrystore/statistics_version_test.go": "d8cb2e1ef4997b4f19486aac54f6adfdebf62ef7c5167607087bbcd59c13d800",
+    "pkg/ingest/trace_statistics_test.go": "1ca49e9f1b9263e36044500a3fe35ac364bfc48fc17d8f3087044c65ca41c384"
+  },
+  "resource_boundary": {
+    "docker_vm": {
+      "NCPU": 12,
+      "MemTotal": 12599844864,
+      "Architecture": "aarch64",
+      "OperatingSystem": "OrbStack",
+      "OSType": "linux",
+      "ServerVersion": "29.4.0"
+    },
+    "databases": [
+      {
+        "engine": "seekdb",
+        "image_id": "sha256:4197b81033b172fc37ba868b5cf082e6d8f8d8c5fe544a25ee582c1aca1b234c",
+        "memory_limit_bytes": 0,
+        "nanocpus_limit": 0,
+        "version": "5.7.25-OceanBase seekdb-v1.4.0.0"
+      },
+      {
+        "engine": "ce",
+        "image_id": "sha256:8e9c9b91bff288ca574ed414c047356744a645c0a2f149c711c18faebf5ef4ae",
+        "memory_limit_bytes": 8589934592,
+        "nanocpus_limit": 4000000000,
+        "version": "5.7.25-OceanBase_CE-v4.4.2.1"
+      }
+    ],
+    "seekdb_engine_parameters": {
+      "memory_limit": [
+        {
+          "name": "memory_limit",
+          "value": "2G",
+          "scope": "CLUSTER",
+          "default_value": "0M"
+        }
+      ],
+      "cpu_count": [
+        {
+          "name": "cpu_count",
+          "value": "2",
+          "scope": "CLUSTER",
+          "default_value": "0"
+        }
+      ],
+      "datafile_size": [
+        {
+          "name": "datafile_size",
+          "value": "2G",
+          "scope": "CLUSTER",
+          "default_value": "32M"
+        }
+      ],
+      "log_disk_size": [
+        {
+          "name": "log_disk_size",
+          "value": "2G",
+          "scope": "CLUSTER",
+          "default_value": "0M"
+        }
+      ]
+    },
+    "image_platforms": {
+      "at_utc": "2026-10-26T13:28:49.868645+00:00",
+      "classification": "Read-only image platform inspection, distinct from Docker host architecture. No image pulls or service changes.",
+      "images": [
+        {
+          "engine": "seekdb",
+          "id": "sha256:4197b81033b172fc37ba868b5cf082e6d8f8d8c5fe544a25ee582c1aca1b234c",
+          "os": "linux",
+          "architecture": "amd64"
+        },
+        {
+          "engine": "ce",
+          "id": "sha256:8e9c9b91bff288ca574ed414c047356744a645c0a2f149c711c18faebf5ef4ae",
+          "os": "linux",
+          "architecture": "arm64"
+        },
+        {
+          "role": "Go test/handler runtime",
+          "os": "linux",
+          "architecture": "arm64",
+          "id": "sha256:b1f8414d6136a1f98736f43ed031e667f81532184b5d491d25aee02bbaa9be03"
+        }
+      ]
+    }
+  },
+  "fixture": {
+    "native_traces": 12,
+    "native_frameworks": 4,
+    "synthetic_sessions": 10000,
+    "synthetic_traces": 30000,
+    "synthetic_spans": 90000,
+    "total_projections": 30012,
+    "typed_calls": 60028,
+    "canonical_base_json_bytes_before_marker": 312202478,
+    "stored_base_json_bytes_pre_publication": 316256979,
+    "preparation": "Bounded task-owned server-local copy plus equivalent CE narrow facts and version/receipt marker bootstrap; NOT production migration/catchup throughput. Real native12 full publisher verified separately.",
+    "bootstrap_elapsed_ms": 61550.59,
+    "source_and_facts_equal": true
+  },
+  "single_request_n3": {
+    "dashboard_metrics": {
+      "baseline": {
+        "elapsed_ms": {
+          "min": 7566.47,
+          "median": 7721.48,
+          "max": 9576.33
+        },
+        "db_read_bytes": {
+          "min": 318961886,
+          "median": 318961886,
+          "max": 318961886
+        },
+        "upstream_response_bytes": {
+          "min": 86413057,
+          "median": 86413057,
+          "max": 86413057
+        },
+        "n": 3,
+        "upstream_categories": {
+          "read-model/metrics-aggregate": 1,
+          "read-model/metrics-window": 1
+        }
+      },
+      "candidate": {
+        "elapsed_ms": {
+          "min": 1211.59,
+          "median": 2056.9,
+          "max": 3700.38
+        },
+        "db_read_bytes": {
+          "min": 432410,
+          "median": 432410,
+          "max": 432410
+        },
+        "upstream_response_bytes": {
+          "min": 146762,
+          "median": 146762,
+          "max": 146762
+        },
+        "n": 3,
+        "upstream_categories": {
+          "read-model/metrics-aggregate": 1
+        }
+      },
+      "median_latency_reduction_pct": 73.36,
+      "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be"
+    },
+    "framework.events.timeseries": {
+      "baseline": {
+        "elapsed_ms": {
+          "min": 6443.78,
+          "median": 6933.3,
+          "max": 7413.93
+        },
+        "db_read_bytes": {
+          "min": 318961886,
+          "median": 318961886,
+          "max": 318961886
+        },
+        "upstream_response_bytes": {
+          "min": 86413057,
+          "median": 86413057,
+          "max": 86413057
+        },
+        "n": 3,
+        "upstream_categories": {
+          "read-model/metrics-aggregate": 1,
+          "read-model/metrics-window": 1
+        }
+      },
+      "candidate": {
+        "elapsed_ms": {
+          "min": 2996.88,
+          "median": 3052.64,
+          "max": 3619.08
+        },
+        "db_read_bytes": {
+          "min": 437082,
+          "median": 437082,
+          "max": 437082
+        },
+        "upstream_response_bytes": {
+          "min": 156274,
+          "median": 156274,
+          "max": 156274
+        },
+        "n": 3,
+        "upstream_categories": {
+          "read-model/metrics-aggregate": 1
+        }
+      },
+      "median_latency_reduction_pct": 55.97,
+      "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312"
+    },
+    "framework.overview.event_stream": {
+      "baseline": {
+        "elapsed_ms": {
+          "min": 7780.38,
+          "median": 8157.71,
+          "max": 8637.35
+        },
+        "db_read_bytes": {
+          "min": 319989024,
+          "median": 319989024,
+          "max": 319989024
+        },
+        "upstream_response_bytes": {
+          "min": 87039556,
+          "median": 87039556,
+          "max": 87039556
+        },
+        "n": 3,
+        "upstream_categories": {
+          "read-model/batch-snapshot": 2,
+          "read-model/metrics-window": 1,
+          "read-model/operation-page": 1
+        }
+      },
+      "candidate": {
+        "elapsed_ms": {
+          "min": 626.4,
+          "median": 727.29,
+          "max": 1026.19
+        },
+        "db_read_bytes": {
+          "min": 1054565,
+          "median": 1054565,
+          "max": 1054565
+        },
+        "upstream_response_bytes": {
+          "min": 660813,
+          "median": 660813,
+          "max": 660813
+        },
+        "n": 3,
+        "upstream_categories": {
+          "read-model/batch-snapshot": 2,
+          "read-model/operation-page": 1
+        }
+      },
+      "median_latency_reduction_pct": 91.08,
+      "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a"
+    }
+  },
+  "single_request_samples": [
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "dashboard_metrics",
+      "sample": 0,
+      "elapsed_ms": 9576.33,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be",
+      "response_bytes": 2642,
+      "upstream_calls": 2,
+      "upstream_response_bytes": 86413057,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1,
+        "read-model/metrics-window": 1
+      },
+      "db_read_bytes": 318961886,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "dashboard_metrics",
+      "sample": 0,
+      "elapsed_ms": 2056.9,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be",
+      "response_bytes": 2650,
+      "upstream_calls": 1,
+      "upstream_response_bytes": 146762,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1
+      },
+      "db_read_bytes": 432410,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "dashboard_metrics",
+      "sample": 1,
+      "elapsed_ms": 1211.59,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be",
+      "response_bytes": 2650,
+      "upstream_calls": 1,
+      "upstream_response_bytes": 146762,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1
+      },
+      "db_read_bytes": 432410,
+      "full_business_equal": true
+    },
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "dashboard_metrics",
+      "sample": 1,
+      "elapsed_ms": 7721.48,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be",
+      "response_bytes": 2642,
+      "upstream_calls": 2,
+      "upstream_response_bytes": 86413057,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1,
+        "read-model/metrics-window": 1
+      },
+      "db_read_bytes": 318961886,
+      "full_business_equal": true
+    },
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "dashboard_metrics",
+      "sample": 2,
+      "elapsed_ms": 7566.47,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be",
+      "response_bytes": 2642,
+      "upstream_calls": 2,
+      "upstream_response_bytes": 86413057,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1,
+        "read-model/metrics-window": 1
+      },
+      "db_read_bytes": 318961886,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "dashboard_metrics",
+      "sample": 2,
+      "elapsed_ms": 3700.38,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be",
+      "response_bytes": 2650,
+      "upstream_calls": 1,
+      "upstream_response_bytes": 146762,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1
+      },
+      "db_read_bytes": 432410,
+      "full_business_equal": true
+    },
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "framework.overview.event_stream",
+      "sample": 0,
+      "elapsed_ms": 7780.38,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+      "response_bytes": 68103,
+      "upstream_calls": 4,
+      "upstream_response_bytes": 87039556,
+      "upstream_categories": {
+        "read-model/batch-snapshot": 2,
+        "read-model/metrics-window": 1,
+        "read-model/operation-page": 1
+      },
+      "db_read_bytes": 319989024,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "framework.overview.event_stream",
+      "sample": 0,
+      "elapsed_ms": 1026.19,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+      "response_bytes": 68103,
+      "upstream_calls": 3,
+      "upstream_response_bytes": 660813,
+      "upstream_categories": {
+        "read-model/batch-snapshot": 2,
+        "read-model/operation-page": 1
+      },
+      "db_read_bytes": 1054565,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "framework.overview.event_stream",
+      "sample": 1,
+      "elapsed_ms": 626.4,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+      "response_bytes": 68101,
+      "upstream_calls": 3,
+      "upstream_response_bytes": 660813,
+      "upstream_categories": {
+        "read-model/batch-snapshot": 2,
+        "read-model/operation-page": 1
+      },
+      "db_read_bytes": 1054565,
+      "full_business_equal": true
+    },
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "framework.overview.event_stream",
+      "sample": 1,
+      "elapsed_ms": 8637.35,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+      "response_bytes": 68103,
+      "upstream_calls": 4,
+      "upstream_response_bytes": 87039556,
+      "upstream_categories": {
+        "read-model/batch-snapshot": 2,
+        "read-model/metrics-window": 1,
+        "read-model/operation-page": 1
+      },
+      "db_read_bytes": 319989024,
+      "full_business_equal": true
+    },
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "framework.overview.event_stream",
+      "sample": 2,
+      "elapsed_ms": 8157.71,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+      "response_bytes": 68103,
+      "upstream_calls": 4,
+      "upstream_response_bytes": 87039556,
+      "upstream_categories": {
+        "read-model/batch-snapshot": 2,
+        "read-model/metrics-window": 1,
+        "read-model/operation-page": 1
+      },
+      "db_read_bytes": 319989024,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "framework.overview.event_stream",
+      "sample": 2,
+      "elapsed_ms": 727.29,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+      "response_bytes": 68101,
+      "upstream_calls": 3,
+      "upstream_response_bytes": 660813,
+      "upstream_categories": {
+        "read-model/batch-snapshot": 2,
+        "read-model/operation-page": 1
+      },
+      "db_read_bytes": 1054565,
+      "full_business_equal": true
+    },
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "framework.events.timeseries",
+      "sample": 0,
+      "elapsed_ms": 7413.93,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312",
+      "response_bytes": 403,
+      "upstream_calls": 2,
+      "upstream_response_bytes": 86413057,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1,
+        "read-model/metrics-window": 1
+      },
+      "db_read_bytes": 318961886,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "framework.events.timeseries",
+      "sample": 0,
+      "elapsed_ms": 3619.08,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312",
+      "response_bytes": 403,
+      "upstream_calls": 1,
+      "upstream_response_bytes": 156274,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1
+      },
+      "db_read_bytes": 437082,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "framework.events.timeseries",
+      "sample": 1,
+      "elapsed_ms": 2996.88,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312",
+      "response_bytes": 403,
+      "upstream_calls": 1,
+      "upstream_response_bytes": 156274,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1
+      },
+      "db_read_bytes": 437082,
+      "full_business_equal": true
+    },
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "framework.events.timeseries",
+      "sample": 1,
+      "elapsed_ms": 6933.3,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312",
+      "response_bytes": 403,
+      "upstream_calls": 2,
+      "upstream_response_bytes": 86413057,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1,
+        "read-model/metrics-window": 1
+      },
+      "db_read_bytes": 318961886,
+      "full_business_equal": true
+    },
+    {
+      "variant": "baseline",
+      "group": "scale-10000x3",
+      "case": "framework.events.timeseries",
+      "sample": 2,
+      "elapsed_ms": 6443.78,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312",
+      "response_bytes": 403,
+      "upstream_calls": 2,
+      "upstream_response_bytes": 86413057,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1,
+        "read-model/metrics-window": 1
+      },
+      "db_read_bytes": 318961886,
+      "full_business_equal": true
+    },
+    {
+      "variant": "candidate",
+      "group": "scale-10000x3",
+      "case": "framework.events.timeseries",
+      "sample": 2,
+      "elapsed_ms": 3052.64,
+      "status": 200,
+      "api_code": 0,
+      "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312",
+      "response_bytes": 403,
+      "upstream_calls": 1,
+      "upstream_response_bytes": 156274,
+      "upstream_categories": {
+        "read-model/metrics-aggregate": 1
+      },
+      "db_read_bytes": 437082,
+      "full_business_equal": true
+    }
+  ],
+  "concurrent_five_request_n3": {
+    "baseline": {
+      "n": 3,
+      "elapsed_ms": {
+        "min": 7659.6,
+        "median": 8060.21,
+        "max": 9645.92
+      },
+      "db_read_bytes": {
+        "min": 322687537,
+        "median": 322687537,
+        "max": 322687893
+      },
+      "upstream_response_bytes": {
+        "min": 89273742,
+        "median": 89273742,
+        "max": 89273742
+      },
+      "case_elapsed_ms": {
+        "dashboard_metrics": {
+          "min": 7538.84,
+          "median": 7939.07,
+          "max": 9514.08
+        },
+        "framework.overview.event_stream": {
+          "min": 7655.19,
+          "median": 8055.76,
+          "max": 9640.62
+        },
+        "framework.events.timeseries": {
+          "min": 7225.76,
+          "median": 7626.95,
+          "max": 9182.67
+        },
+        "dashboard_traces": {
+          "min": 495.85,
+          "median": 522.66,
+          "max": 702.33
+        },
+        "dashboard_sessions": {
+          "min": 762.3,
+          "median": 788.75,
+          "max": 1042.42
+        }
+      },
+      "all_full_business_equal": true
+    },
+    "candidate": {
+      "n": 3,
+      "elapsed_ms": {
+        "min": 3123.81,
+        "median": 3426.42,
+        "max": 4220.92
+      },
+      "db_read_bytes": {
+        "min": 4621446,
+        "median": 4621446,
+        "max": 4621802
+      },
+      "upstream_response_bytes": {
+        "min": 3197859,
+        "median": 3197859,
+        "max": 3197859
+      },
+      "case_elapsed_ms": {
+        "dashboard_metrics": {
+          "min": 3118.74,
+          "median": 3405.02,
+          "max": 4219.21
+        },
+        "framework.overview.event_stream": {
+          "min": 784.58,
+          "median": 874.86,
+          "max": 1086.37
+        },
+        "framework.events.timeseries": {
+          "min": 3120.56,
+          "median": 3423.42,
+          "max": 4212.86
+        },
+        "dashboard_traces": {
+          "min": 571.02,
+          "median": 641.98,
+          "max": 886.43
+        },
+        "dashboard_sessions": {
+          "min": 855.53,
+          "median": 928.97,
+          "max": 1158.2
+        }
+      },
+      "all_full_business_equal": true
+    }
+  },
+  "concurrent_samples": [
+    {
+      "variant": "baseline",
+      "elapsed_ms": 9645.92,
+      "db_read_bytes": 322687893,
+      "upstream_response_bytes": 89273742,
+      "requests": [
+        {
+          "case": "dashboard_metrics",
+          "elapsed_ms": 9514.08,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 2642,
+          "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be"
+        },
+        {
+          "case": "dashboard_traces",
+          "elapsed_ms": 702.33,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 707468,
+          "business_sha256": "371e8491508cb8e4fc4fab39893c0f65880b0dd7e0cb4c28406079e71657db69"
+        },
+        {
+          "case": "dashboard_sessions",
+          "elapsed_ms": 1042.42,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 59627,
+          "business_sha256": "274e80154b1d099ddf006730015622630cdc5a8e2d48920ebc607fbb2607f77f"
+        },
+        {
+          "case": "framework.overview.event_stream",
+          "elapsed_ms": 9640.62,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 68103,
+          "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a"
+        },
+        {
+          "case": "framework.events.timeseries",
+          "elapsed_ms": 9182.67,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 403,
+          "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312"
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "elapsed_ms": 8060.21,
+      "db_read_bytes": 322687537,
+      "upstream_response_bytes": 89273742,
+      "requests": [
+        {
+          "case": "dashboard_metrics",
+          "elapsed_ms": 7939.07,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 2642,
+          "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be"
+        },
+        {
+          "case": "dashboard_traces",
+          "elapsed_ms": 522.66,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 707468,
+          "business_sha256": "371e8491508cb8e4fc4fab39893c0f65880b0dd7e0cb4c28406079e71657db69"
+        },
+        {
+          "case": "dashboard_sessions",
+          "elapsed_ms": 788.75,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 59626,
+          "business_sha256": "274e80154b1d099ddf006730015622630cdc5a8e2d48920ebc607fbb2607f77f"
+        },
+        {
+          "case": "framework.overview.event_stream",
+          "elapsed_ms": 8055.76,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 68103,
+          "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a"
+        },
+        {
+          "case": "framework.events.timeseries",
+          "elapsed_ms": 7626.95,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 403,
+          "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312"
+        }
+      ]
+    },
+    {
+      "variant": "baseline",
+      "elapsed_ms": 7659.6,
+      "db_read_bytes": 322687537,
+      "upstream_response_bytes": 89273742,
+      "requests": [
+        {
+          "case": "dashboard_metrics",
+          "elapsed_ms": 7538.84,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 2642,
+          "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be"
+        },
+        {
+          "case": "dashboard_traces",
+          "elapsed_ms": 495.85,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 707468,
+          "business_sha256": "371e8491508cb8e4fc4fab39893c0f65880b0dd7e0cb4c28406079e71657db69"
+        },
+        {
+          "case": "dashboard_sessions",
+          "elapsed_ms": 762.3,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 59626,
+          "business_sha256": "274e80154b1d099ddf006730015622630cdc5a8e2d48920ebc607fbb2607f77f"
+        },
+        {
+          "case": "framework.overview.event_stream",
+          "elapsed_ms": 7655.19,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 68103,
+          "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a"
+        },
+        {
+          "case": "framework.events.timeseries",
+          "elapsed_ms": 7225.76,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 403,
+          "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312"
+        }
+      ]
+    },
+    {
+      "variant": "candidate",
+      "elapsed_ms": 4220.92,
+      "db_read_bytes": 4621802,
+      "upstream_response_bytes": 3197859,
+      "requests": [
+        {
+          "case": "dashboard_metrics",
+          "elapsed_ms": 4219.21,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 2650,
+          "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be"
+        },
+        {
+          "case": "dashboard_traces",
+          "elapsed_ms": 641.98,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 707467,
+          "business_sha256": "371e8491508cb8e4fc4fab39893c0f65880b0dd7e0cb4c28406079e71657db69"
+        },
+        {
+          "case": "dashboard_sessions",
+          "elapsed_ms": 928.97,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 59626,
+          "business_sha256": "274e80154b1d099ddf006730015622630cdc5a8e2d48920ebc607fbb2607f77f"
+        },
+        {
+          "case": "framework.overview.event_stream",
+          "elapsed_ms": 874.86,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 68101,
+          "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a"
+        },
+        {
+          "case": "framework.events.timeseries",
+          "elapsed_ms": 4212.86,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 403,
+          "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312"
+        }
+      ]
+    },
+    {
+      "variant": "candidate",
+      "elapsed_ms": 3426.42,
+      "db_read_bytes": 4621446,
+      "upstream_response_bytes": 3197859,
+      "requests": [
+        {
+          "case": "dashboard_metrics",
+          "elapsed_ms": 3405.02,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 2650,
+          "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be"
+        },
+        {
+          "case": "dashboard_traces",
+          "elapsed_ms": 886.43,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 707468,
+          "business_sha256": "371e8491508cb8e4fc4fab39893c0f65880b0dd7e0cb4c28406079e71657db69"
+        },
+        {
+          "case": "dashboard_sessions",
+          "elapsed_ms": 1158.2,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 59627,
+          "business_sha256": "274e80154b1d099ddf006730015622630cdc5a8e2d48920ebc607fbb2607f77f"
+        },
+        {
+          "case": "framework.overview.event_stream",
+          "elapsed_ms": 1086.37,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 68103,
+          "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a"
+        },
+        {
+          "case": "framework.events.timeseries",
+          "elapsed_ms": 3423.42,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 403,
+          "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312"
+        }
+      ]
+    },
+    {
+      "variant": "candidate",
+      "elapsed_ms": 3123.81,
+      "db_read_bytes": 4621446,
+      "upstream_response_bytes": 3197859,
+      "requests": [
+        {
+          "case": "dashboard_metrics",
+          "elapsed_ms": 3118.74,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 2650,
+          "business_sha256": "939c1d4ac006a52f944eda1a6642e3cbd02fa4b7a710ab5a8c7ded6ed47de6be"
+        },
+        {
+          "case": "dashboard_traces",
+          "elapsed_ms": 571.02,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 707468,
+          "business_sha256": "371e8491508cb8e4fc4fab39893c0f65880b0dd7e0cb4c28406079e71657db69"
+        },
+        {
+          "case": "dashboard_sessions",
+          "elapsed_ms": 855.53,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 59626,
+          "business_sha256": "274e80154b1d099ddf006730015622630cdc5a8e2d48920ebc607fbb2607f77f"
+        },
+        {
+          "case": "framework.overview.event_stream",
+          "elapsed_ms": 784.58,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 68101,
+          "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a"
+        },
+        {
+          "case": "framework.events.timeseries",
+          "elapsed_ms": 3120.56,
+          "status": 200,
+          "api_code": 0,
+          "response_bytes": 403,
+          "business_sha256": "6a18a5e11e6cb309d526b453c3c302178adb98412fb8815dba5bac454b8a4312"
+        }
+      ]
+    }
+  ],
+  "write_cost": {
+    "boundary": "Same current real publisher and identical full12Trace payload; base-only prefix without optional tables/generated receipt versus typed-schema prefix. Warmup one each excluded, n3 interleaved. Direct publish+DB only after decode/Ping; no HTTP/Docker/prep. No experimental indexes. Not sustained ingestion capacity.",
+    "native_traces": 12,
+    "typed_calls": 28,
+    "variants": {
+      "base_schema_only": {
+        "n": 3,
+        "min_ms": 31.6,
+        "median_ms": 44.292,
+        "max_ms": 50.007
+      },
+      "optional_typed_schema": {
+        "n": 3,
+        "min_ms": 112.67,
+        "median_ms": 115.433,
+        "max_ms": 400.239
+      }
+    },
+    "median_overhead_pct": 160.62
+  },
+  "write_samples": [
+    {
+      "elapsed_ms": 31.6,
+      "optional_schema": false,
+      "prefix": "sk26litewritebase",
+      "published": 12,
+      "sample": 0
+    },
+    {
+      "elapsed_ms": 400.239,
+      "optional_schema": true,
+      "prefix": "sk26literetry",
+      "published": 12,
+      "sample": 0
+    },
+    {
+      "elapsed_ms": 115.433,
+      "optional_schema": true,
+      "prefix": "sk26literetry",
+      "published": 12,
+      "sample": 1
+    },
+    {
+      "elapsed_ms": 50.007,
+      "optional_schema": false,
+      "prefix": "sk26litewritebase",
+      "published": 12,
+      "sample": 1
+    },
+    {
+      "elapsed_ms": 44.292,
+      "optional_schema": false,
+      "prefix": "sk26litewritebase",
+      "published": 12,
+      "sample": 2
+    },
+    {
+      "elapsed_ms": 112.67,
+      "optional_schema": true,
+      "prefix": "sk26literetry",
+      "published": 12,
+      "sample": 2
+    }
+  ],
+  "validation": {
+    "strict_api_response_count": 93,
+    "full_equal_functional_edge_count": 28,
+    "native_frameworks": [
+      "Eino",
+      "DeepAgents",
+      "DSH",
+      "Codex"
+    ],
+    "native_published": 12,
+    "full_envelopes_readback": true,
+    "subsequent_worker_seen": 0,
+    "stage_a": {
+      "sk26lite": {
+        "base_page_hashes": {
+          "sessions": "414755ee78ded6b571a564abd50f22164e8d88e730ba50f1380d8b0b09070666",
+          "traces": "3dadc1bc8169f99f022ab4d29ecf8669e71f5f9e5a737010d1fbb442e5e07b4c"
+        },
+        "base_state": "true false false 2 1",
+        "base_state_and_page_bodies_unchanged": true,
+        "idempotent_retry_ms": 22.154,
+        "lease_released": true,
+        "ready": true,
+        "setup_ms": 1489.457
+      },
+      "sk26liteprobev2": {
+        "base_page_hashes": {
+          "sessions": "414755ee78ded6b571a564abd50f22164e8d88e730ba50f1380d8b0b09070666",
+          "traces": "3dadc1bc8169f99f022ab4d29ecf8669e71f5f9e5a737010d1fbb442e5e07b4c"
+        },
+        "base_state": "true false false 2 1",
+        "base_state_and_page_bodies_unchanged": true,
+        "idempotent_retry_ms": 11.58,
+        "lease_released": true,
+        "ready": true,
+        "setup_ms": 1685.505
+      },
+      "sk26literetry": {
+        "base_page_hashes": {
+          "sessions": "414755ee78ded6b571a564abd50f22164e8d88e730ba50f1380d8b0b09070666",
+          "traces": "3dadc1bc8169f99f022ab4d29ecf8669e71f5f9e5a737010d1fbb442e5e07b4c"
+        },
+        "base_state": "true false false 2 1",
+        "base_state_and_page_bodies_unchanged": true,
+        "idempotent_retry_ms": 16.117,
+        "lease_released": true,
+        "ready": true,
+        "setup_ms": 1517.062
+      }
+    },
+    "old_writer_invalidates_receipt": true,
+    "go_offline": {
+      "top_level": {
+        "pass": 198,
+        "skip": 9
+      },
+      "with_subtests": {
+        "pass": 497,
+        "skip": 9
+      },
+      "passed_packages": [
+        "github.com/SigNoz/signoz/pkg/ingest",
+        "github.com/SigNoz/signoz/pkg/telemetrystore/oceanbasetelemetrystore",
+        "github.com/SigNoz/signoz/pkg/modules/aivision"
+      ]
+    },
+    "source_review": "Two findings resolved: strict version suffixes and seekdb DDL; seven current source hashes match independent review/runtime. No SQL was independently rerun by the source reviewer.",
+    "typed_facts_final_readback": {
+      "trace_statistics": {
+        "rows": 30012,
+        "sha256": "d6893377ff933d41502c5099a6bc1ef0ee4be38d181eae004aa3b4eab879bebc",
+        "all_fields_equal_to_phase3": true
+      },
+      "call_statistics": {
+        "rows": 60028,
+        "sha256": "08af1df74f249ca34662284cbe8ee22e6de6ff242fbef3cf386ae4a14595b0b7",
+        "all_fields_equal_to_phase3": true
+      }
+    },
+    "one_authorized_input_plan": "Production Go prepared-protocol EXPLAIN: one authorized input followed by materialized five constant axes. Statement count does not imply physical scan count."
+  },
+  "protection": {
+    "original_engines_equal": true,
+    "original_services_equal": true,
+    "raw_spans_each": 109858,
+    "source_and_projection_rows_each": 36612,
+    "protected_service_count": 9,
+    "engine_parameters_unchanged": true,
+    "task_listeners_closed": true,
+    "proof_tables_retained": true
+  },
+  "limitations": [
+    "Only observed seekdb1.4.0.0 tested; recognized>=1.4 within1.x allowed, unknown/future2.x declined.",
+    "Existing engine settings memory_limit2G/cpu_count2; Docker container has no hard resource limits and runs on shared12CPU/~11.7GiB VM.",
+    "Latency vector remains up to30000 small scalar values; typed aggregate is not constant-sized in trace count.",
+    "Native12 publication cost is a warm small batch, not sustained ingestion capacity.",
+    "Same stored dataset contains added optional receipts; comparison isolates route behavior, not an exact historical storage image.",
+    "Retained seekdb image is linux/amd64 on an ARM/aarch64 Docker host; Go handler/test containers are linux/arm64. Neither native ARM seekdb nor a native Linux amd64 host was validated."
+  ],
+  "receipt_directory": "outputs/seekdb-ap-light-20261026",
+  "receipt_sha256": {
+    "final-summary.json": "954b0e9ba6417d77592073a4f3a82fa2b4c40ef75ddb5de9f77e6b89e2756eb5",
+    "final-crosscheck.json": "2f787134ff1d70f963bf2342e6535be15f34ec956f24fe45ad55c8286a014a06",
+    "source-freeze.json": "e0ce455fcd93c90d0971b1c0bf2be18c25a7d5bdd6415d4b6a06c1fb2e2b8e50",
+    "source-binding-final.json": "311188a9966c852ae784f29358e137709c3bccece0b8be918cb0cafad8061a30",
+    "go-implementation.json": "76058c4154005b3ab475817eea39930a4e5c295d5ccaafbe38e15d5f39458b04",
+    "go-final-checks.jsonl": "c78b93a9bf10e0e1b620a9a041be847a1df4350e413febd0c93105e5a1c3084b",
+    "independent-review.md": "cdc8883661197d650d4d2cf3931c5e331cdfc33e1301ad6de1eb3b0f51f1222b",
+    "independent-review-source-hashes.json": "bfbf224b98b49ec95fc545bf270abc2056a462f627cb16213e3d18952349c0d8",
+    "stage-a.json": "122fb500e154cff5c3af1c0112f42fa8cdc4fe866af72e14bbbe14b58a18a32f",
+    "stage-a-execution.json": "b1f8f08214ac4e5635b8112e7466f85efe4dd49c16691061ef6fce1d8b493d62",
+    "fixture-preflight.json": "70290800d2f05f97e853eede6bb4c28f4dfaa7e8a5edabb20d295f407acb404b",
+    "fixture-preparation.json": "fb5af659febe4f93906c35448ed072c8d18be3b1b55805c7c58e3f4bfb2b9c08",
+    "native-product-publication.json": "de7e885f559aee6e2ec23449dc7046848adc8ea6b1db70e9eb84df3e1c989617",
+    "functional-gates.json": "196cb61f5c76e390151acfebd153ff9ee43df26a4dc44f11812421d0461edff5",
+    "operation-functional-gates.json": "b8652987a24976b390c16c1d3c960c66b8716a3862d60d06d8cbb5ceb5dd2bf8",
+    "operation-edge-gates.json": "0f9a4727866b2ba1aad465af6e38460323fe091d89a28133cf68528a538351f1",
+    "sql-profile.json": "150e28880b76fcdecf81d3db5f3194d156f615d5abad621f63209423342618ac",
+    "write-comparison.json": "50ae01d1a179e3bcc2b5c318945c956f5cd9405b8cd7b1052c22cac2dd254e0d",
+    "resources.json": "b32355fb201d10c08043697efdb3a34178906165e022c00fe9de056af759bb8a",
+    "image-platforms.json": "b36e9d408f6ae4f2c54f76f9c49e32b049e4cc24893038b5bc6ad94e061cd278",
+    "integrity-before.json": "a438bae753d253bfc2ef86a0767930a13b000e29e3cee7bbede0f2fca8af7264",
+    "integrity-after.json": "6acb1e039e013a562f6bd0d25a78ab8993ee44a3d51e191b4a330144fdf18edb",
+    "cleanup.json": "524709c8611b3986f9950dedfc9b19da0b1388b024ab5c6f827db2a01c6cee91"
+  },
+  "delivery_scope": {
+    "committed_in_this_phase": false,
+    "pushed": false,
+    "release_or_deployment": false
+  },
+  "authentication_boundary": "Existing authorized test credentials, fixed org claim at task transport, real Django login; not full hosted SigNoz authentication. No new database accounts or grants."
+}

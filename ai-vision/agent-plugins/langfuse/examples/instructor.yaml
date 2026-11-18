@@ -1,0 +1,76 @@
+id: instructor
+logo: /assets/frameworks/instructor.svg
+logoInvertInDark: true
+label: Instructor
+frontendSort: 13
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+pipInstall: pip install instructor "langfuse>=4.16.0,<5" openai
+pipExample: |-
+  import os
+
+  import instructor
+  from pydantic import BaseModel
+
+  from langfuse import get_client, observe, propagate_attributes
+  from langfuse.openai import OpenAI
+
+  langfuse = get_client()
+
+  # Wrap your OpenAI client with langfuse, then patch with instructor
+  client = instructor.patch(OpenAI())
+
+
+  class UserDetail(BaseModel):
+      name: str
+      age: int
+
+
+  @observe(name="Extract User Details")
+  def my_function(text: str) -> UserDetail:
+      return client.chat.completions.create(
+          model=os.environ.get("OPENAI_MODEL", "gpt-4o"),
+          response_model=UserDetail,
+          messages=[
+              {
+                  "role": "user",
+                  "content": f"Extract {text}",
+              },
+          ],
+      )
+
+
+  @observe(name="Instructor Demo")
+  def main(text: str = "Jason is 25 years old") -> UserDetail:
+      print("AI Vision trace_id:", langfuse.get_current_trace_id())
+      user = client.chat.completions.create(
+          model=os.environ.get("OPENAI_MODEL", "gpt-4o"),
+          response_model=UserDetail,
+          messages=[
+              {
+                  "role": "user",
+                  "content": f"Extract {text}",
+              },
+          ],
+      )
+      print(user)
+
+      print(my_function(text))
+      return user
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:instructor"]):
+              main("Jason is 25 years old")
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

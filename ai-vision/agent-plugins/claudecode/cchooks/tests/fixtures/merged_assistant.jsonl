@@ -1,0 +1,3 @@
+{"type":"user","message":{"role":"user","content":"Tell me a story"},"timestamp":"2026-03-27T10:00:00.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Once upon a time"}],"id":"msg_001","model":"claude-sonnet-4-20250514"},"timestamp":"2026-03-27T10:00:01.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"there was a brave knight."},{"type":"tool_use","id":"toolu_001","name":"Write","input":{"file_path":"story.txt","content":"Once upon a time there was a brave knight."}}],"id":"msg_001","model":"claude-sonnet-4-20250514","usage":{"input_tokens":10,"output_tokens":30}},"timestamp":"2026-03-27T10:00:02.000Z"}

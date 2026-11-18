@@ -1,0 +1,5 @@
+# Explicitly selected, reviewed PR evidence; other local JPEGs stay ignored.
+!trace-span-filters/00-historical-classic.jpg
+!trace-span-filters/01-eino-filter-groups-zh.jpg
+!trace-span-filters/02-display-settings-zh.jpg
+!trace-span-filters/03-eino-output-active-zh.jpg

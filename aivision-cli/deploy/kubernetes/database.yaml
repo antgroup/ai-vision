@@ -1,0 +1,55 @@
+apiVersion: oceanbase.oceanbase.com/v1alpha1
+kind: OBCluster
+metadata:
+  name: oceanbase
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: database}
+  annotations:
+    oceanbase.oceanbase.com/mode: service
+    oceanbase.oceanbase.com/independent-pvc-lifecycle: "true"
+spec:
+  clusterName: aivision
+  clusterId: 1
+  serviceAccount: aivision
+  userSecrets:
+    root: aivision-ob-root
+    operator: aivision-ob-operator
+    monitor: aivision-ob-monitor
+    proxyro: aivision-ob-proxyro
+  topology:
+    - zone: zone1
+      replica: 1
+  observer:
+    image: {{.OB_IMAGE | quote}}
+    resource:
+      cpu: 2
+      memory: 10Gi
+    storage:
+      dataStorage:
+        storageClass: {{.STORAGE_CLASS | quote}}
+        size: 50Gi
+      redoLogStorage:
+        storageClass: {{.STORAGE_CLASS | quote}}
+        size: 50Gi
+      logStorage:
+        storageClass: {{.STORAGE_CLASS | quote}}
+        size: 20Gi
+  parameters:
+    - name: system_memory
+      value: 1G
+    - name: __min_full_resource_pool_memory
+      value: "2147483648"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oceanbase
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: database}
+spec:
+  selector:
+    ref-obcluster: oceanbase
+  ports:
+    - name: mysql
+      port: 2881
+      targetPort: 2881

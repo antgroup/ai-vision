@@ -1,0 +1,114 @@
+// observ-opencode 完整配置示例
+// 默认配置文件路径: ~/.config/opencode/observ-opencode.json
+// 设置 OPENCODE_CONFIG=/path/to/profile/opencode.json 时，读取同目录的 observ-opencode.json。
+// 未设置 OPENCODE_CONFIG、但设置 OPENCODE_CONFIG_DIR=/path/to/profile 时，
+// 读取 /path/to/profile/observ-opencode.json。
+// 所有字段均可选，未设置时使用默认值或环境变量
+{
+  // ─── 主开关 ──────────────────────────────────────────────────────
+  // env: AGENT_ENABLE_TELEMETRY
+  "enableTelemetry": true,
+
+  // OpenTelemetry service.name 资源属性
+  // env: OTEL_SERVICE_NAME
+  "serviceName": "opencode",
+
+  // 内容采集模式: "full" 记录所有内容, "privacy" 脱敏/不记录原文
+  // env: AIVISION_COLLECTION_MODE, OBSERV_OPENCODE_COLLECTION_MODE
+  "collectionMode": "full",
+
+  // 启用插件诊断日志；不启用 transcript 或离线 replay
+  // env: OBSERV_OPENCODE_DEBUG
+  "debug": false,
+
+  // 每次记录信号时从进程环境变量读取身份；环境变量为空时回退到 otelExporter.attributes
+  // env: AIVISION_ANT_USERNAME / AIVISION_ANT_UID
+  "dynamicUsername": false,
+  "dynamicUid": false,
+
+  // ─── OTel 导出器配置 ─────────────────────────────────────────────
+  "otelExporter": {
+    // 全局 OTLP endpoint, 作为各信号的 fallback
+    // env: OTEL_EXPORTER_OTLP_ENDPOINT
+    "endpoint": "http://127.0.0.1:4319",
+
+    // 传输协议: "http/json" | "http/protobuf"
+    // env: OTEL_EXPORTER_OTLP_PROTOCOL
+    "protocol": "http/json",
+
+    // 全局请求头, 与各信号的 headers 合并 (信号级优先)
+    // env: OTEL_EXPORTER_OTLP_HEADERS (格式: key1=value1,key2=value2)
+    "headers": {},
+
+    // 自定义信号属性, 注入到每个 span、event 和 metric
+    // ant.username 与 ant.uid 均在此配置
+    // env: OBSERV_OPENCODE_OTEL_ATTRIBUTES (格式: key1=value1,key2=value2)
+    // _internal.meta.root 为仓库保留键，会被忽略；其他 _internal.* 键不受影响
+    "attributes": {
+      "ant.username": ""
+    },
+
+    // Agent 元数据和其他资源属性, 合并到 OTel Resource
+    // 合并顺序: config < OTEL_RESOURCE_ATTRIBUTES < AIVISION_OTEL_RESOURCE_ATTRIBUTES
+    //          < OBSERV_OPENCODE_OTEL_RESOURCE_ATTRIBUTES
+    // ant.meta.trigger 还可由最高优先级 AIVISION_META_TRIGGER 覆盖；它表示外部任务归因，
+    // 不从 transcript 推断。可选值: automation | interactive | unknown；未配置时 Resource 输出空字符串，
+    // 显式空值或非法值规范化为 unknown
+    "resourceAttributes": {
+      // "ant.meta.trigger": "automation",
+      "ant.agent.type": "opencode",
+      "ant.agent.product": "OpenCode",
+      "ant.agent.instance": "",
+      "ant.agent.env": "Default",
+      "ant.agent.scene": "default"
+    },
+
+    // Metrics 时间粒度偏好: "delta" | "cumulative"
+    // env: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+    "metricsTemporalityPreference": "delta"
+  },
+
+  // ─── 信号级 endpoint 覆盖 ────────────────────────────────────────
+  // 未设置 endpoint 时回退到 otelExporter.endpoint
+  // headers 与 otelExporter.headers 合并 (信号级优先)
+
+  "tracesConfig": {
+    // env: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+    "endpoint": "http://127.0.0.1:4319/v1/traces",
+    "headers": {},
+    "enabled": true
+  },
+
+  "metricsConfig": {
+    // env: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+    "endpoint": "http://127.0.0.1:4319/v1/metrics",
+    "headers": {},
+    "enabled": true
+  },
+
+  "eventsConfig": {
+    // env: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT
+    "endpoint": "http://127.0.0.1:4319/v1/logs",
+    "headers": {},
+    "enabled": true
+  },
+
+  // ─── 导出间隔 ────────────────────────────────────────────────────
+
+  // Metrics 批量导出间隔 (ms)
+  // env: OTEL_METRIC_EXPORT_INTERVAL
+  "metricExportInterval": 60000,
+
+  // Events/Logs 批量导出间隔 (ms)
+  // env: OTEL_LOGS_EXPORT_INTERVAL
+  "logsExportInterval": 5000
+
+  // Transcript、DEBUG 本地双写、replay 与 report 不属于生产插件配置。
+  // 本地测试时使用独立的 opencode-replay 插件；其配置见
+  // docs/config/opencode-replay.schema.json 与 opencode-replay.example.jsonc。
+
+  // 可选：插件独立日志目录。未设置时使用 OpenCode 运行时 log 目录；
+  // AIVision edition 默认使用 ~/.aivision/ocd/logs。
+  // env: AIVISION_LOG_DIR, OBSERV_OPENCODE_LOG_DIR
+  // "logDir": "C:/path/to/plugin-logs"
+}

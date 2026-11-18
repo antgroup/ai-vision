@@ -1,0 +1,45 @@
+{
+  "resourceSpans": [
+    {
+      "resource": {
+        "attributes": [
+          {"key": "service.name", "value": {"stringValue": "cdxhooks"}}
+        ]
+      },
+      "scopeSpans": [
+        {
+          "scope": {"name": "ai-agent-hooks"},
+          "spans": [
+            {
+              "traceId": "fedcba9876543210fedcba9876543210",
+              "spanId": "dddddddddddddddd",
+              "parentSpanId": "",
+              "name": "invalid_root_span",
+              "kind": 1,
+              "startTimeUnixNano": "1700000000000000000",
+              "endTimeUnixNano": "1700000001000000000",
+              "attributes": [
+                {"key": "session.id", "value": {"stringValue": "sess_xyz456"}},
+                {"key": "source", "value": {"stringValue": "invalid-source"}},
+                {"key": "turn_number", "value": {"stringValue": "-1"}}
+              ]
+            },
+            {
+              "traceId": "fedcba9876543210fedcba9876543210",
+              "spanId": "eeeeeeeeeeeeeeee",
+              "parentSpanId": "dddddddddddddddd",
+              "name": "invalid_generation",
+              "kind": 2,
+              "startTimeUnixNano": "1700000000500000000",
+              "endTimeUnixNano": "1700000000900000000",
+              "attributes": [
+                {"key": "gen_ai.system", "value": {"stringValue": "unknown-provider"}},
+                {"key": "gen_ai.usage.input_tokens", "value": {"stringValue": "-100"}}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

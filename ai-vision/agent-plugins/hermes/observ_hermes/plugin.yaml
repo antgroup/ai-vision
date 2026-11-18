@@ -1,0 +1,7 @@
+name: observ-hermes
+version: "0.2.2"
+description: Production OpenTelemetry observability plugin for Hermes Agent
+requires:
+  aivision-hermes-core: "0.2.2"
+requires_env:
+  - AIVISION_ANT_USERNAME

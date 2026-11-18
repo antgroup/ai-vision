@@ -1,0 +1,40 @@
+{
+  "enableTelemetry": true,
+  "serviceName": "openclaw",
+  "collectionMode": "full",
+  "dynamicUsername": false,
+  "dynamicUid": false,
+  "otelExporter": {
+    "endpoint": "",
+    "protocol": "http/json",
+    "headers": {},
+    "attributes": {
+      "ant.username": ""
+    },
+    "resourceAttributes": {
+      "ant.agent.type": "openclaw",
+      "ant.agent.product": "OpenClaw",
+      "ant.agent.instance": "",
+      "ant.agent.env": "Default",
+      "ant.agent.scene": "default"
+    },
+    "metricsTemporalityPreference": "delta"
+  },
+  "tracesConfig": {
+    "endpoint": "http://localhost:4318/v1/traces",
+    "headers": {},
+    "enabled": true
+  },
+  "metricsConfig": {
+    "endpoint": "http://localhost:4318/v1/metrics",
+    "headers": {},
+    "enabled": true
+  },
+  "eventsConfig": {
+    "endpoint": "http://localhost:4318/v1/logs",
+    "headers": {},
+    "enabled": true
+  },
+  "metricExportInterval": 60000,
+  "logsExportInterval": 5000
+}

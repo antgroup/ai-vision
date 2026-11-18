@@ -1,0 +1,65 @@
+SPACE_READ = "space.read"
+SPACE_SETTINGS_MANAGE = "space.settings.manage"
+SPACE_MEMBER_READ = "space.member.read"
+SPACE_MEMBER_MANAGE = "space.member.manage"
+SPACE_KEY_READ_MASKED = "space.key.read_masked"
+SPACE_KEY_MANAGE = "space.key.manage"
+SPACE_LEAVE = "space.leave"
+AGENT_READ = "agent.read"
+AGENT_MANAGE = "agent.manage"
+AGENT_INGEST_TOKEN_MINT = "agent.ingest_token.mint"
+MODEL_CONNECTION_READ = "model_connection.read"
+MODEL_CONNECTION_MANAGE = "model_connection.manage"
+SANDBOX_CONNECTION_READ = "sandbox_connection.read"
+SANDBOX_CONNECTION_MANAGE = "sandbox_connection.manage"
+MODEL_PRICING_READ = "model_pricing.read"
+MODEL_PRICING_MANAGE = "model_pricing.manage"
+DIAGNOSIS_READ = "diagnosis.read"
+DIAGNOSIS_MANAGE = "diagnosis.manage"
+DIAGNOSIS_EXECUTE = "diagnosis.execute"
+DIAGNOSIS_JOB_MANAGE = "diagnosis.job.manage"
+TELEMETRY_DASHBOARD_READ = "telemetry.dashboard.read"
+TELEMETRY_TRACE_READ = "telemetry.trace.read"
+TELEMETRY_TRACE_READ_SENSITIVE = "telemetry.trace.read_sensitive"
+LEGACY_LANGFUSE_KEY_REVEAL = "legacy_langfuse_key.reveal"
+LEGACY_LANGFUSE_KEY_MANAGE = "legacy_langfuse_key.manage"
+
+READ_PERMISSIONS = {
+    SPACE_READ,
+    SPACE_MEMBER_READ,
+    SPACE_KEY_READ_MASKED,
+    AGENT_READ,
+    MODEL_CONNECTION_READ,
+    SANDBOX_CONNECTION_READ,
+    MODEL_PRICING_READ,
+    DIAGNOSIS_READ,
+    TELEMETRY_DASHBOARD_READ,
+    TELEMETRY_TRACE_READ,
+}
+
+DEVELOPER_PERMISSIONS = READ_PERMISSIONS | {
+    AGENT_MANAGE,
+    AGENT_INGEST_TOKEN_MINT,
+    MODEL_CONNECTION_MANAGE,
+    SANDBOX_CONNECTION_MANAGE,
+    DIAGNOSIS_MANAGE,
+    DIAGNOSIS_EXECUTE,
+    DIAGNOSIS_JOB_MANAGE,
+    TELEMETRY_TRACE_READ_SENSITIVE,
+    LEGACY_LANGFUSE_KEY_REVEAL,
+    SPACE_LEAVE,
+}
+
+ADMIN_PERMISSIONS = DEVELOPER_PERMISSIONS | {
+    MODEL_PRICING_MANAGE,
+    SPACE_SETTINGS_MANAGE,
+    SPACE_MEMBER_MANAGE,
+    SPACE_KEY_MANAGE,
+    LEGACY_LANGFUSE_KEY_MANAGE,
+}
+
+ROLE_PERMISSIONS = {
+    1: frozenset(ADMIN_PERMISSIONS),
+    2: frozenset(DEVELOPER_PERMISSIONS),
+    3: frozenset(READ_PERMISSIONS | {SPACE_LEAVE}),
+}

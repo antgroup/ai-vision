@@ -1,0 +1,597 @@
+{
+  "date": "2026-10-30",
+  "timezone": "Asia/Shanghai",
+  "measurement_kind": "Local synthetic direct-SQL comparison, not end-to-end API latency or P95",
+  "dataset": {
+    "traces": 5000,
+    "spans": 5000,
+    "window_days": 3,
+    "page_size": 50,
+    "nonpage_input_kib": 64,
+    "page_input_kib": 16,
+    "source_json_bytes": 652074800,
+    "stored_metadata_bytes": 1415000,
+    "response_bytes": 1689241
+  },
+  "engines": {
+    "seekdb": {
+      "version": "seekdb-v1.4.0.0",
+      "image": "oceanbase/seekdb@sha256:4db4961869d554313520d6081fca29265ba6da6db7313311bd8acbed771a956b",
+      "cpu_quota": 2,
+      "container_memory_gib": 4,
+      "memory_budget": "2G",
+      "old_restart_c4": {
+        "variant": "old",
+        "nonpage_kib": 64,
+        "inventory": [
+          5000,
+          652074800,
+          1415000
+        ],
+        "concurrency": 4,
+        "before": {
+          "rss": 257040384,
+          "cgroup": 286412800
+        },
+        "after": {
+          "rss": 868540416,
+          "cgroup": 896245760
+        },
+        "peak": {
+          "rss": 1070301184,
+          "cgroup": 1098444800
+        },
+        "outcomes": [
+          {
+            "success": true,
+            "seconds": 3.273,
+            "bytes": 1689241,
+            "traces": 50
+          },
+          {
+            "success": true,
+            "seconds": 3.198,
+            "bytes": 1689241,
+            "traces": 50
+          },
+          {
+            "success": true,
+            "seconds": 3.28,
+            "bytes": 1689241,
+            "traces": 50
+          },
+          {
+            "success": true,
+            "seconds": 3.281,
+            "bytes": 1689241,
+            "traces": 50
+          }
+        ]
+      },
+      "fixed_restart_c4": {
+        "variant": "fixed",
+        "nonpage_kib": 64,
+        "inventory": [
+          5000,
+          652074800,
+          1415000
+        ],
+        "concurrency": 4,
+        "before": {
+          "rss": 248274944,
+          "cgroup": 310194176
+        },
+        "after": {
+          "rss": 629592064,
+          "cgroup": 689217536
+        },
+        "peak": {
+          "rss": 629592064,
+          "cgroup": 689451008
+        },
+        "outcomes": [
+          {
+            "success": true,
+            "seconds": 1.224,
+            "bytes": 1689241,
+            "traces": 50
+          },
+          {
+            "success": true,
+            "seconds": 1.243,
+            "bytes": 1689241,
+            "traces": 50
+          },
+          {
+            "success": true,
+            "seconds": 1.21,
+            "bytes": 1689241,
+            "traces": 50
+          },
+          {
+            "success": true,
+            "seconds": 1.204,
+            "bytes": 1689241,
+            "traces": 50
+          }
+        ]
+      }
+    },
+    "oceanbase_ce": {
+      "version": "OceanBase_CE-v4.4.2.1",
+      "image": "oceanbase/oceanbase-ce@sha256:eaa2c3b3513fa21e4a658f197c1deb93c9d6b6eb742cfa5ef0f085f82b9cec54",
+      "cpu_quota": 2,
+      "container_memory_gib": 8,
+      "memory_limit": "6G",
+      "system_memory": "1G",
+      "test_tenant_memory_gib": 3,
+      "storage": "isolated host temporary bind mount; 2 GiB data file, 4 GiB log allocation",
+      "old_restart_c4": {
+        "variant": "old",
+        "concurrency": 4,
+        "before": {
+          "rss": 2872909824,
+          "cgroup": 3054071808
+        },
+        "after": {
+          "rss": 3956666368,
+          "cgroup": 4133588992
+        },
+        "peak": {
+          "rss": 3956666368,
+          "cgroup": 4133588992
+        },
+        "outcomes": [
+          {
+            "success": true,
+            "seconds": 6.763,
+            "bytes": 1689241,
+            "traces": 50,
+            "total": 5000,
+            "wire_bound": null,
+            "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+          },
+          {
+            "success": true,
+            "seconds": 6.762,
+            "bytes": 1689241,
+            "traces": 50,
+            "total": 5000,
+            "wire_bound": null,
+            "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+          },
+          {
+            "success": true,
+            "seconds": 6.763,
+            "bytes": 1689241,
+            "traces": 50,
+            "total": 5000,
+            "wire_bound": null,
+            "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+          },
+          {
+            "success": true,
+            "seconds": 6.762,
+            "bytes": 1689241,
+            "traces": 50,
+            "total": 5000,
+            "wire_bound": null,
+            "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+          }
+        ],
+        "sample_count": 49
+      },
+      "fixed_restart_c4": {
+        "variant": "fixed",
+        "concurrency": 4,
+        "before": {
+          "rss": 2815221760,
+          "cgroup": 3055280128
+        },
+        "after": {
+          "rss": 3223875584,
+          "cgroup": 3452678144
+        },
+        "peak": {
+          "rss": 3223875584,
+          "cgroup": 3452678144
+        },
+        "outcomes": [
+          {
+            "success": true,
+            "seconds": 1.825,
+            "bytes": 1689241,
+            "traces": 50,
+            "total": 5000,
+            "wire_bound": 10599868,
+            "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+          },
+          {
+            "success": true,
+            "seconds": 1.806,
+            "bytes": 1689241,
+            "traces": 50,
+            "total": 5000,
+            "wire_bound": 10599868,
+            "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+          },
+          {
+            "success": true,
+            "seconds": 1.806,
+            "bytes": 1689241,
+            "traces": 50,
+            "total": 5000,
+            "wire_bound": 10599868,
+            "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+          },
+          {
+            "success": true,
+            "seconds": 1.811,
+            "bytes": 1689241,
+            "traces": 50,
+            "total": 5000,
+            "wire_bound": 10599868,
+            "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+          }
+        ],
+        "sample_count": 13
+      },
+      "warm_rounds": {
+        "old-warm-c4-1": {
+          "variant": "old",
+          "concurrency": 4,
+          "before": {
+            "rss": 3956936704,
+            "cgroup": 4134162432
+          },
+          "after": {
+            "rss": 4058038272,
+            "cgroup": 4235403264
+          },
+          "peak": {
+            "rss": 4058038272,
+            "cgroup": 4235403264
+          },
+          "outcomes": [
+            {
+              "success": true,
+              "seconds": 4.551,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": null,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 4.534,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": null,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 4.551,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": null,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 4.551,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": null,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            }
+          ],
+          "sample_count": 37
+        },
+        "old-warm-c4-2": {
+          "variant": "old",
+          "concurrency": 4,
+          "before": {
+            "rss": 4062138368,
+            "cgroup": 4239106048
+          },
+          "after": {
+            "rss": 4070961152,
+            "cgroup": 4248076288
+          },
+          "peak": {
+            "rss": 4070961152,
+            "cgroup": 4248326144
+          },
+          "outcomes": [
+            {
+              "success": true,
+              "seconds": 4.11,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": null,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 4.105,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": null,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 4.111,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": null,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 4.106,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": null,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            }
+          ],
+          "sample_count": 33
+        },
+        "fixed-warm-c4-1": {
+          "variant": "fixed",
+          "concurrency": 4,
+          "before": {
+            "rss": 3235164160,
+            "cgroup": 3464736768
+          },
+          "after": {
+            "rss": 3250688000,
+            "cgroup": 3478396928
+          },
+          "peak": {
+            "rss": 3250688000,
+            "cgroup": 3478396928
+          },
+          "outcomes": [
+            {
+              "success": true,
+              "seconds": 0.672,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": 10599868,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 0.663,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": 10599868,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 0.652,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": 10599868,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 0.664,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": 10599868,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            }
+          ],
+          "sample_count": 7
+        },
+        "fixed-warm-c4-2": {
+          "variant": "fixed",
+          "concurrency": 4,
+          "before": {
+            "rss": 3261370368,
+            "cgroup": 3489402880
+          },
+          "after": {
+            "rss": 3265830912,
+            "cgroup": 3493793792
+          },
+          "peak": {
+            "rss": 3265830912,
+            "cgroup": 3493793792
+          },
+          "outcomes": [
+            {
+              "success": true,
+              "seconds": 0.665,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": 10599868,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 0.648,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": 10599868,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 0.657,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": 10599868,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            },
+            {
+              "success": true,
+              "seconds": 0.639,
+              "bytes": 1689241,
+              "traces": 50,
+              "total": 5000,
+              "wire_bound": 10599868,
+              "canonical_sha256": "8f3de6d5a1f9c9204ec22d1d7af7a1d3b94da2ab05a0cc18c5828c35a702dd6d"
+            }
+          ],
+          "sample_count": 7
+        }
+      },
+      "integration_tests": {
+        "aivision": {
+          "top_level_pass": 188,
+          "subtests_pass": 309,
+          "skips": [
+            "--- SKIP: TestExportTracePageMemorySQL (0.00s)"
+          ],
+          "real_database_tests": [
+            "--- PASS: TestOceanBaseTraceReadModel (6.83s)",
+            "--- PASS: TestOceanBaseTraceReadModelScopeRetag (3.36s)",
+            "--- PASS: TestOceanBaseProjectionMaintenanceConcurrency (3.91s)",
+            "--- PASS: TestOceanBaseCanonicalSessionReadModel (5.73s)",
+            "--- PASS: TestOceanBaseSessionTokenQuerySemantics (0.16s)",
+            "--- PASS: TestOceanBaseSkillSpans (2.95s)",
+            "--- PASS: TestOceanBaseNativeTracePage (17.84s)",
+            "--- PASS: TestOceanBaseTracePageDimensionsBackfillAndUpdate (3.27s)",
+            "--- PASS: TestOceanBaseRecoveryWindowMergesAndFallsBack (4.01s)"
+          ]
+        },
+        "ingest": {
+          "top_level_pass": 52,
+          "subtests_pass": 16,
+          "skips": [],
+          "real_database_tests": [
+            "--- PASS: TestOceanBaseProjectionMaintenanceLifecycle (3.76s)",
+            "--- PASS: TestOceanBaseTraceContentColumnAdditiveSemantics (0.50s)"
+          ]
+        }
+      },
+      "migration": {
+        "seconds": 10.531091416953132,
+        "exit_code": 0,
+        "stdout": "ready=true err=<nil>\n",
+        "stderr": "",
+        "before": {
+          "rss": 4113375232,
+          "cgroup": 4397522944
+        },
+        "after": {
+          "rss": 4036767744,
+          "cgroup": 4377137152
+        },
+        "peak": {
+          "rss": 4139958272,
+          "cgroup": 4429541376
+        }
+      }
+    }
+  },
+  "limits": [
+    "Four direct SQL callers bypass the HTTP admission limit.",
+    "seekdb timed encoded-page preflight and page query; CE also timed the metadata preflight. Schema checks are covered by integration tests, not the timed SQL.",
+    "Process restarts do not clear the OS page cache. The original query ran first.",
+    "Sampled RSS/cgroup values can miss short peaks.",
+    "Different memory budgets/storage prevent a seekdb-versus-CE ranking.",
+    "Production capacity, ingestion throughput impact, multi-day leaks, other database versions and distributed CE are unverified."
+  ],
+  "source_identity": {
+    "product_base": "historical-source-revision-redacted",
+    "signoz_base": "5b3dde03261a512893dbcb1e889aac429b56b5ad",
+    "implementation_files_unchanged_since_retest": false,
+    "snapshot_note": "Original PR retest snapshot. The follow-up report records subsequent source changes and tests; historical source hashes below are preserved.",
+    "tested_files_sha256": {
+      "ai-vision/aivision-py-be/aivision_backend/settings.py": "40f6e4b2f15a3a617e4c64b17b7f3946e0ec48f32715c0ee80d6f9c5af8cf07c",
+      "ai-vision/aivision-py-be/apps/core/tests/test_managed_queries.py": "34f30eef37647a40ba679d589619dfe916fd99ff53823d57138ead91e2c7f826",
+      "ai-vision/aivision-py-be/apps/core/tests/test_native_session_list_usage.py": "53e57ee497a2d00d726e01dc4ca07afc1911490ab54b644e151a5244009057c8",
+      "ai-vision/aivision-py-be/apps/core/tests/test_native_trace_agent_scope.py": "c217e2814513029b62b6783f1edf5041b066af3bc79bba52fe91f0bb953b9c67",
+      "ai-vision/aivision-py-be/apps/core/tests/test_openapi_trace.py": "c878b47ad8286be0d1e94ee83b2e0878c1cda42abe57c7f19804cd49d1fc5d6b",
+      "ai-vision/aivision-py-be/apps/core/tests/test_signoz_trace_provider.py": "d46b43680c591da233992bd1aa5d4f1f881a309bfff1a9c3633fd23addb89d3f",
+      "ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py": "59ae8537f44dc03a8a5c95fab1acad24adb6fe9b6ce94c37ab86e491a43e0468",
+      "ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model_projection.py": "07a622bd5acd4be6937a2a95f1458d1ab2a120411b2d7dbceee87f499312ae70",
+      "ai-vision/aivision-py-be/apps/core/views/trace_handlers.py": "44589155ccf45f515de9e6c2d3e1149aaf921e1801f6417dfc85f3f2923090ba",
+      "aivision-cli/blueprints/aivision-source.yaml": "36c5e761421d91da8db0b6ea63e412ac5ffbf289c67c497a59d05791a40c36ca",
+      "aivision-cli/blueprints/aivision.yaml": "a928684751df841785e9c71b792b516c07d3d4d1fbe4a2de0eea52becfbd494c",
+      "aivision-cli/deploy/assets-manifest.json": "da5668d9a9bcfcccee8ca1e20842b8c4bd029b73fdfdb264c3d7864e65818079",
+      "aivision-cli/deploy/kubernetes/backend.yaml": "96db3faeee743ef81c30f1bc4800521761d6bd1f9665bcdc9dff3355fe5a7060",
+      "aivision-cli/deploy/kubernetes/config.yaml": "6a9da5a568a302d44a337f55b7b48399537d7f9926ea3747eaca3030647b899e",
+      "aivision-cli/deploy/kubernetes/signoz.yaml": "95f7244f5f3b1d1b5f5707384de1c4feb5b4f8d5a6ec6005afa6e574c51efb83",
+      "aivision-cli/internal/blueprint/blueprint.go": "e27a401496e6e5f762fa45faceb00d79e37dc3e4267f68953f83fbe48ded064e",
+      "aivision-cli/internal/deploy/assets/bootstrap/seekdb.sh": "69e92517697c28181f82bd4caef7c6de612eeb02234b2460b9010b6508b45538",
+      "aivision-cli/internal/deploy/generate/compose.go": "7eb940801f7990a56cbfbe8948b40fcb657efa3cc669db7a9c0b17d20043eb08",
+      "aivision-cli/internal/deploy/generate/datastore_test.go": "479ea8d7afac79c1ff8fcd9275f073dd2a4974e6788fbcbaebd9ed5ff780a8e7",
+      "aivision-cli/internal/deploy/generate/generate.go": "fc3f5a47067798ef1ecfdf31653da34ba584ab61f784a89776e83b133b3d5ffe",
+      "aivision-cli/internal/deploy/generate/kubernetes.go": "148109978f8d414c2f06ef80f40d4e4312192f96d2fd0dc66ad153731e39ecd8",
+      "aivision-cli/internal/deploy/generate/product.go": "a9536bc39700c242cbe4efb1cc3a655c15af6cd490b6c5fa7d4e6b0c2fffc522",
+      "aivision-cli/internal/deploy/generate/systemd.go": "d2404470a66b78077a5dacab4ae2a3ebaace41d8456d8c5234d1620fd9ca9f56",
+      "aivision-cli/internal/deploy/kubernetes/app.go": "e68b00d61a5760507e3b41fdeffa30e6446626110007a66576203812fc092e19",
+      "aivision-cli/internal/deploy/kubernetes/config.go": "be842ea843909b852301f88dea5fc0394e98160d560428a1a7b3e71fd7d86741",
+      "aivision-cli/internal/deploy/kubernetes/query_controls_test.go": "9e287f8cbacf510ffa9a61390579ab502128eadb2feae5327906e577228c2d69",
+      "aivision-cli/internal/deploy/runtime/cast.go": "65f94f51d3a8b16e50a61b6d536a1af3b9b4b9e51d92c55c502d3e45fd426964",
+      "aivision-cli/internal/deploy/runtime/datastore.go": "ffe15109cec7911c4d93ba59f70470e6dae98f0105e337ffc5b36124198fd5f8",
+      "aivision-cli/internal/deploy/runtime/datastore_test.go": "6b142bd9d52080d1716753d80ca25b9b940fcc935aa6aaf41f79e6fc8baad7a9",
+      "deploy/blueprints/aivision-source.yaml": "36c5e761421d91da8db0b6ea63e412ac5ffbf289c67c497a59d05791a40c36ca",
+      "deploy/blueprints/aivision.yaml": "a928684751df841785e9c71b792b516c07d3d4d1fbe4a2de0eea52becfbd494c",
+      "deploy/bootstrap/seekdb.sh": "69e92517697c28181f82bd4caef7c6de612eeb02234b2460b9010b6508b45538",
+      "deploy/config/aivision.vars.example.yaml": "1621976e07a8f2160c56960cc432d31563ded4c15b2c7b8b247f0556e99cd908",
+      "deploy/docker/compose.external-oceanbase.yaml": "c9d34645b44247487bf0a57089698d37f62a574b35b747e890610bef73e3602b",
+      "deploy/docker/compose.external-seekdb.yaml": "51589757e3c541fcc5b9b3170c95d786c6abe869da820481f55e40002655b78c",
+      "deploy/docker/compose.seekdb.yaml": "4ee0fa4e5814e68cbad404c8460f32cee8b6e2e2f998efa169c89008f3e0cbb2",
+      "deploy/docker/compose.yaml": "22ba78a0fa18415eb7303b70377af9adb8edec809ecf160a20f2a75940ebd66e",
+      "deploy/kubernetes/base/backend.yaml": "96db3faeee743ef81c30f1bc4800521761d6bd1f9665bcdc9dff3355fe5a7060",
+      "deploy/kubernetes/base/config.yaml": "6a9da5a568a302d44a337f55b7b48399537d7f9926ea3747eaca3030647b899e",
+      "deploy/kubernetes/base/signoz.yaml": "95f7244f5f3b1d1b5f5707384de1c4feb5b4f8d5a6ec6005afa6e574c51efb83",
+      "docs/deployment/aivision.vars.example.yaml": "1621976e07a8f2160c56960cc432d31563ded4c15b2c7b8b247f0556e99cd908",
+      "docs/deployment/en/docker.md": "e24cb11cf38dedcd4e7ae969fd9fb43baa4c944d05321c5a41c72b8ca0f8d2bd",
+      "docs/deployment/zh-CN/docker.md": "162b06d282a8f2a96888d429abe71b8464daf28f4e3bfce6b3863a3c128e9995",
+      "ai-vision/aivision-py-be/apps/core/tests/test_trace_query_memory.py": "5dfe55a668c9f1cca6c1818fcb920c78502500072e74241cd6e829b4d5b61c15",
+      "ai-vision/aivision-py-be/apps/core/trace_query/memory_budget.py": "af4b5fea7f4f44813b592543ac09db436484ed5b277166079c50f537aa53f1db"
+    }
+  },
+  "backend_fixture": {
+    "16MiB": {
+      "fixture_bytes": 16811248,
+      "peak_MiB": 198.06,
+      "sampled_peak_MiB": 182.13,
+      "pool_open_idle_MiB": 110.42,
+      "idle_MiB": 110.49,
+      "rounds": 6,
+      "response_counts": {
+        "3037": 12,
+        "success": 12
+      }
+    },
+    "128MiB": {
+      "fixture_bytes": 134251748,
+      "peak_MiB": 60.54,
+      "sampled_peak_MiB": 60.72,
+      "pool_open_idle_MiB": 60.62,
+      "idle_MiB": 60.2,
+      "rounds": 6,
+      "response_counts": {
+        "3037": 12,
+        "3036": 12
+      }
+    }
+  }
+}

@@ -1,0 +1,176 @@
+id: nodejs
+label: Node.js SDK
+frameworkId: custom-sdk
+language: typescript
+runtime: Node.js 24+
+requiresModel: false
+exampleFilename: relay-nodejs.ts
+runCommand: node relay-nodejs.ts
+frontendGroup: custom-sdk
+frontendGroupLabel: Custom SDK
+frontendGroupSort: 4
+frontendSort: 4
+marketLabel: Node.js SDK
+marketSort: 4
+marketPreview: true
+integrationNotes: >-
+  Server-side JavaScript/TypeScript with Node.js 24+. This example records an
+  application request and a real local tool call with the official Node.js SDK.
+  It does not automatically instrument LangChain.js, LangGraph.js or model calls.
+  Add Relay tool/LLM wrappers at the boundaries you own. Save the complete example
+  as relay-nodejs.ts before importing its startup and request helpers.
+officialDocs: https://docs.nvidia.com/nemo/relay/v0.9.4/getting-started/quick-start/nodejs
+npmInstall: npm install "nemo-relay-node@>=0.9.3 <0.10"
+envShell:
+  - export AIVISION_OTLP_ENDPOINT="${otelEndpoint}"
+  - export AIVISION_OTLP_AUTHORIZATION="${otelAuthorization}"
+  - export AIVISION_SERVICE_NAME="relay-nodejs-application"
+envDotenv:
+  - AIVISION_OTLP_ENDPOINT="${otelEndpoint}"
+  - AIVISION_OTLP_AUTHORIZATION="${otelAuthorization}"
+  - AIVISION_SERVICE_NAME="relay-nodejs-application"
+existingExample: |-
+  // Download the complete example as relay-nodejs.ts into this directory first.
+  import { startTracing, runWithTrace, stopTracing } from "./relay-nodejs.ts";
+  import type { JsonValue } from "./relay-nodejs.ts";
+
+  // 1. Service startup: call once before accepting requests.
+  startTracing();
+
+  // 2. Per-request handler: preserve and return the application's business result.
+  async function handleRequest(sessionId: string, input: JsonValue) {
+    const { result } = await runWithTrace(
+      sessionId, input,
+      async () => await existingAgent(input),
+      // Optional fourth argument: the application's business user ID.
+    );
+    return result;
+  }
+
+  // 3. Register with the service shutdown hook, after all requests have finished.
+  async function onShutdown() {
+    await stopTracing();
+  }
+  // This captures request input/output. Tool/model internals need their own
+  // official toolCallExecuteAsync / llmCallExecuteAsync wrappers.
+  // Return JSON-compatible business output; await every child task before returning.
+npmExample: |-
+  import { randomUUID } from "node:crypto";
+  import { pathToFileURL } from "node:url";
+  import relay from "nemo-relay-node";
+
+  const {
+    OpenTelemetrySubscriber, ScopeType, createScopeStack, withScopeStack,
+    pushScope, popScope, captureTraceparent,
+    toolCallExecuteAsync, flushSubscribers,
+  } = relay;
+  export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+  let exporter: InstanceType<typeof OpenTelemetrySubscriber> | undefined;
+  const subscriberName = "aivision-relay-node";
+
+  function json(value: JsonValue): string {
+    return JSON.stringify(value, (_key, item) => {
+      if (item === undefined || typeof item === "function" || typeof item === "symbol"
+          || (typeof item === "number" && !Number.isFinite(item))) {
+        throw new TypeError("Trace input/output must be JSON-compatible business data.");
+      }
+      return item;
+    });
+  }
+
+  export function startTracing() {
+    if (exporter) return;
+    if (process.env.OTEL_EXPORTER_OTLP_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT) {
+      throw new Error("Choose one exporter: remove conflicting automatic OTLP configuration first.");
+    }
+    const endpoint = process.env.AIVISION_OTLP_ENDPOINT;
+    if (!endpoint || !process.env.AIVISION_OTLP_AUTHORIZATION) {
+      throw new Error("Set the AI Vision endpoint and authorization from the onboarding page.");
+    }
+    const subscriber = new OpenTelemetrySubscriber({
+      type: "gen_ai", transport: "http_binary", endpoint,
+      headerEnv: { authorization: "AIVISION_OTLP_AUTHORIZATION" },
+      serviceName: process.env.AIVISION_SERVICE_NAME || "relay-nodejs-application",
+      promoteMetadataPrefixes: ["aivision.", "langfuse.user.id"],
+    });
+    try {
+      subscriber.register(subscriberName);
+      exporter = subscriber;
+    } catch (error) {
+      subscriber.shutdown();
+      throw error;
+    }
+  }
+
+  export async function stopTracing() {
+    const subscriber = exporter;
+    if (!subscriber) return;
+    exporter = undefined;
+    try {
+      await flushSubscribers(); // Drain Relay events before flushing finished OTLP spans.
+      subscriber.forceFlush();
+    } finally {
+      try { subscriber.deregister(subscriberName); }
+      finally { subscriber.shutdown(); }
+    }
+  }
+
+  export async function runWithTrace<T extends JsonValue>(
+    sessionId: string, input: JsonValue,
+    run: (metadata: Record<string, string>) => Promise<T>, userId?: string,
+  ): Promise<{ result: T; traceId: string }> {
+    if (!exporter) throw new Error("Call startTracing() at service startup first.");
+    // Each request owns a fresh scope stack; reuse the business session ID across turns.
+    return await withScopeStack(createScopeStack(), async () => {
+      const identity: Record<string, string> = { "gen_ai.conversation.id": sessionId };
+      if (userId !== undefined) identity["langfuse.user.id"] = userId;
+      const root = pushScope("application-request", ScopeType.Agent, null, null, null, {
+        ...identity,
+        "aivision.request.input": json(input),
+        "aivision.request.input.encoding": "json",
+      }, input);
+      let output: JsonValue = null;
+      let outputJson = "null";
+      const end: Record<string, string> = { "otel.status_code": "OK" };
+      try {
+        const traceId = captureTraceparent().split("-")[1];
+        // Print before business execution so failed requests can also be verified.
+        console.log("AI Vision trace_id:", traceId);
+        const result = await run({ ...identity });
+        outputJson = json(result); // Validate before storing the result or closing the scope.
+        output = result;
+        return { result, traceId };
+      } catch (error) {
+        end["otel.status_code"] = "ERROR";
+        end["otel.status_description"] = error instanceof Error ? error.name : "Error";
+        throw error;
+      } finally {
+        // Explicit aliases preserve root business IO in Relay 0.9.x's GenAI projection.
+        end["aivision.request.output"] = outputJson;
+        end["aivision.request.output.encoding"] = "json";
+        popScope(root, output, null, end);
+      }
+    }) as { result: T; traceId: string };
+  }
+
+  async function main() {
+    startTracing();
+    try {
+      const sessionId = randomUUID();
+      const { result } = await runWithTrace(sessionId, { a: 7, b: 9 }, async (metadata) => {
+        const tool = await toolCallExecuteAsync("multiply", { a: 7, b: 9 }, async (args) => ({
+          result: Number(args.a) * Number(args.b),
+        }), null, null, null, metadata); // Carry this request's session/user to the tool.
+        return tool.result as number;
+      });
+      console.log(result);
+      console.log("AI Vision session_id:", sessionId);
+    } finally {
+      await stopTracing();
+    }
+  }
+
+  // Importing this file into a service does not execute the demo.
+  if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+    main().catch((error) => { console.error(error); process.exitCode = 1; });
+  }

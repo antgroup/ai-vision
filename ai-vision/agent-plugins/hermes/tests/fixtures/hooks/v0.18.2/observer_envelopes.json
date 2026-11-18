@@ -1,0 +1,383 @@
+{
+  "generatedBy": "hermes/scripts/capture_hermes_v0182_hooks.py",
+  "hermesVersion": "0.18.2",
+  "hooks": [
+    {
+      "correlationKeys": [
+        "session_id"
+      ],
+      "envelope": {
+        "model": "test-model",
+        "platform": "cli",
+        "session_id": "session-001",
+        "telemetry_schema_version": "hermes.observer.v1"
+      },
+      "hook": "on_session_start",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "agent/conversation_loop.py:367-375"
+    },
+    {
+      "correlationKeys": [
+        "session_id",
+        "task_id",
+        "turn_id"
+      ],
+      "envelope": {
+        "completed": true,
+        "interrupted": false,
+        "model": "test-model",
+        "platform": "cli",
+        "session_id": "session-001",
+        "task_id": "task-001",
+        "telemetry_schema_version": "hermes.observer.v1",
+        "turn_id": "turn-001"
+      },
+      "hook": "on_session_end",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "agent/turn_finalizer.py:493-503"
+    },
+    {
+      "correlationKeys": [
+        "session_id"
+      ],
+      "envelope": {
+        "platform": "cli",
+        "reason": "shutdown",
+        "session_id": "session-001",
+        "telemetry_schema_version": "hermes.observer.v1"
+      },
+      "hook": "on_session_finalize",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "cli.py:1145-1158"
+    },
+    {
+      "correlationKeys": [
+        "session_id"
+      ],
+      "envelope": {
+        "platform": "cli",
+        "reason": "new_session",
+        "session_id": "session-001",
+        "telemetry_schema_version": "hermes.observer.v1"
+      },
+      "hook": "on_session_reset",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "cli.py:6913-6926"
+    },
+    {
+      "correlationKeys": [
+        "sender_id",
+        "session_id",
+        "task_id",
+        "turn_id"
+      ],
+      "envelope": {
+        "conversation_history": [],
+        "is_first_turn": true,
+        "model": "test-model",
+        "platform": "cli",
+        "sender_id": "fixture-user",
+        "session_id": "session-001",
+        "task_id": "task-001",
+        "telemetry_schema_version": "hermes.observer.v1",
+        "turn_id": "turn-001",
+        "user_message": "fixture prompt"
+      },
+      "hook": "pre_llm_call",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "agent/turn_context.py:467-481"
+    },
+    {
+      "correlationKeys": [
+        "session_id",
+        "task_id",
+        "turn_id"
+      ],
+      "envelope": {
+        "assistant_response": "fixture response",
+        "conversation_history": [],
+        "model": "test-model",
+        "platform": "cli",
+        "session_id": "session-001",
+        "task_id": "task-001",
+        "telemetry_schema_version": "hermes.observer.v1",
+        "turn_id": "turn-001",
+        "user_message": "fixture prompt"
+      },
+      "hook": "post_llm_call",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "agent/turn_finalizer.py:367-380"
+    },
+    {
+      "correlationKeys": [
+        "api_request_id",
+        "session_id",
+        "task_id",
+        "turn_id"
+      ],
+      "envelope": {
+        "api_call_count": 1,
+        "api_mode": "openai_chat_completions",
+        "api_request_id": "turn-001:api:1",
+        "approx_input_tokens": 11,
+        "base_url": "https://example.invalid/v1",
+        "conversation_history": [],
+        "max_tokens": 256,
+        "message_count": 1,
+        "middleware_trace": [],
+        "model": "test-model",
+        "platform": "cli",
+        "provider": "test-provider",
+        "request": {
+          "body": {
+            "model": "test-model"
+          },
+          "method": "POST"
+        },
+        "request_char_count": 14,
+        "request_messages": [
+          {
+            "content": "fixture prompt",
+            "role": "user"
+          }
+        ],
+        "session_id": "session-001",
+        "started_at": 1750000000.0,
+        "task_id": "task-001",
+        "telemetry_schema_version": "hermes.observer.v1",
+        "tool_count": 2,
+        "turn_id": "turn-001",
+        "user_message": "fixture prompt"
+      },
+      "hook": "pre_api_request",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "agent/conversation_loop.py:1197-1248"
+    },
+    {
+      "correlationKeys": [
+        "api_request_id",
+        "session_id",
+        "task_id",
+        "turn_id"
+      ],
+      "envelope": {
+        "api_call_count": 1,
+        "api_duration": 0.125,
+        "api_mode": "openai_chat_completions",
+        "api_request_id": "turn-001:api:1",
+        "assistant_content_chars": 16,
+        "assistant_message": {
+          "content": "fixture response",
+          "role": "assistant",
+          "tool_calls": []
+        },
+        "assistant_tool_call_count": 0,
+        "base_url": "https://example.invalid/v1",
+        "ended_at": 1750000000.125,
+        "finish_reason": "stop",
+        "message_count": 1,
+        "model": "test-model",
+        "platform": "cli",
+        "provider": "test-provider",
+        "response": {
+          "finish_reason": "stop",
+          "model": "test-model",
+          "usage": {
+            "input_tokens": 11,
+            "output_tokens": 7
+          }
+        },
+        "response_model": "test-model",
+        "session_id": "session-001",
+        "started_at": 1750000000.0,
+        "task_id": "task-001",
+        "telemetry_schema_version": "hermes.observer.v1",
+        "turn_id": "turn-001",
+        "usage": {
+          "input_tokens": 11,
+          "output_tokens": 7
+        }
+      },
+      "hook": "post_api_request",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "agent/conversation_loop.py:4256-4296"
+    },
+    {
+      "correlationKeys": [
+        "api_request_id",
+        "session_id",
+        "task_id",
+        "turn_id"
+      ],
+      "envelope": {
+        "api_call_count": 1,
+        "api_duration": 0.25,
+        "api_mode": "openai_chat_completions",
+        "api_request_id": "turn-001:api:1",
+        "base_url": "https://example.invalid/v1",
+        "ended_at": 1750000000.25,
+        "error": {
+          "message": "fixture error",
+          "type": "RateLimitError"
+        },
+        "max_retries": 3,
+        "model": "test-model",
+        "platform": "cli",
+        "provider": "test-provider",
+        "reason": "rate_limit",
+        "request": {
+          "body": {
+            "model": "test-model"
+          },
+          "method": "POST"
+        },
+        "retry_count": 1,
+        "retryable": true,
+        "session_id": "session-001",
+        "started_at": 1750000000.0,
+        "status_code": 429,
+        "task_id": "task-001",
+        "telemetry_schema_version": "hermes.observer.v1",
+        "turn_id": "turn-001"
+      },
+      "hook": "api_request_error",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "run_agent.py:2418-2471"
+    },
+    {
+      "correlationKeys": [
+        "api_request_id",
+        "session_id",
+        "task_id",
+        "tool_call_id",
+        "turn_id"
+      ],
+      "envelope": {
+        "api_request_id": "turn-001:api:1",
+        "args": {
+          "command": "printf fixture"
+        },
+        "middleware_trace": [],
+        "session_id": "session-001",
+        "task_id": "task-001",
+        "telemetry_schema_version": "hermes.observer.v1",
+        "tool_call_id": "call-001",
+        "tool_name": "terminal",
+        "turn_id": "turn-001"
+      },
+      "hook": "pre_tool_call",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "hermes_cli/plugins.py:2099-2148"
+    },
+    {
+      "correlationKeys": [
+        "api_request_id",
+        "session_id",
+        "task_id",
+        "tool_call_id",
+        "turn_id"
+      ],
+      "envelope": {
+        "api_request_id": "turn-001:api:1",
+        "args": {
+          "command": "printf fixture"
+        },
+        "duration_ms": 4,
+        "error_message": null,
+        "error_type": null,
+        "middleware_trace": [],
+        "result": {
+          "output": "fixture"
+        },
+        "session_id": "session-001",
+        "status": "ok",
+        "task_id": "task-001",
+        "telemetry_schema_version": "hermes.observer.v1",
+        "tool_call_id": "call-001",
+        "tool_name": "terminal",
+        "turn_id": "turn-001"
+      },
+      "hook": "post_tool_call",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "model_tools.py:968-1015"
+    },
+    {
+      "correlationKeys": [
+        "child_session_id",
+        "child_subagent_id",
+        "parent_session_id",
+        "parent_subagent_id",
+        "parent_turn_id"
+      ],
+      "envelope": {
+        "child_goal": "fixture goal",
+        "child_role": "researcher",
+        "child_session_id": "session-child-001",
+        "child_subagent_id": "sa-0-fixture",
+        "parent_session_id": "session-001",
+        "parent_subagent_id": null,
+        "parent_turn_id": "turn-001",
+        "telemetry_schema_version": "hermes.observer.v1"
+      },
+      "hook": "subagent_start",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "tools/delegate_tool.py:1383-1395"
+    },
+    {
+      "correlationKeys": [
+        "child_session_id",
+        "parent_session_id",
+        "parent_turn_id"
+      ],
+      "envelope": {
+        "child_role": "researcher",
+        "child_session_id": "session-child-001",
+        "child_status": "completed",
+        "child_summary": "fixture summary",
+        "duration_ms": 25,
+        "parent_session_id": "session-001",
+        "parent_turn_id": "turn-001",
+        "telemetry_schema_version": "hermes.observer.v1"
+      },
+      "hook": "subagent_stop",
+      "provenance": "faithfully minimized from the cited real v0.18.2 callback call site and passed through PluginManager.invoke_hook",
+      "source": "tools/delegate_tool.py:2717-2728"
+    }
+  ],
+  "observerSchemaVersion": "hermes.observer.v1",
+  "schemaVersion": "observ-hermes-hook-fixtures.v1",
+  "sourceFiles": [
+    {
+      "path": "agent/conversation_loop.py",
+      "sha256": "9b8d8b98e65a67e6a489b69479fb96614d57f3a28cf7ef427de1a66130aeab50"
+    },
+    {
+      "path": "agent/turn_context.py",
+      "sha256": "db9c49fd4e2dea2dba7298cccc40129ed468a59c62be1c7097329241845cf18e"
+    },
+    {
+      "path": "agent/turn_finalizer.py",
+      "sha256": "01602214acdb686338fa93580e3fe6ae1bdbc4731f246df0ba1f749ca2930663"
+    },
+    {
+      "path": "cli.py",
+      "sha256": "5ab17b5e173fe9b46ea853683b0f1505e787dd8c33d019bea41caf841fb6a1d5"
+    },
+    {
+      "path": "hermes_cli/plugins.py",
+      "sha256": "3eeb699cae4e93a15c83bb4bef111ddc8ede6f2deb54176bf815666afc57cdac"
+    },
+    {
+      "path": "model_tools.py",
+      "sha256": "6a6c7c154c338d513c23ff69921ea84053a1786fab5ac9b55aaee49fe6876e90"
+    },
+    {
+      "path": "run_agent.py",
+      "sha256": "e5778a0c004a90edcb847b91bfc471165575d15d28b306979ef8ea765a391b33"
+    },
+    {
+      "path": "tools/delegate_tool.py",
+      "sha256": "0849735754584e637f72af221f6f87e176ba0afc7d012114beee6ae9d3135927"
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+id: openai-js
+frameworkId: openai
+label: OpenAI
+language: typescript
+runtime: Node.js 22+
+frontendSort: 5.1
+marketPreview: false
+npmInstall: npm install "@langfuse/tracing@6.0.0" "@langfuse/otel@6.0.0" "@opentelemetry/sdk-node@~0.223.0"
+  "@opentelemetry/exporter-trace-otlp-proto@~0.223.0" "@opentelemetry/otlp-exporter-base@~0.223.0"
+  "dotenv@^17" "tsx@^4" "@langfuse/openai@6.0.0" "openai@^7.37.0"
+exampleFilename: test_openai_js.ts
+runCommand: npx tsx test_openai_js.ts
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+- export OPENAI_MODEL="gpt-4o"
+- export OPENAI_BASE_URL="https://api.openai.com/v1"
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+- OPENAI_MODEL="gpt-4o"
+- OPENAI_BASE_URL="https://api.openai.com/v1"
+officialDocs: https://langfuse.com/integrations/model-providers/openai-js
+integrationNotes: Node.js server-side only. Initialize one OpenTelemetry SDK before handling requests; add the Langfuse
+  span processor to your existing SDK if one is already configured. Run the complete example from the directory
+  containing .env; existing shell variables take precedence. Keep a stable session_id across turns in the same conversation.
+  Keep shared telemetry alive between requests and shut it down after all requests finish. Both snippets use non-streaming
+  Chat Completions (stream omitted or false). For cancellable text streaming, use the companion openai-streaming-js.ts
+  example with the raw OpenAI client and an explicit generation lifetime. It records actual partial output and first
+  text time, and only records usage when the provider sends it. The automatic observeOpenAI stream wrapper in the
+  tested SDK versions does not fully finalize early-break/cancellation paths. Do not change an existing streaming
+  request to stream=false or wrap the same model request twice.
+existingExample: |-
+  import "dotenv/config";
+  import { NodeSDK } from "@opentelemetry/sdk-node";
+  import { LangfuseSpanProcessor } from "@langfuse/otel";
+  import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+  import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+  import {
+    getActiveTraceId,
+    propagateAttributes,
+    startActiveObservation,
+  } from "@langfuse/tracing";
+  import { observeOpenAI } from "@langfuse/openai";
+
+  // Start once, before the first instrumented request.
+  // If your service already has an OpenTelemetry SDK, add this processor there.
+  // AI Vision's ingest endpoint accepts OTLP HTTP/protobuf.
+  // Langfuse's default JS exporter uses JSON, so configure protobuf explicitly.
+  const exporter = new OTLPTraceExporter({
+    url: `${process.env.LANGFUSE_BASE_URL?.replace(/\/$/, "")}/api/public/otel/v1/traces`,
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${process.env.LANGFUSE_PUBLIC_KEY}:${process.env.LANGFUSE_SECRET_KEY}`).toString("base64")}`,
+    },
+    compression: process.env.LANGFUSE_OTEL_COMPRESSION === "none"
+      ? CompressionAlgorithm.NONE : CompressionAlgorithm.GZIP,
+  });
+  const processor = new LangfuseSpanProcessor({ exporter });
+  const sdk = new NodeSDK({ spanProcessors: [processor] });
+  sdk.start();
+
+  // Add the following to your async request handler.
+  // Wrap the client your application already uses, preserving its configuration.
+  // This snippet is for non-streaming Chat Completions (stream omitted or false).
+  // For cancellable text streaming, use the companion openai-streaming-js.ts.
+  // It uses the raw client with an explicit generation lifetime.
+  // Keep your business request's streaming behavior; do not force stream=false.
+  const traced_openai = observeOpenAI(existing_openai);
+  const result = await propagateAttributes(
+    { sessionId: session_id, tags: ["framework:openai"] },
+    () => startActiveObservation("openai-request", async (request) => {
+      request.update({ input: existing_input.messages });
+      console.log("AI Vision trace_id:", getActiveTraceId());
+      const result = await traced_openai.chat.completions.create(existing_input);
+      request.update({ output: result.choices[0]?.message.content });
+      return result;
+    }),
+  );
+
+  // At service shutdown, after all requests finish: await sdk.shutdown().
+  // Do not close the shared SDK after each request.
+npmExample: |-
+  import "dotenv/config";
+  import { NodeSDK } from "@opentelemetry/sdk-node";
+  import { LangfuseSpanProcessor } from "@langfuse/otel";
+  import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
+  import { CompressionAlgorithm } from "@opentelemetry/otlp-exporter-base";
+  import {
+    getActiveTraceId,
+    propagateAttributes,
+    startActiveObservation,
+  } from "@langfuse/tracing";
+  import { randomUUID } from "node:crypto";
+  import OpenAI from "openai";
+  import { observeOpenAI } from "@langfuse/openai";
+
+  // Start once, before the first instrumented request.
+  // If your service already has an OpenTelemetry SDK, add this processor there.
+  // AI Vision's ingest endpoint accepts OTLP HTTP/protobuf.
+  // Langfuse's default JS exporter uses JSON, so configure protobuf explicitly.
+  const exporter = new OTLPTraceExporter({
+    url: `${process.env.LANGFUSE_BASE_URL?.replace(/\/$/, "")}/api/public/otel/v1/traces`,
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${process.env.LANGFUSE_PUBLIC_KEY}:${process.env.LANGFUSE_SECRET_KEY}`).toString("base64")}`,
+    },
+    compression: process.env.LANGFUSE_OTEL_COMPRESSION === "none"
+      ? CompressionAlgorithm.NONE : CompressionAlgorithm.GZIP,
+  });
+  const processor = new LangfuseSpanProcessor({ exporter });
+  const sdk = new NodeSDK({ spanProcessors: [processor] });
+  sdk.start();
+
+  async function main() {
+    try {
+      const client = observeOpenAI(new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY,
+        baseURL: process.env.OPENAI_BASE_URL,
+      }));
+
+      const messages = [{ role: "user" as const, content: "Explain observability in one sentence." }];
+      await propagateAttributes(
+        { sessionId: randomUUID(), tags: ["framework:openai"] },
+        () => startActiveObservation("openai-onboarding", async (request) => {
+          request.update({ input: messages });
+          console.log("AI Vision trace_id:", getActiveTraceId());
+          const result = await client.chat.completions.create({
+            model: process.env.OPENAI_MODEL!,
+            messages,
+          });
+          const output = result.choices[0]?.message.content;
+          request.update({ output });
+          console.log(output);
+        }),
+      );
+    } finally {
+      // Short script: export completed spans even if the request fails.
+      // In a service, shut down only after all active requests have finished.
+      await sdk.shutdown();
+    }
+  }
+
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+logo: /assets/frameworks/openai.svg
+logoInvertInDark: true

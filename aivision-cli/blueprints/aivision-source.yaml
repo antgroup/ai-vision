@@ -1,0 +1,612 @@
+# =============================================================================
+# AI Vision — SOURCE-BUILD casting blueprint for aiv (developer use)
+# =============================================================================
+# This is the developer variant: it clones the repos and compiles every
+# component on the deployment host (needs docker + git + uv, plus cargo/npm for
+# the Agent-market plugins). The DEFAULT blueprint (blueprints/aivision.yaml,
+# embedded in the aiv binary) pulls pre-built images from ghcr.io instead and
+# only needs docker. Use this file when you want to run the stack from a local
+# checkout or an unreleased branch.
+#
+# One file describes the whole stack: 5 docker containers (OceanBase CE, signoz-ob,
+# antcollector gateway, Django backend, Vite frontend) + 1 supervised host
+# process (AgentLens). Every component
+# declares its source repo + branch, so you can point aiv at any fork/branch.
+# Values in config.vars are available to every ${...} token below and can be
+# overridden by real environment variables.
+#
+# be/fe run in containers: their artifacts (linux .venv / node_modules) are built
+# inside docker so they are ABI-compatible with the runtime image, then the source
+# tree is bind-mounted in. On the ob-net docker network they reach each other and
+# the datastores by container name; AgentLens stays a host process, so be reaches
+# it via host.docker.internal.
+#
+# Deploy:   aiv cast   -f blueprints/aivision-source.yaml
+# Tear down: aiv destroy -f blueprints/aivision-source.yaml [--purge]
+# Rebuild:  aiv redeploy -f blueprints/aivision-source.yaml
+# =============================================================================
+apiVersion: aivision.forge/v1alpha1
+
+metadata:
+  name: aivision-local
+  namespace: aivision
+
+config:
+  # State (pidfiles, markers, meta), logs and per-namespace artifacts live here.
+  workdir: ~/.aivision/forge
+  # Where component repos are cloned / found. Point this at an existing checkout
+  # to reuse it instead of cloning (see ../README.md).
+  sourceRoot: ~/.aivision/src
+  dockerNetwork: ob-net
+  golangImage: golang:1.25
+  # Named volume that persists the Go module cache across in-docker builds.
+  # Keep existing volume IDs stable when renaming the CLI to aiv.
+  goModCacheVolume: aivforge-gomodcache
+
+  vars:
+    # Source deployments have no installed Release metadata by default.
+    AIVISION_RELEASE_MANIFEST_BASE64: ""
+    # --- source coordinates (edit these to deploy a different fork/branch) ---
+    # Two repositories back the whole stack:
+    #   signoz        -> the SigNoz query plane + OTLP ingest endpoint
+    #   ai-vision     -> a monorepo holding antcollector/, ai-vision/ (backend +
+    #                    frontend) and agentlens/. It is cloned ONCE and each
+    #                    component builds/runs from its own subdir (repo.subdir).
+    SIGNOZ_REPO: https://github.com/ob-labs/signoz.git
+    AIVISION_REPO: https://github.com/antgroup/ai-vision.git
+    AIVISION_MONOREPO: ai-vision
+    SIGNOZ_BRANCH: main
+    AIVISION_BRANCH: main
+
+    # --- container names (also the docker-network DNS hosts) ---
+    # Override per-namespace (e.g. --var OB_CONTAINER=oceanbase-aivtest) to run
+    # a fully isolated second stack on the same host without name collisions.
+    OB_CONTAINER: oceanbase
+    SIGNOZ_CONTAINER: signoz-ob
+    GATEWAY_CONTAINER: antcollector-gw
+    BE_CONTAINER: aivision-be
+    FE_CONTAINER: aivision-fe
+
+    # --- be/fe runtime images (also used to build their artifacts in docker) ---
+    # be: uv + python3.11 in one image, so the linux .venv built at forge time
+    # resolves its interpreter symlink at run time (same image). UV_PYTHON_DOWNLOADS
+    # is disabled in the build so uv uses the image's system python (a stable path).
+    # fe: node + corepack(pnpm); the vite dev server needs no pnpm at run time.
+    BE_IMAGE: ghcr.io/astral-sh/uv:python3.11-bookworm
+    FE_IMAGE: node:22-bookworm
+
+    # --- shared identity ---
+    # ORG_ID is NOT hardcoded here. The org is produced by the system: signoz
+    # starts unregistered, the backend bootstrap command registers the root user
+    # (=> org), cast discovers it and injects ORG_ID at runtime, and it is 下发 to
+    # agents through the ingest token. See ../README.md#the-credential-model.
+    # Address tracks OB_HOST/OB_HOST_PORT so both the bundled container and an
+    # external OceanBase wire themselves correctly.
+    # go-sql-driver takes the LAST '@' before the address as the user separator,
+    # so the OceanBase `root@<tenant>` user form parses correctly here.
+    OCEANBASE_DSN: ${OB_USER}:${OB_TENANT_PASSWORD}@tcp(${OB_HOST}:${OB_HOST_PORT})/signoz?charset=utf8mb4
+    # Shared gateway<->signoz OTLP ingest secret (X-Signoz-Ingest-Key). Must match
+    # on antcollector-gw and signoz-ob. A deployment-internal secret, never a
+    # user-facing credential; override per deployment.
+    SIGNOZ_INGEST_INTERNAL_KEY: local-dev-signoz-ingest-key
+    # Native query acceleration is standard. These are emergency controls only.
+    AIVISION_QUERY_MODE: auto
+    SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED: "true"
+
+    # --- OceanBase: bundled container or an existing instance ---
+    # Same semantics as aivision.yaml (OB_MANAGED=false skips the component and
+    # points the services at OB_HOST:OB_HOST_PORT). This blueprint additionally
+    # runs agentlens as a HOST process, which cannot resolve container DNS, so
+    # it gets its own address pair: OB_HOST_LOCAL/OB_PORT_LOCAL default to the
+    # published port of the bundled container; `aiv cast --ob-host ...` sets
+    # both pairs to the external address.
+    OB_MANAGED: "true"
+    OB_HOST: ${OB_CONTAINER}
+    OB_HOST_PORT: "2881"
+    OB_HOST_LOCAL: 127.0.0.1
+    OB_PORT_LOCAL: ${OB_PORT}
+    # The probe image: no PyMySQL here, so use the uv base image and resolve it
+    # on the fly (needs network access at cast time, like the rest of a source
+    # deploy).
+    OB_PREFLIGHT_IMAGE: ${BE_IMAGE}
+    OB_PREFLIGHT_PYTHON: uv run --no-project --with pymysql python
+
+    # --- OceanBase image, tenant & sizing (same semantics as aivision.yaml) ---
+    # aiv selects the backend image when OB_IMAGE is empty. Override to pin another release.
+    OB_BACKEND: oceanbase # oceanbase | seekdb
+    OB_IMAGE: ""
+    OB_USER: "" # root@OB_TENANT for OceanBase; root for seekdb
+    # Legacy alias remains supported; the new budget takes precedence when set.
+    SEEKDB_MEMORY_LIMIT: 2G
+    SEEKDB_MEMORY_BUDGET: ""
+    SEEKDB_CONTAINER_MEMORY: 4G
+    BE_CONTAINER_MEMORY: 2G
+    SIGNOZ_CONTAINER_MEMORY: 2G
+    SEEKDB_CPU_COUNT: "2"
+    SEEKDB_DATAFILE_SIZE: 2G
+    SEEKDB_LOG_DISK_SIZE: 2G
+    OB_TENANT: aivision
+    OB_TENANT_PASSWORD: aivision-local-ob-change-me
+    OB_SYS_PASSWORD: aivision-local-ob-change-me
+    OB_MODE: mini
+    OB_MEMORY_LIMIT: ""
+    OB_DATAFILE_SIZE: ""
+    OB_LOG_DISK_SIZE: ""
+
+    # --- host ports (change together if 2881/18091/... are taken) ---
+    OB_PORT: "2881"
+    SIGNOZ_PORT: "18091"
+    GATEWAY_GRPC_PORT: "4317"
+    GATEWAY_HTTP_PORT: "4318"
+    GATEWAY_HEALTH_PORT: "13133"
+    BE_PORT: "8001"
+    AGENTLENS_PORT: "8081"
+    FE_PORT: "5174"
+
+    # Fixed UTC history floor for native Langfuse v1 reads. Set once to cover
+    # all retained data; do not replace it with a moving time on each restart.
+    # Empty disables native v1 SDK reads, not the rest of the platform.
+    AIVISION_NATIVE_TRACE_HISTORY_START: ""
+    AIVISION_NATIVE_TRACE_FUTURE_SKEW_SECONDS: "300"
+    AIVISION_NATIVE_TRACE_MAX_WINDOWS: "120"
+    AIVISION_TRACE_RESPONSE_MAX_BYTES: "33554432"
+    AIVISION_TRACE_REQUEST_MAX_BYTES: "67108864"
+    AIVISION_TRACE_QUERY_CONCURRENCY: "2"
+
+    # --- signoz-ob root account (metastore bootstrap) ---
+    SIGNOZ_ROOT_EMAIL: main-local-test@example.com
+    SIGNOZ_ROOT_ORG_NAME: OceanBase main local verification
+    SIGNOZ_USER_ROOT_PASSWORD: LocalDev!2026signoz
+    # Per-namespace writable metastore (auto-created, wiped by destroy --purge).
+    # Override to reuse an existing metastore dir.
+    SIGNOZ_METASTORE_DIR: ${STATE_DIR}/signoz-metastore
+
+    # --- SQL client used for the datastore health probe and bootstrap ---
+    # The oceanbase-ce image ships `obclient`, so this runs inside the datastore
+    # container: no client on the host. (The host agentlens process reaches
+    # OceanBase through ${OB_HOST_LOCAL}:${OB_PORT_LOCAL}.)
+    MYSQL_CMD: docker exec ${OB_CONTAINER} obclient -h127.0.0.1 -P2881 -u${OB_USER} -p${OB_TENANT_PASSWORD}
+
+  tools:
+    - { name: docker, required: true }
+    - { name: git,    required: true }
+    - { name: node,   required: false, note: "fe builds/runs in docker; host node not required" }
+    - { name: pnpm,   required: false, note: "fe builds/runs in docker; host pnpm not required" }
+    - { name: uv,     required: true,  note: "python env manager for the AgentLens host process" }
+
+components:
+  # ---------------------------------------------------------------------------
+  # 1. oceanbase — OceanBase CE datastore (metadata + telemetry tables)
+  # ---------------------------------------------------------------------------
+  - name: oceanbase
+    title: AI Vision Database (OceanBase CE)
+    kind: container
+    # Skipped entirely when OB_MANAGED=false (external OceanBase).
+    enabled: ${OB_MANAGED}
+    image: ${OB_IMAGE}
+    containerName: ${OB_CONTAINER}
+    network: ${DOCKER_NETWORK}
+    # Two named volumes so the datastore survives container recreation — this
+    # makes `cast` idempotent (re-running it does NOT wipe data): observer data
+    # under /root/ob, obd cluster config under /root/.obd/cluster (needed to
+    # recognise an already-initialised cluster). Removed only by
+    # `destroy --purge`; a plain `destroy` keeps them so the next cast is fast.
+    volumes:
+      - aivforge-ob-data-${NAMESPACE}:/root/ob
+      - aivforge-ob-config-${NAMESPACE}:/root/.obd/cluster
+    ports:
+      - 127.0.0.1:${OB_PORT}:2881
+    env:
+      MODE: ${OB_MODE}
+      OB_TENANT_NAME: ${OB_TENANT}
+      OB_TENANT_PASSWORD: ${OB_TENANT_PASSWORD}
+      OB_SYS_PASSWORD: ${OB_SYS_PASSWORD}
+      OB_MEMORY_LIMIT: ${OB_MEMORY_LIMIT}
+      OB_DATAFILE_SIZE: ${OB_DATAFILE_SIZE}
+      OB_LOG_DISK_SIZE: ${OB_LOG_DISK_SIZE}
+    # A real SQL probe (not tcp on the published port, which docker-proxy
+    # answers before the observer listens). Cold bootstrap takes minutes.
+    health:
+      exec: ${MYSQL_CMD} -e 'SELECT 1'
+      retries: 200
+      interval: 3s
+    postStart:
+      # Deliberately NOT `once`: idempotent (CREATE IF NOT EXISTS) and cheap, so
+      # it runs on every cast and guarantees the three databases exist inside
+      # the tenant before signoz-ob boots.
+      - name: create-databases
+        shell: |
+          set -e
+          for i in $(seq 1 90); do ${MYSQL_CMD} -e 'SELECT 1' >/dev/null 2>&1 && break; sleep 2; done
+          ${MYSQL_CMD} -e 'CREATE DATABASE IF NOT EXISTS aivision;
+                           CREATE DATABASE IF NOT EXISTS signoz;
+                           CREATE DATABASE IF NOT EXISTS agentlens;'
+
+  # ---------------------------------------------------------------------------
+  # 2. signoz-ob — SigNoz community server (query/API over the telemetry store)
+  # ---------------------------------------------------------------------------
+  - name: signoz-ob
+    title: AI Vision Data Backend
+    kind: container
+    memoryLimit: ${SIGNOZ_CONTAINER_MEMORY}
+    dependsOn: [oceanbase]
+    repo:
+      url: ${SIGNOZ_REPO}
+      branch: ${SIGNOZ_BRANCH}
+      path: signoz-ob
+    artifactCheck: test -x ${COMPONENT_DIR}/bin/signoz-ob-runtime/signoz-oceanbase
+    build:
+      - name: build signoz community binary (linux, in docker; first build needs network)
+        shell: |
+          docker run --rm -v ${COMPONENT_DIR}:/src -w /src -v ${GOMODCACHE_VOL}:/go/pkg/mod \
+            -e CGO_ENABLED=1 -e GOFLAGS=-mod=mod -e GOTOOLCHAIN=local ${GOLANG_IMAGE} \
+            go build -tags timetzdata -p 4 -o bin/signoz-ob-runtime/signoz-oceanbase ./cmd/community
+      - name: ensure metastore dir
+        shell: mkdir -p ${SIGNOZ_METASTORE_DIR}
+    preStart:
+      # External OceanBase: the bundled component (and its create-databases
+      # hook) is disabled, so the first consumer re-runs the probe aiv derives
+      # into OB_PREFLIGHT_CMD (reachability, tenant login, MySQL mode, CREATE
+      # DATABASE IF NOT EXISTS x3). gauge already ran it once; repeating here
+      # covers `cast --no-gauge`.
+      - name: external-ob-preflight
+        shell: |
+          if [ "${OB_MANAGED}" = "true" ]; then exit 0; fi
+          ${OB_PREFLIGHT_CMD}
+    image: ${GOLANG_IMAGE}
+    containerName: ${SIGNOZ_CONTAINER}
+    network: ${DOCKER_NETWORK}
+    command: ["/app/signoz", "server"]
+    ports:
+      - 127.0.0.1:${SIGNOZ_PORT}:8080
+    mounts:
+      - type=bind,source=${SIGNOZ_METASTORE_DIR},target=/var/lib/signoz
+      - type=bind,source=${COMPONENT_DIR}/bin/signoz-ob-runtime/signoz-oceanbase,target=/app/signoz,readonly
+    env:
+      SIGNOZ_TELEMETRYSTORE_PROVIDER: oceanbase
+      SIGNOZ_TELEMETRYSTORE_OCEANBASE_DSN: ${OCEANBASE_DSN}
+      SIGNOZ_WEB_ENABLED: "false"
+      SIGNOZ_ANALYTICS_ENABLED: "false"
+      SIGNOZ_STATSREPORTER_ENABLED: "false"
+      SIGNOZ_INSTRUMENTATION_METRICS_ENABLED: "false"
+      # Start UNREGISTERED: the backend bootstrap command produces the org by
+      # calling signoz /api/v1/register (org is system-produced, not hardcoded).
+      SIGNOZ_USER_ROOT_ENABLED: "false"
+      # Shared secret for the OTLP ingest endpoint the gateway forwards to.
+      # SIGNOZ_ORG_ID is intentionally UNSET so pkg/ingest takes the org from the
+      # gateway-stamped token attribute (aivision.org.id) 下发 by aivision.
+      SIGNOZ_INGEST_INTERNAL_KEY: ${SIGNOZ_INGEST_INTERNAL_KEY}
+      SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED: ${SIGNOZ_AIVISION_PROJECTION_MAINTENANCE_ENABLED}
+    health:
+      tcp: 127.0.0.1:${SIGNOZ_PORT}
+      retries: 40
+      interval: 3s
+
+  # ---------------------------------------------------------------------------
+  # 3. antcollector-gw — OTLP ingest gateway (aivisionauth + spaceauth + OTLP forward)
+  # ---------------------------------------------------------------------------
+  - name: antcollector-gw
+    title: AI Vision Ingest Gateway
+    kind: container
+    # Forwards verified OTLP to signoz-ob's ingest endpoint, so it must come up
+    # after signoz-ob (which itself depends on oceanbase).
+    dependsOn: [signoz-ob]
+    repo:
+      url: ${AIVISION_REPO}
+      branch: ${AIVISION_BRANCH}
+      path: ${AIVISION_MONOREPO}
+      subdir: antcollector
+    artifactCheck: test -x ${COMPONENT_DIR}/app
+    build:
+      - name: build gateway binary (linux, in docker, vendored => offline)
+        shell: |
+          docker run --rm -v ${COMPONENT_DIR}:/src -w /src \
+            -e CGO_ENABLED=1 -e GOFLAGS=-mod=vendor -e GOTOOLCHAIN=local ${GOLANG_IMAGE} \
+            go build -o /src/app ./cmd/app
+    image: ${GOLANG_IMAGE}
+    containerName: ${GATEWAY_CONTAINER}
+    network: ${DOCKER_NETWORK}
+    command: ["/app/collector", "--config", "/etc/otelcol/config.yaml"]
+    ports:
+      - 127.0.0.1:${GATEWAY_GRPC_PORT}:4317
+      - 127.0.0.1:${GATEWAY_HTTP_PORT}:4318
+      - 127.0.0.1:${GATEWAY_HEALTH_PORT}:13133
+    mounts:
+      - type=bind,source=${COMPONENT_DIR}/app,target=/app/collector,readonly
+      - type=bind,source=${COMPONENT_DIR}/conf/antcollectorsignoz/gateway.yaml,target=/etc/otelcol/config.yaml,readonly
+    # AIVISION_INGEST_SECRET is inherited from the backend's committed env file so
+    # the gateway verifies tokens signed with the SAME shared secret. The backend
+    # lives in the same monorepo checkout (${COMPONENT_REPO} = the ai-vision-ob clone).
+    envFile: ${COMPONENT_REPO}/ai-vision/aivision-py-be/.env.development
+    env:
+      # OTLP forwarding target: signoz-ob's ingest endpoint (container-to-container
+      # on the docker network, internal port 8080). The gateway is the sole external
+      # writer; signoz-ob owns the storage write.
+      SIGNOZ_INGEST_ENDPOINT: http://${SIGNOZ_CONTAINER}:8080
+      # Shared gateway<->signoz secret; must match signoz-ob's value.
+      SIGNOZ_INGEST_INTERNAL_KEY: ${SIGNOZ_INGEST_INTERNAL_KEY}
+      # AIVISION_INGEST_SECRET (token verification) is inherited from envFile above.
+      # No OCEANBASE_DSN / SIGNOZ_ORG_ID: the gateway no longer writes to OB directly,
+      # and org flows via the token (spaceauth stamps aivision.org.id).
+    health:
+      tcp: 127.0.0.1:${GATEWAY_HTTP_PORT}
+      retries: 30
+      interval: 2s
+
+  # ---------------------------------------------------------------------------
+  # 4. be — AI Vision Django backend (control plane), containerized
+  # ---------------------------------------------------------------------------
+  - name: be
+    title: AI Vision API
+    kind: container
+    memoryLimit: ${BE_CONTAINER_MEMORY}
+    dependsOn: [oceanbase, signoz-ob, antcollector-gw]
+    repo:
+      url: ${AIVISION_REPO}
+      branch: ${AIVISION_BRANCH}
+      path: ${AIVISION_MONOREPO}
+      subdir: ai-vision/aivision-py-be
+    # The venv is built inside docker (linux), so .venv/bin/python is a symlink
+    # into the runtime image and is NOT executable on the host. Check the venv
+    # marker file instead (a regular file, host-checkable).
+    artifactCheck: test -f ${COMPONENT_DIR}/.venv/pyvenv.cfg
+    build:
+      - name: sync backend venv (linux, in docker; first build needs network)
+        shell: |
+          docker run --rm -v ${COMPONENT_DIR}:/app -w /app \
+            -e UV_PYTHON_DOWNLOADS=never -e UV_LINK_MODE=copy \
+            ${BE_IMAGE} uv sync
+      # Build the Agent-market plugin artifacts for the HOST platform so
+      # `aiv connect` (which runs on the host, where the coding agent
+      # lives) finds a matching build in catalog.json. It writes into the
+      # agent-plugins dir that the backend mounts read-only at /agent-plugins,
+      # so plugin_catalog() serves it live with no restart. Best-effort per
+      # plugin: Rust hooks need cargo, Node packages need npm — a missing
+      # toolchain skips that agent (warning) instead of failing the deploy.
+      - name: build agent plugin artifacts (host platform, for onboarding)
+        workdir: ${COMPONENT_REPO}/ai-vision/agent-plugins
+        shell: |
+          PY="$(uv python find --no-project '>=3.11' 2>/dev/null || command -v python3.11 || command -v python3)"
+          if [ -z "$PY" ]; then echo "aiv: warn: no Python >=3.11 on host, skipping plugin build"; exit 0; fi
+          "$PY" scripts/build_plugins.py || echo "aiv: warn: plugin build incomplete (some agents unavailable)"
+    image: ${BE_IMAGE}
+    containerName: ${BE_CONTAINER}
+    network: ${DOCKER_NETWORK}
+    # Schema migrations + baseline catalog are folded into the entrypoint (run on
+    # every boot; migrate / ensure_platform_config / seed_data are all idempotent).
+    # They can no longer be host preStart hooks: the venv is a linux build only the
+    # container can execute, and only the run container receives the full resolved
+    # env (envFile + env below) through `docker run -e`.
+    entrypoint: ["/bin/bash"]
+    command:
+      - -lc
+      - cd /app && export PATH="/app/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" && exec /bin/bash ./docker-entrypoint.sh
+    ports:
+      - 127.0.0.1:${BE_PORT}:${BE_PORT}
+    mounts:
+      # Source tree (incl. the linux .venv) + the host log dir at the SAME absolute
+      # path, so AIVISION_LOG_DIR below resolves identically inside the container.
+      - type=bind,source=${COMPONENT_DIR},target=/app
+      - type=bind,source=${LOG_DIR},target=${LOG_DIR}
+      # The Agent market catalog + onboarding install scripts live in the sibling
+      # agent-plugins dir (agents.json is the source of truth). Mount it so the
+      # containerized backend's plugin_catalog()/onboarding endpoints can read it
+      # (AIVISION_AGENT_PLUGINS_DIR below points at this mount).
+      - type=bind,source=${COMPONENT_REPO}/ai-vision/agent-plugins,target=/agent-plugins,readonly
+    # Inherit IAM/INGEST/AGENTLENS defaults from the committed env file, then
+    # override the datastore + peers to docker-network names: be is a container
+    # now, so it reaches oceanbase/signoz by container DNS (internal ports), not the
+    # published host ports. AgentLens stays a HOST process → host.docker.internal.
+    envFile: ${COMPONENT_DIR}/.env.development
+    env:
+      AIVISION_QUERY_MODE: ${AIVISION_QUERY_MODE}
+      BE_PORT: ${BE_PORT}
+      DB_ENGINE: aivision_backend.db_backends.mysql_connector_oceanbase
+      DB_HOST: ${OB_HOST}
+      DB_PORT: ${OB_HOST_PORT}
+      DB_USER: ${OB_USER}
+      DB_PASSWORD: ${OB_TENANT_PASSWORD}
+      DB_NAME: aivision
+      # The vite dev-server proxy (fe container) forwards with the be container
+      # name as Host, so Django must accept it alongside the loopback hosts.
+      ALLOWED_HOSTS: localhost,127.0.0.1,${BE_CONTAINER}
+      # Pin the URL baked into onboarding scripts (install.sh / connect / plugin
+      # downloads). Left unset, Django derives it from request.build_absolute_uri,
+      # which inherits the fe proxy's rewritten Host (aivision-be:8000) — a name
+      # only resolvable inside the docker network, so `curl | bash` on the host
+      # fails with "Could not resolve host: aivision-be". Anchor it to the origin
+      # users actually open — the vite dev-server (FE_PORT), published to 127.0.0.1
+      # and proxying both /api and /openapi to be — so the generated
+      # `aiv connect --base-url` matches the browser address instead of the
+      # raw backend port. catalog.json builds its artifact URLs from this same
+      # value, so connect's same-origin download check stays satisfied.
+      AIVISION_PUBLIC_BASE_URL: http://127.0.0.1:${FE_PORT}
+      AIVISION_RELEASE_MANIFEST_BASE64: ${AIVISION_RELEASE_MANIFEST_BASE64}
+      # Public OTLP ingest endpoint stamped into every Agent's ingest token (the
+      # "endpoint" field returned by ingest_tokens.py). The connect installer runs
+      # validate_url() on it; left unset the token carries an empty endpoint and
+      # `aiv connect` aborts with a misleading "--base-url must be an absolute
+      # HTTP(S) URL" error. Point it at the gateway's host-published OTLP HTTP
+      # receiver; hook_runtime appends the /v1/<signal> paths (traces/metrics/logs),
+      # so give the base only (mirrors ANTCOLLECTOR_ENDPOINT below, minus the path).
+      AIVISION_OTLP_INGEST_ENDPOINT: http://127.0.0.1:${GATEWAY_HTTP_PORT}
+      # Server-side forward target for the Langfuse-compatible proxy view. The
+      # be container cannot reach 127.0.0.1 (its own loopback), so point it at
+      # the gateway's host-published port via host.docker.internal. Keep this
+      # separate from the token-stamped ingest endpoint above, which must stay
+      # host-resolvable.
+      AIVISION_OTLP_UPSTREAM_ENDPOINT: http://host.docker.internal:${GATEWAY_HTTP_PORT}
+      AIVISION_NATIVE_TRACE_HISTORY_START: ${AIVISION_NATIVE_TRACE_HISTORY_START}
+      AIVISION_NATIVE_TRACE_FUTURE_SKEW_SECONDS: ${AIVISION_NATIVE_TRACE_FUTURE_SKEW_SECONDS}
+      AIVISION_NATIVE_TRACE_MAX_WINDOWS: ${AIVISION_NATIVE_TRACE_MAX_WINDOWS}
+      AIVISION_TRACE_RESPONSE_MAX_BYTES: ${AIVISION_TRACE_RESPONSE_MAX_BYTES}
+      AIVISION_TRACE_REQUEST_MAX_BYTES: ${AIVISION_TRACE_REQUEST_MAX_BYTES}
+      AIVISION_TRACE_QUERY_CONCURRENCY: ${AIVISION_TRACE_QUERY_CONCURRENCY}
+      AIVISION_LOG_DIR: ${LOG_DIR}/be-runtime
+      AGENTLENS_BASE_URL: http://host.docker.internal:${AGENTLENS_PORT}
+      # Backend bootstrap (postStart) registers the signoz root user => produces the
+      # org (system-produced, not hardcoded). Reach signoz over the docker network
+      # by container name (internal port 8080).
+      SIGNOZ_INTERNAL_URL: http://${SIGNOZ_CONTAINER}:8080
+      SIGNOZ_ROOT_EMAIL: ${SIGNOZ_ROOT_EMAIL}
+      SIGNOZ_ROOT_ORG_NAME: ${SIGNOZ_ROOT_ORG_NAME}
+      SIGNOZ_USER_ROOT_PASSWORD: ${SIGNOZ_USER_ROOT_PASSWORD}
+      # Point plugin_catalog()/onboarding at the mounted agent-plugins dir (the
+      # default BASE_DIR/../agent-plugins resolves to /agent-plugins inside the
+      # container only if it were mounted there; set it explicitly to be robust).
+      AIVISION_AGENT_PLUGINS_DIR: /agent-plugins
+    health:
+      tcp: 127.0.0.1:${BE_PORT}
+      retries: 60
+      interval: 3s
+    # After be is healthy, produce the deployment's single SigNoz org (system-
+    # produced, never hardcoded): register the root user, mint the internal
+    # service-account key (stored ONLY in the signoz DataSource config, never
+    # echoed) and persist the org so the cast discovery hook can inject it into
+    # agentlens and ingest tokens can stamp it. Runs inside the be container via
+    # `docker exec` because its venv is a linux build only the container can
+    # execute; the container's `-e` env (SIGNOZ_INTERNAL_URL / root creds / DB_*)
+    # is inherited by the exec'd process. Deliberately NOT `once`: bootstrap is
+    # idempotent with a cheap fast-path (returns before any network call once
+    # configured), so re-running each cast/redeploy self-heals a wiped datastore
+    # and guarantees the org exists for the downstream discovery hook.
+    postStart:
+      # Configure the Agent market FIRST: turn the agent-plugins/agents.json
+      # catalog into AgentTypeConfig rows (setup_mode=CLI + config_guide.plugin_key
+      # + display_scope=ALL), which is exactly what the frontend "Agent 市场" tab
+      # filters on. It writes DB rows only (no signoz call), so it is safe to run
+      # every boot (idempotent, updates existing rows). It MUST precede the
+      # bootstrap step below so those products are active when bootstrap mints
+      # the internal key and stamps it into every active product's signoz routes.
+      # Cold-start guard: postStart fires the instant be reports healthy, but the
+      # shared OceanBase may still be finishing migration / first writes, so this
+      # atomic handler can throw — and because it rolls back everything on error,
+      # a single early failure aborts the whole cast. Retry a bounded number of
+      # times so the readiness race self-heals without a manual re-cast; a genuine
+      # error still surfaces after the attempts are exhausted.
+      - name: configure third-party agent market (from agent-plugins)
+        shell: |
+          for i in $(seq 1 12); do
+            if docker exec -w /app ${BE_CONTAINER} .venv/bin/python manage.py configure_third_party_agents --endpoint http://${SIGNOZ_CONTAINER}:8080; then
+              exit 0
+            fi
+            echo "aiv: configure agent market attempt $i/12 failed (cold datastore?), retrying in 5s"
+            sleep 5
+          done
+          echo "aiv: configure agent market still failing after 12 attempts"
+          exit 1
+      - name: bootstrap signoz integration (produce org + internal key)
+        shell: |
+          for i in $(seq 1 12); do
+            if docker exec -w /app ${BE_CONTAINER} .venv/bin/python manage.py bootstrap_signoz_integration; then
+              exit 0
+            fi
+            echo "aiv: bootstrap signoz integration attempt $i/12 failed (cold datastore or stale metastore?), retrying in 5s"
+            sleep 5
+          done
+          echo "aiv: bootstrap signoz integration still failing after 12 attempts"
+          exit 1
+    # Read the produced org id back out of be and export it as $ORG_ID for
+    # downstream components (agentlens resolves SIGNOZ_ORG_ID=${ORG_ID} from it).
+    # `signoz_integration_status --print-org` emits ONLY the non-sensitive org id
+    # — the internal signoz key never leaves the be container. Retried until the
+    # bootstrap has persisted the org; a failure aborts cast (org is required).
+    discover:
+      - var: ORG_ID
+        shell: docker exec -w /app ${BE_CONTAINER} .venv/bin/python manage.py signoz_integration_status --print-org
+        retries: 24
+        interval: 5s
+
+  # ---------------------------------------------------------------------------
+  # 5. agentlens — diagnosis engine (uvicorn)
+  # ---------------------------------------------------------------------------
+  - name: agentlens
+    title: AI Vision Diagnosis
+    kind: process
+    # be is a dependency because cast discovers $ORG_ID from be's bootstrap (see
+    # be.discover) and agentlens consumes it as SIGNOZ_ORG_ID=${ORG_ID}; starting
+    # after be guarantees the org id is resolved before agentlens boots.
+    dependsOn: [oceanbase, antcollector-gw, be]
+    repo:
+      url: ${AIVISION_REPO}
+      branch: ${AIVISION_BRANCH}
+      path: ${AIVISION_MONOREPO}
+      subdir: agentlens
+    artifactCheck: test -x ${COMPONENT_DIR}/.venv/bin/uvicorn
+    build:
+      - name: sync agentlens venv (python 3.11)
+        workdir: ${COMPONENT_DIR}
+        shell: |
+          uv python pin 3.11 >/dev/null 2>&1 || true
+          uv sync
+    # workdir defaults to ${COMPONENT_DIR} (the agentlens subdir of the monorepo).
+    env:
+      AIVISION_ENV: dev
+      # Host process → published OB port; '@' in `root@<tenant>` is %40-encoded.
+      AGENTLENS_OB_URL: mysql+pymysql://${OB_USER_URL}:${OB_TENANT_PASSWORD}@${OB_HOST_LOCAL}:${OB_PORT_LOCAL}/agentlens?charset=utf8mb4
+      SIGNOZ_OB_URL: mysql+pymysql://${OB_USER_URL}:${OB_TENANT_PASSWORD}@${OB_HOST_LOCAL}:${OB_PORT_LOCAL}/signoz?charset=utf8mb4
+      # ORG_ID is discovered by cast after the backend bootstrap produces it (see
+      # the discovery hook); it is NOT hardcoded in vars.
+      SIGNOZ_ORG_ID: ${ORG_ID}
+      AGENTLENS_TOKEN: dev-token
+      ANTCOLLECTOR_ENDPOINT: http://127.0.0.1:${GATEWAY_HTTP_PORT}/v1/traces
+      AIVISION_INGEST_TOKEN_URL: http://127.0.0.1:${BE_PORT}/api/internal/agentlens/ingest-tokens
+      AGENTLENS_LOG_DIR: ${LOG_DIR}/agentlens
+      AGENTLENS_LOG_STDOUT: "true"
+    # The uvicorn startup worker immediately reconciles agentlens_task, so the
+    # control-plane schema MUST exist before boot → preStart (not postStart).
+    preStart:
+      - name: agentlens control-plane migrations
+        once: true
+        workdir: ${COMPONENT_DIR}
+        shell: AIVISION_ENV=dev .venv/bin/alembic -c obschema/alembic.ini upgrade head
+    # AgentLens self-instruments through the gateway. Its exporter uses
+    # AGENTLENS_TOKEN to obtain a scoped ingest token from AIVISION_INGEST_TOKEN_URL.
+    run: |
+      exec .venv/bin/uvicorn --factory agentlens.main:build_app --host 0.0.0.0 --port ${AGENTLENS_PORT}
+    health:
+      tcp: 127.0.0.1:${AGENTLENS_PORT}
+      retries: 40
+      interval: 3s
+
+  # ---------------------------------------------------------------------------
+  # 6. fe — AI Vision frontend (Vite dev server), containerized
+  # ---------------------------------------------------------------------------
+  - name: fe
+    title: AI Vision Web (development)
+    kind: container
+    dependsOn: [be]
+    repo:
+      url: ${AIVISION_REPO}
+      branch: ${AIVISION_BRANCH}
+      path: ${AIVISION_MONOREPO}
+      subdir: ai-vision/vfe
+    # node_modules is a real dir on the host after the in-docker install, but its
+    # native binaries (tailwind oxide, esbuild, …) are linux builds — usable only
+    # inside the runtime container, which is exactly where vite runs now.
+    artifactCheck: test -d ${COMPONENT_DIR}/node_modules
+    build:
+      - name: install frontend deps (linux, in docker; needs network)
+        shell: |
+          docker run --rm -v ${COMPONENT_DIR}:/app -w /app \
+            -e COREPACK_ENABLE_DOWNLOAD_PROMPT=0 ${FE_IMAGE} \
+            bash -lc "corepack enable pnpm && pnpm install"
+    image: ${FE_IMAGE}
+    containerName: ${FE_CONTAINER}
+    network: ${DOCKER_NETWORK}
+    entrypoint: ["/bin/bash"]
+    command:
+      - -lc
+      - cd /app && exec ./node_modules/.bin/vite --port ${FE_PORT} --host 0.0.0.0
+    ports:
+      - 127.0.0.1:${FE_PORT}:${FE_PORT}
+    mounts:
+      - type=bind,source=${COMPONENT_DIR},target=/app
+    env:
+      # fe is a container now: the vite dev-server proxy reaches be over the docker
+      # network by container name (internal port), not the host loopback.
+      VITE_DEV_API_TARGET: http://${BE_CONTAINER}:${BE_PORT}
+    health:
+      tcp: 127.0.0.1:${FE_PORT}
+      retries: 40
+      interval: 3s

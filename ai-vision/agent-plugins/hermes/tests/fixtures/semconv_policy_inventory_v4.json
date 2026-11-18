@@ -1,0 +1,516 @@
+{
+  "contract": "repository-current docs/semconv plus weaver-guard v4.x",
+  "generatedBy": "hermes/scripts/generate_contract_inventory.py",
+  "policies": {
+    "entities": [
+      {
+        "entity": "event:api_request",
+        "files": [
+          "weaver/policies/aivision/events/api_request/improvements_recommended.rego",
+          "weaver/policies/aivision/events/api_request/violations_forbidden.rego",
+          "weaver/policies/aivision/events/api_request/violations_required.rego"
+        ],
+        "ruleCount": 17
+      },
+      {
+        "entity": "event:base",
+        "files": [
+          "weaver/policies/aivision/events/base/improvements_compatibility_deprecated_genai.rego",
+          "weaver/policies/aivision/events/base/violations_compatibility_deprecated_genai.rego"
+        ],
+        "ruleCount": 20
+      },
+      {
+        "entity": "event:common",
+        "files": [
+          "weaver/policies/aivision/events/common_attributes/improvements_recommended.rego",
+          "weaver/policies/aivision/events/common_attributes/violations_forbidden.rego",
+          "weaver/policies/aivision/events/common_attributes/violations_required.rego"
+        ],
+        "ruleCount": 17
+      },
+      {
+        "entity": "event:compaction_result",
+        "files": [
+          "weaver/policies/aivision/events/compaction_result/violations_forbidden.rego",
+          "weaver/policies/aivision/events/compaction_result/violations_required.rego"
+        ],
+        "ruleCount": 4
+      },
+      {
+        "entity": "event:session_end",
+        "files": [
+          "weaver/policies/aivision/events/session_end/violations_forbidden.rego",
+          "weaver/policies/aivision/events/session_end/violations_required.rego"
+        ],
+        "ruleCount": 2
+      },
+      {
+        "entity": "event:session_start",
+        "files": [
+          "weaver/policies/aivision/events/session_start/violations_forbidden.rego",
+          "weaver/policies/aivision/events/session_start/violations_required.rego"
+        ],
+        "ruleCount": 2
+      },
+      {
+        "entity": "event:tool_call",
+        "files": [
+          "weaver/policies/aivision/events/tool_call/violations_forbidden.rego",
+          "weaver/policies/aivision/events/tool_call/violations_required.rego"
+        ],
+        "ruleCount": 13
+      },
+      {
+        "entity": "event:tool_result",
+        "files": [
+          "weaver/policies/aivision/events/tool_result/violations_forbidden.rego",
+          "weaver/policies/aivision/events/tool_result/violations_required.rego"
+        ],
+        "ruleCount": 6
+      },
+      {
+        "entity": "event:user_prompt",
+        "files": [
+          "weaver/policies/aivision/events/user_prompt/violations_forbidden.rego",
+          "weaver/policies/aivision/events/user_prompt/violations_required.rego"
+        ],
+        "ruleCount": 2
+      },
+      {
+        "entity": "metric:api_request",
+        "files": [
+          "weaver/policies/aivision/metrics/api_request/violations_api_request_metrics.rego"
+        ],
+        "ruleCount": 5
+      },
+      {
+        "entity": "metric:base",
+        "files": [
+          "weaver/policies/aivision/metrics/base/improvements_compatibility_deprecated_genai.rego",
+          "weaver/policies/aivision/metrics/base/violations_compatibility_deprecated_genai.rego"
+        ],
+        "ruleCount": 18
+      },
+      {
+        "entity": "metric:common",
+        "files": [
+          "weaver/policies/aivision/metrics/common/violations_metric_common.rego"
+        ],
+        "ruleCount": 4
+      },
+      {
+        "entity": "metric:golden",
+        "files": [
+          "weaver/policies/aivision/metrics/common/violations_metric_common.rego"
+        ],
+        "ruleCount": 10
+      },
+      {
+        "entity": "metric:tool",
+        "files": [
+          "weaver/policies/aivision/metrics/tool/violations_tool_call_metrics.rego"
+        ],
+        "ruleCount": 6
+      },
+      {
+        "entity": "resource:events",
+        "files": [
+          "weaver/policies/aivision/events/resource_attributes/improvements_recommended.rego",
+          "weaver/policies/aivision/events/resource_attributes/violations_forbidden.rego",
+          "weaver/policies/aivision/events/resource_attributes/violations_required.rego"
+        ],
+        "ruleCount": 11
+      },
+      {
+        "entity": "resource:traces",
+        "files": [
+          "weaver/policies/aivision/traces/resource_attributes/improvements_recommended.rego",
+          "weaver/policies/aivision/traces/resource_attributes/violations_forbidden.rego",
+          "weaver/policies/aivision/traces/resource_attributes/violations_required.rego"
+        ],
+        "ruleCount": 13
+      },
+      {
+        "entity": "span:base",
+        "files": [
+          "weaver/policies/aivision/traces/base/improvements_compatibility_deprecated_genai.rego",
+          "weaver/policies/aivision/traces/base/violations_compatibility_deprecated_genai.rego"
+        ],
+        "ruleCount": 22
+      },
+      {
+        "entity": "span:common",
+        "files": [
+          "weaver/policies/aivision/traces/span_attributes/improvements_recommended.rego",
+          "weaver/policies/aivision/traces/span_attributes/violations_forbidden.rego",
+          "weaver/policies/aivision/traces/span_attributes/violations_format.rego",
+          "weaver/policies/aivision/traces/span_attributes/violations_required.rego"
+        ],
+        "ruleCount": 15
+      },
+      {
+        "entity": "span:compaction",
+        "files": [
+          "weaver/policies/aivision/traces/compaction/improvements_recommended.rego",
+          "weaver/policies/aivision/traces/compaction/violations_required.rego"
+        ],
+        "ruleCount": 4
+      },
+      {
+        "entity": "span:llm",
+        "files": [
+          "weaver/policies/aivision/traces/llm/improvements_recommended.rego",
+          "weaver/policies/aivision/traces/llm/information_optional.rego",
+          "weaver/policies/aivision/traces/llm/violations_forbidden.rego",
+          "weaver/policies/aivision/traces/llm/violations_required.rego"
+        ],
+        "ruleCount": 16
+      },
+      {
+        "entity": "span:tool",
+        "files": [
+          "weaver/policies/aivision/traces/tool/improvements_recommended.rego",
+          "weaver/policies/aivision/traces/tool/information_optional.rego",
+          "weaver/policies/aivision/traces/tool/violations_forbidden.rego",
+          "weaver/policies/aivision/traces/tool/violations_required.rego"
+        ],
+        "ruleCount": 12
+      },
+      {
+        "entity": "span:turn",
+        "files": [
+          "weaver/policies/aivision/traces/turn/improvements_recommended.rego",
+          "weaver/policies/aivision/traces/turn/violations_required.rego"
+        ],
+        "ruleCount": 7
+      }
+    ]
+  },
+  "reconciliation": {
+    "documentationOnlySemconv": {
+      "events": [
+        "gen_ai.client.inference.operation.details",
+        "gen_ai.evaluation.result",
+        "subagent_ended",
+        "subagent_spawned",
+        "tool_decision"
+      ],
+      "metrics": [
+        "agent.cache.read_tokens",
+        "agent.cache.write_tokens",
+        "agent.session.count",
+        "agent.token.usage",
+        "aivision.agentic.exec_error",
+        "aivision.agentic.export_error",
+        "aivision.agentic.up",
+        "gen_ai.client.operation.duration",
+        "gen_ai.client.token.usage"
+      ],
+      "spans": [
+        "span.ant.agent",
+        "span.ant.embedding",
+        "span.ant.guardrail",
+        "span.ant.mcp",
+        "span.ant.reranker",
+        "span.ant.retriever",
+        "span.gen_ai.create_agent",
+        "span.gen_ai.embeddings",
+        "span.gen_ai.execute_tool",
+        "span.gen_ai.inference",
+        "span.gen_ai.invoke_agent",
+        "span.gen_ai.retrieval"
+      ]
+    },
+    "mappings": [
+      {
+        "policyEntity": "event:api_request",
+        "registered": true,
+        "semconvEntity": "api_request"
+      },
+      {
+        "policyEntity": "event:compaction_result",
+        "registered": true,
+        "semconvEntity": "compaction_result"
+      },
+      {
+        "policyEntity": "event:session_end",
+        "registered": true,
+        "semconvEntity": "session_end"
+      },
+      {
+        "policyEntity": "event:session_start",
+        "registered": true,
+        "semconvEntity": "session_start"
+      },
+      {
+        "policyEntity": "event:tool_call",
+        "registered": true,
+        "semconvEntity": "tool_call"
+      },
+      {
+        "policyEntity": "event:tool_result",
+        "registered": true,
+        "semconvEntity": "tool_result"
+      },
+      {
+        "policyEntity": "event:user_prompt",
+        "registered": true,
+        "semconvEntity": "user_prompt"
+      },
+      {
+        "policyEntity": "span:compaction",
+        "registered": true,
+        "semconvEntity": "span.ant.compaction"
+      },
+      {
+        "policyEntity": "span:llm",
+        "registered": true,
+        "semconvEntity": "span.ant.llm"
+      },
+      {
+        "policyEntity": "span:tool",
+        "registered": true,
+        "semconvEntity": "span.ant.tool"
+      },
+      {
+        "policyEntity": "span:turn",
+        "registered": true,
+        "semconvEntity": "span.ant.chat"
+      },
+      {
+        "policyEntity": "metric:api_request",
+        "registered": true,
+        "semconvEntity": "agent.api_request.count"
+      },
+      {
+        "policyEntity": "metric:api_request",
+        "registered": true,
+        "semconvEntity": "agent.api_request.error.count"
+      },
+      {
+        "policyEntity": "metric:api_request",
+        "registered": true,
+        "semconvEntity": "agent.api_request.duration"
+      },
+      {
+        "policyEntity": "metric:tool",
+        "registered": true,
+        "semconvEntity": "agent.tool_call.count"
+      },
+      {
+        "policyEntity": "metric:tool",
+        "registered": true,
+        "semconvEntity": "agent.tool_call.error.count"
+      },
+      {
+        "policyEntity": "metric:tool",
+        "registered": true,
+        "semconvEntity": "agent.tool_call.duration"
+      }
+    ],
+    "missingNormativeRedMetrics": [],
+    "missingSemconvForPolicy": [],
+    "normativeRedMetrics": [
+      "agent.api_request.count",
+      "agent.api_request.error.count",
+      "agent.api_request.duration",
+      "agent.tool_call.count",
+      "agent.tool_call.error.count",
+      "agent.tool_call.duration"
+    ]
+  },
+  "schemaVersion": "semconv-policy-inventory.v1",
+  "semconv": {
+    "events": [
+      {
+        "id": "event.ant.api_request",
+        "name": "api_request"
+      },
+      {
+        "id": "event.ant.compaction_result",
+        "name": "compaction_result"
+      },
+      {
+        "id": "event.ant.session_end",
+        "name": "session_end"
+      },
+      {
+        "id": "event.ant.session_start",
+        "name": "session_start"
+      },
+      {
+        "id": "event.ant.subagent_ended",
+        "name": "subagent_ended"
+      },
+      {
+        "id": "event.ant.subagent_spawned",
+        "name": "subagent_spawned"
+      },
+      {
+        "id": "event.ant.tool_call",
+        "name": "tool_call"
+      },
+      {
+        "id": "event.ant.tool_decision",
+        "name": "tool_decision"
+      },
+      {
+        "id": "event.ant.tool_result",
+        "name": "tool_result"
+      },
+      {
+        "id": "event.ant.user_prompt",
+        "name": "user_prompt"
+      },
+      {
+        "id": "event.gen_ai.evaluation.result",
+        "name": "gen_ai.evaluation.result"
+      },
+      {
+        "id": "event.gen_ai.inference.operation.details",
+        "name": "gen_ai.client.inference.operation.details"
+      }
+    ],
+    "metrics": [
+      {
+        "id": "metric.agent.api_request.count",
+        "name": "agent.api_request.count"
+      },
+      {
+        "id": "metric.agent.api_request.duration",
+        "name": "agent.api_request.duration"
+      },
+      {
+        "id": "metric.agent.api_request.error.count",
+        "name": "agent.api_request.error.count"
+      },
+      {
+        "id": "metric.agent.cache.read_tokens",
+        "name": "agent.cache.read_tokens"
+      },
+      {
+        "id": "metric.agent.cache.write_tokens",
+        "name": "agent.cache.write_tokens"
+      },
+      {
+        "id": "metric.agent.session.count",
+        "name": "agent.session.count"
+      },
+      {
+        "id": "metric.agent.token.usage",
+        "name": "agent.token.usage"
+      },
+      {
+        "id": "metric.agent.tool_call.count",
+        "name": "agent.tool_call.count"
+      },
+      {
+        "id": "metric.agent.tool_call.duration",
+        "name": "agent.tool_call.duration"
+      },
+      {
+        "id": "metric.agent.tool_call.error.count",
+        "name": "agent.tool_call.error.count"
+      },
+      {
+        "id": "metric.aivision.agentic.exec_error",
+        "name": "aivision.agentic.exec_error"
+      },
+      {
+        "id": "metric.aivision.agentic.export_error",
+        "name": "aivision.agentic.export_error"
+      },
+      {
+        "id": "metric.aivision.agentic.up",
+        "name": "aivision.agentic.up"
+      },
+      {
+        "id": "metric.gen_ai.client.operation.duration",
+        "name": "gen_ai.client.operation.duration"
+      },
+      {
+        "id": "metric.gen_ai.client.token.usage",
+        "name": "gen_ai.client.token.usage"
+      }
+    ],
+    "spans": [
+      {
+        "id": "span.ant.agent"
+      },
+      {
+        "id": "span.ant.chat"
+      },
+      {
+        "id": "span.ant.compaction"
+      },
+      {
+        "id": "span.ant.embedding"
+      },
+      {
+        "id": "span.ant.guardrail"
+      },
+      {
+        "id": "span.ant.llm"
+      },
+      {
+        "id": "span.ant.mcp"
+      },
+      {
+        "id": "span.ant.reranker"
+      },
+      {
+        "id": "span.ant.retriever"
+      },
+      {
+        "id": "span.ant.tool"
+      },
+      {
+        "id": "span.gen_ai.create_agent"
+      },
+      {
+        "id": "span.gen_ai.embeddings"
+      },
+      {
+        "id": "span.gen_ai.execute_tool"
+      },
+      {
+        "id": "span.gen_ai.inference"
+      },
+      {
+        "id": "span.gen_ai.invoke_agent"
+      },
+      {
+        "id": "span.gen_ai.retrieval"
+      }
+    ]
+  },
+  "sources": {
+    "policyTree": {
+      "fileCount": 60,
+      "sha256": "3e946cd22fd043457cbf5faa2b0c813574d13ea1878d67fb2a1e578ad48282c9"
+    },
+    "semconv": [
+      {
+        "path": "docs/semconv/attribute_groups.yaml",
+        "sha256": "dc93cab8b006748cb6cd50be22221f81b245d79c3f0c8362b790b523501e6f9e"
+      },
+      {
+        "path": "docs/semconv/entities.yaml",
+        "sha256": "76d647c861b3d480778f895661d2084bd7222246fa47f4cf9a73f6e664e0e3b3"
+      },
+      {
+        "path": "docs/semconv/events.yaml",
+        "sha256": "684bac67d75eefa40550b51be86efd0568aedf7b067b51cfadeb44f39abc8def"
+      },
+      {
+        "path": "docs/semconv/metrics.yaml",
+        "sha256": "e32d171373118dd7a9fc5455152043ce1f71660ff2cc15af72b6ad0550134fe0"
+      },
+      {
+        "path": "docs/semconv/spans.yaml",
+        "sha256": "10f73f98a7b69d2a5a7a764d536170653685314a05f67fe4050a990942632e15"
+      }
+    ]
+  }
+}

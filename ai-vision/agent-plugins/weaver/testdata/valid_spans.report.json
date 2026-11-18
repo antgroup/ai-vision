@@ -1,0 +1,44 @@
+{
+  "timestamp": "2026-03-29T09:26:16.419844",
+  "input_file": "weaver/testdata/valid_spans.json",
+  "total_spans": 3,
+  "passed": 3,
+  "failed": 0,
+  "total_violations": 0,
+  "total_warnings": 0,
+  "results": [
+    {
+      "index": 0,
+      "span_name": "ai_agent.turn",
+      "span_id": "aaaaaaaaaaaaaaaa",
+      "parent_span_id": "",
+      "validation": {
+        "violations": [],
+        "warnings": [],
+        "pass": true
+      }
+    },
+    {
+      "index": 1,
+      "span_name": "ai_agent.generation",
+      "span_id": "bbbbbbbbbbbbbbbb",
+      "parent_span_id": "aaaaaaaaaaaaaaaa",
+      "validation": {
+        "violations": [],
+        "warnings": [],
+        "pass": true
+      }
+    },
+    {
+      "index": 2,
+      "span_name": "ai_agent.tool",
+      "span_id": "cccccccccccccccc",
+      "parent_span_id": "aaaaaaaaaaaaaaaa",
+      "validation": {
+        "violations": [],
+        "warnings": [],
+        "pass": true
+      }
+    }
+  ]
+}

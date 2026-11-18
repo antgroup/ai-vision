@@ -1,0 +1,78 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+.codefuse/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Environment - 只忽略本地覆盖文件
+.env.local
+.env.*.local
+
+# Sisyphus
+.sisyphus/
+
+# Node
+node_modules/
+package-lock.json
+/pnpm-lock.yaml
+/pnpm-workspace.yaml
+
+# OMC / Claude Code
+.omc/
+.agents/
+.claude/*
+# Shared project skills are source; keep local memory/settings ignored.
+!.claude/skills/
+state/
+skills-lock.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Screenshots and images (optional - remove if needed)
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Versioned framework brand assets used by the onboarding catalog.
+!vfe/public/assets/frameworks/claude-agent-sdk.png
+!vfe/public/assets/frameworks/anthropic.png
+!vfe/public/assets/frameworks/google-adk.png
+!vfe/public/assets/frameworks/eino.png
+
+# Django static files (build artifacts)
+aivision-py-be/static/
+aivision-py-be/staticfiles/
+aivision-py-be/templates/*
+!aivision-py-be/templates/iam_mock_login.html
+.omc/
+
+# mcp
+.mcp.json
+
+# Local backups
+.aci-backup-*/
+
+# frontend
+.node
+package-lock.json
+dist
+
+# Proto generated code
+aivision-py-be/apps/core/trace_query/jaeger_v3/generated/jaeger/
+vfe/src/proto/generated/
+# API curl test results
+api_curl_results/

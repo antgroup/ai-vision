@@ -1,0 +1,57 @@
+{
+  "source_repository": "https://github.com/ob-labs/ai-vision-ob",
+  "source_revision": "historical-source-revision-redacted",
+  "capture_date": "2026-11-17",
+  "synthetic_data": true,
+  "backend_stubs": true,
+  "real_model_calls": false,
+  "source_files_sha256": {
+    "ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx": "103da7274d0d5f8d5277760192c277cd3ccbe91f24cdc2f63425591dc00e8aeb",
+    "ai-vision/vfe/src/components/traces/shared/TraceMedia.tsx": "37e7d9fe7bc412c38703334a3702b33667e6341e269746213a35486c8d818964",
+    "ai-vision/vfe/src/components/traces/shared/TraceMediaSummary.tsx": "d63288e7cc3792aa23da2481f2661240aa0560dc85a34ae5c96bf79044c53f83",
+    "ai-vision/vfe/src/components/traces/shared/TracePdfPreview.tsx": "79fd92d6061e97e221aefe854b602e6a1408ad142b84015c4e7b7218bb31f721",
+    "ai-vision/vfe/src/components/traces/shared/TraceUserInputSummary.tsx": "f3f91f211054d048a81c12566aa15b708bdf967382c2494a41d5daeac433ae24",
+    "ai-vision/vfe/src/components/traces/shared/traceMediaProjection.ts": "b614a0495cd60fd439846a88340556ea98582762b00935dd6617825c37401b3b",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "74e7b964ea61b716a24e6ea50f1b2a3e64f65ca502fc5ed9bb60e1ae1f66fbd4",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "841397377bf74913639bb1dbc88c3bf665999fac889d3f8d79eabf939d411f1e",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "2c9ca83c9b82287bbfe73a54de0b18869f61de8aa42b6e60b75f5a9dfacad0ed",
+    "ai-vision/vfe/tests/e2e/traceLabs.fixtures.ts": "afda8a75010ceae837a3c98424eb240f7950690e2800b8e492a979d48cab4e90",
+    "ai-vision/vfe/tests/fixtures/trace-media/sample.wav": "bce64775ae3dccdd9a2ac60b06199fbae49c09a9e8ef66221f09912db8330e82",
+    "ai-vision/vfe/tests/fixtures/trace-media/sample.pdf": "1aca51a1d1a742d68266936c263b58c106780a6471d3a82669be02da95ba50be"
+  },
+  "served_build_sha256": {
+    "ai-vision/dist/index.html": "f3dad22a119c9c2ed188ccca4201fdaaaa949787a26449c845610dc6fdd42223",
+    "ai-vision/dist/assets/index-BU8FWTVR.js": "53445a98fc6b119a4d9deab0a4373a6934da4190463bfe837adcf2ffcad5c3d4",
+    "ai-vision/dist/assets/index-oyiTuH2t.css": "bd0286a92ad3a645c494deac0755ab0b6d973068e7cdef3a0d9cffb7cdea75ff"
+  },
+  "source_tree_verified_equal": true,
+  "companion_revision": "68deece40c0a934480587298030dcf09c1e14202",
+  "source_tree": "809e8c268fd46681dddef2af884e43d08e8edb80",
+  "capture_script_repository": "https://github.com/ob-labs/ai-vision-docs",
+  "capture_script_path": "maintenance/screenshots/capture_multimedia.mjs",
+  "capture_script_sha256": "bd00b2a99ee1f10d17c65bb3b2a81058bc95748f4edca9f60c4e6fd10363fda9",
+  "image_transformations": [],
+  "shots": [
+    {
+      "path": "docs/testing/screenshots/trace-multimedia/input.zh-CN.light.png",
+      "sha256": "00817570e3a737f252e549f58369d4a293dea9e25c21ae5de1ecb5474873cffa",
+      "theme": "light",
+      "width": 866,
+      "height": 543
+    },
+    {
+      "path": "docs/testing/screenshots/trace-multimedia/input.zh-CN.dark.png",
+      "sha256": "d822a38c4f37623ff07d8717b28bfad1a67d65ee9c197947cfb3c88e4fed0a8c",
+      "theme": "dark",
+      "width": 866,
+      "height": 543
+    }
+  ],
+  "boundaries": [
+    "Synthetic localized API records and local media fixtures demonstrate frontend controls, not SDK capture, provider execution, ingestion, deployment, diagnosis or answer quality.",
+    "Two browser-generated colored shapes are synthetic source images. Audio and PDF come from product test fixtures. Media requests are fulfilled locally; no provider or real platform is contacted.",
+    "Each capture shows two loaded adjacent images, one loaded audio player, a separately unloaded audio item and an unloaded PDF. Image zoom, Escape, independent hiding/loading, grid and stacked layout were asserted before capture.",
+    "Captured PNGs are browser-native crops of the input card with no pixel edits or resizing. Locale and theme are set through the frontend local storage settings.",
+    "The existing production build was regenerated from the clean frozen source_revision before this capture. Source-file, build-output, build-log and screenshot hashes are recorded separately; runtime API responses and source media are synthetic fixtures."
+  ]
+}

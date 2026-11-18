@@ -1,0 +1,926 @@
+{
+  "date": "2026-10-28",
+  "implementation_commit": "6f50a4818468077ccae8bef9429af91c7917f515",
+  "old_commit": "cd938f04d08cc09911e2a28d34a9e2863cc35428",
+  "frontend_index_sha256": "66aeef03712bc09cd0af1e98364202118d3ebb507b1d008ff6279d5b4816c33d",
+  "old_frontend_index_sha256": "94e2370142c52590dc82c98b914164943d5483306213a4b300b348387a2b1319",
+  "data_scope": {
+    "synthetic_traces": 30000,
+    "spans": 180000,
+    "sessions": 10000,
+    "window_ms": [
+      1792598400000,
+      1793203199000
+    ]
+  },
+  "storage": "prepared local Mac Docker OceanBase, database hard4CPU, applications unchanged",
+  "same_backend_and_database_processes": true,
+  "cpu_period_boundary": "Current cpu.max is1600000/400000; prior raw periods were not recorded. Docker NanoCPUs remained4e9.",
+  "api_control": {
+    "old_n": 80,
+    "new_n": 80,
+    "http_api_correctness_failures": 0,
+    "P95_method": "nearest-rank19thof20",
+    "rows": [
+      {
+        "class": "metrics",
+        "old_n": 20,
+        "new_n": 20,
+        "old_P50_ms": 928.8668335000025,
+        "old_P95_ms": 1969.289958,
+        "new_P50_ms": 611.145792,
+        "new_P95_ms": 657.9450840000014,
+        "P95_delta_ms": -1311.3448739999985,
+        "P95_relative_change": -0.6658973040881158,
+        "investigation_threshold_exceeded": false,
+        "old_payload_byte_values": [
+          12029
+        ],
+        "new_payload_byte_values": [
+          12029
+        ]
+      },
+      {
+        "class": "sessions",
+        "old_n": 20,
+        "new_n": 20,
+        "old_P50_ms": 1740.7172704999994,
+        "old_P95_ms": 2797.4131249999914,
+        "new_P50_ms": 438.5351874999999,
+        "new_P95_ms": 470.1672920000028,
+        "P95_delta_ms": -2327.2458329999886,
+        "P95_relative_change": -0.8319278308240567,
+        "investigation_threshold_exceeded": false,
+        "old_payload_byte_values": [
+          47384,
+          47385,
+          47386
+        ],
+        "new_payload_byte_values": [
+          47383,
+          47384,
+          47385
+        ]
+      },
+      {
+        "class": "events",
+        "old_n": 20,
+        "new_n": 20,
+        "old_P50_ms": 721.4947500000051,
+        "old_P95_ms": 784.8206250000019,
+        "new_P50_ms": 512.8202705000017,
+        "new_P95_ms": 573.0657080000015,
+        "P95_delta_ms": -211.75491700000043,
+        "P95_relative_change": -0.26981313978592236,
+        "investigation_threshold_exceeded": false,
+        "old_payload_byte_values": [
+          199317
+        ],
+        "new_payload_byte_values": [
+          199317
+        ]
+      },
+      {
+        "class": "events-timeseries",
+        "old_n": 20,
+        "new_n": 20,
+        "old_P50_ms": 2436.355375000005,
+        "old_P95_ms": 3758.298291999999,
+        "new_P50_ms": 710.6429374999993,
+        "new_P95_ms": 742.5754169999976,
+        "P95_delta_ms": -3015.7228750000013,
+        "P95_relative_change": -0.8024171155917398,
+        "investigation_threshold_exceeded": false,
+        "old_payload_byte_values": [
+          539,
+          541
+        ],
+        "new_payload_byte_values": [
+          539
+        ]
+      }
+    ],
+    "causal_limit": "servercodeandfourrequestsunchanged; sequentialnaturalcachewarmingandtemporalvariationremain; thisisnotbrowsermodule-readyproof"
+  },
+  "browser_reloads": {
+    "old": {
+      "source": "Pcd938f04 index94e237; same absolute range; 3 observed reloads, not P95; browser cache left intact",
+      "trials": [
+        {
+          "trial": 1,
+          "businessCount": 4,
+          "records": [
+            {
+              "requestId": "91266.50",
+              "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+              "method": "GET",
+              "status": 200,
+              "from": "1792598400000",
+              "to": "1793203199000",
+              "elapsedMs": 872.6410000235774,
+              "readyFromNavigationMs": 1422.1000000252388,
+              "wireBytes": 12360
+            },
+            {
+              "requestId": "91266.51",
+              "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 645.3719999990426,
+              "readyFromNavigationMs": 1195.3750000102445,
+              "wireBytes": 47841
+            },
+            {
+              "requestId": "91266.54",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 747.3250000039116,
+              "readyFromNavigationMs": 1320.992000051774,
+              "wireBytes": 199774
+            },
+            {
+              "requestId": "91266.55",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 1054.4430000009015,
+              "readyFromNavigationMs": 1657.296999997925,
+              "wireBytes": 995
+            }
+          ],
+          "allBusinessCompleteMs": 1657.296999997925,
+          "stats30kVisible": true,
+          "loaded200Visible": true,
+          "session10kVisible": true,
+          "hasVisibleLoadFailure": false
+        },
+        {
+          "trial": 2,
+          "businessCount": 4,
+          "records": [
+            {
+              "requestId": "91266.76",
+              "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+              "method": "GET",
+              "status": 200,
+              "from": "1792598400000",
+              "to": "1793203199000",
+              "elapsedMs": 867.7190000307746,
+              "readyFromNavigationMs": 1305.2349999779835,
+              "wireBytes": 12360
+            },
+            {
+              "requestId": "91266.77",
+              "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 635.7820000266656,
+              "readyFromNavigationMs": 1073.8869999768212,
+              "wireBytes": 47841
+            },
+            {
+              "requestId": "91266.80",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 792.1579999965616,
+              "readyFromNavigationMs": 1265.0869999779388,
+              "wireBytes": 199774
+            },
+            {
+              "requestId": "91266.81",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 949.2300000274554,
+              "readyFromNavigationMs": 1438.423999992665,
+              "wireBytes": 993
+            }
+          ],
+          "allBusinessCompleteMs": 1438.423999992665,
+          "stats30kVisible": true,
+          "loaded200Visible": true,
+          "session10kVisible": true,
+          "hasVisibleLoadFailure": false
+        },
+        {
+          "trial": 3,
+          "businessCount": 4,
+          "records": [
+            {
+              "requestId": "91266.102",
+              "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+              "method": "GET",
+              "status": 200,
+              "from": "1792598400000",
+              "to": "1793203199000",
+              "elapsedMs": 836.1279999953695,
+              "readyFromNavigationMs": 1272.7459999732673,
+              "wireBytes": 12360
+            },
+            {
+              "requestId": "91266.103",
+              "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 652.5299999630079,
+              "readyFromNavigationMs": 1089.680999983102,
+              "wireBytes": 47841
+            },
+            {
+              "requestId": "91266.106",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 706.2839999562129,
+              "readyFromNavigationMs": 1167.9499999736436,
+              "wireBytes": 199774
+            },
+            {
+              "requestId": "91266.107",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 920.0720000080764,
+              "readyFromNavigationMs": 1395.7490000175312,
+              "wireBytes": 993
+            }
+          ],
+          "allBusinessCompleteMs": 1395.7490000175312,
+          "stats30kVisible": true,
+          "loaded200Visible": true,
+          "session10kVisible": true,
+          "hasVisibleLoadFailure": false
+        }
+      ]
+    },
+    "new": {
+      "source": "P6f50a481 index66aeef; same absolute range; 3 authenticated reloads, not P95; browser cache left intact; prior login precondition failure preserved separately",
+      "trials": [
+        {
+          "trial": 1,
+          "businessCount": 2,
+          "records": [
+            {
+              "requestId": "91266.155",
+              "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+              "method": "GET",
+              "status": 200,
+              "from": "1792598400000",
+              "to": "1793203199000",
+              "elapsedMs": 494.330000015907,
+              "readyFromNavigationMs": 983.9739999733865,
+              "wireBytes": 12360
+            },
+            {
+              "requestId": "91266.157",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 376.8180000479333,
+              "readyFromNavigationMs": 880.3199999965727,
+              "wireBytes": 199774
+            }
+          ],
+          "allBusinessCompleteMs": 983.9739999733865,
+          "stats30kVisible": true,
+          "loaded200Visible": true,
+          "session10kVisible": false,
+          "hasVisibleLoadFailure": false
+        },
+        {
+          "trial": 2,
+          "businessCount": 2,
+          "records": [
+            {
+              "requestId": "91266.178",
+              "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+              "method": "GET",
+              "status": 200,
+              "from": "1792598400000",
+              "to": "1793203199000",
+              "elapsedMs": 502.65100004617125,
+              "readyFromNavigationMs": 927.1100000478327,
+              "wireBytes": 12360
+            },
+            {
+              "requestId": "91266.180",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 379.90699999500066,
+              "readyFromNavigationMs": 821.8409999972209,
+              "wireBytes": 199774
+            }
+          ],
+          "allBusinessCompleteMs": 927.1100000478327,
+          "stats30kVisible": true,
+          "loaded200Visible": true,
+          "session10kVisible": false,
+          "hasVisibleLoadFailure": false
+        },
+        {
+          "trial": 3,
+          "businessCount": 2,
+          "records": [
+            {
+              "requestId": "91266.201",
+              "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+              "method": "GET",
+              "status": 200,
+              "from": "1792598400000",
+              "to": "1793203199000",
+              "elapsedMs": 509.56800003768876,
+              "readyFromNavigationMs": 934.1410000342876,
+              "wireBytes": 12360
+            },
+            {
+              "requestId": "91266.203",
+              "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+              "method": "POST",
+              "status": 200,
+              "from": null,
+              "to": null,
+              "elapsedMs": 376.3730000355281,
+              "readyFromNavigationMs": 821.8820000183769,
+              "wireBytes": 199774
+            }
+          ],
+          "allBusinessCompleteMs": 934.1410000342876,
+          "stats30kVisible": true,
+          "loaded200Visible": true,
+          "session10kVisible": false,
+          "hasVisibleLoadFailure": false
+        }
+      ]
+    }
+  },
+  "browser_actions": [
+    {
+      "label": "first activity open",
+      "businessCount": 1,
+      "records": [
+        {
+          "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+          "method": "POST",
+          "status": 200,
+          "elapsedMs": 744.2189999856055
+        }
+      ],
+      "observedActionToVerifiedDomMs": 890,
+      "loadFailed": false
+    },
+    {
+      "label": "first Session open",
+      "businessCount": 1,
+      "records": [
+        {
+          "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+          "method": "POST",
+          "status": 200,
+          "elapsedMs": 541.89100000076,
+          "sessionPage": 1
+        }
+      ],
+      "observedActionToVerifiedDomMs": 757,
+      "loadFailed": false
+    },
+    {
+      "label": "Session next page",
+      "businessCount": 1,
+      "records": [
+        {
+          "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+          "method": "POST",
+          "status": 200,
+          "elapsedMs": 531.7209999775514,
+          "sessionPage": 2
+        }
+      ],
+      "observedActionToVerifiedDomMs": 698,
+      "loadFailed": false
+    },
+    {
+      "label": "close Session",
+      "businessCount": 0,
+      "records": [],
+      "observedActionToVerifiedDomMs": 1492,
+      "loadFailed": false
+    },
+    {
+      "label": "return to Token trend",
+      "businessCount": 0,
+      "records": [],
+      "observedActionToVerifiedDomMs": 1543,
+      "loadFailed": false
+    },
+    {
+      "label": "refresh with optional modules closed",
+      "businessCount": 2,
+      "records": [
+        {
+          "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+          "method": "GET",
+          "status": 200,
+          "elapsedMs": 516.765000007581
+        },
+        {
+          "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+          "method": "POST",
+          "status": 200,
+          "elapsedMs": 444.87999996636063
+        }
+      ],
+      "observedActionToVerifiedDomMs": 708,
+      "loadFailed": false
+    },
+    {
+      "label": "change to empty fixed window",
+      "businessCount": 2,
+      "records": [
+        {
+          "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+          "method": "GET",
+          "status": 200,
+          "elapsedMs": 248.70499997632578
+        },
+        {
+          "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+          "method": "POST",
+          "status": 200,
+          "elapsedMs": 223.24500000104308
+        }
+      ],
+      "observedActionToVerifiedDomMs": 1507,
+      "loadFailed": false
+    },
+    {
+      "label": "restore original fixed window",
+      "businessCount": 2,
+      "records": [
+        {
+          "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+          "method": "GET",
+          "status": 200,
+          "elapsedMs": 3049.2709999671206
+        },
+        {
+          "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+          "method": "POST",
+          "status": 200,
+          "elapsedMs": 2370.6119999988005
+        }
+      ],
+      "observedActionToVerifiedDomMs": 4096,
+      "loadFailed": false
+    }
+  ],
+  "scope_control": {
+    "old": {
+      "source": "authenticated old Pcd FE fallback; same frozen backend/data/window; 3 cycles not P95; auth setup failure separately preserved",
+      "cycles": [
+        {
+          "cycle": 1,
+          "empty": {
+            "label": "old Pcd authenticated empty 1",
+            "businessCount": 4,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 71.4670000015758
+              },
+              {
+                "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 107.71100001875311,
+                "sessionPage": 1
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 57.2309999843128
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 41.117999993730336
+              }
+            ],
+            "observedActionToVerifiedDomMs": 618,
+            "loadFailed": false,
+            "session10kVisible": false
+          },
+          "full": {
+            "label": "old Pcd authenticated restore 1",
+            "businessCount": 4,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 2315.3220000094734
+              },
+              {
+                "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 2162.241999991238,
+                "sessionPage": 1
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 1215.0670000119135
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 2360.6850000214763
+              }
+            ],
+            "observedActionToVerifiedDomMs": 3008,
+            "loadFailed": false,
+            "session10kVisible": true
+          }
+        },
+        {
+          "cycle": 2,
+          "empty": {
+            "label": "old Pcd authenticated empty 2",
+            "businessCount": 4,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 64.64699999196455
+              },
+              {
+                "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 100.57900001993403,
+                "sessionPage": 1
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 56.85799999628216
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 43.11299999244511
+              }
+            ],
+            "observedActionToVerifiedDomMs": 611,
+            "loadFailed": false,
+            "session10kVisible": false
+          },
+          "full": {
+            "label": "old Pcd authenticated restore 2",
+            "businessCount": 4,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 1751.3299999991432
+              },
+              {
+                "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 1556.5869999700226,
+                "sessionPage": 1
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 842.3720000428148
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 1823.679999972228
+              }
+            ],
+            "observedActionToVerifiedDomMs": 2496,
+            "loadFailed": false,
+            "session10kVisible": true
+          }
+        },
+        {
+          "cycle": 3,
+          "empty": {
+            "label": "old Pcd authenticated empty 3",
+            "businessCount": 4,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 56.36499996762723
+              },
+              {
+                "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 89.72699998412281,
+                "sessionPage": 1
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 57.30799998855218
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 41.209999995771796
+              }
+            ],
+            "observedActionToVerifiedDomMs": 589,
+            "loadFailed": false,
+            "session10kVisible": false
+          },
+          "full": {
+            "label": "old Pcd authenticated restore 3",
+            "businessCount": 4,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 1787.1409999788739
+              },
+              {
+                "path": "/api/v1/spaces/{space}/signoz/sessions/list",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 1592.2129999962635,
+                "sessionPage": 1
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 851.2500000069849
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 1857.438999984879
+              }
+            ],
+            "observedActionToVerifiedDomMs": 2528,
+            "loadFailed": false,
+            "session10kVisible": true
+          }
+        }
+      ]
+    },
+    "new": {
+      "source": "authenticated restored P6f FE; same frozen backend/data/window; 3 cycles not P95; original 3.049s spike remains in module-actions-with-scope.json",
+      "cycles": [
+        {
+          "cycle": 1,
+          "empty": {
+            "label": "new P6f authenticated empty 1",
+            "businessCount": 2,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 48.69999998481944
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 38.63900003489107
+              }
+            ],
+            "observedActionToVerifiedDomMs": 558,
+            "loadFailed": false,
+            "session10kVisible": false
+          },
+          "full": {
+            "label": "new P6f authenticated restore 1",
+            "businessCount": 2,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 1384.684999997262
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 362.122000020463
+              }
+            ],
+            "observedActionToVerifiedDomMs": 1904,
+            "loadFailed": false,
+            "session10kVisible": false
+          }
+        },
+        {
+          "cycle": 2,
+          "empty": {
+            "label": "new P6f authenticated empty 2",
+            "businessCount": 2,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 43.781999964267015
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 33.94499997375533
+              }
+            ],
+            "observedActionToVerifiedDomMs": 518,
+            "loadFailed": false,
+            "session10kVisible": false
+          },
+          "full": {
+            "label": "new P6f authenticated restore 2",
+            "businessCount": 2,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 1347.9569999617524
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 402.163999970071
+              }
+            ],
+            "observedActionToVerifiedDomMs": 1895,
+            "loadFailed": false,
+            "session10kVisible": false
+          }
+        },
+        {
+          "cycle": 3,
+          "empty": {
+            "label": "new P6f authenticated empty 3",
+            "businessCount": 2,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 43.2629999704659
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 36.9840000057593
+              }
+            ],
+            "observedActionToVerifiedDomMs": 682,
+            "loadFailed": false,
+            "session10kVisible": false
+          },
+          "full": {
+            "label": "new P6f authenticated restore 3",
+            "businessCount": 2,
+            "records": [
+              {
+                "path": "/api/v1/spaces/{space}/signoz/traces/metrics",
+                "method": "GET",
+                "status": 200,
+                "elapsedMs": 1370.074000034947
+              },
+              {
+                "path": "/api/v2/spaces/{space}/agent-products/langfuse/signoz/query",
+                "method": "POST",
+                "status": 200,
+                "elapsedMs": 472.74499997729436
+              }
+            ],
+            "observedActionToVerifiedDomMs": 1919,
+            "loadFailed": false,
+            "session10kVisible": false
+          }
+        }
+      ]
+    },
+    "original_new_restore_peak_preserved": {
+      "metrics_http_ms": 3049.271,
+      "events_http_ms": 2370.612,
+      "action_to_verified_dom_ms": 4096,
+      "backend_typed_metrics_ms": 2959.162,
+      "backend_operation_page_ms": 2300.108,
+      "raw_fallback_seen": false,
+      "specific_variation_cause": "not established"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "overview.zh-CN.dark.jpg",
+      "source_capture": "10-focused-overview.zh-CN.dark.jpg",
+      "sha256": "12d03d6322c878c99b5cfa6733f56df34c2ce85608acfd8dd0985fc901c8bf6f",
+      "unedited_native_jpeg": true
+    },
+    {
+      "file": "sessions.zh-CN.dark.jpg",
+      "source_capture": "13-session-module-open.zh-CN.dark.jpg",
+      "sha256": "b6a3148ceec3cfd2515467391b22ff1559fcdfde0b962b04ab1d70e13bdd2c09",
+      "unedited_native_jpeg": true
+    },
+    {
+      "file": "overview.en-US.dark.jpg",
+      "source_capture": "15-focused-overview.en-US.dark.jpg",
+      "sha256": "6d3c4b921fe9b1dd72ac66964729e781cc63e6d6844b11da1b444bfdb69fbfb3",
+      "unedited_native_jpeg": true
+    },
+    {
+      "file": "overview.ja-JP.dark.jpg",
+      "source_capture": "16-focused-overview.ja-JP.dark.jpg",
+      "sha256": "5b59fc0a504ee8da3864e559bdc1fd48a9f953e1ab6ff4050374d9862602226e",
+      "unedited_native_jpeg": true
+    },
+    {
+      "file": "overview.zh-CN.light.jpg",
+      "source_capture": "17-focused-overview.zh-CN.light.jpg",
+      "sha256": "91542a414068991a530b9f56e77f6f1402a54d8a6fa440eb16004d9aca45755a",
+      "unedited_native_jpeg": true
+    },
+    {
+      "file": "overview.zh-CN.light.390.jpg",
+      "source_capture": "18-focused-overview.zh-CN.light.390.jpg",
+      "sha256": "4ad0cffbbe18fad443f1ccd2d29905648d2cd3921a9aefff5421edba8af524e1",
+      "unedited_native_jpeg": true
+    }
+  ],
+  "source_navigation": {
+    "source": "actual P6f recent operation link → Trace/Span details on synthetic data",
+    "focusSpan": "c48cc3557e7f25e9",
+    "windowPreserved": true,
+    "agentPreserved": true,
+    "sixNodes": true,
+    "inputMarkerVisible": true,
+    "outputMarkerVisible": true
+  },
+  "private_full_content_gate_sha256": "ca61dc8c1480b8a05d230109fa5619d43b88e886107cb300aaa24b83830da23f",
+  "runtime_final_report_sha256": "f132b855738478cfdb986e17364bc8dab941eef29d10399a82d6a46678e48095",
+  "limitations": [
+    "Three browser repetitions are observations, not P95 or paint metrics.",
+    "Action-to-verified-DOM includes automation overhead; zero-request actions include a deliberate quiet observation interval.",
+    "Authentication preparation failures sent zero business requests and remain separate local receipts; their cause is not established.",
+    "Public synthetic evidence does not expose private original Trace bodies.",
+    "SeekDB runtime and C10/C20 sustained capacity were not rerun in this frontend-only phase."
+  ]
+}

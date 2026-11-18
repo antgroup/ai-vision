@@ -1,0 +1,88 @@
+id: langchain-runnable-as-action
+label: Runnable as Action
+frontendGroup: langchain
+frontendGroupLabel: LangChain
+frontendGroupLogo: /assets/frameworks/langchain-brand.svg
+frontendGroupSort: 1
+logo: /assets/frameworks/langchain-brand.svg
+frontendSort: 4
+pipInstall: pip install nemoguardrails langchain-core langchain-openai opentelemetry-sdk opentelemetry-exporter-otlp-proto-http
+pipExample: |-
+  import os
+  import uuid
+
+  from langchain_core.runnables import Runnable
+  from nemoguardrails import LLMRails, RailsConfig
+  from opentelemetry import trace
+  from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+  from opentelemetry.sdk.resources import Resource
+  from opentelemetry.sdk.trace import SpanProcessor, TracerProvider
+  from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+  CONFIG_YAML = """
+  models:
+    - type: main
+      engine: openai
+      model: gpt-4o
+  rails:
+    input:
+      flows:
+        - check proprietary keywords
+  tracing:
+    enabled: true
+    enable_content_capture: true
+    adapters:
+      - name: OpenTelemetry
+  """
+
+  COLANG = """
+  define flow check proprietary keywords
+    $keywords = "proprietary"
+    $has_keywords = execute check_keywords(text=$user_message, keywords=$keywords)
+    if $has_keywords
+      bot refuse to respond
+      stop
+  """
+
+
+  class CheckKeywordsRunnable(Runnable):
+      def invoke(self, input, config=None, **kwargs):
+          text = input["text"]
+          for keyword in input["keywords"].split(","):
+              if keyword.strip() in text:
+                  return True
+          return False
+
+
+  def bootstrap_relay_tracing(service_name):
+      session_id = uuid.uuid4().hex
+
+      class _TagProcessor(SpanProcessor):
+          def on_start(self, span, parent_context=None):
+              span.set_attribute("langfuse.trace.tags", '["framework:nvidia-nemo-relay"]')
+              span.set_attribute("session.id", session_id)
+
+      provider = TracerProvider(resource=Resource.create({"service.name": service_name}))
+      provider.add_span_processor(_TagProcessor())
+      provider.add_span_processor(
+          BatchSpanProcessor(
+              OTLPSpanExporter(endpoint=os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", ""))
+          )
+      )
+      trace.set_tracer_provider(provider)
+      return provider
+
+
+  provider = bootstrap_relay_tracing("relay-runnable-as-action")
+
+  rails = LLMRails(
+      RailsConfig.from_content(yaml_content=CONFIG_YAML, colang_content=COLANG)
+  )
+  rails.register_action(CheckKeywordsRunnable(), "check_keywords")
+
+  result = rails.generate(
+      messages=[{"role": "user", "content": "What is the result for 2+2?"}]
+  )
+
+  print(result)
+  provider.force_flush()

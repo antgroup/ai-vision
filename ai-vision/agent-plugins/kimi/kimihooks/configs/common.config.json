@@ -1,0 +1,36 @@
+{
+  "enableTelemetry": false,
+  "serviceName": "kimi-cli",
+  "ant": {
+    "agentType": "kimicli"
+  },
+  "otelExporter": {
+    "protocol": "http/json"
+  },
+  "tracesConfig": {
+    "enabled": true
+  },
+  "metricsConfig": {
+    "enabled": true
+  },
+  "logsConfig": {
+    "enabled": true
+  },
+  "statusConfig": {
+    "enabled": true
+  },
+  "log": {
+    "spans": {
+      "userPrompts": false,
+      "modelOutputs": false,
+      "toolDetails": true,
+      "toolOutputs": false
+    },
+    "events": {
+      "userPrompts": false,
+      "modelOutputs": false,
+      "toolDetails": true,
+      "toolOutputs": false
+    }
+  }
+}

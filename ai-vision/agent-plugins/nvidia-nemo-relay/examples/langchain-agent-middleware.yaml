@@ -1,0 +1,95 @@
+id: langchain-agent-middleware
+label: LangChain
+frontendGroup: langchain
+frontendGroupLabel: LangChain
+frontendGroupLogo: /assets/frameworks/langchain-brand.svg
+frontendGroupSort: 1
+logo: /assets/frameworks/langchain-brand.svg
+frontendSort: 1
+marketLabel: LangChain
+marketSort: 1
+marketPreview: true
+integrationNotes: >-
+  NemoRelayCallbackHandler connects the agent run to its request scope.
+  NemoRelayMiddleware wraps model and tool execution; a callback alone does not
+  provide that managed execution. The AI Vision relay_tracing.py helper configures
+  export, request identity and process lifecycle. Keep your existing model, tools,
+  business callbacks and agent settings when adding these components.
+officialDocs: https://docs.nvidia.com/nemo/relay/supported-integrations/langchain
+pipInstall: pip install "nemo-relay[langchain]>=0.9.3,<0.10" "langchain>=1.4.3,<2" "langchain-openai>=1.6.7,<2"
+bootstrapFile: relay_tracing.py
+existingExample: |-
+  # Save the startup module above as relay_tracing.py. Requires Python 3.11+.
+  from langchain.agents import create_agent
+  from langchain_core.runnables.config import merge_configs
+  from nemo_relay.integrations.langchain import NemoRelayCallbackHandler, NemoRelayMiddleware
+  from relay_tracing import request_scope, start_tracing, stop_tracing
+
+  # Keep ALL your existing model/tools/system_prompt/checkpointer/other kwargs.
+  agent_kwargs = dict(existing_agent_kwargs)
+  middleware = list(agent_kwargs.get("middleware") or [])
+  if not any(isinstance(item, NemoRelayMiddleware) for item in middleware):
+      middleware.append(NemoRelayMiddleware())
+  agent_kwargs["middleware"] = middleware
+  agent = create_agent(**agent_kwargs)
+
+  # Startup once per process. In a service, call stop_tracing only at shutdown.
+  start_tracing()
+  try:
+      # Use your business session ID. A new handler/scope is created per request.
+      # Keep business callbacks; remove any previous complete telemetry collector
+      # for this same destination before adding Relay, including a prior Relay handler.
+      config = merge_configs(existing_config, {"callbacks": [NemoRelayCallbackHandler()]})
+      with request_scope(session_id, input=existing_input) as request:
+          result = agent.invoke(existing_input, config=config)
+          request["output"] = result["messages"][-1].content
+          print("AI Vision trace_id:", request["trace_id"])
+  finally:
+      stop_tracing()
+  # Async services: with request_scope(...) inside each task; await agent.ainvoke(...).
+  # At service shutdown, await relay_tracing.stop_tracing_async().
+pipExample: |-
+  import uuid
+
+  from langchain.agents import create_agent
+  from langchain_core.tools import tool
+  from langchain_openai import ChatOpenAI
+  from nemo_relay.integrations.langchain import NemoRelayCallbackHandler, NemoRelayMiddleware
+
+
+  @tool
+  def multiply(a: int, b: int) -> int:
+      """Multiply two integers."""
+      return a * b
+
+
+  def main():
+      # Explicit OpenAI Chat Completions adapter; no automatic provider/model fallback.
+      model = ChatOpenAI(
+          model=os.environ["OPENAI_MODEL"],
+          api_key=os.environ["OPENAI_API_KEY"],
+          base_url=os.environ["OPENAI_BASE_URL"],
+          use_responses_api=False,
+      )
+      agent = create_agent(
+          model=model,
+          tools=[multiply],
+          middleware=[NemoRelayMiddleware()],
+          system_prompt="Use the multiply tool for multiplication questions.",
+      )
+      session_id = str(uuid.uuid4())
+      inputs = {"messages": [{"role": "user", "content": "Use multiply to calculate 7 times 9."}]}
+      start_tracing()
+      try:
+          with request_scope(session_id, input=inputs) as request:
+              result = agent.invoke(inputs, config={"callbacks": [NemoRelayCallbackHandler()]})
+              request["output"] = result["messages"][-1].content
+              print(request["output"])
+              print("AI Vision session_id:", session_id)
+              print("AI Vision trace_id:", request["trace_id"])
+      finally:
+          stop_tracing()
+
+
+  if __name__ == "__main__":
+      main()

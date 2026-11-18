@@ -1,0 +1,29 @@
+apiVersion: oceanbase.oceanbase.com/v1alpha1
+kind: OBTenant
+metadata:
+  name: aivision
+  namespace: {{.Namespace | quote}}
+  labels: {app.kubernetes.io/component: database}
+spec:
+  obcluster: oceanbase
+  tenantName: aivision
+  unitNum: 1
+  charset: utf8mb4
+  connectWhiteList: "%"
+  forceDelete: false
+  credentials:
+    root: aivision-ob-tenant
+  pools:
+    - zone: zone1
+      type:
+        name: Full
+        replica: 1
+        isActive: true
+      resource:
+        maxCPU: 1
+        minCPU: 1
+        memorySize: 2Gi
+        maxIops: 1024
+        minIops: 1024
+        iopsWeight: 2
+        logDiskSize: 4Gi

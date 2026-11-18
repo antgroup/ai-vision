@@ -1,0 +1,492 @@
+{
+  "started_at": "2026-10-23T04:37:34.645372+00:00",
+  "stack": "HTTP Session -> Django 8015 -> AgentLens 8815 -> seekdb 28815",
+  "evidence_scope": "real local authentication, role authorization, Space isolation, CRUD and locally rejected connectivity probes",
+  "provider_calls": {
+    "requested": false,
+    "test_input": "fake credential containing a non-ASCII character and newline",
+    "guard": "valid_key checks every character is ASCII 33..126 before constructing LLMJudge/probe",
+    "proof_boundary": "live invalid_request plus source-path guard; no packet-level dispatch counter or real provider validation"
+  },
+  "events": [
+    {
+      "label": "csrf",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.012
+    },
+    {
+      "label": "login",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.126
+    },
+    {
+      "label": "auth/me initial",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.134
+    },
+    {
+      "label": "csrf",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.138
+    },
+    {
+      "label": "login",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.247
+    },
+    {
+      "label": "auth/me initial",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.254
+    },
+    {
+      "label": "csrf",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 0.258
+    },
+    {
+      "label": "login",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 0.367
+    },
+    {
+      "label": "auth/me initial",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 0.374
+    },
+    {
+      "label": "Space a baseline list",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.412
+    },
+    {
+      "label": "Space b baseline list",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.426
+    },
+    {
+      "label": "Space A list read",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.44
+    },
+    {
+      "label": "Space A list read",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 0.455
+    },
+    {
+      "label": "create disposable",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.514
+    },
+    {
+      "label": "read own disposable",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.529
+    },
+    {
+      "label": "rename disposable",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.57
+    },
+    {
+      "label": "invalid header credential probe",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.626,
+      "status": "unavailable",
+      "test_error": "invalid_request"
+    },
+    {
+      "label": "manager validation payload rejected before provider",
+      "role": "admin",
+      "http_status": 422,
+      "elapsed_seconds": 0.635,
+      "validation_error": "invalid_request"
+    },
+    {
+      "label": "create disposable",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.658
+    },
+    {
+      "label": "read own disposable",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.672
+    },
+    {
+      "label": "rename disposable",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.709
+    },
+    {
+      "label": "invalid header credential probe",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.75,
+      "status": "unavailable",
+      "test_error": "invalid_request"
+    },
+    {
+      "label": "manager validation payload rejected before provider",
+      "role": "developer",
+      "http_status": 422,
+      "elapsed_seconds": 0.758,
+      "validation_error": "invalid_request"
+    },
+    {
+      "label": "shared Space connection read",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 0.775
+    },
+    {
+      "label": "member connection read",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 0.793
+    },
+    {
+      "label": "member references read",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 0.816
+    },
+    {
+      "label": "member create denied",
+      "role": "member",
+      "http_status": 403,
+      "elapsed_seconds": 0.823
+    },
+    {
+      "label": "member update denied",
+      "role": "member",
+      "http_status": 403,
+      "elapsed_seconds": 0.83
+    },
+    {
+      "label": "member delete denied",
+      "role": "member",
+      "http_status": 403,
+      "elapsed_seconds": 0.837
+    },
+    {
+      "label": "member test denied",
+      "role": "member",
+      "http_status": 403,
+      "elapsed_seconds": 0.844
+    },
+    {
+      "label": "member validation denied",
+      "role": "member",
+      "http_status": 403,
+      "elapsed_seconds": 0.85
+    },
+    {
+      "label": "member discovery denied",
+      "role": "member",
+      "http_status": 403,
+      "elapsed_seconds": 0.859
+    },
+    {
+      "label": "cross-Space precondition read",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.873
+    },
+    {
+      "label": "cross-Space detail denied",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.885
+    },
+    {
+      "label": "cross-Space references denied",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.899
+    },
+    {
+      "label": "cross-Space update denied",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.91
+    },
+    {
+      "label": "cross-Space delete denied",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.922
+    },
+    {
+      "label": "cross-Space test denied",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.934
+    },
+    {
+      "label": "cross-Space validation denied",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.946
+    },
+    {
+      "label": "cross-Space postcondition read",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 0.957
+    },
+    {
+      "label": "unknown detail",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.969
+    },
+    {
+      "label": "unknown references",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.982
+    },
+    {
+      "label": "unknown update",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 0.996
+    },
+    {
+      "label": "unknown delete",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 1.011
+    },
+    {
+      "label": "unknown test",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 1.023
+    },
+    {
+      "label": "unknown validate",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 1.036
+    },
+    {
+      "label": "Space a original configuration readback",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 1.048
+    },
+    {
+      "label": "Space b original configuration readback",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 1.059
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 31.188
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 31.195
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 31.203
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 61.322
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 61.328
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 61.335
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 91.585
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 91.592
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 91.601
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 121.815
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 121.821
+    },
+    {
+      "label": "auth/me same-session observation",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 121.827
+    },
+    {
+      "label": "auth/me final before refresh",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 130.02
+    },
+    {
+      "label": "refresh same Session",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 130.034
+    },
+    {
+      "label": "auth/me after refresh",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 130.04
+    },
+    {
+      "label": "auth/me final before refresh",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 130.045
+    },
+    {
+      "label": "refresh same Session",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 130.053
+    },
+    {
+      "label": "auth/me after refresh",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 130.059
+    },
+    {
+      "label": "auth/me final before refresh",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 130.064
+    },
+    {
+      "label": "refresh same Session",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 130.073
+    },
+    {
+      "label": "auth/me after refresh",
+      "role": "member",
+      "http_status": 200,
+      "elapsed_seconds": 130.079
+    },
+    {
+      "label": "cleanup ownership readback",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 130.112
+    },
+    {
+      "label": "cleanup delete disposable",
+      "role": "developer",
+      "http_status": 200,
+      "elapsed_seconds": 130.168
+    },
+    {
+      "label": "cleanup deleted readback",
+      "role": "developer",
+      "http_status": 404,
+      "elapsed_seconds": 130.183
+    },
+    {
+      "label": "cleanup ownership readback",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 130.197
+    },
+    {
+      "label": "cleanup delete disposable",
+      "role": "admin",
+      "http_status": 200,
+      "elapsed_seconds": 130.231
+    },
+    {
+      "label": "cleanup deleted readback",
+      "role": "admin",
+      "http_status": 404,
+      "elapsed_seconds": 130.248
+    }
+  ],
+  "failures": [],
+  "cleanup": [
+    {
+      "creator_role": "developer",
+      "deleted_and_404": true
+    },
+    {
+      "creator_role": "admin",
+      "deleted_and_404": true
+    }
+  ],
+  "baseline_counts": {
+    "a": 4,
+    "b": 0
+  },
+  "cross_space_source_unchanged": true,
+  "original_connection_configuration_unchanged": true,
+  "session_observation_seconds": 130.079,
+  "finished_at": "2026-10-23T04:39:44.893592+00:00",
+  "elapsed_seconds": 130.248,
+  "passed": true,
+  "source_head": "historical-source-revision-redacted",
+  "relevant_source_patch_sha256": "4b3a1b1730780864a66fd124804583fd33349df4ab6f82f9192b7bb4c82fac4e"
+}

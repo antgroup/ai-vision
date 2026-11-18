@@ -1,0 +1,53 @@
+[package]
+name = "cdxhooks"
+version = "0.3.18"
+edition = "2021"
+description = "Codex hook program for Langfuse observability"
+
+[[bin]]
+name = "cdxhooks"
+path = "src/main.rs"
+
+[[bin]]
+name = "cdxhooks-replay"
+path = "src/bin/cdxhooks-replay.rs"
+
+[features]
+default = ["aivision", "tool_context"]
+# Common base shared by every edition (no embedded platform keys).
+# Bundles skill tag scanning and realtime tool context hooks for every edition.
+common = ["skill", "tool_context"]
+# AIVision platform Langfuse keys (reads aivision.keys.json)
+aivision = ["common"]
+# Enable skill tag scanning: reads SKILL.md frontmatter tags at session start.
+skill = []
+# Enable dynamic data collection (git state snapshots, turn tracking, upload).
+dynamic = ["zstd"]
+# Enable Bash tool trace context propagation via PreToolUse.updatedInput.
+tool_context = []
+
+[dependencies]
+agentic-otel-common = { path = "../../agentic-otel-common", features = ["metrics"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "3", features = ["platform-verifier"] }
+base64 = "0.22"
+sha2 = "0.11"
+libc = "0.2"
+pico-args = "0.5"
+basic-toml = "0.1"
+tempfile = "3"
+zstd = { version = "0.13", optional = true }
+
+[dev-dependencies]
+
+[build-dependencies]
+serde_json = "1"
+
+[profile.release]
+# 最小化二进制体积
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1
+panic = "unwind"  # catch_unwind requires unwind (not abort)

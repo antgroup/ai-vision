@@ -1,0 +1,6 @@
+{
+  "id": "traceid-hook",
+  "name": "TraceID Hook",
+  "description": "POC: Inject trace context into exec tool calls via before_tool_call hook parameter modification",
+  "version": "0.0.1"
+}

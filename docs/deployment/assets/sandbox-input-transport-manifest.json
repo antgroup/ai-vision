@@ -1,0 +1,932 @@
+{
+  "schema_version": 1,
+  "issue": "ob-labs/ai-vision-ob issue 150",
+  "source_base_revision": "historical-source-revision-redacted",
+  "capture_date": "2026-11-04",
+  "source_worktree_dirty_at_capture": true,
+  "source_identity_boundary": "Base commit plus the source hashes below identify the tested revision. Every changed backend Python file matches the running source plugin image byte-for-byte. No gateway, worker or manifest change. The final screenshots and locale hashes were refreshed after merging the recorded main revision; backend execution source did not change.",
+  "source_inventory": [
+    {
+      "path": "agentlens/src/agentlens/diagnoser/executors/rule/custom/executor.py",
+      "sha256": "2c3eb7a648d2d0ec7e14e16f0ae4626c639e2cbc926cd7652956414220a257b9"
+    },
+    {
+      "path": "agentlens/src/agentlens/domain/sandbox.py",
+      "sha256": "980ef5fcbf9819fd885cc1c5aa07ca3d8e8198e3e96c969a2b8e60ac6604f96e"
+    },
+    {
+      "path": "agentlens/src/agentlens/infra/sandbox.py",
+      "sha256": "fc70040564f1cf703082cbeed83b39285f2c038aea2b16a3771926c98dcec692"
+    },
+    {
+      "path": "agentlens/src/agentlens/sandbox_plugin/main.py",
+      "sha256": "51783ab2e05fe92042a36040c7ee5613dbf49eb56f2c52fb060c0776b1f44b66"
+    },
+    {
+      "path": "agentlens/src/agentlens/sandbox_plugin/provider.py",
+      "sha256": "822b26613ffd5ac1c45d68767a8e3691fb3624022411f85e1397f30af8c3085e"
+    },
+    {
+      "path": "agentlens/src/agentlens/sandbox_plugin/runtime.py",
+      "sha256": "a38eaccc6b16d08c618fe918c44b7728e0f48530111ce84020b9e34eadcb7c98"
+    },
+    {
+      "path": "agentlens/src/agentlens/service/sandbox_execution.py",
+      "sha256": "edfd7ddea7e714faea3538b7c6be9998962967eab9debbc3ec2e79dadeb10411"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/badcase-detail/TraceTranscriptDrawer.tsx",
+      "sha256": "c3858a9200137b82b60dbf1161c3d28870614e6871461ee67da99e2294419e6c"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/diagnoser/TrialResultView.tsx",
+      "sha256": "967f7a3b9c17633ceafe44f33900de3f041c0ffda86407afea339c30959f9508"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/en-US.json",
+      "sha256": "74f3b12408421071b109d0399ebd86853a6151445dc5697bc0c3643ca3cfe319"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/ja-JP.json",
+      "sha256": "1f5d7a22c201f9375d761f5d4d71d5922832fa457870ce45d12bbb2a05cf770c"
+    },
+    {
+      "path": "ai-vision/vfe/src/i18n/locales/zh-CN.json",
+      "sha256": "9569365e7ff980ec9ca1efb494300a49d1d4e83da5e98fc11efc224b5dc23134"
+    },
+    {
+      "path": "agentlens/src/agentlens/sandbox_plugin/openshell_exec.py",
+      "sha256": "d383cf2b055f214a73bc806bfd7a0b4cf62b7e8fd99edd720047db333945c169"
+    },
+    {
+      "path": "ai-vision/vfe/src/components/diagnose/executionMessage.ts",
+      "sha256": "b1fd846a6f6a97c92137aba7c598e18000961d565d24178d90abf86429aacf54"
+    }
+  ],
+  "image_identity": {
+    "old_container": "71d5e20ae15e45a58e855139e2d9b242878da9e51050588d5f49ac64c74fb4dd",
+    "old_stopped_name": "aiv-sandbox-openshell-6bba3ce9a1f1-intermediate-issue150",
+    "new_container": "e02e664f09604dbaee086ea60106309d8939820b4e3cabbe85736cc9565a36bb",
+    "image": "sha256:84e82643222bfa5a0609b6ca7869698444f8a6e64f48e18af82fd202ab076d0f",
+    "source_base": "historical-source-revision-redacted",
+    "source_mode": "working-tree source build; worker image unchanged"
+  },
+  "source_image_match": [
+    {
+      "path": "agentlens/src/agentlens/diagnoser/executors/rule/custom/executor.py",
+      "sha256": "2c3eb7a648d2d0ec7e14e16f0ae4626c639e2cbc926cd7652956414220a257b9",
+      "container_equal": true
+    },
+    {
+      "path": "agentlens/src/agentlens/domain/sandbox.py",
+      "sha256": "980ef5fcbf9819fd885cc1c5aa07ca3d8e8198e3e96c969a2b8e60ac6604f96e",
+      "container_equal": true
+    },
+    {
+      "path": "agentlens/src/agentlens/infra/sandbox.py",
+      "sha256": "fc70040564f1cf703082cbeed83b39285f2c038aea2b16a3771926c98dcec692",
+      "container_equal": true
+    },
+    {
+      "path": "agentlens/src/agentlens/sandbox_plugin/main.py",
+      "sha256": "51783ab2e05fe92042a36040c7ee5613dbf49eb56f2c52fb060c0776b1f44b66",
+      "container_equal": true
+    },
+    {
+      "path": "agentlens/src/agentlens/sandbox_plugin/provider.py",
+      "sha256": "822b26613ffd5ac1c45d68767a8e3691fb3624022411f85e1397f30af8c3085e",
+      "container_equal": true
+    },
+    {
+      "path": "agentlens/src/agentlens/sandbox_plugin/runtime.py",
+      "sha256": "a38eaccc6b16d08c618fe918c44b7728e0f48530111ce84020b9e34eadcb7c98",
+      "container_equal": true
+    },
+    {
+      "path": "agentlens/src/agentlens/service/sandbox_execution.py",
+      "sha256": "edfd7ddea7e714faea3538b7c6be9998962967eab9debbc3ec2e79dadeb10411",
+      "container_equal": true
+    },
+    {
+      "path": "agentlens/src/agentlens/sandbox_plugin/openshell_exec.py",
+      "sha256": "d383cf2b055f214a73bc806bfd7a0b4cf62b7e8fd99edd720047db333945c169",
+      "container_equal": true
+    }
+  ],
+  "environment": {
+    "host": "macOS ARM64",
+    "daemon": "OrbStack Linux ARM64",
+    "gateway_and_sdk": "OpenShell 0.1.6",
+    "prepared_environment": true,
+    "source_distribution": true,
+    "synthetic_only": true,
+    "telemetry_ingestion_and_record_readback": true,
+    "runtime_manifest_sha256": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5"
+  },
+  "before": [
+    {
+      "case": "ascii900k",
+      "padding_bytes": 900000,
+      "duration_seconds": 2.896,
+      "verdict": "good",
+      "execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2740.5,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "new_leases": {
+        "d37adaa4d36ab9c7c3b1d20c650c9a5130d6f61fb7645ccaa7c6a2c4789cf54a": "closed"
+      }
+    },
+    {
+      "case": "ascii1100k",
+      "padding_bytes": 1100000,
+      "duration_seconds": 2.407,
+      "verdict": "failed",
+      "execution": {
+        "status": "failed",
+        "code": "sandbox_transport_error",
+        "msg": "Sandbox plugin request failed.",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2254.3,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327"
+        }
+      },
+      "new_leases": {
+        "6fb2cc930ba9ad4b340864fe27e763f56705f914710b5138735c37a697e75258": "closed"
+      }
+    },
+    {
+      "case": "ascii1600k",
+      "padding_bytes": 1600000,
+      "duration_seconds": 2.4,
+      "verdict": "failed",
+      "execution": {
+        "status": "failed",
+        "code": "sandbox_transport_error",
+        "msg": "Sandbox plugin request failed.",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2247.8,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327"
+        }
+      },
+      "new_leases": {
+        "5e95239e056c3a7725c80a5b8be75076baa394d73ccbe01bce4ea9272fdd8d1c": "closed"
+      }
+    }
+  ],
+  "after": [
+    {
+      "case": "ascii900k",
+      "padding_bytes": 900000,
+      "duration_seconds": 3.07,
+      "verdict": "good",
+      "execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2854.6,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "new_leases": {
+        "0682575b8624680a90de8034095c27fce83aec906f436fc6821fcce858664bb3": "closed"
+      }
+    },
+    {
+      "case": "ascii1100k",
+      "padding_bytes": 1100000,
+      "duration_seconds": 2.88,
+      "verdict": "good",
+      "execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2701.3,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "new_leases": {
+        "90888b1d3cec3d0e1278ae065c03ce0dd3baf3e86b7329b28620cd1591ce75e8": "closed"
+      }
+    },
+    {
+      "case": "ascii1600k",
+      "padding_bytes": 1600000,
+      "duration_seconds": 2.995,
+      "verdict": "good",
+      "execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2786.0,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "new_leases": {
+        "0c6c8005f0e500a9c1cbe8cd80af9a887d4ea051d3aa6e4066f5c06e6830f44f": "closed"
+      }
+    },
+    {
+      "case": "chinese1600k",
+      "padding_bytes": 1600000,
+      "duration_seconds": 2.987,
+      "verdict": "good",
+      "execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2768.1,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "new_leases": {
+        "218bde2088500347e4b06fc012f0065efc4b4474b247f921b252890faac9d9e5": "closed"
+      }
+    },
+    {
+      "case": "over2MiB",
+      "padding_bytes": 2200000,
+      "duration_seconds": 0.194,
+      "verdict": "failed",
+      "execution": {
+        "status": "failed",
+        "code": "sandbox_input_limit",
+        "msg": "Sandbox input exceeds the supported limit. Received 2201648 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 22.7,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "sandbox_input": {
+            "stage": "request",
+            "actual_bytes": 2201648,
+            "allowed_bytes": 2097152
+          }
+        }
+      },
+      "new_leases": {}
+    },
+    {
+      "case": "near_limit",
+      "padding_bytes": 2093000,
+      "duration_seconds": 2.948,
+      "verdict": "good",
+      "execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2752.9,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "new_leases": {
+        "21a1449417ea54cb7051925e6bd233a057498643244ab103b4f1086f79928dcb": "closed"
+      }
+    },
+    {
+      "case": "large_code",
+      "padding_bytes": 2050000,
+      "duration_seconds": 0.185,
+      "verdict": "failed",
+      "execution": {
+        "status": "failed",
+        "code": "sandbox_input_limit",
+        "msg": "Sandbox input exceeds the supported limit. Received 2107659 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+        "evidence": {
+          "code_hash": "0bdc6b541a4e023f00d08b457f8939be7053249eec49ccedbd1ad54d2478e79d",
+          "execution_ms": 23.4,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "sandbox_input": {
+            "stage": "request",
+            "actual_bytes": 2107659,
+            "allowed_bytes": 2097152
+          }
+        }
+      },
+      "new_leases": {}
+    },
+    {
+      "case": "materials",
+      "padding_bytes": 1700000,
+      "duration_seconds": 0.175,
+      "verdict": "failed",
+      "execution": {
+        "status": "failed",
+        "code": "sandbox_input_limit",
+        "msg": "Sandbox input exceeds the supported limit. Received 2141919 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 22.9,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "sandbox_input": {
+            "stage": "request",
+            "actual_bytes": 2141919,
+            "allowed_bytes": 2097152
+          }
+        }
+      },
+      "new_leases": {}
+    },
+    {
+      "case": "timeout_stream",
+      "padding_bytes": 1600000,
+      "duration_seconds": 32.682,
+      "verdict": "failed",
+      "execution": {
+        "status": "failed",
+        "code": "exec_timeout",
+        "msg": "Sandbox execution timed out.",
+        "evidence": {
+          "code_hash": "1bbd03cf74a89e87606a3f3980ce2c38d2200eddab845e45f3d092b6dd733162",
+          "execution_ms": 32402.7,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327"
+        }
+      },
+      "new_leases": {
+        "c46f66398d841b4bcb7a2d68f7ff9f2f9efec2ac4e4660b3ed4ed927c6617c1f": "closed"
+      }
+    },
+    {
+      "case": "output_limit_stream",
+      "padding_bytes": 1600000,
+      "duration_seconds": 2.961,
+      "verdict": "failed",
+      "execution": {
+        "status": "failed",
+        "code": "rule_output_too_large",
+        "msg": "Enhanced Python output exceeds the supported limit.",
+        "evidence": {
+          "code_hash": "449e0c4477693b90c4a9b456cd4c9f9857899ca3d46306819fb3718c64674804",
+          "execution_ms": 2773.6,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327"
+        }
+      },
+      "new_leases": {
+        "d328d6d79747850e69a47579c9980cbc88a43538421debc94fb51f6d98998413": "closed"
+      }
+    },
+    {
+      "case": "boundary_below",
+      "padding_bytes": 1047000,
+      "duration_seconds": 2.987,
+      "verdict": "good",
+      "execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2771.3,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "new_leases": {
+        "5edd21f96fc6e7859dff9e9b289effdd190f150fa5d9d877566555fd635a1810": "closed"
+      }
+    },
+    {
+      "case": "boundary_above",
+      "padding_bytes": 1049000,
+      "duration_seconds": 2.859,
+      "verdict": "good",
+      "execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 2686.2,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "new_leases": {
+        "4ff37ea053ca7f9cf3ca8230e13467945f323d8b528ca3acaa9f0ca5bf6b3d0d": "closed"
+      }
+    },
+    {
+      "case": "expected_json",
+      "padding_bytes": 1700000,
+      "duration_seconds": 0.17,
+      "verdict": "failed",
+      "execution": {
+        "status": "failed",
+        "code": "sandbox_input_limit",
+        "msg": "Sandbox input exceeds the supported limit. Received 2141576 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+        "evidence": {
+          "code_hash": "dd09074bd23613616c963f8efa04682b59905e85081a5de4dd1e94ee8d885d66",
+          "execution_ms": 24.3,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "sandbox_input": {
+            "stage": "request",
+            "actual_bytes": 2141576,
+            "allowed_bytes": 2097152
+          }
+        }
+      },
+      "new_leases": {}
+    }
+  ],
+  "formal_pipeline": [
+    {
+      "case": "stored_ascii750k",
+      "trace_id": "655cbc139abc4af6aa2141dc1064bfd3",
+      "source_spans": 2,
+      "source_payload_bytes": 750000,
+      "sql_readback_json_bytes": 1505100,
+      "diagnoser_uuid": "dg-2t5f0hfm",
+      "dataset_uuid": "38a8ca4ffa24495985870bd66b7182e8",
+      "job_uuid": "1962b93d09f24f0d97f9d8a03ef8763b",
+      "task_uuid": "5b20bcf239544c789786a7f4d13596c0",
+      "task_status": "succeeded",
+      "task_stats": {
+        "source": {
+          "total": 1,
+          "invalid": 0,
+          "projection_failed": 1
+        },
+        "diagnosers": {
+          "dg-2t5f0hfm": {
+            "complete_input": {
+              "bad": 0,
+              "good": 1,
+              "total": 1,
+              "failed": 0,
+              "evaluate": 1
+            }
+          }
+        },
+        "skip_reasons": {},
+        "schema_version": 3,
+        "source_complete": false,
+        "score_policy_version": "lightweight-v1",
+        "diagnoser_definitions": {
+          "dg-2t5f0hfm": {
+            "key": "rule_custom",
+            "name": "QA issue150 stored_ascii750k 100ebf",
+            "uuid": "dg-2t5f0hfm",
+            "digest": "4e4854d6fc63bddbdaa0adb2ccfb18ef9fef3cd8da9b92b8063176b8967a8f28",
+            "weight": 0,
+            "metrics": [
+              {
+                "desc": "Full source payload hash",
+                "name": "complete_input"
+              }
+            ],
+            "version": "v1",
+            "category": "outcome",
+            "revision": "1.6.0",
+            "score_role": "quality"
+          }
+        }
+      },
+      "record_uuid": "r-2145a96f5bfe33b9",
+      "record_verdict": "good",
+      "record_execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "b298660b8dfabbf39316de8892deedf6825a3384e694c59ee15fbb951a72abad",
+          "execution_ms": 2765.2,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "record_metrics": [
+        {
+          "name": "complete_input",
+          "verdict": "good",
+          "reason": "Full input byte count and SHA256",
+          "evidence": {
+            "bytes": 750000,
+            "sha256": "3d8e5a2ebfd5271ee0aee077a8a3aa97ca11e228d151e4611e93f77208bc9692",
+            "spans": 2
+          }
+        }
+      ],
+      "leases": [
+        {
+          "uuid": "7a4ce0aff8c62f2886e68e3ef195d99c4a5a49f10aa261759d67784d8452d03d",
+          "state": "closed",
+          "cleanup_verified": true
+        }
+      ],
+      "trial_verdict": "good"
+    },
+    {
+      "case": "stored_unicode750k",
+      "trace_id": "24f20c8b057c4d5d8bc6cfeecd292de2",
+      "source_spans": 2,
+      "source_payload_bytes": 750000,
+      "sql_readback_json_bytes": 1505108,
+      "diagnoser_uuid": "dg-1vbdn0k5",
+      "dataset_uuid": "2f990e1140ce4c819859d4d621f46fbe",
+      "job_uuid": "259e8338ec7a4288b1e16897b436f5a1",
+      "task_uuid": "f3d61eb455024b7caf1ef7d462599cb5",
+      "task_status": "succeeded",
+      "task_stats": {
+        "source": {
+          "total": 1,
+          "invalid": 0,
+          "projection_failed": 1
+        },
+        "diagnosers": {
+          "dg-1vbdn0k5": {
+            "complete_input": {
+              "bad": 0,
+              "good": 1,
+              "total": 1,
+              "failed": 0,
+              "evaluate": 1
+            }
+          }
+        },
+        "skip_reasons": {},
+        "schema_version": 3,
+        "source_complete": false,
+        "score_policy_version": "lightweight-v1",
+        "diagnoser_definitions": {
+          "dg-1vbdn0k5": {
+            "key": "rule_custom",
+            "name": "QA issue150 stored_unicode750k faae4b",
+            "uuid": "dg-1vbdn0k5",
+            "digest": "d9f2ce9e11e1c220ddafaedf2b0d9a9eada7fdaa195b2b8dd6ae5731ed77c27b",
+            "weight": 0,
+            "metrics": [
+              {
+                "desc": "Full source payload hash",
+                "name": "complete_input"
+              }
+            ],
+            "version": "v1",
+            "category": "outcome",
+            "revision": "1.6.0",
+            "score_role": "quality"
+          }
+        }
+      },
+      "record_uuid": "r-980256d7a3171b99",
+      "record_verdict": "good",
+      "record_execution": {
+        "status": "succeeded",
+        "code": "",
+        "msg": "",
+        "evidence": {
+          "code_hash": "b298660b8dfabbf39316de8892deedf6825a3384e694c59ee15fbb951a72abad",
+          "execution_ms": 2778.7,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "rule_runtime": "python-eval-v1",
+          "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "captured_stdout": "",
+          "captured_stderr": "",
+          "output_truncated": false
+        }
+      },
+      "record_metrics": [
+        {
+          "name": "complete_input",
+          "verdict": "good",
+          "reason": "Full input byte count and SHA256",
+          "evidence": {
+            "bytes": 750000,
+            "sha256": "8cb9620095f694ec7fc0f9d777a27528aab0567b042749dfe61b6bd66bc45daf",
+            "spans": 2
+          }
+        }
+      ],
+      "leases": [
+        {
+          "uuid": "a33f06708bde24e6989b2aaa8483fddf427957a470304c90d52fd3904b04e45c",
+          "state": "closed",
+          "cleanup_verified": true
+        }
+      ],
+      "trial_verdict": "good"
+    },
+    {
+      "case": "stored_over2MiB",
+      "trace_id": "2da46db16ce3485fb1bd6754e1a24918",
+      "source_spans": 2,
+      "source_payload_bytes": 1100000,
+      "sql_readback_json_bytes": 2205100,
+      "diagnoser_uuid": "dg-k5mmexvc",
+      "dataset_uuid": "b76c8914640d4182815f8ac75a14627e",
+      "job_uuid": "cc520d8af4394f23a7131add16791f20",
+      "task_uuid": "de22f0f9b53940118cbaf88bedeb44d6",
+      "task_status": "succeeded",
+      "task_stats": {
+        "source": {
+          "total": 1,
+          "invalid": 0,
+          "projection_failed": 1
+        },
+        "diagnosers": {
+          "dg-k5mmexvc": {
+            "complete_input": {
+              "bad": 0,
+              "good": 0,
+              "total": 1,
+              "failed": 1,
+              "evaluate": 1
+            }
+          }
+        },
+        "skip_reasons": {},
+        "schema_version": 3,
+        "source_complete": false,
+        "score_policy_version": "lightweight-v1",
+        "diagnoser_definitions": {
+          "dg-k5mmexvc": {
+            "key": "rule_custom",
+            "name": "QA issue150 stored_over2MiB 279909",
+            "uuid": "dg-k5mmexvc",
+            "digest": "c3ca9c10c0b50d2c007aef65ccdaa3f01bcd614862af23c38ba0bf3e851b6ec0",
+            "weight": 0,
+            "metrics": [
+              {
+                "desc": "Full source payload hash",
+                "name": "complete_input"
+              }
+            ],
+            "version": "v1",
+            "category": "outcome",
+            "revision": "1.6.0",
+            "score_role": "quality"
+          }
+        }
+      },
+      "record_uuid": "r-c8337beac7c36199",
+      "record_verdict": "failed",
+      "record_execution": {
+        "status": "failed",
+        "code": "sandbox_input_limit",
+        "msg": "Sandbox input exceeds the supported limit. Received 2206604 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+        "evidence": {
+          "code_hash": "b298660b8dfabbf39316de8892deedf6825a3384e694c59ee15fbb951a72abad",
+          "execution_ms": 23.1,
+          "cache_hit": false,
+          "backend": "sandbox",
+          "provider": "openshell",
+          "connection_uuid": "3ec63790a15a51dd8a17ad611b2cf327",
+          "sandbox_input": {
+            "stage": "request",
+            "actual_bytes": 2206604,
+            "allowed_bytes": 2097152
+          }
+        }
+      },
+      "record_metrics": [
+        {
+          "name": "complete_input",
+          "verdict": "failed",
+          "reason": "Sandbox input exceeds the supported limit. Received 2206604 bytes; limit 2097152 bytes (request). Reduce the complete execution input.",
+          "evidence": {}
+        }
+      ],
+      "leases": [],
+      "trial_verdict": "failed"
+    }
+  ],
+  "formal_pipeline_boundary": "Synthetic spans were sent through authenticated OTLP collector into isolated real seekdb, read as full rows by TraceStore, executed by production Runner using saved Diagnoser/Dataset/Job/Task and frozen snapshots, written through the actual collector and read back through DiagnosisRecordStore. Manual runner dispatch was used; automated scheduler discovery and production data were not tested. Each source has two spans. Full SQL rows include original payload and expanded fields, so payload bytes alone are not the execution budget.",
+  "stock_gateway_boundary": {
+    "provider": "OpenShell 0.1.6",
+    "transport": "authenticated mTLS unary RPC",
+    "scope": "Nonexistent sandbox lookup; validates stock gateway message boundary without creating or executing a workload",
+    "cases": [
+      {
+        "serialized_protobuf_bytes": 1048575,
+        "stdin_bytes": 1048516,
+        "status": "NOT_FOUND",
+        "resource_creation": false
+      },
+      {
+        "serialized_protobuf_bytes": 1048576,
+        "stdin_bytes": 1048517,
+        "status": "NOT_FOUND",
+        "resource_creation": false
+      },
+      {
+        "serialized_protobuf_bytes": 1048577,
+        "stdin_bytes": 1048518,
+        "status": "OUT_OF_RANGE",
+        "resource_creation": false
+      }
+    ]
+  },
+  "cleanup": {
+    "journal": {
+      "leases": 146,
+      "all_closed": true,
+      "same_daemon": true
+    },
+    "docker": {
+      "matching_workload_containers": 0,
+      "matching_workload_volumes": 0,
+      "daemon_id": "3c073cb2-6024-481d-bc72-811bf1448e23"
+    },
+    "gateway": {
+      "sandboxes": 0,
+      "templates": 0,
+      "authenticated_mtls": true
+    },
+    "plugin": {
+      "ready": true,
+      "active_leases": 0,
+      "draining": false,
+      "capabilities": [
+        "custom_rule",
+        "single_execution",
+        "durable_leases",
+        "verified_cleanup",
+        "execution_input_preflight",
+        "streaming_stdin",
+        "python_eval_v1"
+      ]
+    },
+    "application_docker_sockets": {
+      "aiv-enhanced-rules-backend": false,
+      "aiv-enhanced-rules-diagnosis": false
+    },
+    "refs": {
+      "worker": "127.0.0.1:55074/qa/enhanced-worker@sha256:caccd324cf7a1321d3000b8b6f2d20e03f645984ac874aef81434aab1e0ca845",
+      "plugin_image_id": "sha256:84e82643222bfa5a0609b6ca7869698444f8a6e64f48e18af82fd202ab076d0f"
+    },
+    "agentlens_sql": {
+      "leases": 146,
+      "all_closed": true,
+      "all_cleanup_verified": true
+    }
+  },
+  "checks": {
+    "agentlens_pytest": {
+      "passed": 2884,
+      "skipped": 331,
+      "note": "Unconfigured DB and optional integration scopes skip in the default suite. Actual isolated DB/telemetry/provider verification is recorded separately."
+    },
+    "optional_sdk_grpc_integration": {
+      "passed": 18,
+      "note": "Pinned SDK/protobuf and local gRPC decoder; not a simulated OpenShell workload result."
+    },
+    "frontend_full": {
+      "passed": 1481,
+      "failed": 0
+    },
+    "lint_typecheck_build_format_adr_diff": "passed; ordinary build warnings retained in local logs"
+  },
+  "screenshots": [
+    {
+      "path": "sandbox-input-positive.png",
+      "sha256": "77552e110386a0618c5ee563b932b00467394b321d7eade1df1e5e013f2155fd",
+      "case": "positive",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    },
+    {
+      "path": "sandbox-input-oversize.png",
+      "sha256": "6a12520a9b4f87ff2d434457e73d91c8546e7859b9e5287bfb0e31970db9236a",
+      "case": "oversize",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      }
+    }
+  ],
+  "unverified": [
+    "Linux AMD64",
+    "Kubernetes",
+    "cold installation",
+    "private native product bundle",
+    "released image",
+    "automated scheduler discovery"
+  ],
+  "capture_method": "Original full-viewport PNGs from dev-browser headless (native in-app browser control unavailable). Real UI, Django, AgentLens and OpenShell; synthetic editor input; no API interception or rendered fixture results. No crop, overlay or reencoding.",
+  "main_integration": {
+    "fix_revision": "historical-source-revision-redacted",
+    "main_revision": "historical-source-revision-redacted",
+    "conflict_resolution": "Three locale objects merged by nonoverlapping leaf values; both test-module maps retained. No AgentLens source changes.",
+    "backend_source_identity": "All eight changed backend Python files still match the tested plugin image; formal task evidence remains applicable to this execution path.",
+    "frontend_full": {
+      "passed": 1603,
+      "failed": 0
+    },
+    "checks": "ESLint, typecheck, production build, full frontend tests, conflict-file Prettier and diff checks passed.",
+    "real_browser": "Restarted actual Django with integrated sources; 1.6 MB Unicode hash and oversize guidance revalidated through the actual UI. Final captures below were refreshed after integration."
+  }
+}

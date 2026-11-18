@@ -1,0 +1,156 @@
+{
+  "compose_version": "5.1.2",
+  "cases": [
+    {
+      "compose": "compose.yaml",
+      "case": "defaults",
+      "query_mode": "auto",
+      "maintenance": "true",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.yaml",
+      "case": "role-emergency",
+      "query_mode": "raw",
+      "maintenance": "false",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.yaml",
+      "case": "legacy-emergency",
+      "query_mode": "raw",
+      "maintenance": "false",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.yaml",
+      "case": "role-precedence",
+      "query_mode": "auto",
+      "maintenance": "true",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.seekdb.yaml",
+      "case": "defaults",
+      "query_mode": "auto",
+      "maintenance": "true",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.seekdb.yaml",
+      "case": "role-emergency",
+      "query_mode": "raw",
+      "maintenance": "false",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.seekdb.yaml",
+      "case": "legacy-emergency",
+      "query_mode": "raw",
+      "maintenance": "false",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.seekdb.yaml",
+      "case": "role-precedence",
+      "query_mode": "auto",
+      "maintenance": "true",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.external-oceanbase.yaml",
+      "case": "defaults",
+      "query_mode": "auto",
+      "maintenance": "true",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.external-oceanbase.yaml",
+      "case": "role-emergency",
+      "query_mode": "raw",
+      "maintenance": "false",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.external-oceanbase.yaml",
+      "case": "legacy-emergency",
+      "query_mode": "raw",
+      "maintenance": "false",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.external-oceanbase.yaml",
+      "case": "role-precedence",
+      "query_mode": "auto",
+      "maintenance": "true",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.external-seekdb.yaml",
+      "case": "defaults",
+      "query_mode": "auto",
+      "maintenance": "true",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.external-seekdb.yaml",
+      "case": "role-emergency",
+      "query_mode": "raw",
+      "maintenance": "false",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.external-seekdb.yaml",
+      "case": "legacy-emergency",
+      "query_mode": "raw",
+      "maintenance": "false",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    },
+    {
+      "compose": "compose.external-seekdb.yaml",
+      "case": "role-precedence",
+      "query_mode": "auto",
+      "maintenance": "true",
+      "normal_backend_has_recovery_key": false,
+      "bootstrap_is_one_shot": true
+    }
+  ],
+  "passed": 16,
+  "actual_deployment": false,
+  "source_baselines": {
+    "product_before_merge": "2bdb1fbb4b5af0082211174334d32231bf901437",
+    "merged_main": "historical-source-revision-redacted",
+    "signoz": "22e936bf647ba2042810d71fa200e6cbbb468aab"
+  },
+  "source_sha256": {
+    "deploy/blueprints/aivision.yaml": "c3bed7a5ce2b0d6058109b2c931a826e2323a9a69ab5ef8ff2506511057f5c3f",
+    "deploy/blueprints/aivision-source.yaml": "0d99bd3a52296fdae48354fe8b3e6b676771bbd30927561eabf1fc0fb6b6ec96",
+    "deploy/components.json": "522c8fe61583f5314824dbabda096acf24b0704243a19c05040c68323739d03d",
+    "deploy/config/aivision.vars.example.yaml": "fd7df370995d205418ff49baa81dab454d98dbacf381e97174dd594462e50fc9",
+    "deploy/docker/.env.example": "e73b5a653621b6ab0565a3f13f913228717e0e00e7144b6ee85627143dc99adf",
+    "deploy/kubernetes/base/config.yaml": "8fe1d6216c1109c373e43f625169c04e32fa672d448c516b71adbcef829f9702",
+    "deploy/kubernetes/base/signoz.yaml": "9ce884cb1c987bae146344c7eb6e927e092a5f708162e41975c7d245b8d55738",
+    "aivision-cli/internal/deploy/kubernetes/config.go": "dd30598b7b3bc41e629fca4a3de2e06f4e0fd40d876aaaf42110812d852f285f",
+    "ai-vision/aivision-py-be/docker-entrypoint.sh": "91fd4596e96f1e9b59b56024625e4791195aaed459aebab6f30c2577a8f813ae",
+    "ai-vision/aivision-py-be/apps/core/management/commands/serve_with_projector.py": "8713ae86f502dd52367c6223343a5ea9109394e775122789100a97764b7ea31d",
+    "deploy/docker/compose.yaml": "3821d34dde237b30c4446acac0355c7f8f1e42ae7bac80efa105f16f97df2ceb",
+    "deploy/docker/compose.seekdb.yaml": "b4a614ebc8668613a699adcea2adc74c8559698307f693666345137faf79b4d0",
+    "deploy/docker/compose.external-oceanbase.yaml": "53c002be992843c749936e5b2bc54cdebc78e8123292a31887a8b8f2468a32da",
+    "deploy/docker/compose.external-seekdb.yaml": "cff0f9ade5c9a072f8262f1ec4917905255c4abd8c4f6f66d0d3f421952a3a73"
+  }
+}

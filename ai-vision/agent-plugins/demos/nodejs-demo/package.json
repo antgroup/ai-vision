@@ -1,0 +1,15 @@
+{
+  "name": "agent-otel-demo",
+  "version": "1.0.0",
+  "description": "AI Agent OpenTelemetry demo (Node.js) — aivision-agents semconv",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.mjs"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-trace-base": "^1.26.0",
+    "@opentelemetry/resources": "^1.26.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.53.0"
+  }
+}

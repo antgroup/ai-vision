@@ -1,0 +1,1012 @@
+
+# yaml-language-server: $schema=../semconv.schema.json
+
+# Agent 可观测语义约定 - 属性组定义
+# 文档版本: v2.0
+
+groups:
+  # --------------------------------------------------------------------------
+  # OpenClaw Metrics & Events Common Attributes
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.common
+    type: attribute_group
+    brief: "OpenClaw common attributes for metrics and events"
+    stability: development
+    attributes:
+      - id: session.id
+        type: string
+        stability: development
+        brief: "Unique session identifier"
+        requirement_level: recommended
+        examples: ["session-abc123"]
+
+      - id: app.version
+        type: string
+        stability: development
+        brief: "Current OpenClaw version"
+        requirement_level: opt_in
+        examples: ["1.0.0", "2.5.3"]
+
+      - id: organization.id
+        type: string
+        stability: development
+        brief: "Organization UUID (when authenticated)"
+        requirement_level: recommended
+        examples: ["org-123e4567-e89b"]
+
+      - id: user.account_uuid
+        type: string
+        stability: development
+        brief: "Account UUID (when authenticated)"
+        requirement_level: recommended
+        examples: ["user-123e4567-e89b"]
+
+      - id: user.id
+        type: string
+        stability: development
+        brief: "Anonymous device/installation identifier"
+        requirement_level: recommended
+        examples: ["device-abc123"]
+
+      - id: user.email
+        type: string
+        stability: development
+        brief: "User email address (when authenticated via OAuth)"
+        requirement_level: recommended
+        examples: ["user@example.com"]
+
+      - id: terminal.type
+        type: string
+        stability: development
+        brief: "Terminal type (iTerm.app, vscode, cursor, tmux)"
+        requirement_level: recommended
+        examples: ["iTerm.app", "vscode", "cursor", "tmux"]
+
+      - id: prompt.id
+        type: string
+        stability: development
+        brief: "UUID v4 identifier linking events from a single prompt"
+        requirement_level: recommended
+        examples: ["550e8400-e29b-41d4-a716-446655440000"]
+
+      - id: event.name
+        type: string
+        stability: development
+        brief: "Event name identifier"
+        requirement_level: required
+        examples: ["user_prompt", "tool_result", "api_request"]
+
+      - id: event.timestamp
+        type: string
+        stability: development
+        brief: "ISO 8601 timestamp"
+        requirement_level: required
+        examples: ["2024-01-15T10:30:00.000Z"]
+
+      - id: event.sequence
+        type: int
+        stability: development
+        brief: "Monotonically increasing counter for ordering events"
+        requirement_level: recommended
+        examples: [1, 2, 3]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Code Line Type
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.code_line.type
+    type: attribute_group
+    brief: "Code line modification type"
+    stability: development
+    attributes:
+      - id: openclaw.code_line.type
+        type: string
+        stability: development
+        brief: "Type of code modification (added or removed)"
+        requirement_level: required
+        examples: ["added", "removed"]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Token Usage Type
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.token.type
+    type: attribute_group
+    brief: "Token usage type"
+    stability: development
+    attributes:
+      - id: openclaw.token.type
+        type: string
+        stability: development
+        brief: "Type of token usage"
+        requirement_level: required
+        examples: ["input", "output", "cacheRead", "cacheCreation"]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Decision
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.decision
+    type: attribute_group
+    brief: "User decision for tool calls"
+    stability: development
+    attributes:
+      - id: openclaw.decision
+        type: string
+        stability: development
+        brief: "User decision (accept or reject)"
+        requirement_level: required
+        examples: ["accept", "reject"]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Decision Source
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.decision_source
+    type: attribute_group
+    brief: "Source of the decision"
+    stability: development
+    attributes:
+      - id: openclaw.decision_source
+        type: string
+        stability: development
+        brief: "Source of the decision"
+        requirement_level: required
+        examples: ["config", "hook", "user_permanent", "user_temporary", "user_abort", "user_reject"]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Activity Type
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.activity.type
+    type: attribute_group
+    brief: "Type of activity for active time tracking"
+    stability: development
+    attributes:
+      - id: openclaw.activity.type
+        type: string
+        stability: development
+        brief: "Type of activity (user or cli)"
+        requirement_level: required
+        examples: ["user", "cli"]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Speed Mode
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.speed
+    type: attribute_group
+    brief: "Speed mode indicator"
+    stability: development
+    attributes:
+      - id: openclaw.speed
+        type: string
+        stability: development
+        brief: "Whether fast mode was active"
+        requirement_level: recommended
+        examples: ["fast", "normal"]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Tool Result Attributes
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.tool_result
+    type: attribute_group
+    brief: "Tool result event attributes"
+    stability: development
+    attributes:
+      - id: openclaw.tool.success
+        type: boolean
+        stability: development
+        brief: "Whether the tool execution was successful"
+        requirement_level: required
+        examples: [true, false]
+
+      - id: openclaw.tool.duration_ms
+        type: int
+        stability: development
+        brief: "Execution time in milliseconds"
+        requirement_level: recommended
+        examples: [150, 500, 2000]
+
+      - id: openclaw.tool.error
+        type: string
+        stability: development
+        brief: "Error message if failed"
+        requirement_level: opt_in
+        examples: ["Command not found", "Permission denied"]
+
+      - id: openclaw.tool.result_size_bytes
+        type: int
+        stability: development
+        brief: "Size of the tool result in bytes"
+        requirement_level: recommended
+        examples: [1024, 5120, 10240]
+
+      - id: openclaw.tool.mcp_server_scope
+        type: string
+        stability: development
+        brief: "MCP server scope identifier"
+        requirement_level: opt_in
+        examples: ["mcp.example.search"]
+
+      - id: openclaw.tool.parameters
+        type: string
+        stability: development
+        brief: "JSON string of tool-specific parameters"
+        requirement_level: opt_in
+        examples: ['{"bash_command": "ls -la"}']
+
+  # --------------------------------------------------------------------------
+  # OpenClaw API Request Attributes
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.api_request
+    type: attribute_group
+    brief: "API request event attributes"
+    stability: development
+    attributes:
+      - id: openclaw.api.cost_usd
+        type: double
+        stability: development
+        brief: "Estimated cost in USD"
+        requirement_level: recommended
+        examples: [0.01, 0.05, 0.25]
+
+      - id: openclaw.api.duration_ms
+        type: int
+        stability: development
+        brief: "Request duration in milliseconds"
+        requirement_level: recommended
+        examples: [1500, 3000, 5000]
+
+      - id: openclaw.api.cache_read_tokens
+        type: int
+        stability: development
+        brief: "Tokens read from cache"
+        requirement_level: recommended
+        examples: [100, 500, 1000]
+
+      - id: openclaw.api.cache_creation_tokens
+        type: int
+        stability: development
+        brief: "Tokens used for cache creation"
+        requirement_level: recommended
+        examples: [50, 200, 500]
+
+      - id: openclaw.api.error
+        type: string
+        stability: development
+        brief: "Error message"
+        requirement_level: opt_in
+        examples: ["Rate limit exceeded"]
+
+      - id: openclaw.api.status_code
+        type: string
+        stability: development
+        brief: "HTTP status code or 'undefined'"
+        requirement_level: recommended
+        examples: ["429", "500", "undefined"]
+
+      - id: openclaw.api.attempt
+        type: int
+        stability: development
+        brief: "Attempt number for retried requests"
+        requirement_level: recommended
+        examples: [1, 2, 3]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Prompt Attributes
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.prompt
+    type: attribute_group
+    brief: "Prompt event attributes"
+    stability: development
+    attributes:
+      - id: openclaw.prompt.length
+        type: int
+        stability: development
+        brief: "Length of the prompt"
+        requirement_level: recommended
+        examples: [100, 500, 1000]
+
+      - id: openclaw.prompt.content
+        type: string
+        stability: development
+        brief: "Prompt content (enable with OTEL_LOG_USER_PROMPTS=1)"
+        requirement_level: opt_in
+        examples: ["Help me debug this function"]
+
+  # --------------------------------------------------------------------------
+  # L1 通用属性 - 调用链与身份标识
+  # --------------------------------------------------------------------------
+  - id: attr.gen_ai.common
+    type: attribute_group
+    brief: "AI Agent 通用属性，适用于所有 Span 类型（L1 字段）"
+    attributes:
+      - id: gen_ai.span.kind
+        type: string
+        stability: development
+        brief: "Span 类型，标识当前 Span 的分类"
+        requirement_level: required
+        sampling_relevant: true
+        examples: ["CHAT", "AGENT", "TOOL", "MCP", "RETRIEVER", "RERANKER", "EMBEDDING", "GUARDRAIL", "LLM"]
+
+      - id: gen_ai.operation.name
+        type: string
+        stability: development
+        brief: "操作子类型，标识具体的操作名称"
+        requirement_level: recommended
+        examples: ["invoke_agent", "execute_tool", "chat_completion"]
+
+  # --------------------------------------------------------------------------
+  # L1 通用属性 - 服务与部署
+  # --------------------------------------------------------------------------
+  - id: attr.service.common
+    type: attribute_group
+    brief: "服务与部署相关属性（L1 字段）"
+    attributes:
+      - id: service.name
+        type: string
+        stability: development
+        brief: "服务名称"
+        requirement_level: required
+        sampling_relevant: true
+        examples: ["agent-runtime", "ai-gateway"]
+
+      - id: service.version
+        type: string
+        stability: development
+        brief: "服务版本号"
+        requirement_level: recommended
+        examples: ["v2.0.1", "1.3.0"]
+
+      - id: deployment.environment.name
+        type: string
+        stability: development
+        brief: "部署环境（OTel 标准字段）"
+        requirement_level: required
+        sampling_relevant: true
+        examples: ["production", "staging", "development"]
+
+      - id: deployment.region
+        type: string
+        stability: development
+        brief: "部署地域"
+        requirement_level: recommended
+        examples: ["cn-beijing", "cn-shanghai", "us-west-1"]
+
+  # --------------------------------------------------------------------------
+  # L1 通用属性 - 会话与用户
+  # --------------------------------------------------------------------------
+  - id: attr.session.common
+    type: attribute_group
+    brief: "会话与用户相关属性（L1 字段）"
+    attributes:
+      - id: gen_ai.conversation.id
+        type: string
+        stability: development
+        brief: "会话（Session）ID，标识一次完整的会话"
+        requirement_level: required
+        sampling_relevant: true
+        examples: ["ad8c7585-1234-5678-90ab-cdef12345678-s"]
+
+      - id: gen_ai.user.id
+        type: string
+        stability: development
+        brief: "用户 ID"
+        requirement_level: recommended
+        examples: ["2088123456788802", "user_001"]
+
+      - id: user.type
+        type: string
+        stability: development
+        brief: "用户类型，区分测试、白名单、正常用户等"
+        requirement_level: recommended
+        examples: ["test", "whitelist", "normal", "bot"]
+
+  # --------------------------------------------------------------------------
+  # Token 使用字段 - 基础
+  # --------------------------------------------------------------------------
+  - id: attr.gen_ai.token_usage
+    type: attribute_group
+    brief: "Token 使用量相关属性，适用于 CHAT、AGENT、LLM Span"
+    attributes:
+      - id: gen_ai.usage.input_tokens
+        type: int
+        stability: development
+        brief: "输入 tokens 数量"
+        requirement_level: recommended
+        examples: [100, 500, 1024]
+
+      - id: gen_ai.usage.output_tokens
+        type: int
+        stability: development
+        brief: "输出 tokens 数量"
+        requirement_level: recommended
+        examples: [200, 800, 2048]
+
+      - id: gen_ai.usage.total_tokens
+        type: int
+        stability: development
+        brief: "总 tokens 数量"
+        requirement_level: recommended
+        examples: [300, 1300, 3072]
+
+  # --------------------------------------------------------------------------
+  # Token 使用字段 - 缓存（扩展）
+  # --------------------------------------------------------------------------
+  - id: attr.gen_ai.token_usage.cache
+    type: attribute_group
+    brief: "Token 缓存使用相关属性，适用于 LLM Span"
+    attributes:
+      - id: gen_ai.usage.details.cache_read_input_tokens
+        type: int
+        stability: development
+        brief: "从缓存读取的 tokens 数量"
+        requirement_level: opt_in
+        examples: [50, 200]
+
+      - id: gen_ai.usage.details.cache_creation_input_tokens
+        type: int
+        stability: development
+        brief: "缓存创建的 tokens 数量"
+        requirement_level: opt_in
+        examples: [100, 500]
+
+      - id: gen_ai.usage.details.cache_hit_rate
+        type: double
+        stability: development
+        brief: "缓存命中率"
+        requirement_level: opt_in
+        examples: [0.85, 0.92]
+
+  # --------------------------------------------------------------------------
+  # 评测链路字段
+  # --------------------------------------------------------------------------
+  - id: attr.eval.common
+    type: attribute_group
+    brief: "评测链路相关属性，用于打通 trace → golden/bad case dataset → 评测流程"
+    attributes:
+      - id: eval.trace_source
+        type: string
+        stability: development
+        brief: "Trace 来源类型"
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+        examples: ["prod", "sample", "synthetic"]
+
+      - id: eval.dataset.id
+        type: string
+        stability: development
+        brief: "数据集 ID，标识 trace 所属的评测数据集"
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+        examples: ["dataset_golden_v1", "dataset_bad_case_202401"]
+
+      - id: eval.prompt.id
+        type: string
+        stability: development
+        brief: "Prompt 唯一标识"
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+        examples: ["prompt_customer_service_v2", "prompt_intent_recognition"]
+
+      - id: eval.prompt.version
+        type: string
+        stability: development
+        brief: "Prompt 版本号"
+        requirement_level: recommended
+        examples: ["v1.0", "v2.3.1"]
+
+      - id: eval.case.id
+        type: string
+        stability: development
+        brief: "案例唯一标识，用于关联评测案例"
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+        examples: ["case_001", "golden_case_20240115_001"]
+
+      - id: eval.case.type
+        type: string
+        stability: development
+        brief: "案例类型，区分 golden case 和 bad case"
+        requirement_level:
+          conditionally_required: "评测场景必须填写"
+        examples: ["golden", "bad"]
+
+      - id: eval.metrics
+        type: string
+        stability: development
+        brief: "评测指标得分（JSON 格式）"
+        requirement_level: opt_in
+        examples: ['{"accuracy": 0.95, "relevance": 0.88}']
+
+      - id: eval.feedback.score
+        type: double
+        stability: development
+        brief: "人工反馈评分"
+        requirement_level: opt_in
+        examples: [4.5, 5.0]
+
+      - id: eval.feedback.comment
+        type: string
+        stability: development
+        brief: "人工反馈评论"
+        requirement_level: opt_in
+        examples: ["输出准确且符合预期", "需要改进意图识别"]
+
+  # --------------------------------------------------------------------------
+  # 业务场景字段（L2）
+  # --------------------------------------------------------------------------
+  - id: attr.business.common
+    type: attribute_group
+    brief: "业务场景相关属性（L2 字段），用于区分不同业务场景"
+    attributes:
+      - id: traffic.source
+        type: string
+        stability: development
+        brief: "流量来源"
+        requirement_level: recommended
+        examples: ["direct", "ad", "organic"]
+
+      - id: business.scene
+        type: string
+        stability: development
+        brief: "业务场景，区分对话、训练、评测等不同场景"
+        requirement_level: recommended
+        examples: ["chat", "training", "eval"]
+
+      - id: business.app_id
+        type: string
+        stability: development
+        brief: "应用唯一标识"
+        requirement_level: recommended
+        examples: ["app_xxx_123", "chatbot_prod_001"]
+
+  # --------------------------------------------------------------------------
+  # Agentic 运行时扩展字段（L2）
+  # --------------------------------------------------------------------------
+  - id: attr.agentic.runtime
+    type: attribute_group
+    brief: "Agentic 运行时相关属性（L2 字段）"
+    attributes:
+      - id: agentic.runtime.name
+        type: string
+        stability: development
+        brief: "Runtime 名称"
+        requirement_level: recommended
+        examples: ["claude-code", "codex", "openclaw"]
+
+      - id: agentic.runtime.version
+        type: string
+        stability: development
+        brief: "Runtime 版本"
+        requirement_level: recommended
+        examples: ["v1.0.0", "2.5.3"]
+
+      - id: agentic.turn.id
+        type: string
+        stability: development
+        brief: "Turn ID，标识 Agent 的一次交互轮次"
+        requirement_level: recommended
+        examples: ["turn-1", "turn-2"]
+
+  # --------------------------------------------------------------------------
+  # Coding Agent 扩展字段（L2）
+  # --------------------------------------------------------------------------
+  - id: attr.code.tool
+    type: attribute_group
+    brief: "Coding Agent 工具调用相关属性（L2 字段）"
+    attributes:
+      - id: code.tool.name
+        type: string
+        stability: development
+        brief: "代码工具名称/命令名"
+        requirement_level: recommended
+        examples: ["bash", "read", "edit", "write"]
+
+      - id: code.tool.exit_code
+        type: int
+        stability: development
+        brief: "命令返回码"
+        requirement_level: recommended
+        examples: [0, 1, 127]
+
+      - id: code.file.operation
+        type: string
+        stability: development
+        brief: "文件操作类型"
+        requirement_level: recommended
+        examples: ["read", "write", "delete", "create"]
+
+      - id: code.file.path
+        type: string
+        stability: development
+        brief: "操作文件路径"
+        requirement_level: recommended
+        examples: ["/src/main.py", "/config/settings.json"]
+
+  # --------------------------------------------------------------------------
+  # 召回（Retriever）相关字段
+  # --------------------------------------------------------------------------
+  - id: attr.retrieval.common
+    type: attribute_group
+    brief: "召回操作相关属性，用于 RAG 向量召回场景"
+    attributes:
+      - id: retrieval.query
+        type: string
+        stability: development
+        brief: "召回操作的查询内容"
+        requirement_level: recommended
+        examples: ["what is the topic?", "如何配置 Agent"]
+
+      - id: retrieval.kind
+        type: string
+        stability: development
+        brief: "召回种类"
+        requirement_level: required
+        examples: ["vector_query", "text_query", "hybrid"]
+
+      - id: retrieval.system
+        type: string
+        stability: development
+        brief: "召回数据库类别"
+        requirement_level: required
+        examples: ["zsearch", "tbase", "milvus", "pinecone"]
+
+      - id: retrieval.request.top_k
+        type: int
+        stability: development
+        brief: "召回最 K 个相近文档"
+        requirement_level: required
+        examples: [3, 5, 10]
+
+  # --------------------------------------------------------------------------
+  # 重排（Reranker）相关字段
+  # --------------------------------------------------------------------------
+  - id: attr.reranker.common
+    type: attribute_group
+    brief: "内容重排相关属性，用于 RAG 结果重排场景"
+    attributes:
+      - id: reranker.model_name
+        type: string
+        stability: development
+        brief: "精排模型名称"
+        requirement_level: required
+        examples: ["antllm", "bge-reranker", "cohere-rerank"]
+
+      - id: reranker.top_k
+        type: int
+        stability: development
+        brief: "精排返回最 K 个文档"
+        requirement_level: recommended
+        examples: [3, 5, 10]
+
+      - id: reranker.input_documents
+        type: string
+        stability: development
+        brief: "重排输入文档（JSON 格式）"
+        requirement_level: opt_in
+        examples: ['[{"id": "doc1", "score": 0.9}]']
+
+      - id: reranker.output_documents
+        type: string
+        stability: development
+        brief: "重排输出文档（JSON 格式）"
+        requirement_level: opt_in
+        examples: ['[{"id": "doc1", "score": 0.95}]']
+
+  # --------------------------------------------------------------------------
+  # Embedding 相关字段
+  # --------------------------------------------------------------------------
+  - id: attr.embedding.common
+    type: attribute_group
+    brief: "Embedding 操作相关属性，用于文本向量化场景"
+    attributes:
+      - id: embedding.model_name
+        type: string
+        stability: development
+        brief: "Embedding 模型名称"
+        requirement_level: recommended
+        examples: ["text-embedding-v1", "text-embedding-ada-002"]
+
+  # --------------------------------------------------------------------------
+  # Guardrail（拦截服务）相关字段
+  # --------------------------------------------------------------------------
+  - id: attr.guardrail.common
+    type: attribute_group
+    brief: "拦截服务相关属性，用于内容安全检查场景"
+    attributes:
+      - id: guardrail.input
+        type: string
+        stability: development
+        brief: "待检测的内容"
+        requirement_level: required
+        examples: ["用户输入内容", "模型输出内容"]
+
+      - id: guardrail.result
+        type: string
+        stability: development
+        brief: "检测结果（JSON 格式）"
+        requirement_level: required
+        examples: ['{"category": "safety", "score": 0.1, "details": {}}']
+
+      - id: guardrail.action
+        type: string
+        stability: development
+        brief: "处理动作"
+        requirement_level: required
+        examples: ["pass", "block", "modify"]
+
+  # --------------------------------------------------------------------------
+  # MCP 协议相关字段
+  # --------------------------------------------------------------------------
+  - id: attr.mcp.common
+    type: attribute_group
+    brief: "MCP 协议调用相关属性"
+    attributes:
+      - id: mcp.server_id
+        type: string
+        stability: development
+        brief: "MCP Server ID"
+        requirement_level: required
+        examples: ["mcp.example.search"]
+
+      - id: mcp.request_type
+        type: string
+        stability: development
+        brief: "MCP 调用类型"
+        requirement_level: required
+        examples: ["tools/list", "tools/call", "resources/list"]
+
+      - id: mcp.tool_name
+        type: string
+        stability: development
+        brief: "调用的 tool 名称"
+        requirement_level:
+          conditionally_required: "当 request_type 为 tools/call 时必须填写"
+        examples: ["queryAppLogContentByTraceId", "searchDocs"]
+
+  # --------------------------------------------------------------------------
+  # HTTP 响应字段
+  # --------------------------------------------------------------------------
+  - id: attr.http.response
+    type: attribute_group
+    brief: "HTTP 响应相关属性"
+    attributes:
+      - id: http.response.status_code
+        type: int
+        stability: development
+        brief: "HTTP 响应状态码"
+        requirement_level: recommended
+        examples: [200, 201, 400, 404, 500]
+
+  # --------------------------------------------------------------------------
+  # 响应相关字段
+  # --------------------------------------------------------------------------
+  - id: attr.response.common
+    type: attribute_group
+    brief: "响应相关属性"
+    attributes:
+      - id: response.result_state
+        type: string
+        stability: development
+        brief: "业务调用状态（注：OTel Span 一级属性已有 status，此为业务层状态）"
+        requirement_level: recommended
+        examples: ["SUCCESS", "ERROR", "PARTIAL"]
+
+      - id: response.duration
+        type: int
+        stability: development
+        brief: "调用总耗时（毫秒）"
+        requirement_level: recommended
+        examples: [13825, 500, 2000]
+
+      - id: response.total_packets
+        type: int
+        stability: development
+        brief: "流式返回报文次数"
+        requirement_level:
+          conditionally_required: "流式场景推荐填写"
+        examples: [52, 100, 200]
+
+  # --------------------------------------------------------------------------
+  # 流式响应时间字段
+  # --------------------------------------------------------------------------
+  - id: attr.gen_ai.streaming
+    type: attribute_group
+    brief: "流式响应时间相关属性"
+    attributes:
+      - id: gen_ai.response.time_to_first_token
+        type: int
+        stability: development
+        brief: "首 token 时间（毫秒）"
+        requirement_level: required
+        examples: [5782, 1200, 3000]
+
+      - id: gen_ai.response.time_per_output_token
+        type: int
+        stability: development
+        brief: "每个响应报文发送时间（毫秒）"
+        requirement_level:
+          conditionally_required: "流式场景有效"
+        examples: [38, 50, 100]
+
+  # --------------------------------------------------------------------------
+  # Agent 属性
+  # --------------------------------------------------------------------------
+  - id: attr.gen_ai.agent
+    type: attribute_group
+    brief: "Agent 相关属性"
+    attributes:
+      - id: gen_ai.agent.id
+        type: string
+        stability: development
+        brief: "Agent ID"
+        requirement_level: required
+        examples: ["29794", "agent_001"]
+
+      - id: gen_ai.agent.name
+        type: string
+        stability: development
+        brief: "Agent 名称"
+        requirement_level: required
+        examples: ["自助保障范围", "客服助手", "智能诊断"]
+
+      - id: gen_ai.agent.version
+        type: string
+        stability: development
+        brief: "Agent 版本"
+        requirement_level: recommended
+        examples: ["v1.2.3", "2.0.0"]
+
+  # --------------------------------------------------------------------------
+  # Tool 属性
+  # --------------------------------------------------------------------------
+  - id: attr.gen_ai.tool
+    type: attribute_group
+    brief: "Tool 调用相关属性"
+    attributes:
+      - id: gen_ai.tool.call.id
+        type: string
+        stability: development
+        brief: "Tool Call 唯一标识"
+        requirement_level: recommended
+        examples: ["call_mszuSIzqtI65i1wAUOE8w5H4"]
+
+      - id: gen_ai.tool.name
+        type: string
+        stability: development
+        brief: "Tool 名称"
+        requirement_level: recommended
+        examples: ["Flights", "Weather", "Search"]
+
+      - id: gen_ai.tool.type
+        type: string
+        stability: development
+        brief: "Tool 类型"
+        requirement_level: recommended
+        examples: ["function", "extension"]
+
+  # --------------------------------------------------------------------------
+  # LLM 属性
+  # --------------------------------------------------------------------------
+  - id: attr.gen_ai.llm
+    type: attribute_group
+    brief: "LLM 模型服务调用相关属性"
+    attributes:
+      - id: gen_ai.system
+        type: string
+        stability: development
+        brief: "LLM 提供者"
+        requirement_level: required
+        examples: ["openai", "anthropic", "qwen", "azure"]
+
+      - id: gen_ai.request.model
+        type: string
+        stability: development
+        brief: "请求模型名称"
+        requirement_level: required
+        examples: ["gpt-4", "claude-3-opus", "qwen-max"]
+
+      - id: gen_ai.response.model
+        type: string
+        stability: development
+        brief: "实际响应模型名称"
+        requirement_level: recommended
+        examples: ["gpt-4-0613", "claude-3-opus-20240229"]
+
+      - id: gen_ai.request.temperature
+        type: double
+        stability: development
+        brief: "温度参数"
+        requirement_level: recommended
+        examples: [0.7, 0.0, 1.0]
+
+      - id: gen_ai.request.max_tokens
+        type: int
+        stability: development
+        brief: "最大 tokens 数"
+        requirement_level: recommended
+        examples: [100, 4096, 8192]
+
+  # --------------------------------------------------------------------------
+  # Chat 属性
+  # --------------------------------------------------------------------------
+  - id: attr.gen_ai.chat
+    type: attribute_group
+    brief: "Chat 会话相关属性"
+    attributes:
+      - id: gen_ai.chat.id
+        type: string
+        stability: development
+        brief: "对话 ID（一次会话中多次对话不同）"
+        requirement_level: recommended
+        examples: ["f64d85f4-1234-5678-90ab-cdef12345678-c"]
+
+      - id: gen_ai.input.messages
+        type: string
+        stability: development
+        brief: "输入给模型的内容（JSON 格式）"
+        requirement_level: recommended
+        examples: ['[{"role": "user", "content": "Hello"}]']
+
+      - id: gen_ai.output.messages
+        type: string
+        stability: development
+        brief: "会话最终输出内容（JSON 格式）"
+        requirement_level: recommended
+        examples: ['[{"role": "assistant", "content": "Hi there!"}]']
+
+      - id: input.intent
+        type: string
+        stability: development
+        brief: "从 query 识别的意图"
+        requirement_level: recommended
+        examples: ["医疗诊断", "订单查询", "产品咨询"]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Tool Name Attribute
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.tool_name
+    type: attribute_group
+    brief: "Tool name attribute"
+    stability: development
+    attributes:
+      - id: openclaw.tool_name
+        type: string
+        stability: development
+        brief: "Name of the tool being executed"
+        requirement_level: required
+        examples: ["Edit", "Write", "NotebookEdit", "Bash"]
+
+  # --------------------------------------------------------------------------
+  # OpenClaw Language Attribute
+  # --------------------------------------------------------------------------
+  - id: attr.openclaw.language
+    type: attribute_group
+    brief: "Programming language attribute"
+    stability: development
+    attributes:
+      - id: openclaw.language
+        type: string
+        stability: development
+        brief: "Programming language of the edited file"
+        requirement_level: recommended
+        examples: ["TypeScript", "Python", "JavaScript", "Markdown"]
+
+  # --------------------------------------------------------------------------
+  # 业务自定义字段（L3）模板
+  # --------------------------------------------------------------------------
+  - id: attr.custom.common
+    type: attribute_group
+    brief: "业务自定义属性模板（L3 字段），业务方在命名空间隔离下使用"
+    note: |
+      命名规范：custom.<namespace>.<field_name>
+      例如：custom.arec.module_name, custom.xxx.biz_line
+      
+      管理规范：
+      1. 命名空间注册：业务方需向平台注册命名空间，避免冲突
+      2. 类型限制：字段值类型限制为 string, number, boolean, json_string
+      3. 敏感字段声明：敏感字段需在注册时声明，平台自动脱敏
+      4. 审核机制：新增命名空间需经过平台审核
+    attributes:
+      - id: custom.namespace.field_name
+        type: string
+        stability: development
+        brief: "业务自定义字段示例，实际使用时替换 namespace 和 field_name"
+        requirement_level: opt_in
+        examples: ["custom.arec.module_name=intent_recognition"]

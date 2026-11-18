@@ -1,0 +1,353 @@
+{
+  "id": "observ-opencode",
+  "name": "OpenCode Observability",
+  "description": "OpenTelemetry-based observability for OpenCode with semantic conventions for AI agents (Ant Spec v2.0)",
+  "version": "0.3.4",
+  "uiHints": {
+    "enableTelemetry": {
+      "label": "Enable Telemetry (Master Switch)",
+      "help": "Must be enabled for any telemetry data collection. Env: AGENT_ENABLE_TELEMETRY=1"
+    },
+    "collectionMode": {
+      "label": "Collection Mode",
+      "help": "full records configured content; privacy redacts content-bearing telemetry. Local transcripts/replay/report are provided by the separate opencode-replay package. Env: OBSERV_OPENCODE_COLLECTION_MODE or AIVISION_COLLECTION_MODE"
+    },
+    "debug": {
+      "label": "Debug Logging",
+      "help": "Enable verbose plugin diagnostic logging. Does not enable transcript capture or offline replay. Env: OBSERV_OPENCODE_DEBUG"
+    },
+    "dynamicUsername": {
+      "label": "Dynamic Username",
+      "help": "Read ant.username from AIVISION_ANT_USERNAME whenever telemetry is recorded"
+    },
+    "dynamicUid": {
+      "label": "Dynamic UID",
+      "help": "Read ant.uid from AIVISION_ANT_UID whenever telemetry is recorded"
+    },
+    "log": {
+      "label": "Content Logging Controls",
+      "help": "Fine-grained control over what content is recorded. All default to off for privacy."
+    },
+    "otelExporter": {
+      "label": "OTel Exporter Configuration",
+      "help": "Base OTLP endpoint, protocol, and headers. Can also be set via OTEL_EXPORTER_OTLP_* env vars."
+    },
+    "tracesConfig": {
+      "label": "Traces Configuration",
+      "help": "Signal-specific configuration for trace export"
+    },
+    "metricsConfig": {
+      "label": "Metrics Configuration",
+      "help": "Signal-specific configuration for metrics export"
+    },
+    "eventsConfig": {
+      "label": "Events/Logs Configuration",
+      "help": "Signal-specific configuration for events/logs export"
+    },
+    "logDir": {
+      "label": "Plugin Log Directory",
+      "help": "Directory for the plugin-owned observ-opencode.log file. Defaults to the OpenCode runtime log directory for common edition or ~/.aivision/ocd/logs for AIVision."
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enableTelemetry": {
+        "type": "boolean",
+        "description": "Enable telemetry collection (master switch). Env: AGENT_ENABLE_TELEMETRY",
+        "default": false
+      },
+      "collectionMode": {
+        "type": "string",
+        "description": "Collection mode. 'privacy' forces content-bearing payloads to [REDACTED]. Env priority: OBSERV_OPENCODE_COLLECTION_MODE > AIVISION_COLLECTION_MODE",
+        "enum": ["full", "privacy"],
+        "default": "full"
+      },
+      "debug": {
+        "type": "boolean",
+        "description": "Enable verbose plugin diagnostic logging. Env: OBSERV_OPENCODE_DEBUG",
+        "default": false
+      },
+      "dynamicUsername": {
+        "type": "boolean",
+        "description": "Resolve ant.username from AIVISION_ANT_USERNAME whenever a span, event/log, or metric is recorded",
+        "default": false
+      },
+      "dynamicUid": {
+        "type": "boolean",
+        "description": "Resolve ant.uid from AIVISION_ANT_UID whenever a span, event/log, or metric is recorded",
+        "default": false
+      },
+      "serviceName": {
+        "type": "string",
+        "description": "OpenTelemetry service name. Env: OTEL_SERVICE_NAME",
+        "default": "opencode"
+      },
+      "langfuse": {
+        "type": "object",
+        "description": "Langfuse preset configuration - simplifies OTLP endpoint setup with automatic auth",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable Langfuse preset mode. Auto-configures OTLP endpoint and auth headers. Env: LANGFUSE_PRESET",
+            "default": false
+          },
+          "env": {
+            "type": "string",
+            "description": "Langfuse environment. Env: LANGFUSE_ENV or ANT_GRAY",
+            "enum": ["prod", "gray"],
+            "default": "prod"
+          },
+          "publicKey": {
+            "type": "string",
+            "description": "Langfuse public key. Env: LANGFUSE_PUBLIC_KEY or LANGFUSE_PUBLIC_KEY_GRAY"
+          },
+          "secretKey": {
+            "type": "string",
+            "description": "Langfuse secret key. Env: LANGFUSE_SECRET_KEY or LANGFUSE_SECRET_KEY_GRAY"
+          },
+          "host": {
+            "type": "string",
+            "description": "Langfuse host URL. Env: LANGFUSE_HOST. Default: https://cloud.langfuse.com"
+          }
+        }
+      },
+      "log": {
+        "type": "object",
+        "description": "Content logging controls with independent event/span configuration. Top-level shorthand (e.g. log.userPrompts) applies to both unless overridden.",
+        "properties": {
+          "userPrompts": {
+            "type": "boolean",
+            "description": "[Shorthand] Record user prompt text in both events and spans. Env: AGENT_LOG_USER_PROMPTS",
+            "default": false
+          },
+          "systemPrompts": {
+            "type": "boolean",
+            "description": "[Shorthand] Record system prompts in both events and spans. Env: AGENT_LOG_SYSTEM_PROMPTS",
+            "default": false
+          },
+          "modelOutputs": {
+            "type": "boolean",
+            "description": "[Shorthand] Record model output text in both events and spans. Env: AGENT_LOG_MODEL_OUTPUTS",
+            "default": false
+          },
+          "toolDetails": {
+            "type": "boolean",
+            "description": "[Shorthand] Record tool call parameters in both events and spans. Env: AGENT_LOG_TOOL_DETAILS",
+            "default": false
+          },
+          "toolOutputs": {
+            "type": "boolean",
+            "description": "[Shorthand] Record tool execution result text in both events and spans. Env: AGENT_LOG_TOOL_OUTPUTS",
+            "default": false
+          },
+          "events": {
+            "type": "object",
+            "description": "Content logging controls for OTel event bodies. Overrides top-level shorthand.",
+            "properties": {
+              "userPrompts": {
+                "type": "boolean",
+                "description": "Record user prompt text in events. Env: AGENT_LOG_EVENTS_USER_PROMPTS",
+                "default": false
+              },
+              "systemPrompts": {
+                "type": "boolean",
+                "description": "Record system prompts in events. Env: AGENT_LOG_EVENTS_SYSTEM_PROMPTS",
+                "default": false
+              },
+              "modelOutputs": {
+                "type": "boolean",
+                "description": "Record model output text in events. Env: AGENT_LOG_EVENTS_MODEL_OUTPUTS",
+                "default": false
+              },
+              "toolDetails": {
+                "type": "boolean",
+                "description": "Record tool call parameters in events. Env: AGENT_LOG_EVENTS_TOOL_DETAILS",
+                "default": false
+              },
+              "toolOutputs": {
+                "type": "boolean",
+                "description": "Record tool execution result text in events. Env: AGENT_LOG_EVENTS_TOOL_OUTPUTS",
+                "default": false
+              }
+            }
+          },
+          "spans": {
+            "type": "object",
+            "description": "Content logging controls for span attributes. Overrides top-level shorthand.",
+            "properties": {
+              "userPrompts": {
+                "type": "boolean",
+                "description": "Record user prompt text in span attributes. Env: AGENT_LOG_SPANS_USER_PROMPTS",
+                "default": false
+              },
+              "systemPrompts": {
+                "type": "boolean",
+                "description": "Record system prompts in span attributes. Env: AGENT_LOG_SPANS_SYSTEM_PROMPTS",
+                "default": false
+              },
+              "modelOutputs": {
+                "type": "boolean",
+                "description": "Record model output text in span attributes. Env: AGENT_LOG_SPANS_MODEL_OUTPUTS",
+                "default": false
+              },
+              "toolDetails": {
+                "type": "boolean",
+                "description": "Record tool call parameters in span attributes. Env: AGENT_LOG_SPANS_TOOL_DETAILS",
+                "default": false
+              },
+              "toolOutputs": {
+                "type": "boolean",
+                "description": "Record tool execution result text in span attributes. Env: AGENT_LOG_SPANS_TOOL_OUTPUTS",
+                "default": false
+              }
+            }
+          }
+        }
+      },
+      "otelExporter": {
+        "type": "object",
+        "description": "OTel exporter configuration",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "Base OTLP endpoint URL. Env: OTEL_EXPORTER_OTLP_ENDPOINT"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "OTLP protocol. Env: OTEL_EXPORTER_OTLP_PROTOCOL",
+            "enum": ["grpc", "http/json", "http/protobuf"],
+            "default": "grpc"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Attached headers (key=value). Env: OTEL_EXPORTER_OTLP_HEADERS"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Common span/event/metric attributes, including ant.username and ant.uid. Env: OBSERV_OPENCODE_OTEL_ATTRIBUTES",
+            "default": {}
+          },
+          "resourceAttributes": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "properties": {
+              "ant.meta.trigger": {
+                "type": "string",
+                "enum": ["automation", "interactive", "unknown"],
+                "description": "External task attribution on the process Resource; not inferred from transcripts. Env: AIVISION_META_TRIGGER (highest priority; absent input emits an empty Resource value, while explicit empty or invalid values normalize to unknown)",
+                "x-env": "AIVISION_META_TRIGGER"
+              }
+            },
+            "description": "Resource attributes, including ant.agent.* metadata and optional ant.meta.trigger task attribution. ant.uid is signal-only. Env: OTEL_RESOURCE_ATTRIBUTES, AIVISION_OTEL_RESOURCE_ATTRIBUTES, OBSERV_OPENCODE_OTEL_RESOURCE_ATTRIBUTES; AIVISION_META_TRIGGER overrides ant.meta.trigger",
+            "default": {}
+          },
+          "metricsTemporalityPreference": {
+            "type": "string",
+            "description": "Metrics temporality preference. Env: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE",
+            "enum": ["delta", "cumulative"],
+            "default": "delta"
+          }
+        }
+      },
+      "tracesConfig": {
+        "type": "object",
+        "description": "Trace-specific endpoint configuration",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP traces endpoint URL. Env: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Custom headers for traces export"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable trace export",
+            "default": true
+          }
+        }
+      },
+      "metricsConfig": {
+        "type": "object",
+        "description": "Metrics-specific endpoint configuration",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP metrics endpoint URL. Env: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Custom headers for metrics export"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable metrics export",
+            "default": true
+          }
+        }
+      },
+      "eventsConfig": {
+        "type": "object",
+        "description": "Events/logs-specific endpoint configuration",
+        "properties": {
+          "endpoint": {
+            "type": "string",
+            "description": "OTLP logs endpoint URL. Env: OTEL_EXPORTER_OTLP_LOGS_ENDPOINT"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": { "type": "string" },
+            "description": "Custom headers for events/logs export"
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable/disable events/logs export",
+            "default": true
+          }
+        }
+      },
+      "metricExportInterval": {
+        "type": "number",
+        "description": "Metrics export interval in milliseconds. Env: OTEL_METRIC_EXPORT_INTERVAL",
+        "default": 60000
+      },
+      "logsExportInterval": {
+        "type": "number",
+        "description": "Logs/Events export interval in milliseconds. Env: OTEL_LOGS_EXPORT_INTERVAL",
+        "default": 5000
+      },
+      "logDir": {
+        "type": "string",
+        "description": "Directory for the plugin-owned observ-opencode.log file. Priority: this value, AIVISION_LOG_DIR/OBSERV_OPENCODE_LOG_DIR, then the edition default."
+      },
+      "metricsCardinality": {
+        "type": "object",
+        "description": "Metrics cardinality controls",
+        "properties": {
+          "includeSessionId": {
+            "type": "boolean",
+            "description": "Include session.id in metrics. Env: OTEL_METRICS_INCLUDE_SESSION_ID",
+            "default": true
+          },
+          "includeVersion": {
+            "type": "boolean",
+            "description": "Include app.version in metrics. Env: OTEL_METRICS_INCLUDE_VERSION",
+            "default": false
+          },
+          "includeAccountUuid": {
+            "type": "boolean",
+            "description": "Include user.account_uuid in metrics. Env: OTEL_METRICS_INCLUDE_ACCOUNT_UUID",
+            "default": true
+          }
+        }
+      }
+    }
+  }
+}

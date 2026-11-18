@@ -1,0 +1,84 @@
+id: autogen
+logo: /assets/frameworks/autogen.svg
+label: AutoGen
+frontendSort: 14
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+pipInstall: pip install "pyautogen>=0.2.35,<0.3" openinference-instrumentation-autogen openinference-instrumentation-openai "langfuse>=4.16.0,<5" openai
+pipExample: |-
+  import os
+
+  import autogen
+  from langfuse import get_client, propagate_attributes
+  from openinference.instrumentation.autogen import AutogenInstrumentor
+  from openinference.instrumentation.openai import OpenAIInstrumentor
+
+  # Langfuse client: registers the global SDK TracerProvider and attaches its OTLP export
+  langfuse = get_client()
+
+  # Instrumentation: AutoGen covers the agent conversation layer,
+  # OpenAI covers the underlying model calls (generation spans)
+  AutogenInstrumentor().instrument(skip_dep_check=True)
+  OpenAIInstrumentor().instrument(skip_dep_check=True)
+
+  MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
+
+  # Configure your agents
+  config_list = [
+      {
+          "model": MODEL,
+          "api_key": os.getenv("OPENAI_API_KEY"),
+          "base_url": os.getenv("OPENAI_BASE_URL"),
+      }
+  ]
+
+
+  def main():
+      # Create a code reviewer agent
+      code_reviewer = autogen.AssistantAgent(
+          name="code_reviewer",
+          llm_config={"config_list": config_list},
+          system_message="""You are an expert code reviewer. Your role is to:
+  1. Review code for bugs, security issues, and best practices
+  2. Suggest improvements and optimizations
+  3. Provide constructive feedback
+
+  Always be thorough but constructive in your reviews.""",
+      )
+
+      # Create a user proxy agent
+      user_proxy = autogen.UserProxyAgent(
+          name="user_proxy",
+          human_input_mode="NEVER",
+          max_consecutive_auto_reply=1,
+          code_execution_config={"work_dir": "workspace"},
+          llm_config={"config_list": config_list},
+      )
+
+      with langfuse.start_as_current_observation(
+          as_type="span", name="autogen-request"
+      ):
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          # Start the conversation
+          user_proxy.initiate_chat(
+              code_reviewer,
+              message="Please review this Python function for potential improvements:\n"
+              "def add(a, b):\n    return a + b\n",
+          )
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:autogen"]):
+              main()
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

@@ -1,0 +1,1198 @@
+列名	类型	可空	默认值	Parquet
+period
+键/排序
+TIMESTAMP	否	-	
+DELTA_BINARY_PACKED
+ZSTD(3)
+PAGE
+time_unix_nano
+TIMESTAMP	否	-	
+DELTA_BINARY_PACKED
+ZSTD(3)
+PAGE
+trace_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+span_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+body
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+severity_text
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+字典
+severity_number
+INT64	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+flags
+INT64	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+scope_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+scope_version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.username
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.ant.agent.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.ant.agent.product
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.ant.agent.instance
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.user.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.session.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.terminal.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event.timestamp
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event.sequence
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.prompt.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.hook_event
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.hook_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.num_hooks
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.managed_only
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.hook_source
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.safe_mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.os.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.service.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.service.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.host.arch
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.os.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.__antmonitor_job__
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.username
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.ant.agent.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.ant.agent.product
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.ant.agent.instance
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.host.arch
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.os.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.os.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.service.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.service.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tool_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tool_use_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.success
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.duration_ms
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tool_parameters
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tool_input
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tool_input_size_bytes
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tool_result_size_bytes
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.decision_source
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.decision_type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.model
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.input_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.output_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.cache_read_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.cache_creation_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.num_success
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.cost_usd
+DOUBLE	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.num_blocking
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.cost_usd_micros
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.num_non_blocking_error
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.num_cancelled
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.total_duration_ms
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.speed
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.query_source
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.effort
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.decision
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.source
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.organization.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.user.email
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.user.account_uuid
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.user.account_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.request_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.prompt_length
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.prompt
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agent.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tracenet.service.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.skill.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.status
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.transport_type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.server_scope
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.is_plugin
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.server_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.claude.deployment_mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.claude.deployment_mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.hook_type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.hook_matcher
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.plugin.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.marketplace.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.plugin.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.plugin.scope
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.enabled_via
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.plugin_id_hash
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.has_hooks
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.has_mcp
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.skill_path_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.command_path_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agent_path_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.mcp_server_scope
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.error
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.attempt
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.invocation_trigger
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.command_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.error_code
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.skill.source
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.command_source
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.mcp_server.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.mcp_tool.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.pv
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.skipped
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.skip_reason
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.commit_review
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.commit_review_on
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.sha_via_reflog
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.reflog_shas_n
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.plugin_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.error_type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.host_owned_mcp
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.status_code
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.total_attempts
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.total_retry_duration_ms
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agent_type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agent.source
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.is_built_in
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.is_async
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.total_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.total_tool_uses
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.trigger
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.pre_tokens
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.post_tokens
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.mention_type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.from_mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.to_mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.body
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.body_length
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.body_truncated
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.precompute_reuse
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.error_name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.use_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.sdk_bootstrap
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.sdk_bootstrap_ms
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.sdk_hook_py
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.fire_index
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.diff_strategy_v2
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.dirty_now_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.changed_since_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.review_set_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.preexisting_untracked_excluded
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.touched_paths_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event_type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.appearance_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.response
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.survey_type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.enabled_via_override
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.skill.kind
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.warn_fixed
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.warn_unresolved
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.warn_unresolved_mask
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.action
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.auth_method
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.system
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.operation.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.conversation.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.chat.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.request.model
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.response.model
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.provider.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.response.finish_reasons
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic.message.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic.parent.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic.agent.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic.agent.mode
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic.schema
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.usage.input_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.usage.output_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.usage.total_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.usage.cache_read_input_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.usage.cache_write_input_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.usage.reasoning_output_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.gen_ai.usage.cost
+DOUBLE	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic.runtime.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic.runtime.cwd
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.telemetry.sdk.language
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.telemetry.sdk.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.host.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.ant.username
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.telemetry.sdk.language
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.telemetry.sdk.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.host.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.user.id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.ant.username
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.agentic.runtime.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.agentic.runtime.cwd
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.wsl.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+resource.attributes.wsl.version
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.marketplace.is_official
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.install.trigger
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.skip_21_sub
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.bash_hook_dedup
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.tok_in
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tok_out
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tok_cache_r
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.tok_cache_w
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.api_calls
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.http_err_last
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.http_err_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.vulns_found
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.files_reviewed
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.review_ms
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.workspace.host_paths
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.shas_found
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.push_sweep
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.push_sweep_on
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.error_category
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.event.category
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.name
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.type
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.model_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.provider_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.session_id
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.cache_read_input_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.cache_creation_input_tokens
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.rate_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.race_winner
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.critical_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.high_count
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.pushed
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.candidates
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.unreviewed
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.prefix_advanced
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.agentic_fallback
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.diff_files_dropped
+INT64	是	-	
+PLAIN
+ZSTD(3)
+NONE
+attributes.server_fallback_hop
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.has_category
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.has_explanation
+BOOL	是	-	
+PLAIN
+ZSTD(3)
+PAGE
+attributes.category
+STRING	是	-	
+PLAIN
+ZSTD(3)
+NONE

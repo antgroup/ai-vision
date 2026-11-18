@@ -1,0 +1,208 @@
+import { expect, test } from "@playwright/test"
+import { prepare, publicTrace, trace, uiText } from "./traceLabs.fixtures"
+
+// Synthetic nested trace: source steps start below the visible tree viewport.
+const detail = {
+  ...trace,
+  spans: [
+    trace.spans[0],
+    ...Array.from({ length: 35 }, (_, index) => ({
+      ...trace.spans[4],
+      span_id: `filler-${index}`,
+      name: `Unrelated step ${index}`,
+      start_time_unix_nano: new Date(
+        Date.UTC(2026, 9, 16) + index
+      ).toISOString(),
+    })),
+    {
+      ...trace.spans[4],
+      span_id: "branch",
+      name: "Nested source steps",
+    },
+    ...[trace.spans[1], trace.spans[3]].map((span) => ({
+      ...span,
+      parent_span_id: "branch",
+    })),
+  ],
+}
+
+test("nanosecond trace keeps its duration and reveals only the selected collapsed branch", async ({
+  page,
+}) => {
+  const nested = {
+    ...detail,
+    spans: [
+      ...detail.spans,
+      { ...trace.spans[4], span_id: "other-branch", name: "Other branch" },
+      {
+        ...trace.spans[4],
+        parent_span_id: "other-branch",
+        span_id: "other-child",
+        name: "Other hidden child",
+      },
+    ].map((span) => ({
+      ...span,
+      start_time_unix_nano: String(
+        BigInt(Date.parse(span.start_time_unix_nano!)) * 1000000n
+      ),
+      end_time_unix_nano: String(
+        BigInt(Date.parse(span.end_time_unix_nano!)) * 1000000n
+      ),
+    })),
+  }
+  await prepare(page)
+  const unexpected = await publicTrace(page, nested)
+  await expect(
+    page.getByText(`${nested.spans.length} spans · 6.00s`, { exact: true })
+  ).toBeVisible()
+  await page.getByRole("radio", { name: "Timeline", exact: true }).click()
+  await page
+    .locator('button[data-slot="tooltip-trigger"]')
+    .filter({ has: page.locator("svg.lucide-chevrons-down-up") })
+    .click()
+  await expect(page.getByText("github.search", { exact: true })).toHaveCount(0)
+  await page.getByRole("cell", { name: "github", exact: true }).click()
+  await page
+    .locator('[data-process-focused="true"] [data-process-source="mcp"]')
+    .first()
+    .click()
+  const row = page.locator("div.cursor-pointer").filter({
+    has: page.getByText("github.search", { exact: true }),
+  })
+  await expect(row).toBeInViewport({ ratio: 1 })
+  await expect(row.locator(".absolute.top-1")).toHaveCount(1)
+  await expect(
+    page
+      .getByTestId("trace-tree-results")
+      .getByText("Other hidden child", { exact: true })
+  ).toHaveCount(0)
+  expect(unexpected).toEqual([])
+})
+
+for (const view of ["Chain", "Timeline"] as const) {
+  for (const source of ["decision", "MCP"] as const) {
+    test(`${view}: ${source} summary retains filters until its source is explicitly revealed`, async ({
+      page,
+    }) => {
+      await prepare(page)
+      const unexpected = await publicTrace(page, detail)
+      await page.getByRole("radio", { name: view, exact: true }).click()
+      const branch = page.locator("div.cursor-pointer").filter({
+        has: page.getByText("Nested source steps", { exact: true }),
+      })
+      const sourceName = source === "decision" ? "route-model" : "github.search"
+      const rowName =
+        source === "decision" && view === "Chain" ? "Model routing" : sourceName
+      const sourceRow = page.locator("div.cursor-pointer").filter({
+        has: page.getByText(rowName, { exact: true }),
+      })
+      await expect(sourceRow).toHaveCount(1)
+      await branch.getByRole("button").click()
+      await expect(sourceRow).toHaveCount(0)
+
+      // Summary navigation retains the current call-list query.
+      if (source === "decision") {
+        await page
+          .getByRole("button", {
+            name: uiText("en-US", "nativeSpanFilters.errors"),
+            exact: true,
+          })
+          .click()
+      } else {
+        const filterButton = page.getByRole("button", {
+          name: uiText("en-US", "nativeSpanFilters.title"),
+        })
+        await filterButton.click()
+        await page
+          .getByRole("checkbox", {
+            name: uiText("en-US", "nativeSpanFilters.lowConfidence"),
+            exact: true,
+          })
+          .check()
+        await filterButton.click()
+      }
+      const search = page.getByPlaceholder("Search span name, ID, or scene...")
+      const activeFilter = page.getByRole("button", {
+        name: uiText("en-US", "nativeSpanFilters.removeCondition").replace(
+          "{{label}}",
+          uiText(
+            "en-US",
+            `nativeSpanFilters.${source === "decision" ? "errors" : "lowConfidence"}`
+          )
+        ),
+        exact: true,
+      })
+      await search.fill("Unrelated step 0")
+      await expect(page.getByText("0/0", { exact: true })).toBeVisible()
+
+      // Also leave a debounce pending: it must not steal scroll after the jump.
+      await search.fill("Unrelated step 1")
+      await page
+        .getByRole("cell")
+        .filter({
+          // Compact summary cells also include their column label ("Type").
+          has: page.getByText(
+            source === "decision" ? "Model routing" : "github",
+            {
+              exact: true,
+            }
+          ),
+        })
+        .click()
+
+      if (source === "MCP") {
+        // A uniquely represented tool opens its execution step first.
+        const processPanel = page.locator('[data-trace-panel="process"]')
+        const target = processPanel.locator('[data-process-focused="true"]')
+        const sourceLink = target.locator('[data-process-source="mcp"]').first()
+        await expect(target).toContainText(sourceName)
+        await expect(target).toBeFocused()
+        await expect(target).toBeInViewport({ ratio: 1 })
+        await expect(search).toHaveValue("Unrelated step 1")
+        await expect(sourceRow).toHaveCount(0)
+        const processScroll = await processPanel.evaluate((el) => el.scrollTop)
+        await sourceLink.click()
+        await expect(page.getByTestId("native-span-detail")).toHaveAttribute(
+          "data-span-id",
+          "mcp"
+        )
+        await page.locator("[data-return-trace]").click()
+        await expect(sourceLink).toBeFocused()
+        await expect(target).toBeInViewport({ ratio: 1 })
+        await expect(search).toHaveValue("Unrelated step 1")
+        await expect
+          .poll(() => processPanel.evaluate((el) => el.scrollTop))
+          .toBe(processScroll)
+        await sourceLink.click()
+      }
+
+      // An unrepresented decision falls back to its recorded call. Neither
+      // route clears the query until the user explicitly reveals that call.
+      await expect(page.getByTestId("native-span-detail")).toHaveAttribute(
+        "data-span-id",
+        source === "decision" ? "route" : "mcp"
+      )
+      await expect(
+        page.getByRole("heading", { name: sourceName, exact: true })
+      ).toBeVisible()
+      await expect(search).toHaveValue("Unrelated step 1")
+      await expect(activeFilter).toBeVisible()
+      await expect(sourceRow).toHaveCount(0)
+      await expect(page.getByTestId("filtered-selection-notice")).toBeVisible()
+      await page
+        .getByRole("button", {
+          name: uiText("en-US", "nativeSpanFilters.revealSelected"),
+          exact: true,
+        })
+        .click()
+      await expect(search).toHaveValue("")
+      await expect(activeFilter).toHaveCount(0)
+      await expect(sourceRow).toBeInViewport({ ratio: 1 })
+      if (view === "Chain")
+        await expect(sourceRow.locator(".ring-1")).toHaveCount(1)
+      else await expect(sourceRow).toHaveClass(/bg-accent/)
+      await expect(page.getByText("0/0", { exact: true })).toHaveCount(0)
+      expect(unexpected).toEqual([])
+    })
+  }
+}

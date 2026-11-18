@@ -1,0 +1,3 @@
+{"type":"user","message":{"role":"user","content":"/my-skill run"},"timestamp":"2026-03-27T10:00:00.000Z"}
+{"type":"user","message":{"role":"user","content":"Base directory for this skill: /Users/x/.claude/skills/my-skill\nInstructions"},"isMeta":true,"timestamp":"2026-03-27T10:00:00.100Z"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"Running skill."}],"id":"msg_001","model":"claude-sonnet-4-20250514","usage":{"input_tokens":5,"output_tokens":3}},"timestamp":"2026-03-27T10:00:01.000Z"}

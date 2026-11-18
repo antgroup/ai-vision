@@ -1,0 +1,134 @@
+{
+  "started_at": "2026-10-23T04:46:25.468892+00:00",
+  "evidence_scope": "real seekdb + production route/table + stub provider concurrency",
+  "vendor_requests": 0,
+  "vendor_request_boundary": "LLMJudge replaced only in this test process; all six production-route probes invoke the stub",
+  "cases": [
+    {
+      "constructor_calls": 1,
+      "probe_calls": 1,
+      "close_calls": 1,
+      "session_a_no_transaction_before_callback": true,
+      "connection_a_no_transaction_before_callback": true,
+      "driver_a_no_transaction_before_callback": true,
+      "second_session_callback_seconds": 0.000954,
+      "persisted_status": "available",
+      "revision_delta": 0,
+      "case": "unchanged",
+      "http_status": 200,
+      "passed": true
+    },
+    {
+      "constructor_calls": 1,
+      "probe_calls": 1,
+      "close_calls": 1,
+      "session_a_no_transaction_before_callback": true,
+      "connection_a_no_transaction_before_callback": true,
+      "driver_a_no_transaction_before_callback": true,
+      "second_session_callback_seconds": 0.006878,
+      "persisted_status": "untested",
+      "revision_delta": 1,
+      "case": "model",
+      "http_status": 409,
+      "passed": true
+    },
+    {
+      "constructor_calls": 1,
+      "probe_calls": 1,
+      "close_calls": 1,
+      "session_a_no_transaction_before_callback": true,
+      "connection_a_no_transaction_before_callback": true,
+      "driver_a_no_transaction_before_callback": true,
+      "second_session_callback_seconds": 0.006274,
+      "persisted_status": "untested",
+      "revision_delta": 1,
+      "case": "endpoint",
+      "http_status": 409,
+      "passed": true
+    },
+    {
+      "constructor_calls": 1,
+      "probe_calls": 1,
+      "close_calls": 1,
+      "session_a_no_transaction_before_callback": true,
+      "connection_a_no_transaction_before_callback": true,
+      "driver_a_no_transaction_before_callback": true,
+      "second_session_callback_seconds": 0.006585,
+      "persisted_status": "untested",
+      "revision_delta": 1,
+      "case": "key",
+      "http_status": 409,
+      "passed": true
+    },
+    {
+      "constructor_calls": 1,
+      "probe_calls": 1,
+      "close_calls": 1,
+      "session_a_no_transaction_before_callback": true,
+      "connection_a_no_transaction_before_callback": true,
+      "driver_a_no_transaction_before_callback": true,
+      "second_session_callback_seconds": 0.007121,
+      "original_identity_restored_but_stale_result_rejected": true,
+      "persisted_status": "untested",
+      "revision_delta": 2,
+      "case": "aba",
+      "http_status": 409,
+      "passed": true
+    },
+    {
+      "constructor_calls": 1,
+      "probe_calls": 1,
+      "close_calls": 1,
+      "session_a_no_transaction_before_callback": true,
+      "connection_a_no_transaction_before_callback": true,
+      "driver_a_no_transaction_before_callback": true,
+      "second_session_callback_seconds": 0.003976,
+      "deleted_readback": true,
+      "case": "delete",
+      "http_status": 409,
+      "passed": true
+    }
+  ],
+  "cleanup": [
+    {
+      "case": "delete",
+      "absent_readback": true
+    },
+    {
+      "case": "aba",
+      "absent_readback": true
+    },
+    {
+      "case": "key",
+      "absent_readback": true
+    },
+    {
+      "case": "endpoint",
+      "absent_readback": true
+    },
+    {
+      "case": "model",
+      "absent_readback": true
+    },
+    {
+      "case": "unchanged",
+      "absent_readback": true
+    }
+  ],
+  "failures": [],
+  "database": "aiv_model_e2e_b015",
+  "server_version": "5.7.25-OceanBase seekdb-v1.4.0.0",
+  "distinct_physical_connections": true,
+  "autocommit_a": 0,
+  "autocommit_b": 0,
+  "preexisting_connection_count": 4,
+  "preexisting_configurations_unchanged": true,
+  "passed": true,
+  "finished_at": "2026-10-23T04:46:26.378823+00:00",
+  "elapsed_seconds": 0.91,
+  "source_head": "historical-source-revision-redacted",
+  "source_sha256": {
+    "agentlens/src/agentlens/web/routes/model_connection.py": "4c29bdb99a5b664228a635c524adace0197734177956712330de6d1f71645e1b",
+    "agentlens/src/agentlens/infra/ob/tables/model_connection_table.py": "0c98f5d34e98d437914257dd9948b849cf700ed50f1de7d8c051e00b51d65545"
+  }
+}

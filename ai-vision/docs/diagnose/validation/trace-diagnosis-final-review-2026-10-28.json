@@ -1,0 +1,1114 @@
+{
+  "schema": "trace-diagnosis-final-review/v2",
+  "date": "2026-10-28",
+  "tested_source_commit": "historical-source-revision-redacted",
+  "main_base": "historical-source-revision-redacted",
+  "frontend_tree": "39998df241a67a18a2bd9a4d066e17a856fe93c6",
+  "backend_tree": "f647f6639ba0b40c1ae8fbd5eaffce879e02c737",
+  "agentlens_tree": "baf3f281535dc103dfb25662d79b42ac4844e589",
+  "frontend_source_sha256": {
+    "ai-vision/vfe/package.json": "bc714e4745e7009ffa310d49143d7a5847898b5862cd9b46e7c6cbd35c1aaec2",
+    "ai-vision/vfe/src/agents/traces/TraceEntry.tsx": "161aecaa724ccd4a4f36c05676c8ee8710849309560f38e18fca15d0cc17469a",
+    "ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx": "908f82f560d909fe82c48c260eb7dd01fdb942226008f5e23eccac20ce7049de",
+    "ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx": "f6289a5e857b30b2c9969648e186df7e6892c8d84abfc124699c55529ee687e7",
+    "ai-vision/vfe/src/components/diagnose/TraceDiagnosisResult.tsx": "0b9b94951e419b5122d0bee0c595e9c9a9a9ab6f229029d7ef892ca5051b2a37",
+    "ai-vision/vfe/src/components/diagnose/badcase-detail/TraceDetailSections.tsx": "a78c601658a78e26d167be67b43384260ee23df997feaf19872df5bbece26209",
+    "ai-vision/vfe/src/components/diagnose/badcase-detail/TraceTranscriptDrawer.tsx": "97d30d5b764984933bfde01e2006d569a4fdf46be3d3f81ab2adea18012804c2",
+    "ai-vision/vfe/src/components/diagnose/badcase/BadCaseListView.tsx": "062cebcfb2daa070e1756a9183043d7ade691722b9a593b5e409519b895a264f",
+    "ai-vision/vfe/src/components/diagnose/badcase/QualityOverviewView.tsx": "10dc5438fb803300252334cf21109a78468ad68b9a20a75e67fe23fa5a6bd439",
+    "ai-vision/vfe/src/components/diagnose/diagnosisRunApi.ts": "2c5c003b0b6b1bf2ac3bcfb095159c44952440aaff78c465c82269507dad6615",
+    "ai-vision/vfe/src/components/diagnose/diagnosisRunLabels.ts": "1dacd921f0263526ae8c55d0d9cceb5a17e298cec5f0e0f2ed7a2eb58c1341b9",
+    "ai-vision/vfe/src/components/diagnose/quickDiagnosis.ts": "74aa31c8f7100f2f9049309bb5bc27619b30d2ba192b3b730e97aed0a6be6b2d",
+    "ai-vision/vfe/src/components/diagnose/types.ts": "cf68e6707e878dd09f5e46022458eac129f034ff03ececae2368cbcdb142fccf",
+    "ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx": "ea33640d8100f56b67949301de9a19efbbd6908366beb95a2db788209b37b2a1",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "00b465baccd2b40e0b2b37bd2df5646a2558933010f952e551aa5c9489cb010f",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "f08860590786c51bcdd81992569713f177b614ba63b559d58f0c3230f0e3ba10",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "affbb7c098744dd4490f5e2f40f29d109f35b4d80b11baeb43a42923ab47679b",
+    "ai-vision/vfe/src/pages/diagnose/BadCasePage.tsx": "679dc1ec0fccf6d9308237adbc92f3aabcbb29f303651d583845eb3e026b62b9",
+    "ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx": "c4d6bb3ea2eee93acd47b6d65ccd322a3fa260d13fa906084d59cc2294d77ff2",
+    "ai-vision/vfe/tests/badCaseTaskScope.test.ts": "c7172a3d425636e1206845b846f2f8df78db9c1b7c13d1a87f341e5ac94ab731",
+    "ai-vision/vfe/tests/i18n.test.ts": "e46a05239172163fca78dcbac9d3ffed04634fd927852781e42c36581658cf74",
+    "ai-vision/vfe/tests/nativeUiHarness.ts": "eef9f9fe2c4c1cb5fdd5a0a1157f4be077fa5abc440e38d1f56db86d83849af4",
+    "ai-vision/vfe/tests/quickDiagnosis.test.ts": "9f7f9c9a9697a898d99e648e0ccf317285b677937c20ad8aa79929a461cab3ca",
+    "ai-vision/vfe/tests/quickDiagnosisDom.test.ts": "33ab54f4a929fa5d95cef3963f8d39e927b85106c352092aa91b94a9c56ee5b8",
+    "ai-vision/vfe/tests/traceListPageState.test.ts": "342045a22cf5fc6bd1354069f44a24f2b06dc9d6518c63eb924eca3ce6de75fd"
+  },
+  "removed_legacy_ui_source": [
+    "ai-vision/vfe/src/components/diagnose/QuickDiagnosisResult.tsx"
+  ],
+  "checks": {
+    "frontend_full": {
+      "passed": 1279,
+      "failed": 0,
+      "skipped": 0
+    },
+    "result_regression": {
+      "passed": 89,
+      "failed": 0
+    },
+    "i18n": {
+      "passed": 11,
+      "failed": 0
+    },
+    "django_combined": {
+      "passed": 234,
+      "failed": 0,
+      "skipped": 0
+    },
+    "agentlens_affected": {
+      "passed": 685,
+      "skipped": 32
+    },
+    "modified_file_eslint": "passed",
+    "format": "passed",
+    "typecheck": "passed",
+    "build": "passed; existing large-chunk warning"
+  },
+  "runs": [
+    {
+      "language": "zh",
+      "browser": "Codex built-in browser",
+      "task_uuid": "a21757f132ff4048a4f36a54af375b1c",
+      "job_uuid": "6247b1ee6d234792b83a63d69ca3f2c9",
+      "request_id": "5e0eadff-65e1-4e27-ba1c-345e46905385",
+      "receipt_state": "accepted",
+      "persisted_diagnosis_records": 2,
+      "observed_verdicts": {
+        "good": 1,
+        "bad": 1
+      },
+      "external_model_calls": 0
+    },
+    {
+      "language": "en",
+      "browser": "dev-browser isolated headless Chromium",
+      "task_uuid": "15ba7b2486e84bfaa57b7ae5ecf31c5b",
+      "job_uuid": "ec42a1002b2749749fa430a3e5b53d55",
+      "request_id": "d643b53a-bbb7-47e2-9562-50eb3842b392",
+      "receipt_state": "accepted",
+      "persisted_diagnosis_records": 2,
+      "observed_verdicts": {
+        "good": 1,
+        "bad": 1
+      },
+      "external_model_calls": 0
+    },
+    {
+      "language": "ja",
+      "browser": "dev-browser isolated headless Chromium",
+      "task_uuid": "b817f53f014946208581bdb11b56361f",
+      "job_uuid": "b8804b6f640f4d41b98b04ce83058ec7",
+      "request_id": "409432d7-0c83-4c5a-9625-77fa84fa8973",
+      "receipt_state": "accepted",
+      "persisted_diagnosis_records": 2,
+      "observed_verdicts": {
+        "good": 1,
+        "bad": 1
+      },
+      "external_model_calls": 0
+    }
+  ],
+  "selected_trace_ids": [
+    "b53a6be1d82b4562bda3a2d700d7377b",
+    "c3af0e4741e3431f8696a8765c204854"
+  ],
+  "diagnoser_uuid": "dg-sxn9qqd4",
+  "browser_checks": [
+    "exact selected IDs expanded and compared before run",
+    "config description with Decimal applicability remains expandable",
+    "both native disclosures default closed",
+    "actual English bad filter shows only bad Trace; clear returns two records",
+    "two result articles and source/details actions",
+    "no inline model budget/scope audit grids",
+    "single-page result has no pagination controls",
+    "responsive dialog and all controls fit viewport horizontally after bounded resize/animation settling",
+    "Japanese dark diagnosis-detail link retains exact Space/Agent/task and record identity",
+    "detail original-Trace action opens source drawer without changing route; correct bad Trace visible"
+  ],
+  "iab_layout": [
+    {
+      "articles": [
+        {
+          "bottom": 543,
+          "height": 133,
+          "width": 984,
+          "x": 117,
+          "y": 410
+        },
+        {
+          "bottom": 675,
+          "height": 132,
+          "width": 984,
+          "x": 117,
+          "y": 543
+        }
+      ],
+      "clientHeight": 608,
+      "clientWidth": 1024,
+      "controls": [
+        {
+          "bottom": 172,
+          "height": 32,
+          "text": "关闭",
+          "width": 32,
+          "x": 1069,
+          "y": 140
+        },
+        {
+          "bottom": 244,
+          "height": 36,
+          "text": "选择已配置的诊断器工具执行结果运行耗时风险操作提醒凭据暴露线索重复调用线索用户中断事件反复编辑线索修改后验证数值计算一致性受保护内容透出Trace diagnosis regression — model not configured — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。",
+          "width": 898,
+          "x": 117,
+          "y": 208
+        },
+        {
+          "bottom": 244,
+          "height": 36,
+          "text": "再次运行",
+          "width": 78,
+          "x": 1023,
+          "y": 208
+        },
+        {
+          "bottom": 280,
+          "height": 28,
+          "text": "已选 2 条轨迹",
+          "width": 85.5078125,
+          "x": 117,
+          "y": 252
+        },
+        {
+          "bottom": 280,
+          "height": 28,
+          "text": "在新标签页中管理诊断器与专项检查",
+          "width": 64,
+          "x": 1001,
+          "y": 252
+        },
+        {
+          "bottom": 280,
+          "height": 28,
+          "text": "刷新诊断器",
+          "width": 28,
+          "x": 1073,
+          "y": 252
+        },
+        {
+          "bottom": 316,
+          "height": 28,
+          "text": "检查说明与配置专项检查 · 规则",
+          "width": 188.3046875,
+          "x": 117,
+          "y": 288
+        },
+        {
+          "bottom": 373,
+          "height": 32,
+          "text": "全部记录发现线索未发现问题检查执行失败",
+          "width": 110,
+          "x": 991,
+          "y": 341
+        },
+        {
+          "bottom": 530,
+          "height": 28,
+          "text": "查看原始轨迹",
+          "width": 72,
+          "x": 117,
+          "y": 502
+        },
+        {
+          "bottom": 530,
+          "height": 28,
+          "text": "查看诊断详情",
+          "width": 72,
+          "x": 201,
+          "y": 502
+        },
+        {
+          "bottom": 663,
+          "height": 28,
+          "text": "查看原始轨迹",
+          "width": 72,
+          "x": 117,
+          "y": 635
+        },
+        {
+          "bottom": 663,
+          "height": 28,
+          "text": "查看诊断详情",
+          "width": 72,
+          "x": 201,
+          "y": 635
+        },
+        {
+          "bottom": 708,
+          "height": 20,
+          "text": "查看质量结果",
+          "width": 72,
+          "x": 1029,
+          "y": 688
+        }
+      ],
+      "dialog": {
+        "bottom": 728,
+        "height": 608,
+        "width": 1024,
+        "x": 97,
+        "y": 120
+      },
+      "scrollHeight": 608,
+      "scrollWidth": 1024,
+      "viewport": [
+        1218,
+        848
+      ]
+    }
+  ],
+  "responsive_geometry": [
+    {
+      "name": "en-desktop",
+      "viewport": [
+        1440,
+        1000
+      ],
+      "dialog": {
+        "x": 208,
+        "y": 196,
+        "width": 1024,
+        "height": 608,
+        "bottom": 804,
+        "right": 1232
+      },
+      "clientWidth": 1024,
+      "scrollWidth": 1024,
+      "clientHeight": 608,
+      "scrollHeight": 608,
+      "articles": [
+        {
+          "x": 228,
+          "y": 486,
+          "width": 984,
+          "height": 133,
+          "bottom": 619,
+          "right": 1212
+        },
+        {
+          "x": 228,
+          "y": 619,
+          "width": 984,
+          "height": 132,
+          "bottom": 751,
+          "right": 1212
+        }
+      ],
+      "controls": [
+        {
+          "label": "Close",
+          "rect": {
+            "x": 1180,
+            "y": 216,
+            "width": 32,
+            "height": 32,
+            "bottom": 248,
+            "right": 1212
+          }
+        },
+        {
+          "label": "Select a configured diagnoserTool Execution ResultsRun DurationRisky Operation NoticeCredential Exposure CluesRepeated Call CluesUser Interruption EventsRepeated Edit CluesVerification After ChangesNumeric consistencyProtected marker exposureTrace diagnosis regression — model not configured — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.",
+          "rect": {
+            "x": 228,
+            "y": 284,
+            "width": 888.09375,
+            "height": 36,
+            "bottom": 320,
+            "right": 1116.09375
+          }
+        },
+        {
+          "label": "Run again",
+          "rect": {
+            "x": 1124.09375,
+            "y": 284,
+            "width": 87.90625,
+            "height": 36,
+            "bottom": 320,
+            "right": 1212
+          }
+        },
+        {
+          "label": "Selected Traces (2)",
+          "rect": {
+            "x": 228,
+            "y": 328,
+            "width": 123.546875,
+            "height": 28,
+            "bottom": 356,
+            "right": 351.546875
+          }
+        },
+        {
+          "label": "Manage diagnosers and specialist checks in a new tab",
+          "rect": {
+            "x": 1072.671875,
+            "y": 328,
+            "width": 103.328125,
+            "height": 28,
+            "bottom": 356,
+            "right": 1176
+          }
+        },
+        {
+          "label": "Refresh diagnosers",
+          "rect": {
+            "x": 1184,
+            "y": 328,
+            "width": 28,
+            "height": 28,
+            "bottom": 356,
+            "right": 1212
+          }
+        },
+        {
+          "label": "Check detailsSpecialist checks · Rule",
+          "rect": {
+            "x": 228,
+            "y": 364,
+            "width": 231.3125,
+            "height": 28,
+            "bottom": 392,
+            "right": 459.3125
+          }
+        },
+        {
+          "label": "All recordsFindingNo issue foundCheck execution failed",
+          "rect": {
+            "x": 1046,
+            "y": 417,
+            "width": 166,
+            "height": 32,
+            "bottom": 449,
+            "right": 1212
+          }
+        },
+        {
+          "label": "View original Trace",
+          "rect": {
+            "x": 228,
+            "y": 578,
+            "width": 107.078125,
+            "height": 28,
+            "bottom": 606,
+            "right": 335.078125
+          }
+        },
+        {
+          "label": "View diagnosis details",
+          "rect": {
+            "x": 347.078125,
+            "y": 578,
+            "width": 123.90625,
+            "height": 28,
+            "bottom": 606,
+            "right": 470.984375
+          }
+        },
+        {
+          "label": "View original Trace",
+          "rect": {
+            "x": 228,
+            "y": 711,
+            "width": 107.078125,
+            "height": 28,
+            "bottom": 739,
+            "right": 335.078125
+          }
+        },
+        {
+          "label": "View diagnosis details",
+          "rect": {
+            "x": 347.078125,
+            "y": 711,
+            "width": 123.90625,
+            "height": 28,
+            "bottom": 739,
+            "right": 470.984375
+          }
+        },
+        {
+          "label": "View quality results",
+          "rect": {
+            "x": 1104.015625,
+            "y": 764,
+            "width": 107.984375,
+            "height": 20,
+            "bottom": 784,
+            "right": 1212
+          }
+        }
+      ],
+      "details": [
+        {
+          "open": false,
+          "summary": "Selected Traces (2)"
+        },
+        {
+          "open": false,
+          "summary": "Check detailsSpecialist checks · Rule"
+        }
+      ]
+    },
+    {
+      "name": "en-572",
+      "viewport": [
+        572,
+        848
+      ],
+      "dialog": {
+        "x": 16,
+        "y": 124,
+        "width": 540,
+        "height": 600,
+        "bottom": 724,
+        "right": 556
+      },
+      "clientWidth": 540,
+      "scrollWidth": 540,
+      "clientHeight": 600,
+      "scrollHeight": 600,
+      "articles": [
+        {
+          "x": 32,
+          "y": 410,
+          "width": 508,
+          "height": 133,
+          "bottom": 543,
+          "right": 540
+        },
+        {
+          "x": 32,
+          "y": 543,
+          "width": 508,
+          "height": 132,
+          "bottom": 675,
+          "right": 540
+        }
+      ],
+      "controls": [
+        {
+          "label": "Close",
+          "rect": {
+            "x": 508,
+            "y": 140,
+            "width": 32,
+            "height": 32,
+            "bottom": 172,
+            "right": 540
+          }
+        },
+        {
+          "label": "Select a configured diagnoserTool Execution ResultsRun DurationRisky Operation NoticeCredential Exposure CluesRepeated Call CluesUser Interruption EventsRepeated Edit CluesVerification After ChangesNumeric consistencyProtected marker exposureTrace diagnosis regression — model not configured — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.",
+          "rect": {
+            "x": 32,
+            "y": 208,
+            "width": 412.09375,
+            "height": 36,
+            "bottom": 244,
+            "right": 444.09375
+          }
+        },
+        {
+          "label": "Run again",
+          "rect": {
+            "x": 452.09375,
+            "y": 208,
+            "width": 87.90625,
+            "height": 36,
+            "bottom": 244,
+            "right": 540
+          }
+        },
+        {
+          "label": "Selected Traces (2)",
+          "rect": {
+            "x": 32,
+            "y": 252,
+            "width": 123.546875,
+            "height": 28,
+            "bottom": 280,
+            "right": 155.546875
+          }
+        },
+        {
+          "label": "Manage diagnosers and specialist checks in a new tab",
+          "rect": {
+            "x": 400.671875,
+            "y": 252,
+            "width": 103.328125,
+            "height": 28,
+            "bottom": 280,
+            "right": 504
+          }
+        },
+        {
+          "label": "Refresh diagnosers",
+          "rect": {
+            "x": 512,
+            "y": 252,
+            "width": 28,
+            "height": 28,
+            "bottom": 280,
+            "right": 540
+          }
+        },
+        {
+          "label": "Check detailsSpecialist checks · Rule",
+          "rect": {
+            "x": 32,
+            "y": 288,
+            "width": 231.3125,
+            "height": 28,
+            "bottom": 316,
+            "right": 263.3125
+          }
+        },
+        {
+          "label": "All recordsFindingNo issue foundCheck execution failed",
+          "rect": {
+            "x": 374,
+            "y": 341,
+            "width": 166,
+            "height": 32,
+            "bottom": 373,
+            "right": 540
+          }
+        },
+        {
+          "label": "View original Trace",
+          "rect": {
+            "x": 32,
+            "y": 502,
+            "width": 107.078125,
+            "height": 28,
+            "bottom": 530,
+            "right": 139.078125
+          }
+        },
+        {
+          "label": "View diagnosis details",
+          "rect": {
+            "x": 151.078125,
+            "y": 502,
+            "width": 123.90625,
+            "height": 28,
+            "bottom": 530,
+            "right": 274.984375
+          }
+        },
+        {
+          "label": "View original Trace",
+          "rect": {
+            "x": 32,
+            "y": 635,
+            "width": 107.078125,
+            "height": 28,
+            "bottom": 663,
+            "right": 139.078125
+          }
+        },
+        {
+          "label": "View diagnosis details",
+          "rect": {
+            "x": 151.078125,
+            "y": 635,
+            "width": 123.90625,
+            "height": 28,
+            "bottom": 663,
+            "right": 274.984375
+          }
+        },
+        {
+          "label": "View quality results",
+          "rect": {
+            "x": 432.015625,
+            "y": 688,
+            "width": 107.984375,
+            "height": 20,
+            "bottom": 708,
+            "right": 540
+          }
+        }
+      ],
+      "details": [
+        {
+          "open": false,
+          "summary": "Selected Traces (2)"
+        },
+        {
+          "open": false,
+          "summary": "Check detailsSpecialist checks · Rule"
+        }
+      ]
+    },
+    {
+      "name": "en-320",
+      "viewport": [
+        320,
+        844
+      ],
+      "dialog": {
+        "x": 16,
+        "y": 42.203125,
+        "width": 288,
+        "height": 759.59375,
+        "bottom": 801.796875,
+        "right": 304
+      },
+      "clientWidth": 288,
+      "scrollWidth": 288,
+      "clientHeight": 760,
+      "scrollHeight": 773,
+      "articles": [
+        {
+          "x": 32,
+          "y": 433.203125,
+          "width": 256,
+          "height": 181,
+          "bottom": 614.203125,
+          "right": 288
+        },
+        {
+          "x": 32,
+          "y": 614.203125,
+          "width": 256,
+          "height": 152,
+          "bottom": 766.203125,
+          "right": 288
+        }
+      ],
+      "controls": [
+        {
+          "label": "Close",
+          "rect": {
+            "x": 256,
+            "y": 58.203125,
+            "width": 32,
+            "height": 32,
+            "bottom": 90.203125,
+            "right": 288
+          }
+        },
+        {
+          "label": "Select a configured diagnoserTool Execution ResultsRun DurationRisky Operation NoticeCredential Exposure CluesRepeated Call CluesUser Interruption EventsRepeated Edit CluesVerification After ChangesNumeric consistencyProtected marker exposureTrace diagnosis regression — model not configured — This diagnoser’s model connection is incomplete or unavailable. Check its configuration on the Diagnosers page.",
+          "rect": {
+            "x": 32,
+            "y": 126.203125,
+            "width": 256,
+            "height": 36,
+            "bottom": 162.203125,
+            "right": 288
+          }
+        },
+        {
+          "label": "Run again",
+          "rect": {
+            "x": 32,
+            "y": 170.203125,
+            "width": 87.90625,
+            "height": 36,
+            "bottom": 206.203125,
+            "right": 119.90625
+          }
+        },
+        {
+          "label": "Selected Traces (2)",
+          "rect": {
+            "x": 32,
+            "y": 214.203125,
+            "width": 123.546875,
+            "height": 28,
+            "bottom": 242.203125,
+            "right": 155.546875
+          }
+        },
+        {
+          "label": "Manage diagnosers and specialist checks in a new tab",
+          "rect": {
+            "x": 148.671875,
+            "y": 246.203125,
+            "width": 103.328125,
+            "height": 28,
+            "bottom": 274.203125,
+            "right": 252
+          }
+        },
+        {
+          "label": "Refresh diagnosers",
+          "rect": {
+            "x": 260,
+            "y": 246.203125,
+            "width": 28,
+            "height": 28,
+            "bottom": 274.203125,
+            "right": 288
+          }
+        },
+        {
+          "label": "Check detailsSpecialist checks · Rule",
+          "rect": {
+            "x": 32,
+            "y": 282.203125,
+            "width": 231.3125,
+            "height": 28,
+            "bottom": 310.203125,
+            "right": 263.3125
+          }
+        },
+        {
+          "label": "All recordsFindingNo issue foundCheck execution failed",
+          "rect": {
+            "x": 32,
+            "y": 364.203125,
+            "width": 166,
+            "height": 32,
+            "bottom": 396.203125,
+            "right": 198
+          }
+        },
+        {
+          "label": "View original Trace",
+          "rect": {
+            "x": 32,
+            "y": 573.203125,
+            "width": 107.078125,
+            "height": 28,
+            "bottom": 601.203125,
+            "right": 139.078125
+          }
+        },
+        {
+          "label": "View diagnosis details",
+          "rect": {
+            "x": 151.078125,
+            "y": 573.203125,
+            "width": 123.90625,
+            "height": 28,
+            "bottom": 601.203125,
+            "right": 274.984375
+          }
+        },
+        {
+          "label": "View original Trace",
+          "rect": {
+            "x": 32,
+            "y": 726.203125,
+            "width": 107.078125,
+            "height": 28,
+            "bottom": 754.203125,
+            "right": 139.078125
+          }
+        },
+        {
+          "label": "View diagnosis details",
+          "rect": {
+            "x": 151.078125,
+            "y": 726.203125,
+            "width": 123.90625,
+            "height": 28,
+            "bottom": 754.203125,
+            "right": 274.984375
+          }
+        },
+        {
+          "label": "View quality results",
+          "rect": {
+            "x": 180.015625,
+            "y": 779.203125,
+            "width": 107.984375,
+            "height": 20,
+            "bottom": 799.203125,
+            "right": 288
+          }
+        }
+      ],
+      "details": [
+        {
+          "open": false,
+          "summary": "Selected Traces (2)"
+        },
+        {
+          "open": false,
+          "summary": "Check detailsSpecialist checks · Rule"
+        }
+      ]
+    },
+    {
+      "name": "ja-390-dark",
+      "viewport": [
+        390,
+        844
+      ],
+      "dark": true,
+      "dialog": {
+        "x": 16,
+        "y": 71.5,
+        "width": 358,
+        "height": 701,
+        "bottom": 772.5,
+        "right": 374
+      },
+      "clientWidth": 358,
+      "scrollWidth": 358,
+      "clientHeight": 701,
+      "scrollHeight": 701,
+      "articles": [
+        {
+          "x": 32,
+          "y": 430.5,
+          "width": 326,
+          "height": 161,
+          "bottom": 591.5,
+          "right": 358
+        },
+        {
+          "x": 32,
+          "y": 591.5,
+          "width": 326,
+          "height": 132,
+          "bottom": 723.5,
+          "right": 358
+        }
+      ],
+      "controls": [
+        {
+          "label": "閉じる",
+          "rect": {
+            "x": 326,
+            "y": 87.5,
+            "width": 32,
+            "height": 32,
+            "bottom": 119.5,
+            "right": 358
+          }
+        },
+        {
+          "label": "設定済みの診断器を選択ツールの実行結果実行時間リスクのある操作への注意認証情報露出の手がかり繰り返し呼び出しの手がかりユーザーによる中断イベント繰り返し編集の手がかり変更後の検証数値計算の整合性保護対象マーカーの露出Trace diagnosis regression — model not configured — この診断器のモデル接続が未設定または利用できません。診断器ページで設定を確認してください。",
+          "rect": {
+            "x": 32,
+            "y": 155.5,
+            "width": 326,
+            "height": 36,
+            "bottom": 191.5,
+            "right": 358
+          }
+        },
+        {
+          "label": "再実行",
+          "rect": {
+            "x": 32,
+            "y": 199.5,
+            "width": 65,
+            "height": 36,
+            "bottom": 235.5,
+            "right": 97
+          }
+        },
+        {
+          "label": "選択済みトレース 2 件",
+          "rect": {
+            "x": 32,
+            "y": 243.5,
+            "width": 135.90625,
+            "height": 28,
+            "bottom": 271.5,
+            "right": 167.90625
+          }
+        },
+        {
+          "label": "新しいタブで診断器と個別チェックを管理",
+          "rect": {
+            "x": 246,
+            "y": 243.5,
+            "width": 76,
+            "height": 28,
+            "bottom": 271.5,
+            "right": 322
+          }
+        },
+        {
+          "label": "診断器を更新",
+          "rect": {
+            "x": 330,
+            "y": 243.5,
+            "width": 28,
+            "height": 28,
+            "bottom": 271.5,
+            "right": 358
+          }
+        },
+        {
+          "label": "チェックの説明と設定個別チェック · ルール",
+          "rect": {
+            "x": 32,
+            "y": 279.5,
+            "width": 262.703125,
+            "height": 28,
+            "bottom": 307.5,
+            "right": 294.703125
+          }
+        },
+        {
+          "label": "すべての記録手がかりあり問題は見つかりませんでしたチェックの実行失敗",
+          "rect": {
+            "x": 32,
+            "y": 361.5,
+            "width": 194,
+            "height": 32,
+            "bottom": 393.5,
+            "right": 226
+          }
+        },
+        {
+          "label": "元のトレースを表示",
+          "rect": {
+            "x": 32,
+            "y": 550.5,
+            "width": 108,
+            "height": 28,
+            "bottom": 578.5,
+            "right": 140
+          }
+        },
+        {
+          "label": "診断の詳細を表示",
+          "rect": {
+            "x": 152,
+            "y": 550.5,
+            "width": 96,
+            "height": 28,
+            "bottom": 578.5,
+            "right": 248
+          }
+        },
+        {
+          "label": "元のトレースを表示",
+          "rect": {
+            "x": 32,
+            "y": 683.5,
+            "width": 108,
+            "height": 28,
+            "bottom": 711.5,
+            "right": 140
+          }
+        },
+        {
+          "label": "診断の詳細を表示",
+          "rect": {
+            "x": 152,
+            "y": 683.5,
+            "width": 96,
+            "height": 28,
+            "bottom": 711.5,
+            "right": 248
+          }
+        },
+        {
+          "label": "品質結果を表示",
+          "rect": {
+            "x": 274,
+            "y": 736.5,
+            "width": 84,
+            "height": 20,
+            "bottom": 756.5,
+            "right": 358
+          }
+        }
+      ],
+      "details": [
+        {
+          "open": false,
+          "summary": "選択済みトレース 2 件"
+        },
+        {
+          "open": false,
+          "summary": "チェックの説明と設定個別チェック · ルール"
+        }
+      ]
+    }
+  ],
+  "followup_detail_localization": {
+    "new_diagnosis_runs": 0,
+    "feedback_writes": 0,
+    "observations": [
+      {
+        "language": "ja",
+        "sourceLabel": "元のトレースを表示",
+        "copyCount": 3,
+        "collapseLabel": "折りたたむ",
+        "expandLabel": "さらに表示",
+        "collapseExpandPassed": true,
+        "detailUrl": "http://localhost:5175/badcase?view=overview&job=b8804b6f640f4d41b98b04ce83058ec7&task=b817f53f014946208581bdb11b56361f&detail=r-4e916844d52c1742&agent=langfuse&spaceId=45e30ffd-124a-4c1c-a02b-9c1366867999&agent_uuid=a4a4bab2-bf59-4021-8956-2cc2b2e3eb9f",
+        "productChineseControlsAbsent": true
+      },
+      {
+        "language": "en",
+        "sourceLabel": "View original Trace",
+        "copyCount": 3,
+        "collapseLabel": "Show less",
+        "expandLabel": "Show more",
+        "collapseExpandPassed": true,
+        "detailUrl": "http://localhost:5175/badcase?view=overview&job=b8804b6f640f4d41b98b04ce83058ec7&task=b817f53f014946208581bdb11b56361f&detail=r-4e916844d52c1742&agent=langfuse&spaceId=45e30ffd-124a-4c1c-a02b-9c1366867999&agent_uuid=a4a4bab2-bf59-4021-8956-2cc2b2e3eb9f",
+        "productChineseControlsAbsent": true
+      }
+    ],
+    "scope": "same persisted bad record reopened through actual UI; source/copy/collapse-expand labels inspected and both expansion toggles exercised; Copy not clicked"
+  },
+  "screenshots": [
+    {
+      "path": "assets/trace-selection-actions/saved-diagnosis-result-zh.jpg",
+      "sha256": "df7143bb6a39cd99b3e5e578f844f153a550f6a58c9ff70f8ab98e9059ef2423",
+      "width": 1218,
+      "height": 848
+    },
+    {
+      "path": "assets/trace-selection-actions/compact-result-en-desktop.jpg",
+      "sha256": "0076fc0efedc6eaf932d02f65e6eaf270a691e474574023d44be40cb1b57d414",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "path": "assets/trace-selection-actions/compact-result-en-572.jpg",
+      "sha256": "be02370ca00c1f2472313e97fcc2cbdb08292a8d03e0455b081079ae8b216e2a",
+      "width": 572,
+      "height": 848
+    },
+    {
+      "path": "assets/trace-selection-actions/compact-result-en-320.jpg",
+      "sha256": "60a49dee2e2cf129062aecdb9974baddaf88599b1ea3f951435d4ae7e45ff0ec",
+      "width": 320,
+      "height": 844
+    },
+    {
+      "path": "assets/trace-selection-actions/compact-result-ja-390-dark.jpg",
+      "sha256": "bc12bf3df1c62955f80e561e43b7b1fe7285efde9664f3bf1d98510e1197ba22",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "remaining_review_findings": 0,
+  "limitations": [
+    "Prepared macOS source environment; no Linux, deployment or physical mobile device claim.",
+    "No real external model call; numeric specialist uses deterministic rule.",
+    "AgentLens optional isolated database fixtures skipped.",
+    "English320 has13pixels of vertical scrolling, with no horizontal clipping.",
+    "Frozen saved names and generated findings keep their recorded language.",
+    "Initial immediate-resize measurements were transient and superseded by stable geometry; no persistent overflow found.",
+    "Hosted GitHub Actions blocked by account payment/spending-limit restriction."
+  ],
+  "supplemental_browser_environment": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36",
+    "sourceTraceVisible": true,
+    "sourceOutputVisible": true
+  }
+}

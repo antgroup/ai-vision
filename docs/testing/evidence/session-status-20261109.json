@@ -1,0 +1,164 @@
+{
+  "schema": "session-status-validation/v1",
+  "validation_date": "2026-11-09",
+  "baseline_sha": "historical-source-revision-redacted",
+  "tested_product_files_sha256": {
+    "ai-vision/aivision-py-be/apps/core/tests/test_canonical_sessions.py": "39ad8aaad91dddc0ebf0c7f543dc722aaabe3615d9835bcf4b8161982a07f211",
+    "ai-vision/aivision-py-be/apps/core/trace_query/canonical_sessions.py": "d1b3c0dc23fc9307399a9c6c574f639891f9839e1edd4dd54e15afa0daceb7e7",
+    "ai-vision/docs/traces/query-performance-contract.md": "3560bc6dec3660200f2f2d1d6a72818f7a2c243c8d7b326ab621606c580754b7",
+    "ai-vision/vfe/src/components/traces-otel/types.ts": "cda35c2e17dd867b5d852ee10cb9fe6648f8067b685f0324a1a28564686678fe",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "91419f52b03dbb79d7c283b3656531274af45e61ec10432b9dde35bc0427fd6f",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "0ff78d3a43c19e0ca9b1cbacad260081e219e3f72f0e518eaf1a26a10b355dac",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "ece117aba7a095380d251c2f9efbead3d4b0664df91961fb72a9dd3f9a94e6ef",
+    "ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx": "3c7a33838e96c2ebf1686e520a57e146f1ee8033a928f44fd56dc5855a853620",
+    "ai-vision/vfe/tests/nativeTracePreviewDom.test.ts": "205e605c966e4a81ddc75e0dd2bc467418bd140287360a3fc45ae34f5b8d53eb",
+    "ai-vision/vfe/tests/nativeUiHarness.ts": "a3338954d8277ac2ca74a346fb45418d08e0250d6146b4201d411c85da73694d",
+    "ai-vision/vfe/tests/traceListFiltersDom.test.ts": "65b5b04044834480260d2fb0477c65ef22417e29ba52dca12e3c1e5873c4263f",
+    "ai-vision/vfe/src/components/traces-otel/SessionStatusLabel.tsx": "41936ad756613b78da9372833bc1c0d7dc9166f46944096bef25ac9e8a09d163"
+  },
+  "evidence_identity": "Executed before commit against the baseline plus the recorded source files. Final PR head is verified separately; these historical runs are not relabelled.",
+  "runtime": {
+    "product": "macOS source backend/frontend; local dirty patch",
+    "data_plane_source_sha": "dad3892b00c8b8e06e0b544eb5be82cffcc8337c",
+    "collector_image_source_sha": "historical-source-revision-redacted",
+    "collector_source_diff_to_baseline": "empty",
+    "telemetry_database": "real local seekdb, isolated schema",
+    "control_plane_database": "isolated SQLite",
+    "browser": "real Chromium via dev-browser; no interception or DOM replacement",
+    "main_viewport": {
+      "width": 1720,
+      "height": 1120
+    },
+    "narrow_viewport": {
+      "width": 960,
+      "height": 1080
+    },
+    "locales": [
+      "zh-CN",
+      "en-US",
+      "ja-JP"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "checks": {
+    "frontend_full_test_executions": 1701,
+    "frontend_failures": 0,
+    "frontend_related_dom_tests": 50,
+    "backend_related_tests": 138,
+    "modified_file_lint": "passed",
+    "typecheck": "passed",
+    "production_build": "passed; pre-existing large-chunk warning",
+    "backend_full_suite_passed": false,
+    "backend_full_attempt": {
+      "tests": 1773,
+      "skipped": 51,
+      "failures": 2,
+      "errors": 6
+    },
+    "backend_environment_errors": "Local listener restrictions, SQLite transaction/order behavior, temporary logging override; affected checks passed in isolated targeted reruns.",
+    "confirmed_baseline_failures": [
+      "IntegrationLifecycleTests.test_team_source_plugins_can_restore_but_cannot_use_trace_confirmation",
+      "AgentDownloadLatestTests.test_hermes_source_guide_does_not_offer_an_unbuilt_cli_installer"
+    ]
+  },
+  "real_http_checks": [
+    {
+      "cohort": "old139",
+      "configured_mode": "auto",
+      "http": 200,
+      "query_mode": "read_model",
+      "read_model": "ready",
+      "session_count": 10,
+      "session_states": {
+        "unset": 4,
+        "ok": 3,
+        "error": 3
+      },
+      "expected_states_and_counts_matched": true
+    },
+    {
+      "cohort": "old139",
+      "configured_mode": "raw",
+      "http": 200,
+      "query_mode": "raw_snapshot",
+      "read_model": null,
+      "session_count": 10,
+      "session_states": {
+        "unset": 4,
+        "ok": 3,
+        "error": 3
+      },
+      "expected_states_and_counts_matched": true
+    },
+    {
+      "cohort": "new47e",
+      "configured_mode": "auto",
+      "http": 200,
+      "query_mode": "read_model",
+      "read_model": "ready",
+      "session_count": 10,
+      "session_states": {
+        "unset": 4,
+        "ok": 3,
+        "error": 3
+      },
+      "expected_states_and_counts_matched": true
+    },
+    {
+      "cohort": "new47e",
+      "configured_mode": "raw",
+      "http": 200,
+      "query_mode": "raw_snapshot",
+      "read_model": null,
+      "session_count": 10,
+      "session_states": {
+        "unset": 4,
+        "ok": 3,
+        "error": 3
+      },
+      "expected_states_and_counts_matched": true
+    }
+  ],
+  "retained_data": {
+    "old_projection_producer_sha": "historical-source-revision-redacted",
+    "raw_spans": 32,
+    "projected_traces": 26,
+    "checked_root_status_chains": 26,
+    "physical_payload_projection_agree": true,
+    "raw_and_projection_hashes_unchanged_after_fix": true,
+    "projection_rebuild_performed_for_fix": false
+  },
+  "interactions": {
+    "focus_opens_help": true,
+    "escape_closes_help": true,
+    "help_click_keeps_session_drawer_closed": true,
+    "mixed_session_breakdown": {
+      "success": 1,
+      "error": 0,
+      "unknown": 1
+    },
+    "unknown_filter": {
+      "wire_value": "unset",
+      "matched_sessions": 4,
+      "all_unknown": 3,
+      "some_unknown": 1
+    },
+    "narrow_label_clipping": false
+  },
+  "screenshots_sha256": {
+    "after.png": "85dc518b9e6bb586925d6d8dc6b0dcccee0477479397675458f84c5021a2fe49",
+    "before.png": "3ed2cb95f787153c871e2206b065d5dd0e0d4e7c4f69ef564ac35c7ad1615134",
+    "mixed-help.png": "a414c9910af72a7945f8b30b885ca49f5053c1db734c848b00b6b462b3aa6809"
+  },
+  "unverified": [
+    "Remote EZsell database historical integrity",
+    "Data-plane schema-version upgrade",
+    "Linux VM acceptance for this patch",
+    "Live-model execution",
+    "Released artifacts",
+    "Hosted CI"
+  ]
+}

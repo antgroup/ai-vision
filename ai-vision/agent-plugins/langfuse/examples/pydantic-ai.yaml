@@ -1,0 +1,46 @@
+id: pydantic-ai
+logo: /assets/frameworks/pydantic-ai.svg
+label: Pydantic AI
+frontendSort: 18
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+pipInstall: pip install "langfuse>=4.16.0,<5" pydantic-ai
+pipExample: |-
+  import os
+
+  from langfuse import get_client, propagate_attributes
+  from pydantic_ai import Agent
+
+
+  langfuse = get_client()
+
+
+  def main():
+      # Initialize Pydantic AI instrumentation
+      Agent.instrument_all()
+
+      # Create and run an agent
+      agent = Agent(f"openai:{os.environ.get('OPENAI_MODEL', 'gpt-4o')}")
+      with langfuse.start_as_current_observation(
+          as_type="span", name="pydantic-ai-request"
+      ):
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          result = agent.run_sync("What is the capital of France?")
+          print(result.output)
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:pydantic-ai"]):
+              main()
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

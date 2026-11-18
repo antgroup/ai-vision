@@ -1,0 +1,7 @@
+{"type":"metadata","protocol_version":"1.9"}
+{"timestamp":1700000000,"message":{"type":"TurnBegin","payload":{"user_input":[{"type":"text","text":"legacy contract prompt"}]}}}
+{"timestamp":1700000001,"message":{"type":"StepBegin","payload":{"n":1}}}
+{"timestamp":1700000002,"message":{"type":"ToolCall","payload":{"id":"legacy-call","function":{"name":"ReadFile","arguments":"{\"path\":\"receipt.txt\"}"}}}}
+{"timestamp":1700000003,"message":{"type":"StatusUpdate","payload":{"token_usage":{"input_other":10,"output":5,"input_cache_read":0,"input_cache_creation":0},"message_id":"legacy-message"}}}
+{"timestamp":1700000004,"message":{"type":"ToolResult","payload":{"tool_call_id":"legacy-call","return_value":{"is_error":false,"output":"legacy receipt","message":""}}}}
+{"timestamp":1700000005,"message":{"type":"TurnEnd","payload":{}}}

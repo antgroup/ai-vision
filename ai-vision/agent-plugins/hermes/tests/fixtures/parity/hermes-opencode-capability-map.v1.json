@@ -1,0 +1,77 @@
+{
+  "schema_version": "aivision.signal-capability-map.v1",
+  "authority": {
+    "semantic_conventions": "docs/semconv",
+    "validation_policies": "weaver/policies",
+    "peer_reference": {
+      "runtime": "opencode",
+      "version": "0.3.3",
+      "source_revision": "ec2b20937ef159de64376fb5e73ab92903304855"
+    }
+  },
+  "shared": {
+    "metrics": [
+      "agent.api_request.count",
+      "agent.api_request.duration",
+      "agent.api_request.error.count",
+      "agent.cache.read_tokens",
+      "agent.cache.write_tokens",
+      "agent.session.count",
+      "agent.token.usage",
+      "agent.tool_call.count",
+      "agent.tool_call.error.count"
+    ],
+    "events": [
+      "api_request",
+      "session_end",
+      "session_start",
+      "tool_call",
+      "tool_result",
+      "user_prompt"
+    ],
+    "span_kinds": [
+      "AGENT",
+      "CHAT",
+      "LLM",
+      "TOOL"
+    ],
+    "resource_attributes": [
+      "agentic.collection.mode",
+      "ant.agent.env",
+      "ant.agent.instance",
+      "ant.agent.product",
+      "ant.agent.scene",
+      "ant.agent.type",
+      "deployment.environment",
+      "service.name",
+      "service.version"
+    ]
+  },
+  "hermes_only": {
+    "metrics": [
+      "agent.tool_call.duration"
+    ],
+    "events": [
+      "subagent_ended",
+      "subagent_spawned"
+    ]
+  },
+  "declared_unemitted": {
+    "events": [
+      "tool_decision"
+    ]
+  },
+  "opencode_only_host_gap": {
+    "events": [
+      "compaction_result"
+    ],
+    "reason": "Hermes v0.18.2 exposes no documented compaction observer callback."
+  },
+  "ignored_comparison_fields": [
+    "spanId",
+    "timestamp",
+    "traceId",
+    "transport_headers",
+    "otel_scope"
+  ]
+}

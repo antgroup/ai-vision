@@ -1,0 +1,52 @@
+# Optional SOURCE distribution. This is not a private binary delivery recipe.
+# Build the ordinary selfhost AgentLens image at this same source revision first.
+# The separate artifact-only Dockerfile.sandbox-plugin remains the native route.
+ARG AGENTLENS_SOURCE_IMAGE
+ARG RULE_WORKER_IMAGE
+ARG WORKER_BUILD_IMAGE=python:3.11.14-slim-bookworm@sha256:549988ff0804593d8373682ef5c0f0ceee48328abaaa2e054241c23f5c324751
+FROM ${RULE_WORKER_IMAGE} AS rule-runtime
+FROM ${WORKER_BUILD_IMAGE} AS worker-builder
+RUN command -v gcc || (apt-get update \
+    && apt-get install -y --no-install-recommends gcc libc6-dev \
+    && rm -rf /var/lib/apt/lists/*)
+COPY native/requirements-build.txt /build/requirements-build.txt
+RUN /usr/local/bin/python3.11 -m pip install --no-cache-dir -r /build/requirements-build.txt
+COPY native/custom_rule_worker.c /source/native/custom_rule_worker.c
+COPY src/agentlens/diagnoser/executors/rule/custom/worker_main.py /source/src/agentlens/diagnoser/executors/rule/custom/worker_main.py
+COPY docker/build-sandbox-worker.py /build/build-sandbox-worker.py
+RUN /usr/local/bin/python3.11 /build/build-sandbox-worker.py --source /source --output /worker
+
+FROM ${AGENTLENS_SOURCE_IMAGE} AS runtime
+USER root
+# Reject an accidental private native base: source overlays cannot update .so
+# modules safely and must never silently cross that distribution boundary.
+RUN test -f /app/src/agentlens/main.py \
+    && test ! -f /app/src/agentlens/main.cpython-311-x86_64-linux-gnu.so \
+    && test ! -f /app/src/agentlens/main.cpython-311-aarch64-linux-gnu.so
+COPY src/ /app/src/
+COPY --from=worker-builder /worker/ /app/src/
+COPY --from=rule-runtime /app/rule-runtime/manifest.json /app/rule-runtime/manifest.json
+COPY docker/requirements-sandbox-plugin.txt /tmp/requirements-sandbox-plugin.txt
+RUN if /app/.venv/bin/python -c 'from importlib.metadata import version; from pathlib import Path; pins=[line.split("==") for line in Path("/tmp/requirements-sandbox-plugin.txt").read_text().splitlines() if line and not line.startswith("#")]; assert all(version(name)==expected for name,expected in pins)'; then :; else \
+      /usr/local/bin/python -m pip install --no-cache-dir --no-deps \
+      --target /app/.venv/lib/python3.11/site-packages \
+      -r /tmp/requirements-sandbox-plugin.txt; fi \
+    && rm /tmp/requirements-sandbox-plugin.txt \
+    && /app/.venv/bin/python -c 'import agentlens.sandbox_plugin.main; import openshell' \
+    && /app/src/agentlens-rule-worker --check-isolation \
+    && test -x /usr/bin/stat \
+    && mkdir -p /work \
+    && chown 1000:1000 /work \
+    && chmod 755 /work
+ARG SOURCE_SHA
+ARG SOURCE_REPOSITORY_URL
+LABEL org.opencontainers.image.source="${SOURCE_REPOSITORY_URL}" \
+      org.opencontainers.image.revision="${SOURCE_SHA}" \
+      io.aivision.distribution="source-selfhost" \
+      io.aivision.sandbox.protocol="1"
+ENV PYTHONPATH=/app/src PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# The catalog selects a separate fixed Rule worker image. This image contains
+# the qualified inventory, not its additional evaluation dependencies.
+WORKDIR /work
+EXPOSE 8091
+ENTRYPOINT ["/app/.venv/bin/python", "-m", "uvicorn", "agentlens.sandbox_plugin.main:app", "--host", "0.0.0.0", "--port", "8091", "--workers", "1"]

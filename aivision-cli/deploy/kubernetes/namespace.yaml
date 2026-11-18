@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{.Namespace | quote}}
+  labels:
+    app.kubernetes.io/part-of: aivision
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aivision
+  namespace: {{.Namespace | quote}}
+# The official OceanBase entrypoint initializes an in-cluster Kubernetes
+# client. Application Pods opt out of this token in their own Pod specs.
+automountServiceAccountToken: true
+{{if .IMAGE_PULL_SECRET}}
+imagePullSecrets:
+  - name: {{.IMAGE_PULL_SECRET | quote}}
+{{end}}

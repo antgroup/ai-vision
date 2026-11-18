@@ -1,0 +1,192 @@
+{
+  "date": "2026-11-12",
+  "source_commit": "historical-source-revision-redacted",
+  "source_tree": "dc31f9ffc4c02a9efb11b4eac6bfa9afdd61461e",
+  "main_commit": "historical-source-revision-redacted",
+  "sample_sha256": "8c3d7b341b38f980af8b5edd80cf3d854a626c7a4834c2bf806b0ed25c48c900",
+  "browser_command": "npm run test:e2e:platform -- onboardingDemo.spec.ts",
+  "browser_test": {
+    "passed": 1,
+    "failed": 0,
+    "retries": 0,
+    "api_fixtures": false,
+    "viewport": [
+      1440,
+      1000
+    ]
+  },
+  "browser_readback": {
+    "agent_uuid": "da424558-27dc-5e98-9515-bbec5371025d",
+    "trace_id": "7e6ae576db703b7142927febf7faccd5",
+    "span_count": 21,
+    "failed_span_id": "201c48c39bef53e1",
+    "model_connections": 0,
+    "replay_reused_agent_trace_and_rule": true
+  },
+  "sql_before": {
+    "data_backend": {
+      "version": "5.7.25-OceanBase seekdb-v1.4.0.0",
+      "version_comment": "OceanBase 4.3.5.3 seekdb (r1.4.0.0) (Built 100000172026082615-0003f8d4b32a2cfe3b75ae8f4dbe26fcee994541 Aug 26 2026)"
+    },
+    "space_id": "6bb8b350-6670-489d-8441-88b2fca2ea92",
+    "agent_count": 0,
+    "model_connections": 0
+  },
+  "sql_after": {
+    "data_backend": {
+      "version": "5.7.25-OceanBase seekdb-v1.4.0.0",
+      "version_comment": "OceanBase 4.3.5.3 seekdb (r1.4.0.0) (Built 100000172026082615-0003f8d4b32a2cfe3b75ae8f4dbe26fcee994541 Aug 26 2026)"
+    },
+    "space_id": "6bb8b350-6670-489d-8441-88b2fca2ea92",
+    "agent_count": 1,
+    "model_connections": 0,
+    "agent": {
+      "uuid": "da424558-27dc-5e98-9515-bbec5371025d",
+      "agent_product": "langfuse",
+      "status": 1
+    },
+    "sample_digest": "8c3d7b341b38f980af8b5edd80cf3d854a626c7a4834c2bf806b0ed25c48c900",
+    "trace": {
+      "id": "7e6ae576db703b7142927febf7faccd5",
+      "spans": 21,
+      "failed_span": {
+        "trace_id": "7e6ae576db703b7142927febf7faccd5",
+        "span_id": "201c48c39bef53e1",
+        "span_name": "retrieve_policy",
+        "status_code": 2,
+        "status_message": "Error executing tool retrieve_policy: Controlled retrieval failure after actual vector search",
+        "agent_product": "langfuse"
+      }
+    },
+    "space_trace_count": 2,
+    "source_traces": [
+      {
+        "trace_id": "2d83ec545682ab9327fadb2c59b94415",
+        "span_count": 15,
+        "mcp_calls": [
+          {
+            "span_id": "8b149d437961c589",
+            "name": "retrieve_policy",
+            "status": 1
+          }
+        ]
+      },
+      {
+        "trace_id": "7e6ae576db703b7142927febf7faccd5",
+        "span_count": 21,
+        "mcp_calls": [
+          {
+            "span_id": "201c48c39bef53e1",
+            "name": "retrieve_policy",
+            "status": 2
+          },
+          {
+            "span_id": "0607b526e3648210",
+            "name": "retrieve_policy",
+            "status": 1
+          }
+        ]
+      }
+    ],
+    "rule": {
+      "uuid": "dg-y02pguwq",
+      "type": "builtin",
+      "mode": "rule"
+    },
+    "task": {
+      "task_uuid": "9c16838b00764594a33e100b485be7e9",
+      "provisioning_step": "accepted",
+      "status": "succeeded",
+      "attempt": 1
+    },
+    "record": {
+      "uuid": "r-70b94e264f5d2cc6",
+      "task_uuid": "9c16838b00764594a33e100b485be7e9",
+      "target_id": "7e6ae576db703b7142927febf7faccd5",
+      "verdict": "bad",
+      "failed_span_id": "201c48c39bef53e1",
+      "execution": "succeeded",
+      "counts": {
+        "success": 2,
+        "failure": 1,
+        "unknown": 0
+      },
+      "recovery": "matching_success_observed"
+    }
+  },
+  "platform": {
+    "host": "Darwin arm64",
+    "docker_host": "linux/aarch64",
+    "namespace": "aiv167-6dfbde37d",
+    "services": {
+      "database": {
+        "reference": "aiv-local010-deps/seekdb:approved-arm64",
+        "image_config_id": "sha256:39a950d4caf63489638ff9aa9b7028b5dd2a896e8fc5d77ae6145fa60fd3b59d",
+        "state": "running",
+        "restarts": 0,
+        "platform": "linux/arm64"
+      },
+      "telemetry_query": {
+        "reference": "aiv-local010/signoz-ob:0.1.0-daily.20261108-arm64",
+        "image_config_id": "sha256:c99013a2cdd7443e1686fecead1f48ea930d110746c3b3438d896d561c056229",
+        "state": "running",
+        "restarts": 0,
+        "platform": "linux/arm64"
+      },
+      "ingest_gateway": {
+        "reference": "aiv-local010/antcollector-gw:0.1.0-daily.20261108-arm64",
+        "image_config_id": "sha256:7bcd9e98550cbd2b5d5d975a04bff2fd382113d6e8d35e9b30ff1e99c3bc599d",
+        "state": "running",
+        "restarts": 0,
+        "platform": "linux/arm64"
+      },
+      "backend": {
+        "implementation": "current checkout source",
+        "readiness_http": 200,
+        "dependency_lock_sha256": "feee44e95c8be86d3d9c663c4447d55f1dfad4a9563cbbf09fb3acefd17aa329"
+      },
+      "agentlens": {
+        "implementation": "current checkout source",
+        "readiness_http": 200,
+        "dependency_lock_sha256": "9d79e2a24994f3777fea3d34b77c000bd0f1b3dab158cd9f54de755da52547e5"
+      }
+    },
+    "database_verification": [
+      "mysql ('5.7.25-OceanBase seekdb-v1.4.0.0', 'OceanBase 4.3.5.3 seekdb (r1.4.0.0) (Built 100000172026082615-0003f8d4b32a2cfe3b75ae8f4dbe26fcee994541 Aug 26 2026)')",
+      "applied migrations 58"
+    ],
+    "checkout_head": "b4d84d4fe359adcf4c733c05a3c2963db7b5e542",
+    "fixture_sha256": "8c3d7b341b38f980af8b5edd80cf3d854a626c7a4834c2bf806b0ed25c48c900",
+    "published_bootstrap_commit": "historical-source-revision-redacted"
+  },
+  "screenshots": [
+    {
+      "file": "01-consent.png",
+      "sha256": "dce2bec4c1ad47429d9d0f1604458ee39c1da6b44f10b52398a15066b58fc40c"
+    },
+    {
+      "file": "02-dashboard.png",
+      "sha256": "26a0886ab4aba9c7c88cd94a851a70c8c4f97ffe3920bd4634f27b8ceea48033"
+    },
+    {
+      "file": "03-mcp-summary.png",
+      "sha256": "82f86218499ebfbdca0a136f684e5bb4f88ff70b0eb9d5240bfada19d601b8d8"
+    },
+    {
+      "file": "04-mcp-call.png",
+      "sha256": "9952c5717c22d53681f8b79791d2d44e9c88e45a667762ec94fd5f2b3e4c7b74"
+    },
+    {
+      "file": "05-rule-result.png",
+      "sha256": "f58e33028fe84f62e1e85af774889616f1e8f7de8b71fb32f11d962fd7ebc8d6"
+    },
+    {
+      "file": "06-failed-span.png",
+      "sha256": "7a946314781ec83af8d7df091a57f540f1385e6c24e4222b1ddc63cf884839ba"
+    },
+    {
+      "file": "07-mcp-replay.png",
+      "sha256": "82f86218499ebfbdca0a136f684e5bb4f88ff70b0eb9d5240bfada19d601b8d8"
+    }
+  ]
+}

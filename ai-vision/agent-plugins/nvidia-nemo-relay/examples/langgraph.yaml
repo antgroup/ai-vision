@@ -1,0 +1,102 @@
+id: langgraph
+label: LangGraph
+frontendGroup: langgraph
+frontendGroupLabel: LangGraph
+frontendGroupLogo: /assets/frameworks/langgraph.svg
+frontendGroupSort: 2
+logo: /assets/frameworks/langgraph.svg
+frontendSort: 2
+marketLabel: LangGraph
+marketSort: 2
+marketPreview: true
+integrationNotes: >-
+  NemoRelayCallbackHandler records graph execution and its scopes. For model and
+  tool calls inside a nested LangChain agent, add NemoRelayMiddleware and forward
+  the graph config. For a standalone ToolNode, use Relay's create_tool_node.
+  A graph callback alone does not instrument every model or tool. The AI Vision
+  relay_tracing.py helper configures export, request identity and process lifecycle.
+officialDocs: https://docs.nvidia.com/nemo/relay/supported-integrations/langgraph
+pipInstall: pip install "nemo-relay[langgraph]>=0.9.3,<0.10" "langgraph>=1.2.12,<2" "langchain>=1.4.3,<2" "langchain-openai>=1.6.7,<2"
+bootstrapFile: relay_tracing.py
+existingExample: |-
+  # Save the startup module above as relay_tracing.py. Requires Python 3.11+.
+  from langchain_core.runnables.config import merge_configs
+  from nemo_relay.integrations.langgraph import NemoRelayCallbackHandler
+  from relay_tracing import request_scope, start_tracing, stop_tracing
+
+  # Keep your existing compiled graph, state schema, nodes, edges, checkpointer,
+  # store and compile options. The callback does not rebuild your graph.
+  # Nested LangChain agents use NemoRelayMiddleware and receive the node's
+  # RunnableConfig in agent.invoke(..., config=config), as in the full example.
+  # For managed standalone ToolNode calls, use Relay's create_tool_node helper.
+  start_tracing()  # Once at service startup.
+  try:
+      # Keep business callbacks and thread_id; use one full collector per destination.
+      # existing_config must not already contain a Relay tracing callback.
+      config = merge_configs(existing_config, {"callbacks": [NemoRelayCallbackHandler()]})
+      with request_scope(session_id, input=existing_input) as request:
+          result = existing_graph.invoke(existing_input, config=config)
+          # MessagesState: select the business message rather than serializing BaseMessage objects.
+          # For other state schemas, select your JSON-compatible business output.
+          request["output"] = result["messages"][-1].content
+          print("AI Vision trace_id:", request["trace_id"])
+  finally:
+      stop_tracing()  # Service shutdown, after all requests have finished.
+  # Async: scope inside each task, await existing_graph.ainvoke(..., config=config).
+  # At service shutdown, await relay_tracing.stop_tracing_async().
+pipExample: |-
+  import uuid
+
+  from langchain.agents import create_agent
+  from langchain_core.runnables import RunnableConfig
+  from langchain_core.tools import tool
+  from langchain_openai import ChatOpenAI
+  from langgraph.graph import END, START, MessagesState, StateGraph
+  from nemo_relay.integrations.langgraph import NemoRelayCallbackHandler, NemoRelayMiddleware
+
+
+  @tool
+  def multiply(a: int, b: int) -> int:
+      """Multiply two integers."""
+      return a * b
+
+
+  def main():
+      model = ChatOpenAI(
+          model=os.environ["OPENAI_MODEL"],
+          api_key=os.environ["OPENAI_API_KEY"],
+          base_url=os.environ["OPENAI_BASE_URL"],
+          use_responses_api=False,
+      )
+      agent = create_agent(
+          model=model,
+          tools=[multiply],
+          middleware=[NemoRelayMiddleware()],
+          system_prompt="Use the multiply tool for multiplication questions.",
+      )
+
+      def assistant(state: MessagesState, config: RunnableConfig):
+          # Forward callbacks, thread_id and other graph configuration to the agent.
+          return agent.invoke({"messages": state["messages"]}, config=config)
+
+      builder = StateGraph(MessagesState)
+      builder.add_node("assistant", assistant)
+      builder.add_edge(START, "assistant")
+      builder.add_edge("assistant", END)
+      graph = builder.compile()
+      session_id = str(uuid.uuid4())
+      inputs = {"messages": [{"role": "user", "content": "Use multiply to calculate 7 times 9."}]}
+      start_tracing()
+      try:
+          with request_scope(session_id, input=inputs) as request:
+              result = graph.invoke(inputs, config={"callbacks": [NemoRelayCallbackHandler()]})
+              request["output"] = result["messages"][-1].content
+              print(request["output"])
+              print("AI Vision session_id:", session_id)
+              print("AI Vision trace_id:", request["trace_id"])
+      finally:
+          stop_tracing()
+
+
+  if __name__ == "__main__":
+      main()

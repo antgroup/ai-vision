@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <p>将以下 Agent Type 作为<strong>目标</strong>，从其他 Agent Type 克隆 Dashboard 面板：</p>
+  <ul>
+    {% for obj in queryset %}
+      <li>{{ obj.agent_name }} — <strong>{{ obj.agent_product }}</strong></li>
+      <input type="hidden" name="{{ action_checkbox_name }}" value="{{ obj.pk }}" />
+    {% endfor %}
+  </ul>
+  <p>
+    <label for="source_agent_type">选择源 Agent Type（从此处克隆面板）：</label>
+    <select name="source_agent_type" id="source_agent_type" required style="padding:4px 8px;">
+      <option value="">---------</option>
+      {% for src in sources %}
+        <option value="{{ src.pk }}">{{ src.agent_product }}（{{ src.agent_name }}）</option>
+      {% endfor %}
+    </select>
+  </p>
+  <input type="hidden" name="action" value="clone_dashboard_panels" />
+  <input type="submit" value="确认克隆" style="margin-top:8px;padding:6px 16px;" />
+</form>
+{% endblock %}

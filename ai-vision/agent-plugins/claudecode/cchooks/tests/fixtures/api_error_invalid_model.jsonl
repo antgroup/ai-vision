@@ -1,0 +1,3 @@
+{"type":"user","uuid":"prompt-invalid-model","message":{"role":"user","content":"Trigger invalid model regression."},"timestamp":"2026-08-24T10:00:00.000Z"}
+{"type":"system","subtype":"api_error","level":"error","error":{"status":400,"error":{"type":"invalid_request_error","message":"model: claude-regression-invalid-20260824 is not valid","model":"claude-regression-invalid-20260824"}},"retryAttempt":1,"maxRetries":1,"retryInMs":0.0,"timestamp":"2026-08-24T10:00:01.000Z"}
+{"type":"assistant","isApiErrorMessage":true,"message":{"role":"assistant","content":[{"type":"text","text":"API request failed."}],"id":"msg_synthetic_invalid_model","model":"<synthetic>","usage":{"input_tokens":0,"output_tokens":0}},"timestamp":"2026-08-24T10:00:02.000Z"}

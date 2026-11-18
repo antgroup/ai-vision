@@ -1,0 +1,13 @@
+{
+  "id": "python-eval-v1",
+  "manifest_sha256": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+  "packages": {
+    "jsonschema": "4.26.0",
+    "numpy": "2.4.6",
+    "openpyxl": "3.1.5",
+    "pandas": "3.1.0",
+    "pydantic": "2.14.2",
+    "pytest": "9.2.0"
+  },
+  "python_version": "3.11.14"
+}

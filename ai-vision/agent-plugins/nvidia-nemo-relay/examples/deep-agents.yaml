@@ -1,0 +1,107 @@
+id: deep-agents
+label: Deep Agents
+frontendGroup: deep-agents
+frontendGroupLabel: Deep Agents
+frontendGroupLogo: /assets/frameworks/deep-agents.svg
+frontendGroupSort: 3
+logo: /assets/frameworks/deep-agents.svg
+frontendSort: 3
+marketLabel: Deep Agents
+marketSort: 3
+marketPreview: true
+integrationNotes: >-
+  add_nemo_relay_integration adds official middleware to the main agent and
+  dictionary subagents. NemoRelayDeepAgentsCallbackHandler records agent scopes
+  and Deep Agents lifecycle events; it does not replace model/tool middleware.
+  Default general-purpose, precompiled and remote subagents need separate internal
+  call coverage checks. The AI Vision relay_tracing.py helper configures export,
+  request identity and process lifecycle.
+officialDocs: https://docs.nvidia.com/nemo/relay/supported-integrations/deepagents
+pipInstall: pip install "nemo-relay[deepagents]>=0.9.3,<0.10" "deepagents>=0.7.21,<0.8" "langchain>=1.4.3,<2" "langchain-openai>=1.6.7,<2"
+bootstrapFile: relay_tracing.py
+existingExample: |-
+  # Save the startup module above as relay_tracing.py. Requires Python 3.11+.
+  from deepagents import create_deep_agent
+  from langchain_core.runnables.config import merge_configs
+  from nemo_relay.integrations.deepagents import (
+      NemoRelayDeepAgentsCallbackHandler, add_nemo_relay_integration,
+  )
+  from relay_tracing import request_scope, start_tracing, stop_tracing
+
+  # Pass the complete existing kwargs, preserving model, tools, middleware,
+  # backend, checkpointer, skills, subagents and other business configuration.
+  # The official helper copies kwargs and instruments dictionary subagents.
+  agent = create_deep_agent(**add_nemo_relay_integration(existing_agent_kwargs))
+  start_tracing()  # Service startup once; not once per request.
+  try:
+      # Retain business callbacks. Use only one full collector for this destination.
+      # existing_config must not already contain a Relay tracing callback.
+      config = merge_configs(existing_config, {"callbacks": [NemoRelayDeepAgentsCallbackHandler()]})
+      with request_scope(session_id, input=existing_input) as request:
+          result = agent.invoke(existing_input, config=config)
+          request["output"] = result["messages"][-1].content
+          print("AI Vision trace_id:", request["trace_id"])
+  finally:
+      stop_tracing()  # Service shutdown, after all requests have finished.
+  # Async: scope inside each task, await agent.ainvoke; await stop_tracing_async at shutdown.
+  # Default general-purpose and precompiled/remote subagents need separate
+  # coverage decisions; this helper does not promise their internal model/tool tracing.
+pipExample: |-
+  import uuid
+
+  from deepagents import create_deep_agent
+  from langchain_core.tools import tool
+  from langchain_openai import ChatOpenAI
+  from langgraph.checkpoint.memory import InMemorySaver
+  from nemo_relay.integrations.deepagents import (
+      NemoRelayDeepAgentsCallbackHandler, add_nemo_relay_integration,
+  )
+
+
+  @tool
+  def multiply(a: int, b: int) -> int:
+      """Multiply two integers."""
+      return a * b
+
+
+  def main():
+      model = ChatOpenAI(
+          model=os.environ["OPENAI_MODEL"],
+          api_key=os.environ["OPENAI_API_KEY"],
+          base_url=os.environ["OPENAI_BASE_URL"],
+          use_responses_api=False,
+      )
+      agent_kwargs = {
+          "model": model,
+          "name": "coordinator",
+          "system_prompt": "Delegate multiplication to the calculator subagent using task.",
+          "checkpointer": InMemorySaver(),
+          "subagents": [{
+              "name": "calculator",
+              "description": "Multiplies integers with a deterministic tool.",
+              "system_prompt": "Always call multiply for multiplication, then return the result.",
+              "model": model,
+              "tools": [multiply],
+          }],
+      }
+      agent = create_deep_agent(**add_nemo_relay_integration(agent_kwargs))
+      session_id = str(uuid.uuid4())
+      inputs = {"messages": [{"role": "user", "content": "Ask calculator to multiply 7 by 9 using its tool."}]}
+      config = {
+          "callbacks": [NemoRelayDeepAgentsCallbackHandler()],
+          "configurable": {"thread_id": session_id},
+      }
+      start_tracing()
+      try:
+          with request_scope(session_id, input=inputs) as request:
+              result = agent.invoke(inputs, config=config)
+              request["output"] = result["messages"][-1].content
+              print(request["output"])
+              print("AI Vision session_id:", session_id)
+              print("AI Vision trace_id:", request["trace_id"])
+      finally:
+          stop_tracing()
+
+
+  if __name__ == "__main__":
+      main()

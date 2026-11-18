@@ -1,0 +1,192 @@
+{
+  "schema": "trace-selection-actions-validation/v1",
+  "date": "2026-10-28",
+  "base_commit": "historical-source-revision-redacted",
+  "origin": "http://localhost:5175",
+  "classification": "real prepared macOS frontend/backend and collector, safe synthetic inputs",
+  "diagnosis": {
+    "task_uuid": "8d53a5273fee409cb768af99bc2da2f0",
+    "job_uuid": "b942d34f03c144eea4cf1de2e2781f16",
+    "status": "succeeded",
+    "source_complete": true,
+    "source": {
+      "total": 2,
+      "invalid": 0,
+      "projection_failed": 0
+    },
+    "diagnosers": {
+      "dg-sxn9qqd4": {
+        "numeric_consistency": {
+          "bad": 1,
+          "good": 1,
+          "total": 2,
+          "failed": 0,
+          "evaluate": 2
+        }
+      }
+    },
+    "reserved_model_requests": 0,
+    "requests": [
+      {
+        "url": "http://localhost:5175/api/v1/spaces/45e30ffd-124a-4c1c-a02b-9c1366867999/diagnose/runs/options?agent_uuid=a4a4bab2-bf59-4021-8956-2cc2b2e3eb9f",
+        "method": "GET"
+      },
+      {
+        "url": "http://localhost:5175/api/v1/spaces/45e30ffd-124a-4c1c-a02b-9c1366867999/diagnose/runs?agent_uuid=a4a4bab2-bf59-4021-8956-2cc2b2e3eb9f",
+        "method": "POST",
+        "body": {
+          "trace_ids": [
+            "b53a6be1d82b4562bda3a2d700d7377b",
+            "c3af0e4741e3431f8696a8765c204854"
+          ],
+          "diagnoser_uuid": "dg-sxn9qqd4",
+          "request_id": "06b4b31d-023a-426e-bb53-3b91f0c3dff7"
+        }
+      }
+    ]
+  },
+  "browser": {
+    "desktop": [
+      1440,
+      1000
+    ],
+    "narrow_ja": {
+      "viewport": [
+        390,
+        844
+      ],
+      "bar_x": 24.1171875,
+      "bar_width": 341.765625,
+      "client_width": 340,
+      "scroll_width": 340
+    },
+    "narrow_en": {
+      "viewport": [
+        320,
+        844
+      ],
+      "bar_x": 16,
+      "bar_width": 273,
+      "bar_height": 91,
+      "client_width": 271,
+      "scroll_width": 271
+    },
+    "desktop_scroll": {
+      "bottom_bar": [
+        918,
+        976
+      ],
+      "bottom_pagination": [
+        841,
+        877
+      ],
+      "scroll_top_at_end": 1066,
+      "scroll_height": 2002,
+      "client_height": 936,
+      "scrolled_bar_bottom": 984
+    },
+    "checks": [
+      "empty list has no diagnosis row",
+      "Select header visible",
+      "no action before selection",
+      "two selected IDs passed exactly to persisted diagnosis",
+      "ten selected disables ten other first-page checkboxes",
+      "page two retains ten selections and dialog receives ten IDs",
+      "clear removes actions and enables checkboxes",
+      "Session removes action bar and selection",
+      "three locales and dark/light surfaces",
+      "horizontal table scrollbar independent from actions",
+      "narrow controls stay inside viewport"
+    ]
+  },
+  "external_model_calls": 0,
+  "limitations": [
+    "Unchanged backend not rerun as a separate backend unit suite in this follow-up.",
+    "No real external model call; numeric specialist is deterministic Rule.",
+    "Prepared macOS source runtime; no Linux, deployment or hosted CI pass claimed.",
+    "Comparison action is future work."
+  ],
+  "source_sha256": {
+    "ai-vision/vfe/src/agents/traces/TraceEntry.tsx": "161aecaa724ccd4a4f36c05676c8ee8710849309560f38e18fca15d0cc17469a",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "187a73b27251c228257f6ab8031e84dfcc8e24ddf73b69fb54a498b3e103957b",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "619fac9fbdec953596d8cbb80fb4e59a208ec1fd03d347af36c004b7f1420cc0",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "a2672ba205086444e2ba5998933fa9e28cd8e81f15ed4223ad843a871325ca5c",
+    "ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx": "9733fd84bf274d5acb9903656d392a758d236eae5f664c1326e0e372babc4548",
+    "ai-vision/vfe/tests/traceListPageState.test.ts": "f34f2967072b379ad1c65fbef9199034657c10a3feebe4a8f64c5f9e9f0417e0"
+  },
+  "automated_checks": {
+    "frontend_full": {
+      "passed": 1258,
+      "failed": 0,
+      "skipped": 0
+    },
+    "selection_regressions": {
+      "passed": 32,
+      "failed": 0
+    },
+    "i18n": {
+      "passed": 11,
+      "failed": 0
+    },
+    "changed_file_eslint": "passed",
+    "typecheck": "passed",
+    "build": "passed, existing large-chunk warning"
+  },
+  "independent_review": {
+    "base_commit": "historical-source-revision-redacted",
+    "remaining_actionable_findings": 0,
+    "diff_sha256": "c9f0195d9e5d337402d512446c3ca3789a92c602942518db39ef385939908e2a",
+    "scope": "Read-only six-file source/test/locale diff review; browser evidence belongs to main task."
+  },
+  "screenshots": [
+    {
+      "path": "assets/trace-selection-actions/selected-en-light-320.jpg",
+      "sha256": "3cc5021dbaf0280e729b5b4bc260c7991fc4e88e9c03e3f739c6eb00259e7aae",
+      "width": 320,
+      "height": 844
+    },
+    {
+      "path": "assets/trace-selection-actions/selected-en-light.jpg",
+      "sha256": "5ab45033da50cc243feef2a7d29c52700ca5776f586f9ff5f0cc7462431b08d7",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "path": "assets/trace-selection-actions/selected-ja-light-narrow.jpg",
+      "sha256": "67293ab5730423ad94552358cc222aff58e4b2baacfdcece8ffedcf3d5705eb6",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "path": "assets/trace-selection-actions/selected-ten-zh-dark-bottom.jpg",
+      "sha256": "c5781c4cd92e08bf02fa0789258e1fd5c0de2fd7759904cc482b71476fb73d82",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "path": "assets/trace-selection-actions/selected-ten-zh-dark-scroll.jpg",
+      "sha256": "22d0af8ef01c2a31e5f9186d42ec421ddeb0d8d99d4567f31f0318095fce162f",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "path": "assets/trace-selection-actions/selected-zh-dark.jpg",
+      "sha256": "1fed9ca3af2144240cf9736adc8b1556d44c37932c50c26c859ed84ab6ee6789",
+      "width": 1440,
+      "height": 1000
+    },
+    {
+      "path": "assets/trace-selection-actions/unselected-zh-dark.jpg",
+      "sha256": "14dde058e1c2087d6bcc41676efd663a74324b64a220d055690a84bd1dc8d1fa",
+      "width": 1440,
+      "height": 1000
+    }
+  ],
+  "retained_task_resources": {
+    "tasks": 23,
+    "result_spans": 88,
+    "synthetic_source_spans": 46,
+    "cleanup_executed": false,
+    "original_replay_excluded": true
+  }
+}

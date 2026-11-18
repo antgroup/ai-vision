@@ -1,0 +1,476 @@
+{
+  "schema": "diagnosis-entrypoint-review/v1",
+  "verified_at_utc": "2026-11-09T08:10:04.309908+00:00",
+  "previous_pr_head": "historical-source-revision-redacted",
+  "main_base": "historical-source-revision-redacted",
+  "reviewed_followup_patch_sha256": "abeb03a2cefe78c39cd81edb55b425fa24cfe9a88ee019c0034b2a0ac19f135a",
+  "tested_followup_files_sha256": {
+    "ai-vision/vfe/src/components/diagnose/diagnoser/CreateLlmDiagnoserModal.tsx": "8ab9783abdf0f7fb0ece58651bd7111116ec9ef94d9e39e677528a5e4a912019",
+    "ai-vision/vfe/tests/llmDiagnoserSpec.test.ts": "7a33476f85aa9762cf87a6c5378229ede92780e33df5c8315d7724b4721834b3",
+    "ai-vision/vfe/tests/modelConnectionFormDom.test.ts": "f92b18c1cc93bf0febad2907dcc1e6f883a9d14485a2028780b81726d8908696"
+  },
+  "entrypoint_inventory": {
+    "shared_run_flow": [
+      "NativeTracePage selected Trace toolbar -> TraceDiagnosisDialog -> TraceDiagnosisPanel -> QuickRunIntent",
+      "NativeTracePage current Trace detail header -> same flow, exact selectedTraceId only"
+    ],
+    "no_independent_run_button": [
+      "Session list",
+      "Langfuse source",
+      "Quality record transcript drawer",
+      "Agent overview detail drawer",
+      "Public share and trace-link view"
+    ],
+    "separate_execution_flows": [
+      "Generic LLM Trial",
+      "Rule Trial",
+      "Specialist Trial",
+      "Manual Job execution"
+    ],
+    "remaining_direct_randomUUID_calls": "Only the guarded diagnosis helper and the previously guarded local span-filter preset ID helper"
+  },
+  "followup_bug": {
+    "observed": "A late generic LLM Trial response appeared under a newly selected Trace or context.",
+    "reproduction": "Actual React DOM and TraceIdInput with controlled API responses and leaf UI doubles; actual parent chain also checked.",
+    "repair": "Bind pending work/results to principal, Space, Agent, selected source, model and execution spec; invalidate on change/close; ignore stale success/error/toast/finally; synchronous in-flight lock; no fallback to a different recent Trace."
+  },
+  "checks": {
+    "modified_file_eslint": "passed",
+    "typescript_typecheck": "passed",
+    "production_build": "passed; existing chunk-size warning",
+    "format_and_diff_check": "passed",
+    "full_frontend_suite": {
+      "tests": 1697,
+      "pass": 1697,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "llm_trial_regression": {
+      "pass": 28,
+      "fail": 0
+    },
+    "model_connections_regression": {
+      "pass": 62,
+      "fail": 0
+    },
+    "independent_reviews": "Original PR and follow-up source/API contracts reviewed with no remaining blocking findings"
+  },
+  "real_browser_runs": [
+    {
+      "case": "list-double-click",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12",
+              "e88d3b9c5f274086b8f68698cd5db8cb"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "d4c518b5-ec6a-47a1-b359-17bbbeea0ac9"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "d4c518b5-ec6a-47a1-b359-17bbbeea0ac9",
+            "dataset_uuid": "ed2ae82c1a984b908f9d8f6eb0cea39d",
+            "job_uuid": "2261e7a12b564226bf2d854dc7006ec1",
+            "task_uuid": "64aa57ed6727477fb193d57293a37b69"
+          }
+        }
+      ],
+      "text": "运行诊断\n诊断器或专项检查\n选择已配置的诊断器\n风险操作提醒\n反复编辑线索\n凭据暴露线索\n重复调用线索\n修改后验证\n工具执行结果\n运行耗时\n用户中断事件\n文本回应检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n实际交付检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n执行声明核对 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n资料支持检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n再次运行\n已选 2 条轨迹\n管理配置\n检查说明与配置已保存的诊断器 · 规则\n已检查运行信号，未评估任务质量\n2 条诊断记录\n筛选记录\n全部记录\n发现线索\n未发现问题\n检查执行失败\n\n结果仅针对本次选定的轨迹。\n\n风险操作提醒\n运行信号 · 不计质量分 · 未发现问题\n\n轨迹 ID: e88d3b9c5f274086b8f68698cd5db8cb\n\n全部诊断项通过\n\n查看原始轨迹\n查看诊断详情\n风险操作提醒\n运行信号 · 不计质量分 · 发现线索\n\n轨迹 ID: 639000969052482490a70e124ae75a12\n\n已执行风险操作：放宽文件权限；授权状态未知，请核对任务范围\n\n查看来源步骤\n查看诊断详情\n查看质量结果"
+    },
+    {
+      "case": "detail-ignores-list-selection",
+      "backgroundSelectedTrace": "e88d3b9c5f274086b8f68698cd5db8cb",
+      "detailTrace": "639000969052482490a70e124ae75a12",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "fe6dcba9-a7ef-4c3d-9fc2-387fb0cb4a71"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "fe6dcba9-a7ef-4c3d-9fc2-387fb0cb4a71",
+            "dataset_uuid": "586922d71e4c40e9aadcb5c7eb1e52ad",
+            "job_uuid": "ef4aa4d6b4b844f797f13940364f0f14",
+            "task_uuid": "df480f589f2048649d18ca46e9f33588"
+          }
+        }
+      ],
+      "text": "运行诊断\n诊断器或专项检查\n选择已配置的诊断器\n风险操作提醒\n反复编辑线索\n凭据暴露线索\n重复调用线索\n修改后验证\n工具执行结果\n运行耗时\n用户中断事件\n文本回应检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n实际交付检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n执行声明核对 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n资料支持检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n再次运行\n已选 1 条轨迹\n管理配置\n检查说明与配置已保存的诊断器 · 规则\n已检查运行信号，未评估任务质量\n1 条诊断记录\n筛选记录\n全部记录\n发现线索\n未发现问题\n检查执行失败\n\n结果仅针对本次选定的轨迹。\n\n风险操作提醒\n运行信号 · 不计质量分 · 发现线索\n\n轨迹 ID: 639000969052482490a70e124ae75a12\n\n已执行风险操作：放宽文件权限；授权状态未知，请核对任务范围\n\n查看来源步骤\n查看诊断详情\n查看质量结果"
+    },
+    {
+      "case": "detail-accepted-response-recovery",
+      "requests": [
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "b976cda6-6e80-419e-9862-8468d30e8074"
+          },
+          "status": 503,
+          "result": {
+            "error_key": "QUICK_UPSTREAM_UNAVAILABLE",
+            "retryable": true
+          }
+        },
+        {
+          "request": {
+            "trace_ids": [
+              "639000969052482490a70e124ae75a12"
+            ],
+            "diagnoser_uuid": "dg-yn6yhhsq",
+            "request_id": "b976cda6-6e80-419e-9862-8468d30e8074"
+          },
+          "status": 200,
+          "result": {
+            "state": "accepted",
+            "request_id": "b976cda6-6e80-419e-9862-8468d30e8074",
+            "dataset_uuid": "0f58183583fb4f229ca38438b23eb27c",
+            "job_uuid": "3a93b3c73f2743a19e953e83e74fb2fa",
+            "task_uuid": "9d102008bcd948d281b3e38bc8f52833"
+          }
+        }
+      ],
+      "uncertain": "运行诊断\n诊断器或专项检查\n选择已配置的诊断器\n风险操作提醒\n反复编辑线索\n凭据暴露线索\n重复调用线索\n修改后验证\n工具执行结果\n运行耗时\n用户中断事件\n文本回应检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n实际交付检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n执行声明核对 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n资料支持检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n运行诊断\n已选 1 条轨迹\n管理配置\n检查说明与配置已保存的诊断器 · 规则\n\n暂时无法确认状态。可使用原请求恢复，避免重复创建。\n\n恢复这次请求",
+      "text": "运行诊断\n诊断器或专项检查\n选择已配置的诊断器\n风险操作提醒\n反复编辑线索\n凭据暴露线索\n重复调用线索\n修改后验证\n工具执行结果\n运行耗时\n用户中断事件\n文本回应检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n实际交付检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n执行声明核对 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n资料支持检查 — 该诊断器的模型连接不完整或不可用，请在诊断器页面检查配置。\n再次运行\n已选 1 条轨迹\n管理配置\n检查说明与配置已保存的诊断器 · 规则\n已检查运行信号，未评估任务质量\n1 条诊断记录\n筛选记录\n全部记录\n发现线索\n未发现问题\n检查执行失败\n\n结果仅针对本次选定的轨迹。\n\n风险操作提醒\n运行信号 · 不计质量分 · 发现线索\n\n轨迹 ID: 639000969052482490a70e124ae75a12\n\n已执行风险操作：放宽文件权限；授权状态未知，请核对任务范围\n\n查看来源步骤\n查看诊断详情\n查看质量结果"
+    }
+  ],
+  "session_boundary": {
+    "session": {
+      "runButtons": 0,
+      "checkboxes": 0
+    }
+  },
+  "selection_reset": {
+    "trace": {
+      "runButtons": 0,
+      "selected": 0
+    }
+  },
+  "real_llm_form_without_model": {
+    "trial_disabled": true,
+    "actual_context_providers_rendered": true
+  },
+  "real_backend": {
+    "tested_commit_at_backend_readback": "historical-source-revision-redacted",
+    "backend_source_tree": "35f07a8ad1b4a8dcaeb47d50e531d09cdd3732a1",
+    "agentlens_source_tree": "42747d097997a000b92e25b2fa475388e0233bbd",
+    "backend_and_agentlens_tracked_sources_clean": true,
+    "browser_run_count": 3,
+    "browser_runs": [
+      {
+        "request_id": "d4c518b5-ec6a-47a1-b359-17bbbeea0ac9",
+        "task_uuid": "64aa57ed6727477fb193d57293a37b69",
+        "job_uuid": "2261e7a12b564226bf2d854dc7006ec1",
+        "dataset_uuid": "ed2ae82c1a984b908f9d8f6eb0cea39d",
+        "trace_ids": [
+          "639000969052482490a70e124ae75a12",
+          "e88d3b9c5f274086b8f68698cd5db8cb"
+        ],
+        "provisioning_step": "accepted",
+        "task_status": "succeeded",
+        "source_complete": true,
+        "stats": {
+          "source": {
+            "total": 2,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 1,
+                "total": 2,
+                "failed": 0,
+                "evaluate": 2
+              }
+            }
+          },
+          "skip_reasons": {},
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "resource_counts": {
+          "agentlens_dataset": 1,
+          "agentlens_job": 1,
+          "agentlens_task": 1
+        },
+        "judge_request_ledger": null
+      },
+      {
+        "request_id": "fe6dcba9-a7ef-4c3d-9fc2-387fb0cb4a71",
+        "task_uuid": "df480f589f2048649d18ca46e9f33588",
+        "job_uuid": "ef4aa4d6b4b844f797f13940364f0f14",
+        "dataset_uuid": "586922d71e4c40e9aadcb5c7eb1e52ad",
+        "trace_ids": [
+          "639000969052482490a70e124ae75a12"
+        ],
+        "provisioning_step": "accepted",
+        "task_status": "succeeded",
+        "source_complete": true,
+        "stats": {
+          "source": {
+            "total": 1,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 0,
+                "total": 1,
+                "failed": 0,
+                "evaluate": 1
+              }
+            }
+          },
+          "skip_reasons": {},
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "resource_counts": {
+          "agentlens_dataset": 1,
+          "agentlens_job": 1,
+          "agentlens_task": 1
+        },
+        "judge_request_ledger": null
+      },
+      {
+        "request_id": "b976cda6-6e80-419e-9862-8468d30e8074",
+        "task_uuid": "9d102008bcd948d281b3e38bc8f52833",
+        "job_uuid": "3a93b3c73f2743a19e953e83e74fb2fa",
+        "dataset_uuid": "0f58183583fb4f229ca38438b23eb27c",
+        "trace_ids": [
+          "639000969052482490a70e124ae75a12"
+        ],
+        "provisioning_step": "accepted",
+        "task_status": "succeeded",
+        "source_complete": true,
+        "stats": {
+          "source": {
+            "total": 1,
+            "invalid": 0,
+            "projection_failed": 0
+          },
+          "diagnosers": {
+            "dg-yn6yhhsq": {
+              "high_risk_command_execution": {
+                "bad": 1,
+                "good": 0,
+                "total": 1,
+                "failed": 0,
+                "evaluate": 1
+              }
+            }
+          },
+          "skip_reasons": {},
+          "schema_version": 3,
+          "source_complete": true,
+          "score_policy_version": "lightweight-v1",
+          "diagnoser_definitions": {
+            "dg-yn6yhhsq": {
+              "key": "high_risk_command",
+              "name": "风险操作提醒",
+              "uuid": "dg-yn6yhhsq",
+              "digest": "b131c2364372d4f99131933058a2e0fa736d71cc5f0803cdac63365839c81fee",
+              "weight": 1.0,
+              "metrics": [
+                {
+                  "desc": "风险操作提醒",
+                  "name": "high_risk_command_execution"
+                }
+              ],
+              "version": "3.0.0",
+              "category": "safety",
+              "revision": "1.6.0",
+              "score_role": "signal"
+            }
+          }
+        },
+        "resource_counts": {
+          "agentlens_dataset": 1,
+          "agentlens_job": 1,
+          "agentlens_task": 1
+        },
+        "judge_request_ledger": null
+      }
+    ],
+    "model_connections": 0,
+    "source_integrity": {
+      "owned_source_rows": 5,
+      "sha256": "bacb70ee3a04a0cb422c3b2bb8a0a4c5415b26051f831b6df52d2ea1e49aaf5d",
+      "unchanged": true
+    },
+    "negative_http": {
+      "cases": [
+        {
+          "case": "llm_without_model",
+          "status": 422,
+          "error_key": "QUICK_MODEL_UNAVAILABLE",
+          "retryable": false
+        },
+        {
+          "case": "trace_outside_scope",
+          "status": 422,
+          "error_key": "QUICK_TRACE_SCOPE_REJECTED",
+          "retryable": false
+        },
+        {
+          "case": "invalid_request_id",
+          "status": 422,
+          "error_key": "QUICK_INPUT_INVALID",
+          "retryable": false
+        },
+        {
+          "case": "same_id_changed_intent",
+          "status": 409,
+          "error_key": "QUICK_REQUEST_CONFLICT",
+          "retryable": false
+        }
+      ],
+      "new_receipts_for_negative_request_ids": 0,
+      "llm_selectable": false
+    },
+    "retained_receipts": 11,
+    "resource_totals": {
+      "agentlens_dataset": 11,
+      "agentlens_job": 11,
+      "agentlens_task": 11
+    },
+    "same_request_recovery": {
+      "request_id": "b976cda6-6e80-419e-9862-8468d30e8074",
+      "task_uuid": "9d102008bcd948d281b3e38bc8f52833",
+      "job_uuid": "3a93b3c73f2743a19e953e83e74fb2fa",
+      "dataset_uuid": "0f58183583fb4f229ca38438b23eb27c",
+      "accepted_resources_retained_one_each": true
+    },
+    "validation_boundaries": [
+      "Real current-source Django/AgentLens, seekdb, SigNoz and Collector; synthetic non-executed rule examples.",
+      "Fault proxy changed a completed real response to typed 503; backend execution and recovery were real.",
+      "No model configured, no external model calls, and no true LLM inference tested.",
+      "Prepared linux/arm64 container integration; not release-image or cold-install qualification."
+    ],
+    "retention_policy": "Keep all test data, schemas and containers; stop only task-owned running services after test."
+  },
+  "withheld_accepted_response": {
+    "fault": "accepted upstream response withheld; typed HTTP 503 injected",
+    "request_id": "b976cda6-6e80-419e-9862-8468d30e8074",
+    "request_body_sha256": "5e819fd1aa288e5d36512b3f17f79c1049aafe0800095ecc0fc590e4be7e128a",
+    "upstream_status": 200,
+    "accepted": {
+      "state": "accepted",
+      "request_id": "b976cda6-6e80-419e-9862-8468d30e8074",
+      "dataset_uuid": "0f58183583fb4f229ca38438b23eb27c",
+      "job_uuid": "3a93b3c73f2743a19e953e83e74fb2fa",
+      "task_uuid": "9d102008bcd948d281b3e38bc8f52833"
+    }
+  },
+  "boundaries": [
+    "HTTP list/detail code was unchanged by the LLM Trial follow-up; original source file hashes still match the first receipt.",
+    "Three additional real HTTP submissions used current source services and the same retained synthetic Space; no external models were configured or called.",
+    "LLM delayed-response ownership tests use actual React and TraceIdInput with controlled API responses; no live-model execution claim.",
+    "Current-source prepared macOS/arm64 + linux/arm64 integration, Chromium only; not cold-install or released-artifact qualification.",
+    "User explicitly requested retention of all test data, schemas and containers; only task-owned services/pages were stopped."
+  ],
+  "retention_state": {
+    "user_policy": "Preserve test data. Stop only task-owned services; keep containers and schemas.",
+    "owned_services": [
+      {
+        "name": "aiv-http-backend-20261109-b015",
+        "state": "exited",
+        "retained": true
+      },
+      {
+        "name": "aiv-http-diagnosis-20261109-b015",
+        "state": "exited",
+        "retained": true
+      }
+    ],
+    "shared_dependencies": [
+      {
+        "name": "aiv-local-review-data-20261106",
+        "state": "running"
+      },
+      {
+        "name": "aiv-local-review-collector-20261106",
+        "state": "running"
+      },
+      {
+        "name": "aiv-openshell-web-db-20261103",
+        "state": "running"
+      }
+    ],
+    "retained_schemas": [
+      "aiv_http_agentlens_20261109_b015",
+      "aiv_http_platform_20261109_b015"
+    ],
+    "retained_receipts": 11,
+    "retained_resource_totals": {
+      "agentlens_dataset": 11,
+      "agentlens_job": 11,
+      "agentlens_task": 11
+    },
+    "original_source_integrity": {
+      "owned_source_rows": 5,
+      "sha256": "bacb70ee3a04a0cb422c3b2bb8a0a4c5415b26051f831b6df52d2ea1e49aaf5d",
+      "unchanged": true
+    },
+    "model_connections": 0,
+    "rows_deleted": 0,
+    "schemas_dropped": 0,
+    "containers_removed": 0,
+    "data_retention_verified_before_stop": true
+  }
+}

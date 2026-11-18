@@ -1,0 +1,113 @@
+# AI Vision Agent Semantic Conventions - Resource Entities
+# Source: docs/standard/aivision/resource.md
+# Version: v2.0
+
+groups:
+  - id: entity.ant.agent
+    type: entity
+    brief: >
+      AI Vision Agent resource entity. Identifies the agent that produces telemetry data.
+      Set at SDK initialization and attached to all Traces, Metrics, and Logs.
+    note: >
+      OTel SDK auto-reports `telemetry.sdk.name`, `telemetry.sdk.language`, `telemetry.sdk.version`.
+      Standard resource attributes `service.name` (mapped from `ant.agent.product`),
+      `service.version`, `service.instance.id` (mapped from `ant.agent.instance`),
+      `deployment.environment`, `os.type`, `host.arch` are also available automatically.
+    attributes:
+      - id: ant.agent.type
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "Agent engine type. Custom agent identifiers are allowed."
+        examples: ["claudecode", "custom-agent"]
+
+      - id: ant.agent.product
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Product name. Maps to `service.name`; custom product identifiers are allowed."
+        examples: ["antclaudecode", "custom-agent-enterprise"]
+
+      - id: ant.agent.instance
+        type: string
+        stability: experimental
+        requirement_level: recommended
+        brief: "Instance identifier, format: `{product}-{identifier}`. Maps to `service.instance.id`."
+        examples: ["antclaudecode-100001"]
+
+      - id: ant.agent.scene
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "Agent scene identifier for sub-agent categorization in KA business scenarios. Defaults to 'default'."
+        examples: ["default", "code_review", "daily_dev"]
+
+      - id: ant.agent.env
+        type: string
+        stability: experimental
+        requirement_level: required
+        brief: "Deployment environment name. Defaults to 'Default'. Valid values: Default, Office, Dev, Test, Pre, Gray, Prod."
+        examples: ["Default", "Office", "Dev", "Test", "Pre", "Gray", "Prod"]
+
+      - id: ant.publicKey
+        type: string
+        stability: experimental
+        requirement_level:
+          conditionally_required: "Required for business scenarios"
+        brief: "Access key for business scenarios"
+        examples: ["pk-av-xyz789"]
+
+      - id: ant.meta.trigger
+        type:
+          allow_custom_values: false
+          members:
+            - id: automation
+              value: "automation"
+              brief: "Task/process attributed to automation, scheduler, or an upstream agent orchestrator."
+              stability: experimental
+            - id: interactive
+              value: "interactive"
+              brief: "Task/process explicitly attributed to real-user interaction."
+              stability: experimental
+            - id: unknown
+              value: "unknown"
+              brief: "External trigger attribution is absent, invalid, or conflicting."
+              stability: experimental
+        stability: experimental
+        requirement_level: opt_in
+        brief: "External task/process trigger attribution on the telemetry Resource."
+        note: "Do not infer this value from prompt, transcript, username, Git, or process directory."
+        examples: ["automation", "interactive", "unknown"]
+
+  - id: entity.agentic.collection
+    type: entity
+    brief: >
+      Agent telemetry collection mode. Indicates whether content-bearing payloads
+      are collected in full or structurally redacted for privacy.
+    attributes:
+      - id: agentic.collection.mode
+        type:
+          allow_custom_values: false
+          members:
+            - id: full
+              value: "full"
+              brief: "Full collection mode"
+              stability: experimental
+            - id: privacy
+              value: "privacy"
+              brief: "Privacy mode; content-bearing payloads are redacted"
+              stability: experimental
+        stability: experimental
+        requirement_level: required
+        brief: "Telemetry collection mode"
+        examples: ["full", "privacy"]
+
+  - id: entity.ant.meta
+    type: entity
+    brief: >
+      Caller-declared Ant invocation metadata for the telemetry-producing agent
+      process. This metadata is independent from per-turn transcript evidence.
+    attributes:
+      - ref: ant.meta.trigger
+        requirement_level:
+          conditionally_required: "For ClaudeCode/cchooks and Codex/cdxhooks Resource attributes"

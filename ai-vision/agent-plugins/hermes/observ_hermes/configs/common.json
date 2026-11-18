@@ -1,0 +1,42 @@
+{
+  "enableTelemetry": false,
+  "serviceName": "hermes",
+  "collectionMode": "full",
+  "debug": false,
+  "dynamicUsername": false,
+  "dynamicUid": false,
+  "otelExporter": {
+    "endpoint": "",
+    "protocol": "http/json",
+    "headers": {},
+    "attributes": {
+      "ant.username": ""
+    },
+    "resourceAttributes": {
+      "ant.agent.type": "hermes",
+      "ant.agent.product": "Hermes",
+      "ant.agent.instance": "",
+      "ant.agent.env": "Default",
+      "ant.agent.scene": "default"
+    },
+    "metricsTemporalityPreference": "delta"
+  },
+  "tracesConfig": {
+    "endpoint": "",
+    "headers": {},
+    "enabled": true
+  },
+  "metricsConfig": {
+    "endpoint": "",
+    "headers": {},
+    "enabled": true
+  },
+  "eventsConfig": {
+    "endpoint": "",
+    "headers": {},
+    "enabled": true
+  },
+  "metricExportInterval": 60000,
+  "logsExportInterval": 5000,
+  "logDir": ""
+}

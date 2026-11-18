@@ -1,0 +1,300 @@
+{
+  "date": "2026-10-28",
+  "classification": "LOCAL_SOURCE_VALIDATION_NOT_NEW_LOAD_TEST",
+  "backend": {
+    "command": [
+      ".venv/bin/python",
+      "manage.py",
+      "test",
+      "apps.core.tests.test_performance_capabilities",
+      "apps.core.tests.test_query_thresholds",
+      "apps.core.tests.test_source_pages",
+      "apps.core.tests.test_canonical_sessions",
+      "apps.core.tests.test_dashboard_metrics_projection",
+      "apps.core.tests.test_framework_operation_page",
+      "apps.core.tests.test_framework_snapshot",
+      "apps.core.tests.test_native_read_model",
+      "apps.core.tests.test_native_trace_pagination",
+      "apps.core.tests.test_statistics_aggregate",
+      "apps.core.tests.test_statistics_projection",
+      "apps.core.tests.test_native_input_evidence",
+      "apps.core.tests.test_native_query",
+      "apps.core.tests.test_managed_queries.StandardQueryControlTests",
+      "apps.core.tests.test_managed_queries.SnapshotWindowTests",
+      "apps.core.tests.test_managed_queries.BatchProjectorTests",
+      "apps.core.tests.test_managed_queries.ManagedProjectorTests",
+      "--noinput",
+      "--verbosity",
+      "2"
+    ],
+    "cwd": "ai-vision/aivision-py-be",
+    "exit_code": 0,
+    "elapsed_seconds": 4.940865709,
+    "log_sha256": "92cabdd2a37c5f1d5fe079f9018989eb5965e35456aaccb47da9cf2f1c7ba781"
+  },
+  "frontend": [
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:i18n"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.4140405,
+      "log_sha256": "e7498244ba469f73dcb8bcea1b11846c300b7c0bcd3bfd38a5017253126a7df4",
+      "cwd": "ai-vision/vfe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:framework-metrics"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.7446233329999998,
+      "log_sha256": "c259248c8f55c6650898889bf98bfa92b4dd9743ca6d7f3e7c82c1016570ca0a",
+      "cwd": "ai-vision/vfe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:framework-lifecycle"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.2654363330000002,
+      "log_sha256": "04be82080f055eb83f8e347d3cd3b4ffb8693b76d80cada73fdb920c03d86d08",
+      "cwd": "ai-vision/vfe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:trace-evidence"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 11.476526458999999,
+      "log_sha256": "38018d0733dd4e1f98810815ecffd7839a055173b35d92cd0ce8ff704276bc7b",
+      "cwd": "ai-vision/vfe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:trace-filters"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.181153166000001,
+      "log_sha256": "fb4874775814457d653c2c779478567c618eeeafacb2e06a3d4f52ba29fe66d7",
+      "cwd": "ai-vision/vfe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:source-system"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.45435549999999836,
+      "log_sha256": "89033ae95ad59ca93d47f7455be3ad3487b5a4a94613eaa6167fb67d22034153",
+      "cwd": "ai-vision/vfe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:dashboard-metrics"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.2953037499999986,
+      "log_sha256": "28f77b3bd3accd2c11ac29e85cc3ba60e115a923afbf3b9f29e847de32c934b0",
+      "cwd": "ai-vision/vfe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "typecheck"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 7.845292000000001,
+      "log_sha256": "de482370a88496e78a4c09a05fe54d4d972f35f55892f42e2192e6a853b1829f",
+      "cwd": "ai-vision/vfe"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 13.910119875,
+      "log_sha256": "6639871ac169d220ae041566999d944fb89a2080aa4e2c5b4a395a1a5eca7163",
+      "cwd": "ai-vision/vfe"
+    }
+  ],
+  "data_plane": {
+    "command": [
+      "go",
+      "test",
+      "-p",
+      "1",
+      "./pkg/ingest",
+      "./pkg/modules/aivision",
+      "./pkg/telemetrystore/oceanbasetelemetrystore",
+      "./pkg/apiserver/signozapiserver",
+      "-count=1"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 24.106420834,
+    "real_DSN_tests": "disabled; earlier runtime evidence separate",
+    "log_sha256": "95b1de551182ca20bc750a0431cac8ffb0b19a834db7bbc5d27624d20354d1ad",
+    "cwd": "SigNoz repository root",
+    "toolchain": "go1.25.7"
+  },
+  "reviewed_tested_source": {
+    "product": {
+      "base": "historical-source-revision-redacted",
+      "files": {
+        "ai-vision/aivision-py-be/apps/core/query/framework.py": "6844e3b1011c7fa79815ff90d21066e85892e6e59fa344635055c35d08013a13",
+        "ai-vision/aivision-py-be/apps/core/tests/test_canonical_sessions.py": "ea62260af94e2683bbcb8e3d5669090599b23368741ebb5544be822c8b257f21",
+        "ai-vision/aivision-py-be/apps/core/tests/test_dashboard_metrics_projection.py": "dc0a29b1073ea4930518d22518e7dd65424341ae6219059750b87436dbf44f07",
+        "ai-vision/aivision-py-be/apps/core/tests/test_framework_operation_page.py": "33b913975f472620559365c8f8c01d0e5f04954f26435f01c22eda510077a1e3",
+        "ai-vision/aivision-py-be/apps/core/tests/test_framework_snapshot.py": "29add00d468b3b961ea27206ba89909f08d29a4be211ee57f1776a27b75213a1",
+        "ai-vision/aivision-py-be/apps/core/tests/test_managed_queries.py": "7b9e22f743eb82ce9c72b10e58f9d035796c630ea963d4ad1cb0f15e0a9bfff7",
+        "ai-vision/aivision-py-be/apps/core/tests/test_native_read_model.py": "527fac228cf858c81fc7cf57f3190781f579942059f3e220cba5dddfed496e3c",
+        "ai-vision/aivision-py-be/apps/core/tests/test_native_trace_pagination.py": "f9738119271ec02211842db14d8a029fe28cb295af0c66bcb7550b43f47c5a6a",
+        "ai-vision/aivision-py-be/apps/core/tests/test_performance_capabilities.py": "ac48ac5b1c387a861f43146710d201556446c1a28efbc50a85f192b90ecfba37",
+        "ai-vision/aivision-py-be/apps/core/tests/test_query_thresholds.py": "0cbc09cfe640e7f9b73643b580bbcfafaf2041c1a4a10f465f18e6545f8e2d56",
+        "ai-vision/aivision-py-be/apps/core/tests/test_source_pages.py": "13a5deacebb1b2d1c9c3814850217bdddc3bbc966157e446decb44db988fbf00",
+        "ai-vision/aivision-py-be/apps/core/tests/test_statistics_aggregate.py": "86fa2b01efb84f7c298e36c9944b6658650a1155032870c1ef5626946345fd2e",
+        "ai-vision/aivision-py-be/apps/core/tests/test_statistics_projection.py": "fabbf6db30cbfdcf417d550b383d247fd66a87204476ce231ddeb7a6898df9a7",
+        "ai-vision/aivision-py-be/apps/core/trace_query/canonical_sessions.py": "72f98a51f392cf78d3a83b94df0f5030526a2d82c4c266fb2e879cfc9f1ad23a",
+        "ai-vision/aivision-py-be/apps/core/trace_query/metrics_projection.py": "4562c1feea3deb4366eb215be54760f761641e7437702fad0273411f3bb7fac7",
+        "ai-vision/aivision-py-be/apps/core/trace_query/native_query.py": "32c995d6d79edc03eac70b2efc03dbf9576dc39317a43e1e3ac5b45dcd6ee4de",
+        "ai-vision/aivision-py-be/apps/core/trace_query/query_limits.py": "fae377ba713e5686e97b41ab29699987b8779cdc65d453d10b2b85763271d3db",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/operation_page.py": "0308833abe259f5cef981315bbe33524d084985c0479af58e12bfc318e2f73f3",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/performance_capabilities.py": "ac3d2384509f1ff4d3bd9c88047cd3a1778a8f7f41e204a79f83fb9b23e581fd",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py": "d7b367c67864f99d2e1e0deee4f63dd8744ff2999d7742ba88d5eef9ead3f5bd",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model.py": "df0bf3f616972a22653c85f6ae4cd79aba36f80e5e1fef07d053e989e15e3381",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model_projection.py": "4c0dc00e9379d67d48d8cccf397ab55901a9d8ec4dc01471b54d88f2a47085db",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/session_read_model.py": "da565cb80338b54b75d9bb6246b49d2d19331d9aac17dcc94b19043cbdedad42",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/snapshot_window.py": "726f2ba00d5ee9fdd7951f18e3da18437154410a0b78d84eaf587a95fad0a6de",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/source_pages.py": "ff5d03204ea5cd0b1b1760fd97894a2a2063936bb39eb3fe4dbc37138637b5b7",
+        "ai-vision/aivision-py-be/apps/core/trace_query/signoz/statistics_aggregate.py": "7f2efd45525cb24861566e49602f5a0533e3e0564f95f2df569c310170d29f04",
+        "ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx": "4df0a106d24f3f2ce42f330204998d7482598bb0de996f65c18e7175a024c90e",
+        "ai-vision/vfe/src/agents/traces/TraceListFilters.tsx": "c5b71be50bc5ed0d216e34e17db37fc64e77516a087416e90f1721c55984f80f",
+        "ai-vision/vfe/src/agents/traces/sofaTraceTime.ts": "3beb11bc378dd43b6b4b71ab1116202bee81b6988de117ffa0b0cb04c7534fee",
+        "ai-vision/vfe/src/agents/traces/traceListThresholds.ts": "a1dd0af2aff81ebdd91b4dc988090c717e60621d488d81df2cb74f7ef110e4e6",
+        "ai-vision/vfe/src/agents/types/langfuse.ts": "f326b2b9ad84d3415a780a631e04c78a379bd8765492469123c714e54aae4d50",
+        "ai-vision/vfe/src/components/traces-otel/api.ts": "562751f828532fc05b9cbf54f3fbe993ef7b7b2ab803df3acd46ec934861cf3b",
+        "ai-vision/vfe/src/components/traces-otel/types.ts": "cc2172390a5da36d9da67488192acd01e51790cb783de4d017eef93bc78e55b7",
+        "ai-vision/vfe/src/i18n/locales/en-US.json": "44b8c0b911bcca540c83f767800186b1bc735f012d5d3c00b41086f5d8005822",
+        "ai-vision/vfe/src/i18n/locales/ja-JP.json": "cfa06f542273df8bbbdab148145b570c12abbb77d18e7b780f1b54fc50fa1fba",
+        "ai-vision/vfe/src/i18n/locales/zh-CN.json": "9a2662f25532dd393cde7ccbb364278ad05714a26d65e7e00f64eacb47eae170",
+        "ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx": "10836e95a8b447a181e457d723c4a9c4a53c98f69b774cd9c029d1e1d794ef4e",
+        "ai-vision/vfe/tests/e2e/nativeEnvironmentFilter.spec.ts": "7ce2125016547de8ba73852f60961120fd49e0c0bc854119226f0806ad0bc951",
+        "ai-vision/vfe/tests/e2e/nativePrimaryMetrics.spec.ts": "fad7b3cce7e5cf033f143c3219dae0cfa50af08ab889b7a64c86e7f4b691671d",
+        "ai-vision/vfe/tests/e2e/sessionCostSummary.spec.ts": "8da7b1e261bd09f666b240eac5db917748bb94b2ca866c59f65b29e58d185244",
+        "ai-vision/vfe/tests/frameworkDashboard.test.ts": "a401ad9253b5d3929ef200cbb5d3e118967a87cc9d2dda94829f126c96fd6d42",
+        "ai-vision/vfe/tests/frameworkMetricsApi.test.ts": "99232dad5c4e554373b9fbf0bff955d67e4c46eb4da5beb199bb20c2bde084d8",
+        "ai-vision/vfe/tests/nativeTraceSummaryDom.test.ts": "2c05331c9ce7418b4acf5bbd5403be3f02c73a422f80c08a1a8e1e739b1c058c",
+        "ai-vision/vfe/tests/nativeUiHarness.ts": "3d1d6a0a7fa0c1cb96bec74f1219967fa093327ced1cea6f79b1273760a30f63",
+        "ai-vision/vfe/tests/traceListFiltersDom.test.ts": "41e8436ac579dbdc3bce9bd699992f2aa85c78f349d72c31c9778712b2c30485",
+        "ai-vision/vfe/tests/traceListPageState.test.ts": "ee341d8e9eafeef5ef25066b7c8b369567ded68e29ca153ae6c3a6090c8a1303",
+        "ai-vision/vfe/tests/traceListState.test.ts": "7b1a81a2f8d67c59fde90c568ff28ffb2120029c3800ef5da251a103307d3b58"
+      }
+    },
+    "signoz": {
+      "base": "5db3052d546846b62d878db42a336f11474fb6cf",
+      "files": {
+        "pkg/apiserver/signozapiserver/aivision.go": "25fc2b2c7c9cce36b83dc31f22c51744ff0583b216e6a282a3ab6623d696b6d2",
+        "pkg/apiserver/signozapiserver/aivision_source_page_test.go": "6c4f9814d28d2063c46995dabbf216485dc814c1ce8d5facf273bc31d970690f",
+        "pkg/ingest/trace_content_column.go": "50fa63289dd45765dd585b883cea16fd892aa6f509400c0a82bf77730378d231",
+        "pkg/ingest/trace_content_column_test.go": "43204c0814001a35c9fbb16f9450530bf040efc683129e13d63b83a35d6c70f9",
+        "pkg/modules/aivision/native.go": "7c7452897c05ff2445e282eea3750311e903508791bd252fa5c2a3d822fc8bb0",
+        "pkg/modules/aivision/operation_page.go": "5aa253e87f6806026beac8450f25fd7fe0a156a1e2deffb9f9c22147a61b75fe",
+        "pkg/modules/aivision/operation_page_facts.go": "e8d5513a567976d6ac34e239187e46b8865326f78602ec83e2838baf7c707c33",
+        "pkg/modules/aivision/operation_page_test.go": "bb9dfbeba16a90015e76633d3eb8b5c566a841ff731cee3fdcd3fed71f73c328",
+        "pkg/modules/aivision/read_model.go": "ce2c531e90a08f61e0bc02545ca528578396c743d83517c20d10e58eee3eb479",
+        "pkg/modules/aivision/read_model_capabilities_test.go": "456b1a433085f215125a5b344d035983fe455c6e9a3465a90e434b31ab07a691",
+        "pkg/modules/aivision/read_model_content.go": "feea5250173a9d60fd64b4e433cc67ca09d0b8343c0b7d807165c3837b80cd2e",
+        "pkg/modules/aivision/read_model_content_test.go": "33b29b0116509be7f4d44ba4d55efcd8a4183fc76db83cb6ef6bd0c738df5cec",
+        "pkg/modules/aivision/read_model_metadata.go": "4fb3a87783e1cb953375c2b3aeae369db51993a7c402758084e17a5df39194a9",
+        "pkg/modules/aivision/read_model_metadata_test.go": "7d4336a52b4181e17c39dae6722d4fd6585f3ad24b481625be3f1f49daab6c38",
+        "pkg/modules/aivision/read_model_refinement_test.go": "1cfabd005a0f60dbaeb9f518e914e63e88d3c30936be167556af43a012e92079",
+        "pkg/modules/aivision/read_model_resume_refinement_test.go": "8cacd1a835cd46ec476288bceefeec357595ff5df648c1ee0e830ad2b787b931",
+        "pkg/modules/aivision/read_model_source_page.go": "8eab2809429aadc3183663c58de0de37a014f82d9e99ff30dd9ef3db1650ff66",
+        "pkg/modules/aivision/read_model_source_page_test.go": "3f77f3e2b5b2c3797bd2f63a7c24c99320f95eee7582ad862e660706ca12b619",
+        "pkg/modules/aivision/read_model_test.go": "b94766e3eaadb05dcd0b507780255e75993746fb3b5a65b6a373cd5d26fa7e7e",
+        "pkg/modules/aivision/session_page_batch_test.go": "8b61b8a15369a61c49caf4548e544e9f1464473202558be8aa51b0443e46830b",
+        "pkg/modules/aivision/session_read_model.go": "a6e62bce30f1b9e62f966e11e4f2630cf72627c51176398652cf2616ddebc180",
+        "pkg/modules/aivision/session_read_model_integration_test.go": "b66588f56fa6f4d58fd795bceb67c1d33976e3b56e8f06581a17c04cc672eb89",
+        "pkg/modules/aivision/session_read_model_test.go": "0da8397a90162ab91be410a7d8848b283b53130c20f1cc7dc7697c7ebdd25a3f",
+        "pkg/modules/aivision/session_token_columns_test.go": "7a74843bb36c0918b4f599dec362d9ed3214f06c4cc8dc8e34ac977f938443ba",
+        "pkg/modules/aivision/trace_metrics_window.go": "179a279092fa677628ef25aa037b912df6638cf292683d4a71370ea294318a27",
+        "pkg/modules/aivision/trace_metrics_window_test.go": "b3883c2b5695f695d7114db9382a8fe7d6cb31ee2f1c2a860bf53c63e5549ea3",
+        "pkg/telemetrystore/oceanbasetelemetrystore/projection_lifecycle_test.go": "5918fda1693050faafd1a8cb24c9c96fc7ae28cfa9b01a093d931bfed63bb486",
+        "pkg/telemetrystore/oceanbasetelemetrystore/provider.go": "d4e27b04824d226b22bd3e4a57b2651cb98e822e86a823981e950a0c8f4979cc"
+      }
+    }
+  },
+  "limitations": [
+    "Fixture tests do not establish live engine behavior.",
+    "Live API/source gates and load series are reported separately.",
+    "Documentation and UI screenshot artifacts were added after source checks; runtime production files remain identical."
+  ],
+  "browser_protocol_fixtures": {
+    "setup_attempt": {
+      "command": [
+        "npm",
+        "run",
+        "test:e2e",
+        "--",
+        "tests/e2e/nativePrimaryMetrics.spec.ts",
+        "tests/e2e/nativeEnvironmentFilter.spec.ts",
+        "tests/e2e/sessionCostSummary.spec.ts"
+      ],
+      "cwd": "ai-vision/vfe",
+      "exit_code": 1,
+      "elapsed_seconds": 4.204115458,
+      "log_sha256": "26c0e69a202171a1bb6f108456b50b2e58849b8ab9a118c0c5f4f28f95016dbb",
+      "scope": "Local browser protocol fixtures; not live storage or performance evidence"
+    },
+    "isolated_loopback_run": {
+      "command": [
+        "npm",
+        "run",
+        "test:e2e",
+        "--",
+        "tests/e2e/nativePrimaryMetrics.spec.ts",
+        "tests/e2e/nativeEnvironmentFilter.spec.ts",
+        "tests/e2e/sessionCostSummary.spec.ts"
+      ],
+      "cwd": "ai-vision/vfe",
+      "exit_code": 0,
+      "elapsed_seconds": 30.089887583,
+      "log_sha256": "555e56fbaf1340e074e268d9f791df2ab0ab6e3d9f4d2e8cd8d7f1dc004d2410",
+      "scope": "Local browser protocol fixtures; not live storage or performance evidence",
+      "environment": "HTTP proxy removed for local fixture process; NO_PROXY loopback only",
+      "prior_attempt": "Proxy health-check false positive; no test cases executed"
+    },
+    "result": "12/12 passed; setup attempt executed no cases because proxy falsely answered the health probe"
+  },
+  "backend_format_cleanup_check": {
+    "command": [
+      ".venv/bin/python",
+      "manage.py",
+      "test",
+      "apps.core.tests.test_query_thresholds",
+      "--noinput",
+      "--verbosity",
+      "2"
+    ],
+    "cwd": "ai-vision/aivision-py-be",
+    "exit_code": 0,
+    "elapsed_seconds": 2.610543125,
+    "log_sha256": "836a6c01e52687e599927f3cc0c3557349605dd704146030797c41aaaec1cde5",
+    "change": "Removed one trailing blank line from test_query_thresholds.py after full suite. No production source changed."
+  }
+}

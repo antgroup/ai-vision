@@ -1,0 +1,87 @@
+{
+  "name": "observ-opencode",
+  "version": "0.3.4",
+  "description": "OpenCode Agent Observability - OpenTelemetry instrumentation for OpenCode AI Agent",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./config": {
+      "import": "./dist/config-api.js",
+      "types": "./dist/config-api.d.ts"
+    },
+    "./core": {
+      "import": "./dist/core.js",
+      "types": "./dist/core.d.ts"
+    },
+    "./http-runtime": {
+      "import": "./dist/http-runtime.js",
+      "types": "./dist/http-runtime.d.ts"
+    }
+  },
+  "scripts": {
+    "generate-keys": "tsx scripts/generate-keys.ts",
+    "prebuild": "npm run generate-keys",
+    "build": "tsx scripts/build.ts",
+    "test": "npm run typecheck && npm run test:turn-state && npm run test:events && npm run test:tool-call && npm run test:llm-input-delta && npm run test:llm-retry-input && npm run test:llm-usage-terminal && npm run test:provider-wire && npm run test:compaction-delta && npm run test:command-skill && npm run test:trace-tags && npm run test:logger-paths && npm run test:runtime-logger-config && npm run test:config && npm run test:subagent && npm run test:production-boundary && npm run test:vcs && npm run test:desktop-loader",
+    "test:config": "npm run generate-keys && tsx scripts/test-config-priority.ts",
+    "test:events": "npm run generate-keys && tsx scripts/test-event-semantics.ts",
+    "test:turn-state": "npm run generate-keys && tsx scripts/test-turn-counter-store.ts",
+    "test:tool-call": "npm run generate-keys && tsx scripts/test-tool-call-event.ts",
+    "test:llm-input-delta": "npm run generate-keys && tsx scripts/test-llm-input-delta.ts",
+    "test:llm-retry-input": "npm run generate-keys && tsx scripts/test-llm-retry-input.ts",
+    "test:llm-usage-terminal": "npm run generate-keys && tsx scripts/test-llm-usage-terminal.ts",
+    "test:provider-wire": "npm run generate-keys && tsx scripts/test-provider-wire-usage.ts",
+    "test:compaction-delta": "npm run generate-keys && tsx scripts/test-compaction-delta-semantics.ts",
+    "test:command-skill": "npm run generate-keys && tsx scripts/test-command-skill.ts",
+    "test:trace-tags": "npm run generate-keys && tsx scripts/test-trace-tags.ts",
+    "test:logger-paths": "npm run generate-keys && tsx scripts/test-logger-paths.ts",
+    "test:runtime-logger-config": "npm run generate-keys && tsx scripts/test-runtime-logger-config.ts",
+    "test:subagent": "npm run generate-keys && tsx scripts/test-subagent-correlation.ts",
+    "test:production-boundary": "npm run generate-keys && tsx scripts/test-production-boundary.ts && tsx scripts/test-metric-temporality.ts",
+    "test:vcs": "npm run generate-keys && tsx scripts/test-vcs-resource.ts",
+    "test:desktop-loader": "npm run build && tsx scripts/test-desktop-loader.ts",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": "^1.3.4",
+    "@opencode-ai/sdk": "^1.3.4"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.214.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.214.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.214.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.214.0",
+    "@opentelemetry/resources": "^2.6.1",
+    "@opentelemetry/sdk-logs": "^0.214.0",
+    "@opentelemetry/sdk-metrics": "^2.6.1",
+    "@opentelemetry/sdk-trace-base": "^2.6.1",
+    "@opentelemetry/sdk-trace-node": "^2.6.1",
+    "@opentelemetry/semantic-conventions": "^1.30.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.3.4",
+    "@opencode-ai/sdk": "^1.3.4",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "files": [
+    "dist",
+    "opencode.plugin.json"
+  ],
+  "keywords": [
+    "opentelemetry",
+    "observability",
+    "ai-agent",
+    "opencode",
+    "tracing"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,418 @@
+# AI Vision Agent Semantic Conventions - Metrics
+# Source: docs/standard/aivision/metrics.md
+# Version: v4.0
+#
+# Changes from v3.0:
+#   - Added: agent.tool_call.duration histogram (RED Duration for tool calls)
+#   - Added: gen_ai.conversation.id on agent.tool_call.count (symmetric with duration)
+#   - Removed: agent.cost.usage, agent.active_time.total, agent.error.count
+#   - Removed: gen_ai.server.* (5 metrics, not collectible from agent-side hooks)
+#   - Added: agent.cache.read_tokens, agent.cache.write_tokens
+#   - Updated: agent.tool_call.count attributes (tool_name/success -> agentic.tool.type)
+#   - Updated: agent.api_request.count attributes (model/status -> gen_ai.request.model)
+#   - Updated: agent.api_request.duration attributes (model -> gen_ai.request.model + gen_ai.provider.name)
+#   - Updated: agent.token.usage attributes (model removed, high-cardinality)
+#   - Added: agent.api_request.error.count and agent.tool_call.error.count for RED Errors
+#   - Added: bounded agentic.error.category for RED error metric dimensions
+#   - Attribute naming aligned to gen_ai.* / agentic.* conventions
+
+groups:
+  # ============================================================
+  # OTel Standard Client Metrics
+  # ============================================================
+
+  - id: metric.gen_ai.client.token.usage
+    type: metric
+    metric_name: gen_ai.client.token.usage
+    stability: experimental
+    instrument: histogram
+    unit: "{token}"
+    brief: >
+      Number of input and output tokens used. Measures token usage distribution.
+    note: >
+      ExplicitBucketBoundaries: [1, 4, 16, 64, 256, 1024, 4096, 16384, 65536,
+      262144, 1048576, 4194304, 16777216, 67108864]
+    attributes:
+      # Required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref: gen_ai.provider.name
+        requirement_level: required
+      - ref: gen_ai.token.type
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: server.port
+        requirement_level:
+          conditionally_required: "When server.address is set"
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      # Recommended
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: server.address
+        requirement_level: recommended
+
+  - id: metric.gen_ai.client.operation.duration
+    type: metric
+    metric_name: gen_ai.client.operation.duration
+    stability: experimental
+    instrument: histogram
+    unit: "s"
+    brief: >
+      GenAI operation duration.
+    note: >
+      ExplicitBucketBoundaries: [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64,
+      1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92]
+    attributes:
+      # Required
+      - ref: gen_ai.operation.name
+        requirement_level: required
+      - ref: gen_ai.provider.name
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      # Conditionally Required
+      - ref: error.type
+        requirement_level:
+          conditionally_required: "When the operation ends with an error"
+      - ref: gen_ai.request.model
+        requirement_level:
+          conditionally_required: "When available"
+      - ref: server.port
+        requirement_level:
+          conditionally_required: "When server.address is set"
+      - ref: ant.uid
+        requirement_level:
+          conditionally_required: "When available"
+      # Recommended
+      - ref: gen_ai.response.model
+        requirement_level: recommended
+      - ref: server.address
+        requirement_level: recommended
+
+  # ============================================================
+  # Ant Business Metrics (agent.*)
+  # ============================================================
+  #
+  # Metric Semantic Constraints
+  # ---------------------------
+  # Normative RED golden metrics for weaver-guard metrics validation:
+  #   Rate:     agent.api_request.count, agent.tool_call.count
+  #   Errors:   agent.api_request.error.count, agent.tool_call.error.count
+  #   Duration: agent.api_request.duration, agent.tool_call.duration
+  #
+  # The RED validator intentionally applies only to these six metrics. Other
+  # agent.* metrics are semconv documentation only and MUST NOT produce findings
+  # from the minimal metrics Rego spec unless a future version explicitly
+  # promotes them into the normative set.
+  #
+  # Metric dimensions are low-cardinality:
+  #   - API request metrics: gen_ai.request.model, ant.username
+  #   - Tool metrics: agentic.tool.type, ant.username
+  #   - Error count metrics: agentic.error.category
+  #
+  # Raw error.type and error.message are forbidden as metric datapoint
+  # attributes for the six RED metrics. Keep raw error details in correlated
+  # events/log records where drill-down can preserve detail without exploding
+  # metric cardinality.
+
+  - id: metric.agent.session.count
+    type: metric
+    metric_name: agent.session.count
+    stability: experimental
+    instrument: counter
+    unit: "{count}"
+    brief: >
+      Agent session start count. Incremented each time an agent session starts.
+    attributes:
+      - ref: ant.agent.type
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+
+  - id: metric.agent.token.usage
+    type: metric
+    metric_name: agent.token.usage
+    stability: experimental
+    instrument: counter
+    unit: "{token}"
+    brief: >
+      Token usage counter. Complements gen_ai.client.token.usage (Histogram) with simple
+      cumulative counting.
+    attributes:
+      - ref: ant.agent.type
+        requirement_level: required
+      - ref: type
+        requirement_level: required
+        note: "Values: `input` or `output`"
+
+  - id: metric.agent.tool_call.count
+    type: metric
+    metric_name: agent.tool_call.count
+    stability: experimental
+    instrument: counter
+    unit: "{count}"
+    brief: >
+      Tool invocation count. Incremented after each tool call completes.
+    note: >
+      This is the RED Rate metric for tool calls. It must be exported as a
+      monotonic counter/sum with unit {count}. Metric datapoints must carry
+      agentic.tool.type and ant.username; raw tool names and error details
+      belong in correlated events/log records, not metric dimensions.
+      Derived zero-duration Skill-load spans do not increment this physical
+      tool-call metric; their source `read` contributes one `builtin` datapoint.
+    attributes:
+      - ref: agentic.tool.type
+        requirement_level: required
+        note: "Values: `mcp`, `skill`, or `builtin`. Classifies the physical tool invocation; derived Skill-load spans do not add datapoints."
+      - ref: ant.username
+        requirement_level: required
+      # Recommended (v4: added for symmetry with agent.tool_call.duration)
+      - ref: gen_ai.conversation.id
+        requirement_level: recommended
+
+  - id: metric.agent.tool_call.error.count
+    type: metric
+    metric_name: agent.tool_call.error.count
+    stability: experimental
+    instrument: counter
+    unit: "{count}"
+    brief: >
+      Tool invocation error count. Incremented once for each failed tool call.
+      This is the RED Errors metric for tool calls.
+    note: >
+      Must be exported as a monotonic sum/counter. Use bounded
+      agentic.error.category for aggregation; keep raw error.type and
+      error.message in correlated tool_result events.
+      Derived Skill-load spans are emitted only after success and therefore do
+      not increment the physical tool error counter.
+    attributes:
+      - ref: agentic.tool.type
+        requirement_level: required
+        note: "Values: `mcp`, `skill`, or `builtin`. Classifies the physical tool invocation; derived Skill-load spans do not add datapoints."
+      - ref: ant.username
+        requirement_level: required
+      - ref: agentic.error.category
+        requirement_level: required
+
+  - id: metric.agent.tool_call.duration
+    type: metric
+    metric_name: agent.tool_call.duration
+    stability: experimental
+    instrument: histogram
+    unit: "ms"
+    brief: >
+      Tool call duration distribution in milliseconds. Completes RED coverage
+      for tool calls (Rate: agent.tool_call.count, Errors:
+      agent.tool_call.error.count, Duration: this metric).
+    note: |
+      This is the RED Duration metric for tool calls. It must be exported as a
+      histogram with unit ms. Metric datapoints must carry agentic.tool.type
+      and ant.username; raw tool names and error details belong in correlated
+      events/log records, not metric dimensions.
+
+      Derived zero-duration Skill-load spans do not add a second duration
+      datapoint; the source `read` records its real duration as `builtin`.
+
+      ExplicitBucketBoundaries: [50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000]
+    attributes:
+      - ref: agentic.tool.type
+        requirement_level: required
+        note: "Values: `mcp`, `skill`, or `builtin`. Classifies the physical tool invocation; derived Skill-load spans do not add datapoints."
+      - ref: ant.username
+        requirement_level: required
+      - ref: gen_ai.conversation.id
+        requirement_level: recommended
+
+  - id: metric.agent.api_request.count
+    type: metric
+    metric_name: agent.api_request.count
+    stability: experimental
+    instrument: counter
+    unit: "{count}"
+    brief: >
+      API request count. Incremented after each API request completes.
+    note: >
+      This is the RED Rate metric for API requests. It must be exported as a
+      monotonic counter/sum with unit {count}. Metric datapoints must carry
+      gen_ai.request.model and ant.username; request status and raw error
+      details belong in correlated events/log records, not metric dimensions.
+    attributes:
+      - ref: gen_ai.request.model
+        requirement_level: required
+      - ref: gen_ai.provider.name
+        requirement_level: recommended
+      - ref: ant.username
+        requirement_level: required
+
+  - id: metric.agent.api_request.error.count
+    type: metric
+    metric_name: agent.api_request.error.count
+    stability: experimental
+    instrument: counter
+    unit: "{count}"
+    brief: >
+      API request error count. Incremented once for each failed API request.
+      This is the RED Errors metric for API requests.
+    note: >
+      Must be exported as a monotonic sum/counter. Use bounded
+      agentic.error.category for aggregation; keep raw error.type and
+      error.message in correlated api_request events.
+    attributes:
+      - ref: gen_ai.request.model
+        requirement_level: required
+      - ref: ant.username
+        requirement_level: required
+      - ref: agentic.error.category
+        requirement_level: required
+
+  - id: metric.agent.api_request.duration
+    type: metric
+    metric_name: agent.api_request.duration
+    stability: experimental
+    instrument: histogram
+    unit: "ms"
+    brief: >
+      API request duration distribution in milliseconds.
+    note: |
+      This is the RED Duration metric for API requests. It must be exported as
+      a histogram with unit ms. Metric datapoints must carry
+      gen_ai.request.model and ant.username; request status and raw error
+      details belong in correlated events/log records, not metric dimensions.
+
+      ExplicitBucketBoundaries: [500, 1000, 2000, 5000, 10000, 20000, 30000, 60000]
+    attributes:
+      - ref: gen_ai.request.model
+        requirement_level: required
+      - ref: gen_ai.provider.name
+        requirement_level: recommended
+      - ref: ant.username
+        requirement_level: required
+
+  - id: metric.agent.cache.read_tokens
+    type: metric
+    metric_name: agent.cache.read_tokens
+    stability: experimental
+    instrument: counter
+    unit: "{token}"
+    brief: >
+      Cache read token count. Tokens retrieved from prompt cache (cache hits).
+      Use with agent.cache.write_tokens to compute cache hit ratio.
+    attributes:
+      - ref: gen_ai.request.model
+        requirement_level: required
+      - ref: ant.agent.type
+        requirement_level: required
+
+  - id: metric.agent.cache.write_tokens
+    type: metric
+    metric_name: agent.cache.write_tokens
+    stability: experimental
+    instrument: counter
+    unit: "{token}"
+    brief: >
+      Cache write token count. Tokens written to prompt cache (cache misses).
+      Use with agent.cache.read_tokens to compute cache hit ratio.
+    attributes:
+      - ref: gen_ai.request.model
+        requirement_level: required
+      - ref: ant.agent.type
+        requirement_level: required
+
+  # ============================================================
+  # AIVision Agentic Self-Monitoring Metrics
+  # ============================================================
+  # Self-monitoring metrics for the observability collection components
+  # (hooks, SDKs, plugins). Prefixed with aivision.agentic.* to distinguish
+  # from agent business metrics. Applicable to cchooks, cdxhooks,
+  # observ-openclaw, observ-opencode, etc.
+
+  - id: metric.aivision.agentic.up
+    type: metric
+    metric_name: aivision.agentic.up
+    stability: experimental
+    instrument: counter
+    unit: "{count}"
+    brief: >
+      Component invocation count (heartbeat). Incremented each time the
+      observability component is invoked. Used to detect active installations.
+    attributes:
+      - ref: ant.username
+        requirement_level: required
+      - ref: ant.agent.product
+        requirement_level: required
+      - ref: ant.agent.type
+        requirement_level: required
+      - ref: ant.agent.instance
+        requirement_level: required
+      - id: hook.version
+        type: string
+        stability: experimental
+        brief: "Build version of the observability component"
+        requirement_level: required
+
+  - id: metric.aivision.agentic.exec_error
+    type: metric
+    metric_name: aivision.agentic.exec_error
+    stability: experimental
+    instrument: counter
+    unit: "{count}"
+    brief: >
+      Execution error count. Incremented when a handler fails or the component
+      panics during execution.
+    attributes:
+      - ref: ant.username
+        requirement_level: required
+      - ref: ant.agent.product
+        requirement_level: required
+      - ref: ant.agent.type
+        requirement_level: required
+      - ref: ant.agent.instance
+        requirement_level: required
+      - id: hook.version
+        type: string
+        stability: experimental
+        brief: "Build version of the observability component"
+        requirement_level: required
+      - id: handler.name
+        type: string
+        stability: experimental
+        brief: "Name of the handler that failed"
+        requirement_level:
+          conditionally_required: "When a specific handler failed"
+      - ref: error.type
+        requirement_level: required
+        note: "Error class: handler error message or 'panic'"
+
+  - id: metric.aivision.agentic.export_error
+    type: metric
+    metric_name: aivision.agentic.export_error
+    stability: experimental
+    instrument: counter
+    unit: "{count}"
+    brief: >
+      Export error count. Incremented when the HTTP POST to the observability
+      backend (e.g. Langfuse) fails.
+    attributes:
+      - ref: ant.username
+        requirement_level: required
+      - ref: ant.agent.product
+        requirement_level: required
+      - ref: ant.agent.type
+        requirement_level: required
+      - ref: ant.agent.instance
+        requirement_level: required
+      - id: hook.version
+        type: string
+        stability: experimental
+        brief: "Build version of the observability component"
+        requirement_level: required
+      - ref: error.type
+        requirement_level: required
+        note: "HTTP error message or connection error description"

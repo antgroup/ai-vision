@@ -1,0 +1,61 @@
+{
+  "name": "@observ/pi",
+  "version": "0.2.1",
+  "private": true,
+  "type": "module",
+  "main": "index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "index.js",
+    "dist/index.js",
+    "dist/src",
+    "dist/pi.managed-config.json"
+  ],
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./index.js"
+    ]
+  },
+  "scripts": {
+    "generate:edition": "node scripts/generate-edition-config.mjs",
+    "build": "npm run clean && npm run generate:edition && node scripts/build.mjs && tsc --emitDeclarationOnly --declaration --sourceMap false && node scripts/prepare-managed-config.mjs",
+    "clean": "rm -rf dist coverage",
+    "validate:release": "node scripts/validate-release.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/**/*.test.ts",
+    "contract:skills": "node scripts/refresh-pi-skill-contract.mjs"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.220.0",
+    "@opentelemetry/core": "^2.9.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.220.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.220.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.220.0",
+    "@opentelemetry/otlp-transformer": "^0.220.0",
+    "@opentelemetry/resources": "^2.9.0",
+    "@opentelemetry/sdk-logs": "^0.220.0",
+    "@opentelemetry/sdk-metrics": "^2.9.0",
+    "@opentelemetry/sdk-trace-base": "^2.9.0",
+    "@opentelemetry/sdk-trace-node": "^2.9.0",
+    "@opentelemetry/semantic-conventions": "^1.30.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.0.2",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.27.5",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  },
+  "overrides": {
+    "@earendil-works/pi-coding-agent": {
+      "@earendil-works/pi-codemode": "1.0.2"
+    }
+  }
+}

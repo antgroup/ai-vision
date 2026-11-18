@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aivision.example.com/schemas/hermes-replay-config.json",
+  "title": "Hermes Replay Local Configuration",
+  "description": "Developer-only raw callback capture and offline replay configuration. Production observ-hermes settings are not read.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "captureEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Explicitly enable replay-owned raw callback capture.",
+      "x-env": "HERMES_REPLAY_CAPTURE_ENABLED"
+    },
+    "collectionMode": {
+      "type": "string",
+      "enum": ["full", "privacy"],
+      "default": "full",
+      "description": "Content policy applied before raw envelopes are written and again during offline reconstruction.",
+      "x-env": "HERMES_REPLAY_COLLECTION_MODE"
+    },
+    "sessionDir": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Directory for replay-owned raw callback transcript JSONL files.",
+      "x-env": "HERMES_REPLAY_SESSION_DIR"
+    },
+    "sessionName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional stable session label used only for replay-owned artifact naming.",
+      "x-env": "HERMES_REPLAY_SESSION_NAME"
+    },
+    "debug": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable replay-owned diagnostic logging only.",
+      "x-env": "HERMES_REPLAY_DEBUG"
+    }
+  },
+  "x-resolution-priority": "environment > replay plugin options > hermes-replay.json > defaults"
+}

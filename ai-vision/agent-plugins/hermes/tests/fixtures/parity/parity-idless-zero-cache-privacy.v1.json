@@ -1,0 +1,151 @@
+{
+  "schema_version": "aivision.hermes-parity-scenario.v1",
+  "name": "parity-idless-zero-cache-privacy.v1",
+  "session_id": "parity-idless-privacy",
+  "collection_mode": "privacy",
+  "hooks": [
+    {
+      "hook": "on_session_start",
+      "captured_at": "2026-07-22T12:00:00Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "model": "model-edge",
+        "platform": "cli"
+      }
+    },
+    {
+      "hook": "pre_llm_call",
+      "captured_at": "2026-07-22T12:00:01Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "model": "model-edge",
+        "user_message": "CANARY_EDGE_PROMPT",
+        "conversation_history": []
+      }
+    },
+    {
+      "hook": "pre_api_request",
+      "captured_at": "2026-07-22T12:00:02Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "api_request_id": "api-edge",
+        "model": "model-edge",
+        "provider": "openai",
+        "request_messages": [
+          {
+            "role": "user",
+            "content": "CANARY_EDGE_PROMPT"
+          }
+        ]
+      }
+    },
+    {
+      "hook": "post_api_request",
+      "captured_at": "2026-07-22T12:00:03Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "api_request_id": "api-edge",
+        "model": "model-edge",
+        "provider": "openai",
+        "api_duration": 0.1,
+        "response_model": "model-edge",
+        "finish_reason": "stop",
+        "usage": {
+          "input_tokens": 5,
+          "output_tokens": 0,
+          "cache_read_tokens": 0,
+          "cache_write_tokens": 0,
+          "prompt_tokens": 5
+        },
+        "assistant_message": {
+          "role": "assistant",
+          "content": "CANARY_EDGE_OUTPUT"
+        }
+      }
+    },
+    {
+      "hook": "pre_tool_call",
+      "captured_at": "2026-07-22T12:00:04Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "tool_call_id": "tool-edge",
+        "tool_name": "Read",
+        "args": {
+          "path": "CANARY_EDGE_TOOL_INPUT"
+        }
+      }
+    },
+    {
+      "hook": "post_tool_call",
+      "captured_at": "2026-07-22T12:00:05Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "tool_call_id": "tool-edge",
+        "tool_name": "Read",
+        "result": "CANARY_EDGE_TOOL_OUTPUT",
+        "duration_ms": 3,
+        "status": "success"
+      }
+    },
+    {
+      "hook": "post_llm_call",
+      "captured_at": "2026-07-22T12:00:06Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "model": "model-edge",
+        "user_message": "CANARY_EDGE_PROMPT",
+        "assistant_response": "CANARY_EDGE_OUTPUT",
+        "conversation_history": []
+      }
+    },
+    {
+      "hook": "on_session_end",
+      "captured_at": "2026-07-22T12:00:07Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "completed": true,
+        "interrupted": false
+      }
+    },
+    {
+      "hook": "on_session_finalize",
+      "captured_at": "2026-07-22T12:00:08Z",
+      "raw": {
+        "telemetry_schema_version": "hermes.observer.v1",
+        "session_id": "parity-idless-privacy",
+        "platform": "cli",
+        "reason": "shutdown"
+      }
+    }
+  ],
+  "expected": {
+    "shared_events": {
+      "session_start": 1,
+      "session_end": 1,
+      "user_prompt": 1,
+      "api_request": 1,
+      "tool_call": 1,
+      "tool_result": 1
+    },
+    "metrics": {
+      "agent.session.count": {"count": 1, "sum": 1},
+      "agent.token.usage": {"count": 1, "sum": 5},
+      "agent.cache.read_tokens": {"count": 0, "sum": 0},
+      "agent.cache.write_tokens": {"count": 0, "sum": 0},
+      "agent.api_request.count": {"count": 1, "sum": 1},
+      "agent.api_request.error.count": {"count": 0, "sum": 0},
+      "agent.api_request.duration": {"count": 1, "sum": 100},
+      "agent.tool_call.count": {"count": 1, "sum": 1},
+      "agent.tool_call.error.count": {"count": 0, "sum": 0},
+      "agent.tool_call.duration": {"count": 1, "sum": 3}
+    }
+  }
+}

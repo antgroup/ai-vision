@@ -1,0 +1,60 @@
+{
+  "name": "@aivision/pireplay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/src/index.js",
+  "files": [
+    "dist/src",
+    "README.md"
+  ],
+  "keywords": [
+    "pi-package"
+  ],
+  "pi": {
+    "extensions": [
+      "./dist/src/index.js"
+    ]
+  },
+  "bundledDependencies": [
+    "@observ/pi"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/**/*.test.ts",
+    "replay": "tsx src/replay.ts",
+    "golden": "tsx src/golden/superloop.ts"
+  },
+  "dependencies": {
+    "@observ/pi": "file:../observ-pi",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/api-logs": "^0.220.0",
+    "@opentelemetry/core": "^2.9.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.220.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.220.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.220.0",
+    "@opentelemetry/otlp-transformer": "^0.220.0",
+    "@opentelemetry/resources": "^2.9.0",
+    "@opentelemetry/sdk-logs": "^0.220.0",
+    "@opentelemetry/sdk-metrics": "^2.9.0",
+    "@opentelemetry/sdk-trace-base": "^2.9.0",
+    "@opentelemetry/sdk-trace-node": "^2.9.0",
+    "@opentelemetry/semantic-conventions": "^1.30.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "1.0.2",
+    "@types/node": "^24.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.8.0"
+  },
+  "overrides": {
+    "@earendil-works/pi-coding-agent": {
+      "@earendil-works/pi-codemode": "1.0.2"
+    }
+  }
+}

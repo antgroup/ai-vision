@@ -1,0 +1,10 @@
+{
+  "name": "@aivision/traceid-hook",
+  "version": "0.0.1",
+  "description": "POC: Inject trace context into exec tool calls",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "build": "echo 'no build needed for POC'"
+  }
+}

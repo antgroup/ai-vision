@@ -1,0 +1,83 @@
+.product-guide-offer,
+.product-guide-card {
+  position: fixed;
+  z-index: 90;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: 0 8px 36px rgb(0 0 0 / 14%);
+  pointer-events: auto;
+}
+.product-guide-offer {
+  right: 24px;
+  bottom: 24px;
+  width: min(320px, calc(100vw - 32px));
+}
+.product-guide-offer p,
+.product-guide-card p {
+  margin: 0 14px 18px 0;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.product-guide-close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  padding: 5px;
+  border-radius: 6px;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+.product-guide-close:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+.product-guide-close:focus-visible {
+  outline: 2px solid var(--ring);
+}
+.product-guide-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 89;
+  pointer-events: none;
+}
+.product-guide-ring {
+  position: fixed;
+  border: 2px solid var(--primary);
+  border-radius: 9px;
+  box-shadow: 0 0 0 100vmax rgb(0 0 0 / 24%);
+  pointer-events: none;
+}
+@media (max-width: 640px) {
+  .product-guide-offer {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+@media (max-height: 480px) {
+  .product-guide-card {
+    padding: 12px 14px;
+  }
+  .product-guide-card p {
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+}
+
+.product-guide-layer:popover-open {
+  display: block;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  overflow: hidden;
+}

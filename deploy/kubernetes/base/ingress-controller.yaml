@@ -1,0 +1,167 @@
+# Standard Kubernetes Ingress provider; no Traefik CRDs or dashboard.
+# See https://doc.traefik.io/traefik/v3.7/reference/install-configuration/providers/kubernetes/kubernetes-ingress/
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aivision-ingress
+  namespace: {{.Namespace | quote}}
+automountServiceAccountToken: true
+{{if .IMAGE_PULL_SECRET}}
+imagePullSecrets:
+  - name: {{.IMAGE_PULL_SECRET | quote}}
+{{end}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: aivision-ingress
+  namespace: {{.Namespace | quote}}
+rules:
+  - apiGroups: [""]
+    resources: [services, secrets]
+    verbs: [get, list, watch]
+  - apiGroups: [discovery.k8s.io]
+    resources: [endpointslices]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingresses/status]
+    verbs: [update]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: aivision-ingress
+  namespace: {{.Namespace | quote}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: aivision-ingress
+subjects:
+  - kind: ServiceAccount
+    name: aivision-ingress
+    namespace: {{.Namespace | quote}}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{printf "%s-ingress" .Namespace | quote}}
+rules:
+  - apiGroups: [""]
+    resources: [nodes]
+    verbs: [get, list, watch]
+  - apiGroups: [networking.k8s.io]
+    resources: [ingressclasses]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{printf "%s-ingress" .Namespace | quote}}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{printf "%s-ingress" .Namespace | quote}}
+subjects:
+  - kind: ServiceAccount
+    name: aivision-ingress
+    namespace: {{.Namespace | quote}}
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: {{.INGRESS_CLASS | quote}}
+  annotations:
+    aivision.ob-labs.io/namespace: {{.Namespace | quote}}
+spec:
+  controller: traefik.io/ingress-controller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aivision-ingress
+  namespace: {{.Namespace | quote}}
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  progressDeadlineSeconds: 420
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxSurge: 1, maxUnavailable: 0}
+  selector:
+    matchLabels: {app: aivision-ingress}
+  template:
+    metadata:
+      labels: {app: aivision-ingress, app.kubernetes.io/part-of: aivision}
+    spec:
+      serviceAccountName: aivision-ingress
+      automountServiceAccountToken: true
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: traefik
+          image: {{.INGRESS_IMAGE | quote}}
+          imagePullPolicy: IfNotPresent
+          args:
+            - --providers.kubernetesingress=true
+            - {{printf "--providers.kubernetesingress.ingressclass=%s" .INGRESS_CLASS | quote}}
+            - {{printf "--providers.kubernetesingress.namespaces=%s" .Namespace | quote}}
+            - {{printf "--providers.kubernetesingress.ingressendpoint.publishedservice=%s/aivision-ingress" .Namespace | quote}}
+            - --providers.kubernetesingress.strictprefixmatching=true
+            - --entrypoints.web.address=:8000
+            - --entrypoints.web.asdefault=true
+            - --entrypoints.web.forwardedheaders.insecure=false
+            - --entrypoints.web.http.aliasheadersstrategy=delete
+            - --entrypoints.websecure.address=:8443
+            - --entrypoints.websecure.asdefault=true
+            - --entrypoints.websecure.http.tls=true
+            - --entrypoints.websecure.forwardedheaders.insecure=false
+            - --entrypoints.websecure.http.aliasheadersstrategy=delete
+            - --entrypoints.health.address=:8082
+            - --ping=true
+            - --ping.entrypoint=health
+            - --api.dashboard=false
+          ports:
+            - {name: web, containerPort: 8000}
+            - {name: websecure, containerPort: 8443}
+            - {name: health, containerPort: 8082}
+          startupProbe:
+            httpGet: {path: /ping, port: health}
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /ping, port: health}
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet: {path: /ping, port: health}
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 100m, memory: 64Mi}
+            limits: {cpu: 500m, memory: 256Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aivision-ingress
+  namespace: {{.Namespace | quote}}
+spec:
+  type: NodePort
+  selector: {app: aivision-ingress}
+  ports:
+    - {name: web, port: 80, targetPort: web, nodePort: {{.INGRESS_HTTP_NODE_PORT}}}
+    - {name: websecure, port: 443, targetPort: websecure, nodePort: {{.INGRESS_HTTPS_NODE_PORT}}}

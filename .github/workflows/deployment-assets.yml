@@ -1,0 +1,101 @@
+name: Deployment asset contracts
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - deploy/**
+      - aivision-cli/**
+      - docs/deployment/**
+      - .github/workflows/deployment-assets.yml
+      - .github/workflows/release-cli.yml
+      - scripts/ci/deployment_assets_scope.py
+      - scripts/ci/plan.py
+      - scripts/ci/native_unit_scope.py
+      - scripts/ci/test_ci_cost_controls.py
+
+permissions:
+  contents: read
+
+jobs:
+  assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Select deployment asset validation scope
+        id: scope
+        run: python3 scripts/ci/deployment_assets_scope.py --event "$GITHUB_EVENT_PATH"
+      - uses: actions/setup-python@v5
+        if: steps.scope.outputs.heavy_checks == 'true'
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        if: steps.scope.outputs.heavy_checks == 'true'
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - name: Verify canonical assets and compatibility packages
+        if: steps.scope.outputs.heavy_checks == 'true'
+        run: |
+          python deploy/scripts/package_assets.py --check
+          (cd aivision-cli && go run -mod=vendor ./internal/deploy/renderproduct --check)
+          python -m unittest discover -s deploy/tests
+          python -m unittest discover -s aivision-cli/scripts -p 'test_install.py'
+          (cd deploy/kubernetes/dependencies && sha256sum --check SHA256SUMS)
+      - name: Render Kubernetes resources and check lifecycle contracts
+        if: steps.scope.outputs.heavy_checks == 'true'
+        working-directory: aivision-cli
+        env:
+          AIV_K8S_RENDER_DIR: ${{ runner.temp }}/aiv-kubernetes-rendered
+        run: |
+          mkdir -p "$AIV_K8S_RENDER_DIR"
+          go test -mod=vendor ./internal/deploy/generate ./internal/deploy/kubernetes ./deploy/kubernetes
+      - name: Extract pinned custom resource schemas
+        if: steps.scope.outputs.heavy_checks == 'true'
+        run: |
+          python -m pip install PyYAML==6.0.2
+          python deploy/scripts/extract_crd_schemas.py \
+            --out '${{ runner.temp }}/aiv-kubernetes-schemas' \
+            deploy/kubernetes/dependencies/*.yaml
+      - name: Install checksum-verified Kubeconform
+        if: steps.scope.outputs.heavy_checks == 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          curl --fail --location --output kubeconform.tar.gz \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz
+          curl --fail --location --output kubeconform-checksums \
+            https://github.com/yannh/kubeconform/releases/download/v0.6.7/CHECKSUMS
+          awk '$2 == "kubeconform-linux-amd64.tar.gz" { print $1 "  kubeconform.tar.gz"; count++ } END { if (count != 1) exit 1 }' \
+            kubeconform-checksums > kubeconform.sha256
+          sha256sum --check kubeconform.sha256
+          tar -xzf kubeconform.tar.gz kubeconform
+      - name: Validate rendered Kubernetes schemas
+        if: steps.scope.outputs.heavy_checks == 'true'
+        run: |
+          '${{ runner.temp }}/kubeconform' -strict -summary -kubernetes-version 1.34.0 \
+            -schema-location default \
+            -schema-location '${{ runner.temp }}/aiv-kubernetes-schemas/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            '${{ runner.temp }}/aiv-kubernetes-rendered'
+      - name: Validate all product Compose configurations
+        if: steps.scope.outputs.heavy_checks == 'true'
+        env:
+          NAMESPACE: validation-only
+          AIV_STATE_DIR: ${{ runner.temp }}/aiv-compose-validation/state
+          AIV_LOG_DIR: ${{ runner.temp }}/aiv-compose-validation/logs
+          AIVISION_NATIVE_TRACE_HISTORY_START: '2026-01-01T00:00:00Z'
+          OB_HOST: example.invalid
+          OB_TENANT_PASSWORD: validation_only_database
+          OB_SYS_PASSWORD: validation_only_system
+          SECRET_KEY: validation_only_backend
+          SIGNOZ_INGEST_INTERNAL_KEY: validation_only_ingest
+          AIVISION_INGEST_SECRET: validation_only_token
+          AGENTLENS_TOKEN: validation_only_diagnosis
+          SIGNOZ_USER_ROOT_PASSWORD: 'Validation-only_9!'
+        run: |
+          for compose in deploy/docker/compose*.yaml; do
+            docker compose --file "$compose" --env-file deploy/docker/.env.example \
+              --profile bootstrap config --quiet
+          done

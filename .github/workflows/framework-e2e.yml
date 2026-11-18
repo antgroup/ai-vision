@@ -1,0 +1,681 @@
+name: Agent framework E2E
+
+on:
+  workflow_call:
+    inputs:
+      public_platform_images:
+        description: Pinned public candidate images from the current release attempt
+        type: string
+        default: ''
+      tier:
+        description: Test tier (pr, daily or release)
+        required: true
+        type: string
+      frontend:
+        description: Frontend lint, tests, browser fixtures and build
+        type: boolean
+        default: false
+      backend:
+        description: Database-free backend and version contracts
+        type: boolean
+        default: false
+      cli:
+        description: CLI and installer unit tests
+        type: boolean
+        default: false
+      contracts:
+        description: Framework and SDK collector contracts
+        type: boolean
+        default: false
+      database:
+        description: OceanBase and seekdb backend tests
+        type: boolean
+        default: false
+      platform:
+        description: Owned platform ingestion and read-back
+        type: boolean
+        default: false
+      browser_only:
+        description: When platform is selected, run SDK/browser acceptance without the separate Docker SDK suite
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: Test tier
+        type: choice
+        options: [pr, daily, release]
+        default: release
+      frontend:
+        description: Frontend lint, tests, browser fixtures and build
+        type: boolean
+        default: true
+      backend:
+        description: Database-free backend and version contracts
+        type: boolean
+        default: true
+      cli:
+        description: CLI and installer unit tests
+        type: boolean
+        default: true
+      contracts:
+        description: Framework and SDK collector contracts
+        type: boolean
+        default: true
+      database:
+        description: OceanBase and seekdb backend tests
+        type: boolean
+        default: true
+      platform:
+        description: Owned platform ingestion and read-back
+        type: boolean
+        default: true
+      browser_only:
+        description: When platform is selected, run SDK/browser acceptance without the separate Docker SDK suite
+        type: boolean
+        default: false
+      nvidia_browser:
+        description: 'Run NVIDIA free-endpoint browser acceptance (7 requests, 32 output tokens each, no retries)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: '1'
+
+concurrency:
+  group: framework-e2e-${{ github.workflow }}-${{ github.ref }}-${{ inputs.tier }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  frontend:
+    if: inputs.frontend
+    name: Frontend (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ai-vision/vfe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ai-vision/.nvmrc
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '12.6.0'
+          package_json_file: ai-vision/vfe/package.json
+          run_install: false
+      - name: Install locked frontend dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Lint current frontend source
+        run: pnpm lint:ci
+      - name: Frontend regression tests
+        run: pnpm test
+      - name: Source proxy Host and Origin contract
+        run: node --test tests/viteProxy.test.mjs
+      - name: Frontend type check
+        run: pnpm typecheck
+      - name: Build current frontend source
+        run: pnpm build
+      - name: Build shared browser fixture assets
+        if: matrix.os == 'ubuntu-24.04'
+        run: pnpm build -- --mode development
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'ubuntu-24.04'
+        with:
+          name: frontend-fixture-${{ github.run_id }}-${{ github.sha }}
+          path: ai-vision/dist/
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 1
+
+  frontend-browser:
+    needs: frontend
+    if: inputs.frontend
+    name: Frontend browser (${{ matrix.shard }}/4)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        shard: [1, 2, 3, 4]
+    defaults:
+      run:
+        working-directory: ai-vision/vfe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ai-vision/.nvmrc
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '12.6.0'
+          package_json_file: ai-vision/vfe/package.json
+          run_install: false
+      - name: Install locked frontend dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Chromium for trace Labs browser regressions
+        run: pnpm exec playwright install --with-deps chromium
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-fixture-${{ github.run_id }}-${{ github.sha }}
+          path: ai-vision/dist
+      - name: Trace Labs browser regressions (API fixtures)
+        run: pnpm exec playwright test --shard=${{ matrix.shard }}/4
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trace-labs-browser-${{ matrix.shard }}-${{ github.run_attempt }}
+          path: ai-vision/vfe/test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
+  backend-contracts:
+    if: inputs.backend
+    name: Backend contracts (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ai-vision/aivision-py-be
+    env:
+      AIVISION_ENV: test
+      USE_SQLITE_FOR_TESTS: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: ai-vision/aivision-py-be/uv.lock
+      - name: Install locked backend dependencies
+        run: uv sync --frozen --python 3.12
+      - name: Create writable backend log directory
+        env:
+          AIVISION_LOG_DIR: ${{ runner.temp }}/aivision-backend-logs
+        run: uv run --frozen --python 3.12 python -c "import os; from pathlib import Path; Path(os.environ['AIVISION_LOG_DIR']).mkdir(parents=True, exist_ok=True)"
+      - name: Native query, session and usage unit tests (no database required)
+        env:
+          AIVISION_LOG_DIR: ${{ runner.temp }}/aivision-backend-logs
+        run: >-
+          uv run --frozen --python 3.12 python manage.py test
+          apps.core.tests.test_native_query
+          apps.core.tests.test_trace_usage_semantics
+          apps.core.tests.test_langfuse_sdk_encoding
+          apps.core.tests.test_native_sessions.NativeSessionWindowTests
+          apps.core.tests.test_native_langfuse_api.NativeUsageWireTests
+          apps.core.tests.test_native_langfuse_api.NativeFilterContractTests
+          apps.core.tests.test_native_langfuse_api.NativeHistoryWindowTests
+          --noinput --verbosity 2
+      - name: Version, update checks and routing contracts (no database)
+        env:
+          AIVISION_ENV: version-test
+          AIVISION_LOG_DIR: ${{ runner.temp }}/aivision-backend-logs
+        run: >-
+          uv run --frozen --python 3.12 python manage.py test
+          apps.core.tests.test_build_info
+          apps.core.tests.test_releases
+          apps.core.tests.test_url_routing
+          --noinput --verbosity 2
+      - name: MCP configuration and local protocol regressions
+        if: runner.os == 'Linux'
+        env:
+          AIVISION_LOG_DIR: ${{ runner.temp }}/aivision-backend-logs
+          USE_SQLITE_FOR_TESTS: 'true'
+          OTEL_ENABLED: 'false'
+        run: >-
+          uv run --frozen --python 3.12 python manage.py test
+          apps.core.tests.test_labs_mcp
+          --noinput --verbosity 2
+
+  cli:
+    if: inputs.cli
+    name: CLI unit tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: aivision-cli
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Deployment assets and Go unit tests
+        run: |
+          make assets-check
+          go test -mod=vendor ./...
+      - name: Installer unit tests
+        run: python -m unittest discover -s scripts -p "test_install.py"
+
+  contracts:
+    if: inputs.contracts
+    name: Contracts (${{ matrix.os }}, Langfuse ${{ matrix.sdk }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+        sdk: [lf3, lf4, lf5]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned framework and SDK dependencies
+        run: python -m pip install -r ai-vision/agent-plugins/tests/framework_e2e/requirements-${{ matrix.sdk }}.txt
+      - name: Business and telemetry oracle regressions
+        run: python -m unittest discover -s ai-vision/agent-plugins/tests/framework_e2e -p "test_*.py"
+      - name: Langfuse lifecycle regressions
+        run: python -m unittest discover -s ai-vision/agent-plugins/langfuse/tests -p "test_streaming_lifecycle.py"
+      - name: Relay lifecycle and exporter regressions
+        if: matrix.sdk != 'lf5'
+        run: python -m unittest discover -s ai-vision/agent-plugins/nvidia-nemo-relay/tests -p "test_*.py"
+      - name: Python onboarding snippets and complete examples
+        run: python -m unittest discover -s ai-vision/agent-plugins/langfuse/tests -p "test_onboarding_examples.py"
+      - name: All fake-model RAG scenarios and official SDK export (runner-local)
+        run: >-
+          python ai-vision/agent-plugins/tests/framework_e2e/suite.py
+          --mode collector --out artifacts/framework-collector --repo .
+          --sdks ${{ matrix.sdk == 'lf5' && 'langfuse' || 'langfuse nemo-relay' }}
+      - name: Preserve runner-local SDK reconciliation evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework-collector-${{ matrix.os }}-${{ matrix.sdk }}-${{ github.run_attempt }}
+          path: artifacts/framework-collector
+          if-no-files-found: error
+          retention-days: 7
+
+  js-contracts:
+    if: inputs.contracts
+    name: JS collection (${{ matrix.os }}, ${{ matrix.sdk }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+        sdk: [js, js6]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ai-vision/agent-plugins/langfuse/tests/${{ matrix.sdk }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install locked SDK dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: TypeScript, protobuf, metadata and lifecycle regressions
+        run: npm test
+
+  docker-database:
+    if: inputs.database
+    name: Database and backend units (${{ matrix.os }}, ${{ matrix.backend }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: >-
+          ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","ubuntu-24.04-arm","macos-15-intel"]'
+          || inputs.tier == 'daily' && '["ubuntu-24.04","ubuntu-24.04-arm"]'
+          || '["ubuntu-24.04"]') }}
+        backend: [oceanbase, seekdb]
+    runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
+    timeout-minutes: 45
+    env:
+      DATABASE_PLATFORM: ${{ matrix.os == 'ubuntu-24.04-arm' && 'linux/arm64' || 'linux/amd64' }}
+      AIVISION_E2E_DB_IMAGES_JSON: >-
+        {"oceanbase":"oceanbase/oceanbase-ce@sha256:eaa2c3b3513fa21e4a658f197c1deb93c9d6b6eb742cfa5ef0f085f82b9cec54",
+         "seekdb":"oceanbase/seekdb@sha256:4db4961869d554313520d6081fca29265ba6da6db7313311bd8acbed771a956b"}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          python-version: '3.12'
+          enable-cache: true
+          cache-dependency-glob: ai-vision/aivision-py-be/uv.lock
+      - name: Start Linux Docker on macOS
+        if: runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/aivision-colima
+        run: |
+          brew install colima docker
+          python - <<'PYCOLIMA'
+          import os
+          from pathlib import Path
+          config = Path(os.environ['COLIMA_HOME']) / 'default/colima.yaml'
+          config.parent.mkdir(parents=True, exist_ok=True)
+          config.write_text('docker:\n  default-ulimits:\n    nofile:\n      Name: nofile\n      Soft: 65536\n      Hard: 65536\n', encoding='utf-8')
+          PYCOLIMA
+          colima start --runtime docker --cpu 3 --memory 10 --disk 30
+          docker info
+      - name: Install locked backend and SQL client dependencies
+        working-directory: ai-vision/aivision-py-be
+        run: uv sync --frozen --python 3.12
+      - name: Start temporary database, verify SQL and run all Django unit tests
+        run: >-
+          ai-vision/aivision-py-be/.venv/bin/python
+          ai-vision/agent-plugins/tests/framework_e2e/docker_database.py
+          --platform "$DATABASE_PLATFORM" --backend ${{ matrix.backend }} --out artifacts/docker-database
+          --backend-tests . --python ai-vision/aivision-py-be/.venv/bin/python
+      - name: Preserve deployment evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-${{ matrix.os }}-${{ matrix.backend }}-${{ github.run_attempt }}
+          path: artifacts/docker-database
+          if-no-files-found: error
+          retention-days: 7
+      - name: Stop Colima
+        if: always() && runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/aivision-colima
+        run: colima delete --data --force
+
+  browser-platform:
+    name: SDK to platform to browser (fake)
+    needs: [frontend, frontend-browser]
+    if: always() && !cancelled() && inputs.platform && (!inputs.frontend || (needs.frontend.result == 'success' && needs.frontend-browser.result == 'success')) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ${{ github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read
+    env:
+      AIVISION_E2E_PLATFORM_IMAGES_JSON: ${{ inputs.public_platform_images || vars.AIVISION_E2E_PLATFORM_IMAGES_JSON }}
+    steps:
+      - name: Require pinned platform fixtures
+        if: env.AIVISION_E2E_PLATFORM_IMAGES_JSON == ''
+        run: |
+          echo '::error::Supply pinned candidate images or configure AIVISION_E2E_PLATFORM_IMAGES_JSON.'
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reclaim unused Android SDK on the disposable hosted VM
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux' && runner.arch == 'X64'
+        run: python scripts/ci/prepare_platform_disk.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.7'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '12.6.0'
+          package_json_file: ai-vision/vfe/package.json
+          run_install: false
+      - name: Install pinned Python 5 and host deployment clients
+        run: >-
+          python -m pip install
+          -r ai-vision/agent-plugins/tests/framework_e2e/requirements-lf5.txt
+          httpx==0.28.1 mysql-connector-python==9.6.0
+      - name: Install both locked JavaScript SDK environments
+        run: |
+          npm ci --prefix ai-vision/agent-plugins/langfuse/tests/js --ignore-scripts --no-audit --no-fund
+          npm ci --prefix ai-vision/agent-plugins/langfuse/tests/js6 --ignore-scripts --no-audit --no-fund
+      - name: Install current frontend and Chromium
+        working-directory: ai-vision/vfe
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+      - name: LangChain fake models, JS fixtures and actual browser assertions
+        run: >-
+          python ai-vision/agent-plugins/tests/framework_e2e/browser_platform.py
+          --repo . --out artifacts/browser-fake --source fake
+      - name: Preserve sanitized source, API and page evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework-browser-fake-${{ github.run_attempt }}
+          path: artifacts/browser-fake
+          if-no-files-found: error
+          retention-days: 7
+
+  browser-platform-nvidia:
+    name: SDK to platform to browser (nvidia)
+    needs: [frontend, frontend-browser]
+    # A secret-bearing run must use reviewed code from the default branch.
+    environment: nvidia-e2e
+    if: always() && !cancelled() && github.event_name == 'workflow_dispatch' && inputs.nvidia_browser && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && (!inputs.frontend || (needs.frontend.result == 'success' && needs.frontend-browser.result == 'success'))
+    runs-on: ${{ vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read
+    env:
+      AIVISION_E2E_PLATFORM_IMAGES_JSON: ${{ inputs.public_platform_images || vars.AIVISION_E2E_PLATFORM_IMAGES_JSON }}
+    steps:
+      - name: Require pinned platform fixtures
+        if: env.AIVISION_E2E_PLATFORM_IMAGES_JSON == ''
+        run: |
+          echo '::error::Supply pinned candidate images or configure AIVISION_E2E_PLATFORM_IMAGES_JSON.'
+          exit 1
+      - name: Require explicit NVIDIA secret
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: |
+          test -n "$NVIDIA_API_KEY" || { echo "Set NVIDIA_API_KEY in the nvidia-e2e environment before selecting this run"; exit 1; }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reclaim unused Android SDK on the disposable hosted VM
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux' && runner.arch == 'X64'
+        run: python scripts/ci/prepare_platform_disk.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.7'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '12.6.0'
+          package_json_file: ai-vision/vfe/package.json
+          run_install: false
+      - name: Install pinned Python 5 and host deployment clients
+        run: >-
+          python -m pip install
+          -r ai-vision/agent-plugins/tests/framework_e2e/requirements-lf5.txt
+          httpx==0.28.1 mysql-connector-python==9.6.0
+      - name: Install both locked JavaScript SDK environments
+        run: |
+          npm ci --prefix ai-vision/agent-plugins/langfuse/tests/js --ignore-scripts --no-audit --no-fund
+          npm ci --prefix ai-vision/agent-plugins/langfuse/tests/js6 --ignore-scripts --no-audit --no-fund
+      - name: Install current frontend and Chromium
+        working-directory: ai-vision/vfe
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec playwright install --with-deps chromium
+      - name: Bounded NVIDIA collection and actual browser assertions
+        env:
+          NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+        run: >-
+          python ai-vision/agent-plugins/tests/framework_e2e/browser_platform.py
+          --repo . --out artifacts/browser-nvidia --source nvidia
+      - name: Preserve sanitized source, API and page evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework-browser-nvidia-${{ github.run_attempt }}
+          path: artifacts/browser-nvidia
+          if-no-files-found: ignore
+          retention-days: 7
+
+
+  nvidia-result:
+    name: Requested NVIDIA acceptance passed
+    if: always() && github.event_name == 'workflow_dispatch' && inputs.nvidia_browser
+    needs: browser-platform-nvidia
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require the requested real-provider acceptance to succeed
+        env:
+          RESULTS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PYRESULT'
+          import json
+          import os
+
+          result = json.loads(os.environ['RESULTS_JSON']).get('browser-platform-nvidia', {}).get('result', 'missing')
+          if result != 'success':
+              raise SystemExit('Requested NVIDIA acceptance did not succeed: ' + result + '. Use the default branch with the configured nvidia-e2e environment.')
+          PYRESULT
+
+  docker-platform:
+    if: always() && !cancelled() && inputs.platform && !inputs.browser_only && (!inputs.frontend || (needs.frontend.result == 'success' && needs.frontend-browser.result == 'success')) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    # When selected, frontend source must pass; deployment uses a pinned FE image.
+    needs: [frontend, frontend-browser]
+    name: Docker platform (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15-intel"]' || '["ubuntu-24.04"]') }}
+    runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: read
+    env:
+      AIVISION_E2E_PLATFORM_IMAGES_JSON: ${{ inputs.public_platform_images || vars.AIVISION_E2E_PLATFORM_IMAGES_JSON }}
+    steps:
+      - name: Require pinned platform fixtures
+        if: env.AIVISION_E2E_PLATFORM_IMAGES_JSON == ''
+        run: |
+          echo '::error::Supply pinned candidate images or configure AIVISION_E2E_PLATFORM_IMAGES_JSON.'
+          exit 1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Reclaim unused Android SDK on the disposable hosted VM
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux' && runner.arch == 'X64'
+        run: python scripts/ci/prepare_platform_disk.py
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.7'
+      - name: Start Linux Docker on macOS
+        if: runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/aivision-colima
+        run: |
+          brew install colima docker
+          python - <<'PYCOLIMA'
+          import os
+          from pathlib import Path
+          config = Path(os.environ['COLIMA_HOME']) / 'default/colima.yaml'
+          config.parent.mkdir(parents=True, exist_ok=True)
+          config.write_text('docker:\n  default-ulimits:\n    nofile:\n      Name: nofile\n      Soft: 65536\n      Hard: 65536\n', encoding='utf-8')
+          PYCOLIMA
+          colima start --runtime docker --cpu 3 --memory 10 --disk 30
+          docker info
+      - name: Record Docker resources before the temporary stack
+        run: |
+          python - <<'PYMEM'
+          import json
+          import subprocess
+          info = json.loads(subprocess.check_output(
+              ['docker', 'info', '--format', '{{json .}}'], text=True))
+          from pathlib import Path
+          resources = {'memory_gib': info.get('MemTotal', 0) / (1024 ** 3),
+                       'cpus': info.get('NCPU'), 'docker_version': info.get('ServerVersion')}
+          Path('artifacts').mkdir(exist_ok=True)
+          Path('artifacts/docker-resources.json').write_text(json.dumps(resources, indent=2))
+          print(json.dumps(resources))
+          PYMEM
+      # SDK wheels run in the existing Linux backend image, including on Colima.
+      - name: Install host deployment and SQL clients
+        run: python -m pip install httpx==0.28.1 PyYAML==6.0.3 mysql-connector-python==9.6.0
+      - name: Deploy candidate platform and verify actual ingestion and reads
+        run: python ai-vision/agent-plugins/tests/framework_e2e/docker_platform.py --repo . --out artifacts/docker-platform
+      - name: Preserve sanitized deployment and acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: platform-docker-${{ matrix.os }}-${{ github.run_attempt }}
+          path: |
+            artifacts/docker-platform
+            artifacts/docker-resources.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Stop Colima
+        if: always() && runner.os == 'macOS'
+        env:
+          COLIMA_HOME: ${{ runner.temp }}/aivision-colima
+        run: colima delete --data --force
+
+  result:
+    name: Selected checks passed
+    if: always()
+    needs: [frontend, frontend-browser, backend-contracts, cli, contracts, js-contracts, docker-database, browser-platform, docker-platform]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Verify every selected check completed
+        env:
+          TIER: ${{ inputs.tier }}
+          SELECTED_JSON: >-
+            {"frontend": ${{ inputs.frontend }}, "frontend-browser": ${{ inputs.frontend }}, "backend-contracts": ${{ inputs.backend }}, "cli": ${{ inputs.cli }}, "contracts": ${{ inputs.contracts }}, "js-contracts": ${{ inputs.contracts }}, "docker-database": ${{ inputs.database }}, "browser-platform": ${{ inputs.platform }}, "docker-platform": ${{ inputs.platform && !inputs.browser_only }}}
+          RESULTS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PYRESULT'
+          import json
+          import os
+          from pathlib import Path
+
+          selected = json.loads(os.environ['SELECTED_JSON'])
+          results = json.loads(os.environ['RESULTS_JSON'])
+          failures = []
+          tier = os.environ['TIER']
+          if tier not in {'pr', 'daily', 'release'}:
+              failures.append('Unknown test tier: ' + tier)
+          lines = ['## Selected checks', '', '| Check | Selected | Result |', '| --- | --- | --- |']
+          for job, required in selected.items():
+              result = results.get(job, {}).get('result', 'missing')
+              lines.append(f'| {job} | {required} | {result} |')
+              if required and result != 'success':
+                  failures.append(f'{job}: required check {result}')
+          lines += ['', 'Selected platform checks require trusted access to the pinned images.',
+                    'A skipped selected check is a failure, including an unavailable fork platform check.']
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as summary:
+              summary.write('\n'.join(lines) + '\n')
+          if failures:
+              raise SystemExit('\n'.join(failures))
+          PYRESULT

@@ -1,0 +1,504 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage:
+  scripts/worktree-setup [--dry-run] [--force]
+
+Configures a checkout for shared build inputs and canonical runtime artifacts:
+  - ~/.aivision/{cc,cdx,ocw,ocd,pi,kimi,hermes}/{transcripts,replays,golden}
+    are created once and naturally shared by every worktree
+  - Cargo crate target directories -> matching primary target directories
+  - releases           -> primary releases directory
+  - *.keys.json files  -> copied from primary worktree
+
+Safety:
+  - non-empty real directories are never replaced
+  - existing different *.keys.json files are not overwritten without --force
+  - obsolete managed root target links/configs are removed during migration
+  - legacy artifact symlinks are removed only with --force and only when they
+    point to the corresponding directory in a registered git worktree
+  - --force may replace wrong build-target symlinks and empty real directories
+USAGE
+}
+
+dry_run=0
+force=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run)
+      dry_run=1
+      ;;
+    --force)
+      force=1
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "worktree-setup: unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "worktree-setup: not inside a git worktree" >&2
+  exit 1
+fi
+
+abs_dir() {
+  cd "$1" && pwd -P
+}
+
+relpath() {
+  python3 - "$1" "$2" <<'PY'
+import os
+import sys
+print(os.path.relpath(sys.argv[1], sys.argv[2]))
+PY
+}
+
+same_path() {
+  python3 - "$1" "$2" <<'PY'
+import os
+import sys
+sys.exit(0 if os.path.realpath(sys.argv[1]) == os.path.realpath(sys.argv[2]) else 1)
+PY
+}
+
+current_root="$(abs_dir "$(git rev-parse --show-toplevel)")"
+git_dir="$(abs_dir "$(git -C "$current_root" rev-parse --path-format=absolute --git-dir)")"
+git_common_dir="$(abs_dir "$(git -C "$current_root" rev-parse --path-format=absolute --git-common-dir)")"
+aivision_home="${AIVISION_HOME:-${HOME}/.aivision}"
+if [[ "$aivision_home" != /* ]]; then
+  aivision_home="$(python3 - "$aivision_home" <<'PY'
+import os
+import sys
+print(os.path.abspath(os.path.expanduser(sys.argv[1])))
+PY
+)"
+fi
+
+main_worktree=""
+if [[ "$git_dir" == "$git_common_dir" || "$git_dir" != "$git_common_dir"/worktrees/* ]]; then
+  main_worktree="$current_root"
+elif [[ "$(basename "$git_common_dir")" == ".git" && -d "$(dirname "$git_common_dir")" ]]; then
+  main_worktree="$(abs_dir "$(dirname "$git_common_dir")")"
+else
+  main_worktree="$(git -C "$current_root" worktree list --porcelain | awk '/^worktree / { sub(/^worktree /, ""); print; exit }')"
+  if [[ -n "$main_worktree" ]]; then
+    main_worktree="$(abs_dir "$main_worktree")"
+  fi
+fi
+
+if [[ -z "$main_worktree" ]]; then
+  echo "worktree-setup: unable to resolve primary worktree" >&2
+  exit 1
+fi
+
+linked=()
+already_ok=()
+skipped=()
+failed=()
+
+record() {
+  local kind="$1"
+  local message="$2"
+  case "$kind" in
+    linked) linked+=("$message") ;;
+    already_ok) already_ok+=("$message") ;;
+    skipped) skipped+=("$message") ;;
+    failed) failed+=("$message") ;;
+  esac
+}
+
+run() {
+  if [[ "$dry_run" == "1" ]]; then
+    printf 'DRY-RUN:'
+    printf ' %q' "$@"
+    printf '\n'
+  else
+    "$@"
+  fi
+}
+
+print_group() {
+  local title="$1"
+  shift
+
+  echo "$title:"
+  if [[ "$#" -eq 0 ]]; then
+    echo "  (none)"
+    return
+  fi
+
+  local item
+  for item in "$@"; do
+    echo "  - $item"
+  done
+}
+
+has_tracked_files() {
+  local rel="$1"
+  [[ -n "$(git -C "$current_root" ls-files -- "$rel")" ]]
+}
+
+is_empty_dir() {
+  local path="$1"
+  [[ -z "$(find "$path" -mindepth 1 -maxdepth 1 -print -quit)" ]]
+}
+
+ensure_dir() {
+  local path="$1"
+  local label="$2"
+
+  if [[ -d "$path" ]]; then
+    record already_ok "$label exists: $path"
+    return
+  fi
+
+  run mkdir -p "$path"
+  record linked "$label created: $path"
+}
+
+ensure_private_dir() {
+  local path="$1"
+  local label="$2"
+
+  if [[ -d "$path" ]]; then
+    record already_ok "$label exists: $path"
+    return
+  fi
+
+  run install -d -m 700 "$path"
+  record linked "$label created: $path"
+}
+
+canonical_artifact_dirs() {
+  local component
+  local kind
+
+  for component in cc cdx ocw ocd pi kimi hermes; do
+    for kind in transcripts replays golden; do
+      printf '%s/%s/%s\n' "$aivision_home" "$component" "$kind"
+    done
+  done
+}
+
+legacy_artifact_links() {
+  local pair
+  local agent
+  local component
+  local kind
+
+  for pair in \
+    claudecode:cc codex:cdx openclaw:ocw opencode:ocd \
+    pi:pi kimi:kimi hermes:hermes; do
+    agent="${pair%%:*}"
+    component="${pair##*:}"
+    for kind in transcripts replays golden; do
+      printf '%s|%s/%s|%s/%s\n' "$component" "$agent" "$kind" "$component" "$kind"
+    done
+  done
+}
+
+is_registered_worktree_artifact_link() {
+  local link="$1"
+  local rel="$2"
+  local worktree
+
+  while IFS= read -r worktree; do
+    [[ -n "$worktree" ]] || continue
+    if same_path "$link" "$worktree/$rel"; then
+      return 0
+    fi
+  done < <(git -C "$current_root" worktree list --porcelain | awk '/^worktree / { sub(/^worktree /, ""); print }')
+  return 1
+}
+
+legacy_tree_is_migrated() {
+  local legacy_root="$1"
+  local canonical_root="$2"
+
+  python3 - "$legacy_root" "$canonical_root" <<'PY'
+import hashlib
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1]).resolve()
+destination = Path(sys.argv[2])
+if not source.is_dir() or not destination.is_dir():
+    raise SystemExit(1)
+
+def digest(path: Path) -> str:
+    value = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            value.update(chunk)
+    return value.hexdigest()
+
+for entry in source.rglob("*"):
+    if entry.is_symlink():
+        raise SystemExit(1)
+    if not entry.is_file() or entry.name == ".gitkeep":
+        continue
+    target = destination / entry.relative_to(source)
+    if not target.is_file() or digest(entry) != digest(target):
+        raise SystemExit(1)
+PY
+}
+
+cleanup_legacy_artifact_link() {
+  local rel="$1"
+  local canonical="$2"
+  local current="$current_root/$rel"
+
+  [[ -L "$current" ]] || return 0
+
+  if ! is_registered_worktree_artifact_link "$current" "$rel"; then
+    record skipped "$rel is an unrecognized symlink; left untouched"
+    return
+  fi
+
+  if [[ "$force" != "1" ]]; then
+    record skipped "$rel is an obsolete managed artifact symlink; rerun with FORCE=1 to remove it"
+    return
+  fi
+
+  if ! legacy_tree_is_migrated "$current" "$canonical"; then
+    record skipped "$rel is not fully copied to $canonical; run migrate-artifacts before removing the link"
+    return
+  fi
+
+  run rm "$current"
+  record linked "$rel obsolete managed artifact symlink removed"
+}
+
+is_obsolete_managed_cargo_config() {
+  local config_path="$1"
+
+  python3 - "$config_path" "$current_root" "$main_worktree/target" <<'PY'
+import os
+import sys
+
+try:
+    import tomllib
+except ModuleNotFoundError:
+    sys.exit(1)
+
+config_path, current_root, obsolete_target = sys.argv[1:]
+try:
+    with open(config_path, "rb") as fh:
+        data = tomllib.load(fh)
+except Exception:
+    sys.exit(1)
+
+build = data.get("build")
+if set(data.keys()) != {"build"} or not isinstance(build, dict):
+    sys.exit(1)
+if set(build.keys()) != {"target-dir"}:
+    sys.exit(1)
+
+target_dir = build.get("target-dir")
+if not isinstance(target_dir, str):
+    sys.exit(1)
+
+target_path = target_dir
+if not os.path.isabs(target_path):
+    target_path = os.path.join(current_root, target_path)
+
+sys.exit(0 if os.path.realpath(target_path) == os.path.realpath(obsolete_target) else 1)
+PY
+}
+
+cleanup_obsolete_cargo_config() {
+  local config_dir="$current_root/.cargo"
+  local config_path="$config_dir/config.toml"
+
+  if [[ ! -e "$config_path" ]]; then
+    return
+  fi
+
+  if [[ ! -f "$config_path" ]]; then
+    record failed ".cargo/config.toml exists but is not a regular file"
+    return
+  fi
+
+  if ! is_obsolete_managed_cargo_config "$config_path"; then
+    record failed ".cargo/config.toml exists and is not the old managed root-target config; review it manually"
+    return
+  fi
+
+  run rm "$config_path"
+  if [[ "$dry_run" == "1" ]]; then
+    echo "DRY-RUN: rmdir $config_dir if empty"
+  else
+    rmdir "$config_dir" 2>/dev/null || true
+  fi
+  record linked "obsolete .cargo/config.toml removed"
+}
+
+cleanup_obsolete_root_target_link() {
+  local root_target="$current_root/target"
+
+  if [[ -L "$root_target" ]] && same_path "$root_target" "$main_worktree/target"; then
+    run rm "$root_target"
+    record linked "obsolete root target symlink removed"
+  fi
+}
+
+link_path() {
+  local rel="$1"
+  local expected="$2"
+  local current="$current_root/$rel"
+  local current_parent
+  local link_target
+
+  if has_tracked_files "$rel"; then
+    record skipped "$rel contains tracked files; left local"
+    return
+  fi
+
+  current_parent="$(dirname "$current")"
+  link_target="$(relpath "$expected" "$current_parent")"
+
+  if [[ -L "$current" ]]; then
+    if same_path "$current" "$expected"; then
+      record already_ok "$rel -> $(readlink "$current")"
+      return
+    fi
+    if [[ "$rel" == "target" || "$rel" == */target ]] && same_path "$current" "$main_worktree/target"; then
+      run rm "$current"
+      record linked "$rel obsolete root target link removed"
+    elif [[ "$force" != "1" ]]; then
+      record failed "$rel is a symlink to $(readlink "$current"); rerun with FORCE=1 to replace it"
+      return
+    else
+      run rm "$current"
+    fi
+  elif [[ -d "$current" ]]; then
+    if ! is_empty_dir "$current"; then
+      record failed "$rel is a non-empty directory; migrate or remove it manually before linking"
+      return
+    fi
+    if [[ "$force" != "1" ]]; then
+      record failed "$rel is an empty directory; rerun with FORCE=1 to replace it"
+      return
+    fi
+    run rmdir "$current"
+  elif [[ -e "$current" ]]; then
+    record failed "$rel exists and is not a symlink or directory"
+    return
+  fi
+
+  ensure_dir "$expected" "shared target for $rel"
+  run ln -s "$link_target" "$current"
+  record linked "$rel -> $link_target"
+}
+
+copy_key_files() {
+  local found=0
+  local src
+  local rel
+  local dest
+  local parent
+
+  while IFS= read -r -d '' src; do
+    found=1
+    rel="$(relpath "$src" "$main_worktree")"
+    dest="$current_root/$rel"
+    parent="$(dirname "$dest")"
+
+    if [[ -f "$dest" ]]; then
+      if cmp -s "$src" "$dest"; then
+        record already_ok "$rel already copied"
+        continue
+      fi
+      if [[ "$force" != "1" ]]; then
+        record failed "$rel exists with different contents; rerun with FORCE=1 after reviewing it"
+        continue
+      fi
+    elif [[ -e "$dest" ]]; then
+      record failed "$rel exists but is not a regular file"
+      continue
+    fi
+
+    run mkdir -p "$parent"
+    run cp -p "$src" "$dest"
+    record linked "$rel copied from primary"
+  done < <(
+    find "$main_worktree" \
+      \( -path "$main_worktree/.git" -o \
+         -path "$main_worktree/releases" -o \
+         -name target -o \
+         -name node_modules \) -prune -o \
+      -type f -name '*.keys.json' -print0
+  )
+
+  if [[ "$found" == "0" ]]; then
+    record skipped "no *.keys.json files found in primary worktree"
+  fi
+}
+
+cargo_target_links() {
+  git -C "$current_root" ls-files '*/Cargo.toml' | while IFS= read -r manifest; do
+    if [[ "$manifest" == "Cargo.toml" ]]; then
+      continue
+    fi
+    printf '%s/target\n' "$(dirname "$manifest")"
+  done
+}
+
+while IFS= read -r artifact_dir; do
+  [[ -n "$artifact_dir" ]] || continue
+  ensure_private_dir "$artifact_dir" "canonical artifact directory"
+done < <(canonical_artifact_dirs)
+
+# Bash 3.2 treats empty arrays as unset under nounset. Expand them only when populated.
+if [[ "$current_root" == "$main_worktree" ]]; then
+  echo "worktree-setup: current worktree is primary; canonical artifact directories are ready."
+  echo "primary: $main_worktree"
+  echo "aivision: $aivision_home"
+  echo ""
+  print_group "created" ${linked[@]+"${linked[@]}"}
+  print_group "already_ok" ${already_ok[@]+"${already_ok[@]}"}
+  exit 0
+fi
+
+echo "worktree-setup: current=$current_root"
+echo "worktree-setup: primary=$main_worktree"
+echo "worktree-setup: aivision=$aivision_home"
+
+ensure_dir "$main_worktree/releases" "shared releases"
+cleanup_obsolete_cargo_config
+cleanup_obsolete_root_target_link
+
+while IFS= read -r target_link; do
+  [[ -n "$target_link" ]] || continue
+  link_path "$target_link" "$main_worktree/$target_link"
+done < <(cargo_target_links)
+
+link_path "releases" "$main_worktree/releases"
+copy_key_files
+
+while IFS='|' read -r _component legacy_rel canonical_rel; do
+  [[ -n "$legacy_rel" ]] || continue
+  cleanup_legacy_artifact_link "$legacy_rel" "$aivision_home/$canonical_rel"
+done < <(legacy_artifact_links)
+
+echo ""
+echo "worktree-setup summary"
+print_group "linked" ${linked[@]+"${linked[@]}"}
+print_group "already_ok" ${already_ok[@]+"${already_ok[@]}"}
+print_group "skipped" ${skipped[@]+"${skipped[@]}"}
+print_group "failed" ${failed[@]+"${failed[@]}"}
+
+if [[ "${#failed[@]}" -gt 0 ]]; then
+  exit 2
+fi

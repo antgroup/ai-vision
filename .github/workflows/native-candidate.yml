@@ -1,0 +1,132 @@
+name: Native candidate build and audit
+
+# Portable local-output build gate. Deployment qualification and publishing are
+# separate operations; there is deliberately no scheduled or PR trigger.
+on:
+  workflow_dispatch:
+    inputs:
+      source_ci_run_id:
+        description: Successful CI workflow run for this exact source SHA
+        type: string
+        required: true
+      source_ci_attempt:
+        description: Exact successful source CI attempt
+        type: string
+        default: '1'
+        required: true
+      python_image:
+        description: Public python:3.11.14-slim-bookworm@sha256 digest (64 hex characters)
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: native-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: metadata
+        name: Validate source CI and independent producer identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_CI_RUN_ID: ${{ inputs.source_ci_run_id }}
+          SOURCE_CI_ATTEMPT: ${{ inputs.source_ci_attempt }}
+          PYTHON_IMAGE: ${{ inputs.python_image }}
+        run: |
+          set -euo pipefail
+          if ! [[ "$SOURCE_CI_RUN_ID" =~ ^[1-9][0-9]*$ ]] || ! [[ "$SOURCE_CI_ATTEMPT" =~ ^[1-9][0-9]*$ ]]; then
+            printf '%s\n' 'Source CI identifiers must be canonical positive integers.' >&2
+            exit 2
+          fi
+          mkdir -p "$RUNNER_TEMP/candidate-inputs" "$RUNNER_TEMP/candidate-plan"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_CI_RUN_ID/attempts/$SOURCE_CI_ATTEMPT" > "$RUNNER_TEMP/candidate-inputs/source-ci.json"
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/actions/runs/$SOURCE_CI_RUN_ID/attempts/$SOURCE_CI_ATTEMPT/jobs?per_page=100" > "$RUNNER_TEMP/candidate-inputs/source-ci-jobs.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT" > "$RUNNER_TEMP/candidate-inputs/producer.json"
+          python3 scripts/ci/native_candidate.py plan \
+            --source-root "$GITHUB_WORKSPACE" \
+            --source-ci-json "$RUNNER_TEMP/candidate-inputs/source-ci.json" \
+            --source-ci-jobs-json "$RUNNER_TEMP/candidate-inputs/source-ci-jobs.json" \
+            --producer-json "$RUNNER_TEMP/candidate-inputs/producer.json" \
+            --python-image "$PYTHON_IMAGE" \
+            --output "$RUNNER_TEMP/candidate-plan/plan.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-plan-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/candidate-plan/plan.json
+          if-no-files-found: error
+          retention-days: 5
+
+  plugins:
+    needs: plan
+    permissions:
+      contents: read
+    uses: ./.github/workflows/release-plugins.yml
+    with:
+      linux_amd64_only: true
+
+  build:
+    needs: [plan, plugins]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare disposable hosted runner capacity
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux' && runner.arch == 'X64'
+        run: python scripts/ci/prepare_platform_disk.py
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.7'
+          cache: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: candidate-plan-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/candidate-plan
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-release-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/plugin-release
+      - id: candidate
+        name: Produce native artifacts, dual CLI profiles and local OCI audits
+        run: |
+          python3 scripts/ci/native_candidate.py build \
+            --source-root "$GITHUB_WORKSPACE" \
+            --plan "$RUNNER_TEMP/candidate-plan/plan.json" \
+            --plugin-dist "$RUNNER_TEMP/plugin-release/plugin-dist.tar.gz" \
+            --output "$RUNNER_TEMP/native-candidate-output" \
+            --work "$RUNNER_TEMP/native-candidate-work"
+      - name: Record the acceptance boundary
+        run: |
+          printf '%s\n' 'Native build/content/import and local OCI audit only.' \
+            'Source-capable and restricted native CLI variants are separate artifacts.' \
+            'Deployment, full product assembly and release qualification were not run.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: native-candidate-${{ github.run_attempt }}-linux-amd64
+          path: ${{ runner.temp }}/native-candidate-output/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 5

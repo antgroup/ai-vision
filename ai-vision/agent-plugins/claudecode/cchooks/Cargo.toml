@@ -1,0 +1,52 @@
+[package]
+name = "cchooks"
+version = "0.7.22"
+edition = "2021"
+description = "Claude Code hook program for Langfuse observability"
+
+[[bin]]
+name = "cchooks"
+path = "src/main.rs"
+
+[features]
+default = ["aivision"]
+# Common base shared by every edition (no embedded platform keys).
+# Currently bundles skill tag scanning so all editions can recognize SKILL.md tags.
+common = ["skill", "tool_context"]
+# AIVision platform Langfuse keys (reads aivision.keys.json)
+aivision = ["common"]
+# Enable dynamic data collection (RL training samples + acceptance rate tracking).
+dynamic = ["zstd"]
+# Enable per-turn input/output digest extraction (OTel LogRecord export).
+turn_digest = []
+# Enable skill tag scanning: reads SKILL.md frontmatter tags at session start.
+skill = []
+# Enable trace context injection into Bash tool commands via PreToolUse updatedInput.
+tool_context = []
+
+[dependencies]
+agentic-otel-common = { path = "../../agentic-otel-common", features = ["metrics"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+ureq = { version = "3", features = ["platform-verifier"] }
+pico-args = "0.5"
+basic-toml = "0.1"
+base64 = "0.22"
+zstd = { version = "0.13", optional = true }
+
+sha2 = "0.11"
+libc = "0.2"
+tempfile = "3"
+
+[dev-dependencies]
+
+[build-dependencies]
+serde_json = "1"
+
+[profile.release]
+# 最小化二进制体积
+opt-level = "z"
+lto = true
+strip = true
+codegen-units = 1
+panic = "unwind"  # catch_unwind requires unwind (not abort)

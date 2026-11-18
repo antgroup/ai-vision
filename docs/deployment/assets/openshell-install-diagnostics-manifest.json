@@ -1,0 +1,297 @@
+{
+  "capture_date": "2026-11-05",
+  "scope": "Linux AMD64 source-built QA stack in an isolated Ubuntu24.04 nested KVM VM on the user-specified VM. Prepared exact-digest image cache; not an unprepared cold-install or released-artifact qualification.",
+  "base_commit": "historical-source-revision-redacted",
+  "source_sha256": {
+    "agentlens/src/agentlens/sandbox_plugin/environment.py": "e3e99b273f12190aa34d856dd0f553d7242595cd89424bc05adbb1ce3b40d5d9",
+    "agentlens/src/agentlens/sandbox_plugin/main.py": "b61383d5f9f558203b70d041849f21893d700f8e541e6135e6c819b3c6d3a377",
+    "ai-vision/aivision-py-be/apps/core/services/sandbox_installation.py": "b724fe56f5df62edadcaee0c0adc80f76fd8e544da39c83bf3cf413425614e09",
+    "aivision-cli/internal/installprogress/reporting.go": "c418700ba2e209e01bcb5087936f9d13854d722901a6e14a6c4c75e4250cc47c",
+    "aivision-cli/internal/sandboxbootstrap/host.go": "638c75be1450d614796e3e0e9454be18e75b47b210b9294cd05ed7b47577fe0a",
+    "aivision-cli/internal/sandboxbootstrap/setup.go": "f63316812fa121d85a28efff8c9c79adc1684a1a4f2e04d46ef1dbd01f2fe7eb",
+    "aivision-cli/internal/sandboxbootstrap/environment.go": "0b6b626af43fc41e9b7796df8829d57aedfbf7e55f08af1c6b37fcd1801cd34a",
+    "aivision-cli/internal/sandboxbootstrap/environment_linux.go": "73c45bc51df32f61b266cc4d09dca3c4af4a6c235e48733fc8f230cbe0e338fc",
+    "aivision-cli/internal/sandboxbootstrap/environment_other.go": "0da504e15684af3d3f8940a261ad2f7bea03ea1963f1a9754063104202d7f9df",
+    "aivision-cli/internal/sandboxplugin/manager.go": "63f3e54cbf85a9f2de69648fc8b81ab49eb980a7910423cfecf3d4707a44033e",
+    "aivision-cli/internal/sandboxplugin/progress.go": "a3d2ffdafcf516be65428105d8d9a7896e8e792223dbaeec2c1155e2694184bb",
+    "ai-vision/vfe/src/features/plugins/OpenShellBootstrap.tsx": "5581bb140bd975cea28129d6a4097d6da50a892b6cf8d4c89a35eb369db30728",
+    "ai-vision/vfe/src/features/plugins/installationTypes.ts": "40f6b514e3fe165946f4bbeca02947852fbbf74903cd10b1c659039b632b355e",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "31172b5438b86a3a6ed5e318b846981f5f4bc0d4fb31f4e79798679df499f907",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "c791c4c0bb1c1b6931dc8229125c0f7165f3fb09b52134fef896ccaaf45ff157",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "ede5a002acd77d1b32e00b71b983897dd771e69eb3a2bdbbe4aa75b4f2c8a711",
+    "ai-vision/vfe/tests/openShellBootstrapDom.test.ts": "ec26671f01abdcbbeabedcd31ba231f33c1f8558d3decdceb4c8d2d4def0ab6a",
+    "ai-vision/vfe/tests/e2e/sandboxConnections.spec.ts": "71264e97530948f46206b9615ea226775ffb5cff2a93bb24aaaf0cbfbb299496"
+  },
+  "cli_sha256": "87468ff50fd0e8d42e6a2eb430489855b2069288455c7b0bac8e7e735a6c0ef4",
+  "host_checks": {
+    "original_host": {
+      "scope": "Read-only production environment checker; not a full install attempt",
+      "docker": "26.1.3",
+      "result": "docker_version_unsupported",
+      "required": "28.0"
+    },
+    "execution_vm": {
+      "system": "Ubuntu24.04",
+      "kernel": "6.8.0-147-generic",
+      "architecture": "x86_64",
+      "docker": "29.9.3",
+      "landlock_abi": 4,
+      "actual_authenticated_plugin_environment": "passed"
+    }
+  },
+  "installation": {
+    "first_attempt": {
+      "stopped_stage": "images",
+      "diagnostic": "canceled",
+      "elapsed_seconds": 656.258543252945,
+      "scope": "Operator SIGINT after official GHCR Docker pull stalled; actual failed progress retained. Not a successful cold install."
+    },
+    "prepared_retry": {
+      "exit_code": 0,
+      "elapsed_seconds": 6.193180084228516,
+      "completed_stages": 7,
+      "image_detail": "cached",
+      "copied_command_unchanged": true,
+      "zero_parameter_inputs": true,
+      "unnecessary_word_quotes": false,
+      "credentials_absent_from_dom": true,
+      "old_canceled_record_retained": true,
+      "default_binding_readback": true
+    },
+    "cache_proof": "NJU and official raw manifests/configs match; normal mirrored pull followed by normal official pull; actual config SHA and RootFS DiffIDs and final official RepoDigest verified; catalog unchanged"
+  },
+  "diagnosis": {
+    "status": "passed",
+    "scope": "Actual native Linux VM services; newly generated complete synthetic Trace; no API/provider mocks",
+    "resources": {
+      "diagnoser_uuid": "dg-sy9tgoz9",
+      "dataset_uuid": "ds-9meple4c",
+      "job_uuid": "j-lxuaw6nm",
+      "task_uuid": "t-h1ula2wa"
+    },
+    "record_id": "r-258e54f7d7975268",
+    "trace_spans": 7,
+    "one_root": true,
+    "missing_parents": 0,
+    "request_bytes": 3100586,
+    "worker_input_bytes": 3100039,
+    "max_input_bytes": 8388608,
+    "transport": "streaming",
+    "positive_trial": "GOOD",
+    "negative_table_reference_trial": "BAD",
+    "pytest_in_both": "GOOD",
+    "task_status": "succeeded",
+    "source_complete": true,
+    "projection_failed": 0,
+    "record_api_and_independent_sql": {
+      "uuid": "r-258e54f7d7975268",
+      "task_uuid": "t-h1ula2wa",
+      "verdict": "good",
+      "execution_status": "succeeded",
+      "backend": "sandbox",
+      "provider": "openshell",
+      "sql_rows": 1,
+      "api_record_matches": true
+    },
+    "execution": {
+      "status": "succeeded",
+      "code": "",
+      "msg": "",
+      "evidence": {
+        "code_hash": "db1a2d82471b9704504258fe64e37d1a3d6adb990c8ead5c5d9df67a0c218c24",
+        "execution_ms": 7580.5,
+        "cache_hit": false,
+        "backend": "sandbox",
+        "provider": "openshell",
+        "connection_uuid": "e1fd000ab39e5371a845c995d76c5af5",
+        "rule_runtime": "python-eval-v1",
+        "rule_runtime_manifest": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+        "captured_stdout": "",
+        "captured_stderr": "",
+        "output_truncated": false
+      }
+    },
+    "runtime": {
+      "connection_uuid": "e1fd000ab39e5371a845c995d76c5af5",
+      "config_revision": 1,
+      "image": "127.0.0.1:55176/qa/worker@sha256:0a8a7fa41c97dad877529f7b559746340519f4e1c573108c3d140f99ea224c5c",
+      "ready": true,
+      "capabilities": [
+        "custom_rule",
+        "python_eval_v1"
+      ],
+      "runtime_manifests": [
+        {
+          "id": "python-eval-v1",
+          "manifest_sha256": "06d7d34ebd40f46f31a1985bac744877204e3622b563f8b0f3f4842b3bbba5a5",
+          "packages": {
+            "jsonschema": "4.26.0",
+            "numpy": "2.4.6",
+            "openpyxl": "3.1.5",
+            "pandas": "3.1.0",
+            "pydantic": "2.14.2",
+            "pytest": "9.2.0"
+          },
+          "python_version": "3.11.14",
+          "image": "127.0.0.1:55176/qa/worker@sha256:0a8a7fa41c97dad877529f7b559746340519f4e1c573108c3d140f99ea224c5c"
+        }
+      ],
+      "effective_timeout_seconds": 30.0,
+      "effective_input_bytes": 8388608
+    },
+    "cleanup": {
+      "sql_leases": 3,
+      "all_closed": true,
+      "all_cleanup_verified": true,
+      "plugin_journal_matches": true,
+      "same_docker_daemon": true,
+      "docker_daemon_id": "3fc51129-5d6b-4368-8895-dd64f4110025",
+      "matching_workload_containers": 0,
+      "matching_workload_volumes": 0,
+      "gateway": {
+        "sandboxes": 0,
+        "templates": 0,
+        "authenticated_mtls": true,
+        "configured_client_read_succeeded": true,
+        "configured_client_read_after_negative_succeeded": true,
+        "no_client_certificate_or_bearer_rejected": true,
+        "no_client_certificate_rejection": "grpc_unauthenticated",
+        "trusted_ca_verification": true,
+        "configured_mtls_auth_required": true,
+        "gateway_image_id": "sha256:9ca31b210cb0811db12bb52783de74f1fe279722cbc70cc24588e56811616e0d"
+      },
+      "plugin": {
+        "ready": true,
+        "active_leases": 0,
+        "draining": false,
+        "capabilities": [
+          "custom_rule",
+          "single_execution",
+          "durable_leases",
+          "verified_cleanup",
+          "execution_input_preflight",
+          "streaming_stdin",
+          "python_eval_v1"
+        ],
+        "max_input_bytes": 8388608
+      },
+      "applications": {
+        "aiv-vm-qa-diagnosis": {
+          "docker_socket_mounted": false,
+          "image_id": "sha256:7daa1c8bcca1a47c73bbcafdfedac1d82b2c07f17a1ede753fa81b970bfd56fc"
+        },
+        "aiv-vm-qa-backend": {
+          "docker_socket_mounted": false,
+          "image_id": "sha256:060c29cd125352934cf129721983dd133437bf68022f0a5d07695f340d80c3dd"
+        }
+      }
+    },
+    "negative_scope_limit": "No failing-pytest branch qualification; the negative case is a successfully executed BAD table reconciliation."
+  },
+  "checks": {
+    "go_full_suite": "passed",
+    "go_registration_gate_combinations": 6,
+    "plugin_unit_tests_passed": 89,
+    "django_tests": {
+      "run": 27,
+      "passed": 26,
+      "existing_mysql_only_skip": 1
+    },
+    "frontend_sandbox_tests": 72,
+    "bootstrap_dom_subset": 19,
+    "i18n_tests": 11,
+    "browser_fixture_tests": 7,
+    "browser_fixture_states": 5,
+    "browser_fixture_locales": [
+      "zh-CN",
+      "en-US",
+      "ja-JP"
+    ],
+    "changed_lint_typecheck_build_format": "passed",
+    "independent_code_review": "P2 environment failure priority fixed and re-reviewed; no remaining blocking finding"
+  },
+  "parent_preservation": {
+    "original_container_ids_retained": 48,
+    "original_running_services_still_running": 13,
+    "guest_retained_for_review": true
+  },
+  "screenshots": {
+    "docs/deployment/assets/openshell-install-environment.zh-CN.fixture.png": {
+      "sha256": "bc07f4a47bca7ca837d9a1cda918dc6df7fa3c1d87bf1526464a56e1e9b437c9",
+      "scope": "Synthetic API error events with final compact footer"
+    },
+    "docs/deployment/assets/openshell-install-canceled.zh-CN.vm.png": {
+      "sha256": "11656c75fc9d66bb4a73c988ab8ddd5adef5aff472e410d0895fa58606f7b307",
+      "scope": "Actual VM before compact-footer refinement"
+    },
+    "docs/deployment/assets/openshell-install-ready.zh-CN.vm.png": {
+      "sha256": "b0120ac2f52c29b291506f480d895933a5fe226bc3a9b963da936aaea9972ff3",
+      "scope": "Actual VM on final frontend assets"
+    },
+    "docs/deployment/assets/openshell-install-footer.zh-CN.vm.png": {
+      "sha256": "abd5a5898c62e8c733634a600c4d18daee259379f2da0099bc30f7efdf09e40d",
+      "scope": "Actual VM on final frontend assets"
+    },
+    "docs/deployment/assets/openshell-install-footer-bound.zh-CN.vm.png": {
+      "sha256": "8b21b0c0dac2705cc20cd399cd6843505cc3389fcd358e0a74f3a04702068a48",
+      "scope": "Actual VM on final frontend assets"
+    },
+    "docs/deployment/assets/openshell-vm-enhanced-rule.zh-CN.png": {
+      "sha256": "0e81cf460cc3ca51f9994cd5fac8ad4dad2b044f98577be5b01ce738a66ded9f",
+      "scope": "Actual VM on final frontend assets"
+    },
+    "docs/deployment/assets/openshell-vm-record.zh-CN.png": {
+      "sha256": "8d8b787fc8f8f3a5aa67c0365b34d444dc3fa6bfdc7dd5bc07368a484885c6de",
+      "scope": "Actual VM on final frontend assets"
+    }
+  },
+  "limits": [
+    "Worker/runtime execution image is the exact base223 native AMD64 build; app/CLI/plugin/frontend diagnostics delta is identified by the listed source hashes.",
+    "No macOS/Windows/ARM64/Kubernetes runtime install claim.",
+    "CI at base223 was blocked before jobs started by GitHub payment/spending limits.",
+    "Native browser connection timed out; actual pages were captured with project Playwright without mocked responses."
+  ],
+  "installation_frontend_before_footer_sha256": {
+    "ai-vision/vfe/src/features/plugins/OpenShellBootstrap.tsx": "55583c1ac40713bf2c951468d13838aa73f260f05704c1e0b9870ff6dd395a58",
+    "ai-vision/vfe/src/features/plugins/installationTypes.ts": "40f6b514e3fe165946f4bbeca02947852fbbf74903cd10b1c659039b632b355e",
+    "ai-vision/vfe/src/i18n/locales/zh-CN.json": "fb1fc6184f4ae7c8e98bebacde79108cd72b4a36e9aa0e91b49317959999cbb4",
+    "ai-vision/vfe/src/i18n/locales/en-US.json": "33ccaa2360f9a5a2a384e0936ae51d17e53784cbb51e8bb4ecc495d9230cd4c7",
+    "ai-vision/vfe/src/i18n/locales/ja-JP.json": "392ca25d0267d0e56a6aadcf09bc88dd0766007d7585dfc4f55ecce8bc257611",
+    "ai-vision/vfe/tests/openShellBootstrapDom.test.ts": "024e2d4e4dfb389f64b4acc2b2004dcf19892a7c035b09c0b75fbc9449fe52bf",
+    "ai-vision/vfe/tests/e2e/sandboxConnections.spec.ts": "00b56e672aa32c5e75fc8148db25007d138707d0d2972a26ad84c544f525a7f9"
+  },
+  "footer": {
+    "actual_desktop_height_px": 57,
+    "actual_390px_height_px": 57,
+    "binding_cleared_and_restored": true,
+    "adjacent_secondary_and_primary": true,
+    "bound_only_done": true,
+    "low_frequency_controls_in_scroll_body": true,
+    "fixture_checks": {
+      "modified_lint": "passed",
+      "typecheck": "passed",
+      "production_build": "passed",
+      "bootstrap_dom": "19/19 passed",
+      "sandbox_tests": "72/72 passed",
+      "i18n": "11/11 passed",
+      "browser": "7/7 passed; actual fresh frontend-dist, fixture API responses; not a deployed backend claim",
+      "browser_geometry": "55 <= action bar height <= 64; controls same line and adjacent; zh-CN1440/en-US390/ja-JP390 including saved+running and in-flight enabling",
+      "focus": "Escape restores launcher focus"
+    },
+    "final_frontend_archive_sha256": "4969542bac66a641ef3e10005afc4fcb7eef68b0fbb0ed1faef38c36d909e8fd",
+    "final_frontend_image_id": "sha256:6a98c0db95f4913f6761a5aa6f2049bb5931303381f66fc2114559a06d7f29ad",
+    "served_assets_verified": 50,
+    "other_containers_preserved": 8,
+    "volumes_preserved": 3,
+    "sql_leases_preserved": 3,
+    "deployment_scope": "Manual targeted FE-only QA update, with rollback containers retained; backend/worker/CLI/plugin unchanged",
+    "metadata_note": "The inherited container QA footer-manifest label is intermediate. Final image identity and all50 actual HTTP asset hashes are authoritative."
+  },
+  "actual_diagnosis_ui": {
+    "status": "passed",
+    "screenshots": 9,
+    "receipt_sha256": "77d4b357827f1022c55f7d969de39fd1a5e8953e449b0c55a2c83575a29e602e",
+    "rule_and_record_readback_unchanged": true,
+    "additional_execution": false
+  }
+}

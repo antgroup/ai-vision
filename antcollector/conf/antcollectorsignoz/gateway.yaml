@@ -1,0 +1,109 @@
+# AI Vision OceanBase gateway profile for antcollector.
+#
+# Replaces signoz-otel-collector-ob (collectorgw) while keeping the exact same
+# data plane: writes the signoz.* flat tables in the OceanBase/seekdb `signoz`
+# database, which signoz-ob reads unchanged.
+#
+# Space-close (root-cause) wiring, plan subsystem 2:
+#   traces: otlp(auth) -> [memory_limiter, spaceauth, modelbilling, batch] -> otlphttp/signoz
+#   logs, metrics: otlp(auth) -> [memory_limiter, spaceauth, batch] -> otlphttp/signoz
+#
+# The aivisionauth extension verifies, offline, the short-lived HMAC ingest
+# token aivision signs per (space, user) using the shared AIVISION_INGEST_SECRET
+# and rejects unauthenticated writes. spaceauth then strips any client-reported
+# space/user attribute and stamps the authoritative, verified identity that the
+# signoz-ob ingest endpoint trusts.
+#
+# Run with the antcollector otelcol command, e.g.:
+#   otelcorecol --config conf/antcollectorsignoz/gateway.yaml
+
+# antcollector's factory set has no `health_check` extension; liveness is proven
+# by the OTLP listener + a signed smoke push. `pprof` gives an HTTP endpoint we
+# can keep on the historic 13133 port for operational continuity.
+extensions:
+  pprof:
+    endpoint: 0.0.0.0:13133
+
+  aivisionauth:
+    # Shared HMAC key, identical to the aivision control plane's signing secret.
+    secret: ${env:AIVISION_INGEST_SECRET}
+    # Metadata/header key carrying the bearer token (matched case-insensitively).
+    header: authorization
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+        max_recv_msg_size_mib: 64
+        auth:
+          authenticator: aivisionauth
+      http:
+        endpoint: 0.0.0.0:4318
+        max_request_body_size: 67108864
+        auth:
+          authenticator: aivisionauth
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+
+  # Stamps the authoritative space/org/user derived from the verified token and
+  # removes every client-supplied space attribute so a client cannot steer its
+  # own storage/query partition. Placed before batch (per-resource, cheap) and
+  # after memory_limiter.
+  spaceauth:
+    require_claims: true
+
+  modelbilling:
+
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+
+exporters:
+  # Data-plane hop into the signoz-ob ingest endpoint (signoz-ob pkg/ingest).
+  # The gateway remains the sole external writer: it verifies the ingest
+  # token and stamps space/user identity; signoz-ob owns the storage write.
+  otlphttp/signoz:
+    # confmap v0.96 envprovider has no `${env:VAR:-default}` fallback syntax —
+    # the `:-...` suffix is parsed as part of the variable name and resolves to
+    # nil, aborting config load. SIGNOZ_INGEST_ENDPOINT is always injected by the
+    # deployment blueprint, so reference it directly.
+    traces_endpoint: ${env:SIGNOZ_INGEST_ENDPOINT}/v1/traces
+    logs_endpoint: ${env:SIGNOZ_INGEST_ENDPOINT}/v1/logs
+    metrics_endpoint: ${env:SIGNOZ_INGEST_ENDPOINT}/v1/metrics
+    # signoz-ob's ingest (pkg/ingest) reads the raw request body and feeds it
+    # straight to the OTLP protobuf unmarshaler — it does NOT honour
+    # Content-Encoding: gzip. The otlphttp exporter defaults to gzip, so signoz
+    # would try to decode the 0x1f gzip magic as a protobuf field (wireType 7)
+    # and reject every batch with HTTP 400 "illegal wireType 7". Export plain.
+    compression: none
+    headers:
+      X-Signoz-Ingest-Key: ${env:SIGNOZ_INGEST_INTERNAL_KEY}
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 30s
+      max_elapsed_time: 5m
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: 10000
+
+service:
+  extensions: [pprof, aivisionauth]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, spaceauth, modelbilling, batch]
+      exporters: [otlphttp/signoz]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, spaceauth, batch]
+      exporters: [otlphttp/signoz]
+    metrics:
+      receivers: [otlp]
+      processors: [memory_limiter, spaceauth, batch]
+      exporters: [otlphttp/signoz]

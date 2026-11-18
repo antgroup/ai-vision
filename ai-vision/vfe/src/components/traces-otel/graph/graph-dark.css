@@ -1,0 +1,52 @@
+/* ReactFlow controls — dark mode
+ * Uses project theme variables from index.css .dark {} block:
+ *   --background: oklch(0.145 0 0)   — page bg
+ *   --card: oklch(0.205 0 0)         — elevated surface
+ *   --muted: oklch(0.269 0 0)        — subtle surface
+ *   --border: oklch(1 0 0 / 10%)     — border
+ *   --muted-foreground: oklch(0.708 0 0) — secondary text
+ */
+.dark .react-flow__controls {
+  border: 1px solid oklch(1 0 0 / 10%) !important;
+  border-radius: 6px !important;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+
+.dark .react-flow__controls button {
+  background: oklch(0.145 0 0) !important;
+  border-color: oklch(1 0 0 / 10%) !important;
+  fill: oklch(0.708 0 0) !important;
+  color: oklch(0.708 0 0) !important;
+}
+
+.dark .react-flow__controls button:hover {
+  background: oklch(0.269 0 0) !important;
+}
+
+/* ReactFlow minimap — dark mode */
+.dark .react-flow__minimap {
+  background: oklch(0.205 0 0) !important;
+  border: 1px solid oklch(1 0 0 / 10%) !important;
+  border-radius: 6px !important;
+}
+
+.dark .react-flow__minimap-mask {
+  fill: oklch(0.145 0 0) !important;
+  opacity: 0.6;
+}
+
+.dark .react-flow__minimap-node {
+  fill: oklch(0.922 0 0) !important;
+  stroke: none !important;
+}
+
+/* ReactFlow background dots — dark mode */
+.dark .react-flow__background pattern circle {
+  fill: oklch(0.708 0 0 / 0.15) !important;
+}
+
+/* ReactFlow edges — dark mode */
+.dark .react-flow__edge-path {
+  stroke: oklch(0.708 0 0 / 0.5);
+}

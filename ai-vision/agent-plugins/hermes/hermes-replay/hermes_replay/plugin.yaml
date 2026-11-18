@@ -1,0 +1,5 @@
+name: hermes-replay
+version: "0.2.2"
+description: Explicit developer-only raw callback capture for offline Hermes replay
+requires:
+  aivision-hermes-core: "0.2.2"

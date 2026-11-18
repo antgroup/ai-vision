@@ -1,0 +1,6 @@
+if [ "$#" = "0" ]; then
+  supervisorctl -s http://127.0.0.1:9001 status
+  exit 0
+fi
+
+supervisorctl -s http://127.0.0.1:9001 "$@"

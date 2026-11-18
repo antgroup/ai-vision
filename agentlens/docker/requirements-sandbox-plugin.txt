@@ -1,0 +1,6 @@
+# Optional additions only; base runtime supplies compatible httpx/protobuf/
+# googleapis-common-protos. This file is not installed in ordinary AgentLens.
+openshell==0.1.6
+grpcio==1.85.1
+cloudpickle==3.1.2
+PyYAML==6.0.3

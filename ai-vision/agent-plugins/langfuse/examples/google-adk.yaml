@@ -1,0 +1,88 @@
+id: google-adk
+logo: /assets/frameworks/google-adk.png
+label: Google ADK
+marketPreview: true
+marketSort: 7
+frontendSort: 9
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export GOOGLE_API_KEY="..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- GOOGLE_API_KEY="..."
+pipInstall: pip install "google-adk>=2,<3" openinference-instrumentation-google-adk "langfuse>=4,<5"
+pipExample: |-
+  import asyncio
+  import os
+
+  from google.adk.agents import Agent
+  from google.adk.runners import Runner
+  from google.adk.sessions import InMemorySessionService
+  from google.genai import types
+  from langfuse import get_client, propagate_attributes
+  from openinference.instrumentation.google_adk import GoogleADKInstrumentor
+
+  langfuse = get_client()
+  GoogleADKInstrumentor().instrument()
+
+
+  async def main():
+      # Define a tool
+      def get_weather(city: str) -> dict:
+          """Get weather for a city."""
+          return {"city": city, "temperature": "72F", "conditions": "Sunny"}
+
+      # Create the agent
+      agent = Agent(
+          name="weather_agent",
+          model=os.environ.get("GOOGLE_MODEL", "gemini-2.0-flash"),
+          description="Provides weather information.",
+          instruction="Use the get_weather tool to answer weather questions.",
+          tools=[get_weather],
+      )
+
+      # Set up session and runner
+      session_service = InMemorySessionService()
+      session = await session_service.create_session(
+          app_name="weather_app",
+          user_id="user_123",
+          session_id="session_456",
+      )
+
+      runner = Runner(
+          agent=agent,
+          app_name="weather_app",
+          session_service=session_service,
+      )
+
+      with langfuse.start_as_current_observation(
+          as_type="span", name="google-adk-request"
+      ):
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          # Run the agent
+          async for event in runner.run_async(
+              user_id="user_123",
+              session_id=session.id,
+              new_message=types.Content(
+                  role="user",
+                  parts=[types.Part(text="What's the weather in San Francisco?")],
+              ),
+          ):
+              if event.is_final_response():
+                  if event.content and event.content.parts:
+                      print(event.content.parts[0].text)
+                  elif event.error_message:
+                      print(f"Agent error: {event.error_message}")
+
+
+  if __name__ == "__main__":
+      try:
+          with propagate_attributes(tags=["framework:google-adk"]):
+              asyncio.run(main())
+      finally:
+          # Flush after all observations have ended, including on failure.
+          langfuse.flush()

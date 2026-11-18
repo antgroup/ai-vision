@@ -1,0 +1,34 @@
+services:
+  ob:
+    image: mysql:5.7
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+      MYSQL_DATABASE: agentlens
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-prootpw"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  agentlens:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    depends_on:
+      ob:
+        condition: service_healthy
+    environment:
+      AIVISION_ENV: dev
+      AGENTLENS_OB_URL: "mysql+pymysql://root:rootpw@ob:3306/agentlens?charset=utf8mb4"
+    entrypoint: ["sh", "-c", "alembic -c obschema/alembic.ini upgrade head && python3 -m uvicorn --factory agentlens.main:build_app --host 0.0.0.0 --port 8080"]
+    ports:
+      - "8080:8080"
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"

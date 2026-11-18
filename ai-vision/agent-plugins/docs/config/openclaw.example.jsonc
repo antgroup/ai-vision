@@ -1,0 +1,95 @@
+// observ-openclaw 完整配置示例
+// 配置文件路径: openclaw.plugin.json 的 config 字段
+// AIVision edition managed config 的唯一静态初始化来源。
+// 安装时只允许交互补齐 otelExporter.attributes["ant.username"] 和 collectionMode；不需要的可选字段不写入。
+{
+  // ─── 主开关 ──────────────────────────────────────────────────────
+  // env: AGENT_ENABLE_TELEMETRY
+  "enableTelemetry": true,
+
+  // OpenTelemetry service.name 资源属性
+  // env: OTEL_SERVICE_NAME
+  "serviceName": "openclaw",
+
+  // 内容采集模式: "full" 记录所有内容, "privacy" 脱敏/不记录原文
+  // env: AIVISION_COLLECTION_MODE
+  "collectionMode": "full",
+
+  // 每次记录信号时从进程环境变量读取身份；环境变量为空时回退到 otelExporter.attributes
+  // env: AIVISION_ANT_USERNAME / AIVISION_ANT_UID
+  "dynamicUsername": false,
+  "dynamicUid": false,
+
+  // ─── OTel 导出器配置 ─────────────────────────────────────────────
+  "otelExporter": {
+    // 全局 endpoint 保持为空；三类信号使用各自固定任务地址
+    "endpoint": "",
+
+    // 传输协议: "http/json" | "http/protobuf"
+    // env: OTEL_EXPORTER_OTLP_PROTOCOL
+    "protocol": "http/json",
+
+    // 个人版不需要鉴权 header
+    "headers": {},
+
+    // 自定义信号属性, 注入到 span、event 和 metric
+    // ant.username 与 ant.uid 均在此配置
+    // env: OBSERV_OPENCLAW_OTEL_ATTRIBUTES (格式: key1=value1,key2=value2)
+    // _internal.meta.root 为仓库保留键，会被忽略；其他 _internal.* 键不受影响
+    "attributes": {
+      "ant.username": ""
+    },
+
+    // Agent 元数据和其他资源属性, 合并到 OTel Resource
+    // 合并顺序: config < OTEL_RESOURCE_ATTRIBUTES < AIVISION_OTEL_RESOURCE_ATTRIBUTES
+    //          < OBSERV_OPENCLAW_OTEL_RESOURCE_ATTRIBUTES
+    "resourceAttributes": {
+      "ant.agent.type": "openclaw",
+      "ant.agent.product": "OpenClaw",
+      "ant.agent.instance": "",
+      "ant.agent.env": "Default",
+      "ant.agent.scene": "default"
+    },
+
+    // Metrics 时间粒度偏好: "delta" | "cumulative"
+    // env: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+    "metricsTemporalityPreference": "delta"
+  },
+
+  // ─── 信号级 endpoint 覆盖 ────────────────────────────────────────
+  // 未设置 endpoint 时回退到 otelExporter.endpoint
+  // headers 与 otelExporter.headers 合并 (信号级优先)
+
+  "tracesConfig": {
+    "endpoint": "http://localhost:4318/v1/traces",
+    "headers": {},
+    "enabled": true
+  },
+
+  "metricsConfig": {
+    "endpoint": "http://localhost:4318/v1/metrics",
+    "headers": {},
+    "enabled": true
+  },
+
+  "eventsConfig": {
+    "endpoint": "http://localhost:4318/v1/logs",
+    "headers": {},
+    "enabled": true
+  },
+
+  // ─── 导出间隔 ────────────────────────────────────────────────────
+
+  // Metrics 批量导出间隔 (ms)
+  // env: OTEL_METRIC_EXPORT_INTERVAL
+  "metricExportInterval": 60000,
+
+  // Events/Logs 批量导出间隔 (ms)
+  // env: OTEL_LOGS_EXPORT_INTERVAL
+  "logsExportInterval": 5000
+
+  // Transcript 与本地 replay 输出请配置独立的 openclaw-replay 插件：
+  // plugins.entries.openclaw-replay.config.captureEnabled / sessionDir /
+  // sessionName / collectionMode / stdout / debug
+  // 对应环境变量前缀为 OPENCLAW_REPLAY_*。
+}

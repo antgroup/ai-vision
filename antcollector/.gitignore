@@ -1,0 +1,18 @@
+.DS_Store
+.aone_copilot
+AGENTS.md
+.idea/
+.vscode
+cover.out
+# Local runtime logs; vendor packages also contain required logs/ source.
+/logs/
+*.log
+receiver/tfeventreceiver/op/record/failed_jobs.txt
+/build
+# local oceanbase gateway build artifact (see conf/antcollectorsignoz)
+/app
+# Local crash dumps
+/core
+/core.[0-9]*
+CLAUDE.md
+.gocache/

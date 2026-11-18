@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aivision.example.com/schemas/opencode-replay-config.json",
+  "title": "OpenCode Replay Local Configuration",
+  "description": "Local-only configuration for opencode-replay. Production telemetry settings remain in observ-opencode.json and use common.schema.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "captureEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Explicitly enable developer-only raw callback capture.",
+      "x-env": "OPENCODE_REPLAY_CAPTURE_ENABLED"
+    },
+    "enableTelemetry": {
+      "type": "boolean",
+      "deprecated": true,
+      "description": "Deprecated replay-config-only alias for captureEnabled. Production enableTelemetry is never read."
+    },
+    "collectionMode": {
+      "type": "string",
+      "enum": ["full", "privacy"],
+      "default": "full",
+      "description": "Raw transcript content policy used again during offline semantic reconstruction.",
+      "x-env": "OPENCODE_REPLAY_COLLECTION_MODE"
+    },
+    "sessionDir": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Directory for persisted transcript JSONL files.",
+      "x-env": "OPENCODE_REPLAY_SESSION_DIR"
+    },
+    "debug": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable replay-owned diagnostic logging only.",
+      "x-env": "OPENCODE_REPLAY_DEBUG"
+    }
+  },
+  "x-resolution-priority": "environment > host options > opencode-replay.json > defaults"
+}

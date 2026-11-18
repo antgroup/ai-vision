@@ -1,0 +1,41 @@
+# Golden example regression test configuration
+#
+# Stricter than default compare config:
+# - session.id in exact (same transcript → same session.id)
+# - token tolerance = 0 (deterministic replay)
+#
+# Usage:
+#   weaver-guard compare golden/ --replay replays/ --config ../weaver/golden-compare.toml --diff-only
+
+[ignore]
+# Timestamps: regenerated on every replay
+timestamp_fields = [
+  "startTimeUnixNano",
+  "endTimeUnixNano",
+  "timeUnixNano",
+  "observedTimeUnixNano",
+  "*.timeUnixNano",
+]
+
+# IDs: regenerated on every replay
+id_fields = [
+  "traceId",
+  "spanId",
+  "parentSpanId",
+]
+
+# Resource fields tied to runtime environment
+resource_fields = [
+  "service.instance.id",
+]
+
+[exact]
+# These fields must match exactly between golden and actual
+fields = [
+  "gen_ai.system",
+  "source",
+  "gen_ai.request.model",
+  "gen_ai.span.kind",
+  "session.id",
+  "service.name",
+]

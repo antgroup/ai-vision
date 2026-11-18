@@ -1,0 +1,13 @@
+{
+  "deleted_disposable_uuid": "m-a2jvldrw",
+  "delete_http": 200,
+  "readback_http": 404,
+  "remaining_original_uuids": [
+    "m-tz5bwk3a",
+    "m-57j2qpym",
+    "m-skzcgcg8",
+    "m-jc43812e"
+  ],
+  "remaining_count": 4,
+  "credentials_echoed": false
+}

@@ -1,0 +1,1609 @@
+{
+  "status": "complete",
+  "measured_at_utc": "2026-10-26T11:29:31.763011+00:00",
+  "scope": "Prepared local CE API/SQL comparison. Uncommitted source; no release or production capacity claim. No credentials or message bodies included.",
+  "engine": {
+    "product": "OceanBase CE",
+    "version": "4.4.2.1",
+    "cpu": 4,
+    "memory_gib": 8,
+    "global_query_timeout_us": 10000000
+  },
+  "comparison_boundary": "Controlled legacy compact-window route vs typed aggregate on the same current CE ap26 dataset. Stored canonical projections already include new optional _statistics; this is not exact old-version storage-byte comparison and not evidence of columnstore-only gain. Original signoz data and nine original services are outside task mutation scope. Fixed org authentication at Go handler boundary, real Django APIs/production Go handlers/real DB; not hosted end-to-end authentication. NO_PROXY set equally on baseline/candidate.",
+  "fixture": {
+    "trace_rows": 30012,
+    "typed_call_rows": 60028,
+    "scale_sessions": 10000,
+    "scale_traces": 30000,
+    "scale_spans": 90000,
+    "native_four_framework_traces": 12,
+    "source_canonical_json_bytes": 312202478,
+    "current_stored_json_bytes": "328298739",
+    "bulk_preparation_ms": 744545.15,
+    "bulk_preparation_is_product_migration_throughput": false
+  },
+  "final_five_request_concurrency": {
+    "baseline": {
+      "wall": {
+        "n": 3,
+        "samples_ms": [
+          10910.23,
+          10944.0,
+          10933.05
+        ],
+        "min_ms": 10910.23,
+        "median_ms": 10933.05,
+        "max_ms": 10944.0
+      },
+      "per_request": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            10795.03,
+            10830.66,
+            10815.31
+          ],
+          "min_ms": 10795.03,
+          "median_ms": 10815.31,
+          "max_ms": 10830.66
+        },
+        "dashboard_traces": {
+          "n": 3,
+          "samples_ms": [
+            1167.6,
+            937.08,
+            1246.53
+          ],
+          "min_ms": 937.08,
+          "median_ms": 1167.6,
+          "max_ms": 1246.53
+        },
+        "dashboard_sessions": {
+          "n": 3,
+          "samples_ms": [
+            1278.35,
+            1035.61,
+            1384.12
+          ],
+          "min_ms": 1035.61,
+          "median_ms": 1278.35,
+          "max_ms": 1384.12
+        },
+        "framework.overview.event_stream": {
+          "n": 3,
+          "samples_ms": [
+            10906.17,
+            10940.97,
+            10929.13
+          ],
+          "min_ms": 10906.17,
+          "median_ms": 10929.13,
+          "max_ms": 10940.97
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            10465.43,
+            10497.51,
+            10501.77
+          ],
+          "min_ms": 10465.43,
+          "median_ms": 10497.51,
+          "max_ms": 10501.77
+        }
+      },
+      "db_read_bytes": [
+        334794440,
+        334794440,
+        334794440
+      ],
+      "sources": [
+        "concurrent-final-generation-sequence-0-baseline-5api.json",
+        "concurrent-final-generation-sequence-3-baseline-5api.json",
+        "concurrent-final-generation-sequence-4r-baseline-5api.json"
+      ],
+      "upstream_response_bytes": [
+        89413042,
+        89413042,
+        89413042
+      ]
+    },
+    "candidate": {
+      "wall": {
+        "n": 3,
+        "samples_ms": [
+          3310.36,
+          3109.01,
+          3263.27
+        ],
+        "min_ms": 3109.01,
+        "median_ms": 3263.27,
+        "max_ms": 3310.36
+      },
+      "per_request": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            2528.79,
+            2337.49,
+            2496.59
+          ],
+          "min_ms": 2337.49,
+          "median_ms": 2496.59,
+          "max_ms": 2528.79
+        },
+        "dashboard_traces": {
+          "n": 3,
+          "samples_ms": [
+            1505.15,
+            1180.79,
+            1323.51
+          ],
+          "min_ms": 1180.79,
+          "median_ms": 1323.51,
+          "max_ms": 1505.15
+        },
+        "dashboard_sessions": {
+          "n": 3,
+          "samples_ms": [
+            1706.25,
+            1439.44,
+            1539.63
+          ],
+          "min_ms": 1439.44,
+          "median_ms": 1539.63,
+          "max_ms": 1706.25
+        },
+        "framework.overview.event_stream": {
+          "n": 3,
+          "samples_ms": [
+            3305.46,
+            3105.68,
+            3259.84
+          ],
+          "min_ms": 3105.68,
+          "median_ms": 3259.84,
+          "max_ms": 3305.46
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            2541.77,
+            2347.18,
+            2516.87
+          ],
+          "min_ms": 2347.18,
+          "median_ms": 2516.87,
+          "max_ms": 2541.77
+        }
+      },
+      "db_read_bytes": [
+        4697355,
+        4696999,
+        4696999
+      ],
+      "sources": [
+        "concurrent-final-generation-sequence-1-candidate-5api.json",
+        "concurrent-final-generation-sequence-2-candidate-5api.json",
+        "concurrent-final-generation-sequence-5-candidate-5api.json"
+      ],
+      "upstream_response_bytes": [
+        3337450,
+        3337450,
+        3337450
+      ]
+    },
+    "strict_business_hashes_equal": true,
+    "classification": "Five simultaneous actual Django APIs, no browser render or retries. Final operation-page chooses at most 200 recent keys under a complete typed gate and hydrates only selected Trace batches; statistics and trend use SQL aggregates. n=3 interleaved routes; all samples retained."
+  },
+  "individual_latency": {
+    "paired_n3_baseline": {
+      "eino": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            132.3,
+            22.82,
+            34.95
+          ],
+          "min_ms": 22.82,
+          "median_ms": 34.95,
+          "max_ms": 132.3
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            31.8,
+            26.86,
+            49.82
+          ],
+          "min_ms": 26.86,
+          "median_ms": 31.8,
+          "max_ms": 49.82
+        }
+      },
+      "deepagents": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            16.5,
+            13.92,
+            40.47
+          ],
+          "min_ms": 13.92,
+          "median_ms": 16.5,
+          "max_ms": 40.47
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            16.95,
+            15.62,
+            16.85
+          ],
+          "min_ms": 15.62,
+          "median_ms": 16.85,
+          "max_ms": 16.95
+        }
+      },
+      "dsh": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            17.91,
+            14.4,
+            12.34
+          ],
+          "min_ms": 12.34,
+          "median_ms": 14.4,
+          "max_ms": 17.91
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            14.47,
+            14.06,
+            14.43
+          ],
+          "min_ms": 14.06,
+          "median_ms": 14.43,
+          "max_ms": 14.47
+        }
+      },
+      "codex": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            11.98,
+            12.79,
+            11.72
+          ],
+          "min_ms": 11.72,
+          "median_ms": 11.98,
+          "max_ms": 12.79
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            14.33,
+            14.08,
+            12.73
+          ],
+          "min_ms": 12.73,
+          "median_ms": 14.08,
+          "max_ms": 14.33
+        }
+      },
+      "scale-10000x3": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            13023.89,
+            16677.61,
+            13392.43
+          ],
+          "min_ms": 13023.89,
+          "median_ms": 13392.43,
+          "max_ms": 16677.61
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            12674.58,
+            14905.23,
+            14478.68
+          ],
+          "min_ms": 12674.58,
+          "median_ms": 14478.68,
+          "max_ms": 14905.23
+        }
+      }
+    },
+    "paired_n3_column_candidate": {
+      "eino": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            84.07,
+            70.49,
+            62.81
+          ],
+          "min_ms": 62.81,
+          "median_ms": 70.49,
+          "max_ms": 84.07
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            27.56,
+            25.73,
+            37.97
+          ],
+          "min_ms": 25.73,
+          "median_ms": 27.56,
+          "max_ms": 37.97
+        }
+      },
+      "deepagents": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            23.64,
+            88.72,
+            25.73
+          ],
+          "min_ms": 23.64,
+          "median_ms": 25.73,
+          "max_ms": 88.72
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            20.73,
+            21.96,
+            32.9
+          ],
+          "min_ms": 20.73,
+          "median_ms": 21.96,
+          "max_ms": 32.9
+        }
+      },
+      "dsh": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            18.64,
+            22.34,
+            19.73
+          ],
+          "min_ms": 18.64,
+          "median_ms": 19.73,
+          "max_ms": 22.34
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            18.88,
+            21.34,
+            26.78
+          ],
+          "min_ms": 18.88,
+          "median_ms": 21.34,
+          "max_ms": 26.78
+        }
+      },
+      "codex": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            19.28,
+            18.43,
+            19.73
+          ],
+          "min_ms": 18.43,
+          "median_ms": 19.28,
+          "max_ms": 19.73
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            18.11,
+            17.5,
+            21.44
+          ],
+          "min_ms": 17.5,
+          "median_ms": 18.11,
+          "max_ms": 21.44
+        }
+      },
+      "scale-10000x3": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            1779.1,
+            1528.84,
+            1624.76
+          ],
+          "min_ms": 1528.84,
+          "median_ms": 1624.76,
+          "max_ms": 1779.1
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            1668.28,
+            1626.2,
+            1650.99
+          ],
+          "min_ms": 1626.2,
+          "median_ms": 1650.99,
+          "max_ms": 1668.28
+        }
+      }
+    },
+    "exact_final_row_n3": {
+      "eino": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            191.06,
+            23.44,
+            26.16
+          ],
+          "min_ms": 23.44,
+          "median_ms": 26.16,
+          "max_ms": 191.06
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            26.75,
+            21.54,
+            23.49
+          ],
+          "min_ms": 21.54,
+          "median_ms": 23.49,
+          "max_ms": 26.75
+        }
+      },
+      "deepagents": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            26.05,
+            32.68,
+            41.76
+          ],
+          "min_ms": 26.05,
+          "median_ms": 32.68,
+          "max_ms": 41.76
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            20.66,
+            22.45,
+            20.31
+          ],
+          "min_ms": 20.31,
+          "median_ms": 20.66,
+          "max_ms": 22.45
+        }
+      },
+      "dsh": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            16.85,
+            18.38,
+            18.93
+          ],
+          "min_ms": 16.85,
+          "median_ms": 18.38,
+          "max_ms": 18.93
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            18.91,
+            20.95,
+            42.81
+          ],
+          "min_ms": 18.91,
+          "median_ms": 20.95,
+          "max_ms": 42.81
+        }
+      },
+      "codex": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            16.1,
+            17.01,
+            19.37
+          ],
+          "min_ms": 16.1,
+          "median_ms": 17.01,
+          "max_ms": 19.37
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            54.5,
+            19.98,
+            27.33
+          ],
+          "min_ms": 19.98,
+          "median_ms": 27.33,
+          "max_ms": 54.5
+        }
+      },
+      "scale-10000x3": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            1868.84,
+            1592.75,
+            1479.63
+          ],
+          "min_ms": 1479.63,
+          "median_ms": 1592.75,
+          "max_ms": 1868.84
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            1541.82,
+            1601.37,
+            1728.67
+          ],
+          "min_ms": 1541.82,
+          "median_ms": 1601.37,
+          "max_ms": 1728.67
+        }
+      }
+    },
+    "paired_sequence": "baseline,candidate,candidate,baseline,baseline,candidate; exact-final-row n3 is separate final-source smoke with same query shape, not a claim of same-time paired row measurements"
+  },
+  "layouts": {
+    "row": {
+      "scale10k": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            1685.42,
+            1567.4,
+            1540.9
+          ],
+          "min_ms": 1540.9,
+          "median_ms": 1567.4,
+          "max_ms": 1685.42
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            1573.87,
+            1597.19,
+            1541.8
+          ],
+          "min_ms": 1541.8,
+          "median_ms": 1573.87,
+          "max_ms": 1597.19
+        }
+      },
+      "reported_sstable_size_bytes": 2934487,
+      "sstable_kinds": {
+        "MAJOR": 2,
+        "MDS_MINI": 1
+      },
+      "source": "layout-row-three-query.json",
+      "storage_scope": "Sum GV$OB_SSTABLES SIZE of both task fact tables, MDS excluded, not total disk or universal compression claim."
+    },
+    "hybrid": {
+      "scale10k": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            1734.47,
+            1631.1,
+            1576.96
+          ],
+          "min_ms": 1576.96,
+          "median_ms": 1631.1,
+          "max_ms": 1734.47
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            1622.65,
+            1632.98,
+            1487.41
+          ],
+          "min_ms": 1487.41,
+          "median_ms": 1622.65,
+          "max_ms": 1632.98
+        }
+      },
+      "reported_sstable_size_bytes": 5761059,
+      "sstable_kinds": {
+        "CO_MAJOR": 2,
+        "NORMAL_CG": 31,
+        "MDS_MINI": 1
+      },
+      "source": "layout-hybrid-three-query.json",
+      "storage_scope": "Sum GV$OB_SSTABLES SIZE of both task fact tables, MDS excluded, not total disk or universal compression claim."
+    },
+    "column": {
+      "scale10k": {
+        "dashboard_metrics": {
+          "n": 3,
+          "samples_ms": [
+            1779.1,
+            1528.84,
+            1624.76
+          ],
+          "min_ms": 1528.84,
+          "median_ms": 1624.76,
+          "max_ms": 1779.1
+        },
+        "framework.events.timeseries": {
+          "n": 3,
+          "samples_ms": [
+            1668.28,
+            1626.2,
+            1650.99
+          ],
+          "min_ms": 1626.2,
+          "median_ms": 1650.99,
+          "max_ms": 1668.28
+        }
+      },
+      "reported_sstable_size_bytes": 4338087,
+      "sstable_kinds": {
+        "CO_MAJOR": 2,
+        "NORMAL_CG": 31,
+        "MDS_MINI": 1
+      },
+      "source": "layout-column.json",
+      "storage_scope": "Sum GV$OB_SSTABLES SIZE of both task fact tables, MDS excluded, not total disk or universal compression claim."
+    }
+  },
+  "layout_decision": "New tables explicitly rowstore: measured read ranges overlap and row reported smaller fact SSTable size. Existing hybrid/column unchanged. No forced index or global setting.",
+  "statistics_transport": {
+    "baseline": {
+      "dashboard_metrics": {
+        "upstream_response_bytes": 86412942,
+        "db_read_bytes": 330993705,
+        "response_bytes": 2642,
+        "upstream_categories": {
+          "read-model/metrics-window": 1
+        }
+      },
+      "framework.events.timeseries": {
+        "upstream_response_bytes": 86412942,
+        "db_read_bytes": 330993705,
+        "response_bytes": 405,
+        "upstream_categories": {
+          "read-model/metrics-window": 1
+        }
+      }
+    },
+    "candidate": {
+      "dashboard_metrics": {
+        "upstream_response_bytes": 146762,
+        "db_read_bytes": 432263,
+        "response_bytes": 2650,
+        "upstream_categories": {
+          "read-model/metrics-aggregate": 1
+        }
+      },
+      "framework.events.timeseries": {
+        "upstream_response_bytes": 156274,
+        "db_read_bytes": 436935,
+        "response_bytes": 403,
+        "upstream_categories": {
+          "read-model/metrics-aggregate": 1
+        }
+      }
+    }
+  },
+  "aggregate_wire_components": {
+    "classification": "Direct final aggregate wire component size diagnostic; not an app latency sample. Component sizes are reserialized JSON, full HTTP bytes are exact.",
+    "http_response_bytes": 146762,
+    "elapsed_ms": 2875.66,
+    "components_bytes": {
+      "complete": 4,
+      "contract": 35,
+      "groups": 470,
+      "latencies": 144001,
+      "meta": 422,
+      "operations": 133,
+      "summary": 159,
+      "supported": 4,
+      "timeseries": 474,
+      "usage": 439,
+      "usageByType": 461
+    },
+    "latency_vector_length": 30000,
+    "aggregate_group_rows": {
+      "usageByType": 1,
+      "groups": 1,
+      "timeseries": 1,
+      "operations": 2
+    }
+  },
+  "projection_publication": {
+    "baseline": {
+      "n": 3,
+      "samples_ms": [
+        1250.865,
+        837.744,
+        902.458
+      ],
+      "min_ms": 837.744,
+      "median_ms": 902.458,
+      "max_ms": 1250.865
+    },
+    "candidate": {
+      "n": 3,
+      "samples_ms": [
+        1404.897,
+        1234.294,
+        1245.302
+      ],
+      "min_ms": 1234.294,
+      "median_ms": 1245.302,
+      "max_ms": 1404.897
+    },
+    "classification": "Interleaved baseline and candidate real Go batch publication over same 12 native Traces in fresh ap26write prefix, no experimental covering index. Time includes publisher+DB after db.Ping but excludes JSON decode, HTTP and Docker startup. Not a historical bulk migration throughput claim.",
+    "trace_count": 12,
+    "call_count": 28,
+    "relative_median_change_pct": 37.99002280438535,
+    "restored": true
+  },
+  "correctness": {
+    "exact_final_business_hash_matches": 30,
+    "native_final_vs_emergency_raw_matches": 24,
+    "compact_vs_raw_statistics_fact_receipts": 15,
+    "whole_fixture_hash_equal": true,
+    "missing_statistics_full_list_bodies": {
+      "checks": [
+        {
+          "case": "agent_traces",
+          "before_query_mode": "read_model",
+          "after_query_mode": "read_model",
+          "total_items": 3,
+          "before_business_sha256": "b2bf59b12973b9d25faaf1e2522f18cf496a6f489fdfa611963e87f72adc8c9c",
+          "after_business_sha256": "b2bf59b12973b9d25faaf1e2522f18cf496a6f489fdfa611963e87f72adc8c9c",
+          "full_business_equal": true
+        },
+        {
+          "case": "agent_sessions",
+          "before_query_mode": "read_model",
+          "after_query_mode": "read_model",
+          "total_items": 1,
+          "before_business_sha256": "5be0f19e556624f08cc027a67c1442da98cae0e25121f2d5fa6fa8df8d1c43df",
+          "after_business_sha256": "5be0f19e556624f08cc027a67c1442da98cae0e25121f2d5fa6fa8df8d1c43df",
+          "full_business_equal": true
+        }
+      ],
+      "restored_exact_original_json_and_receipt": true
+    },
+    "dynamic_attribute_filter": {
+      "classification": "Actual Eino dynamic attribute filter, native frozen raw rows only; same request candidate versus emergency raw mode, no fixture mutation. Value retained only in private fixture.",
+      "field": "attributes.langfuse.observation.metadata.eino_component",
+      "checks": [
+        {
+          "case": "present",
+          "results": [
+            {
+              "variant": "candidate",
+              "status": 200,
+              "query_mode": "raw_snapshot",
+              "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+              "counts": {
+                "traceCount": 3,
+                "spanCount": 20,
+                "generationCount": 5,
+                "toolCount": 4
+              }
+            },
+            {
+              "variant": "raw",
+              "status": 200,
+              "query_mode": "raw_snapshot",
+              "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+              "counts": {
+                "traceCount": 3,
+                "spanCount": 20,
+                "generationCount": 5,
+                "toolCount": 4
+              }
+            }
+          ],
+          "equal": true
+        },
+        {
+          "case": "absent",
+          "results": [
+            {
+              "variant": "candidate",
+              "status": 200,
+              "query_mode": "raw_snapshot",
+              "business_sha256": "909e62446b693638af1533f4a5d7cae91e88370946040ccdc280ae9b340d1727",
+              "counts": {
+                "traceCount": 0,
+                "spanCount": 0,
+                "generationCount": 0,
+                "toolCount": 0
+              }
+            },
+            {
+              "variant": "raw",
+              "status": 200,
+              "query_mode": "raw_snapshot",
+              "business_sha256": "909e62446b693638af1533f4a5d7cae91e88370946040ccdc280ae9b340d1727",
+              "counts": {
+                "traceCount": 0,
+                "spanCount": 0,
+                "generationCount": 0,
+                "toolCount": 0
+              }
+            }
+          ],
+          "equal": true
+        }
+      ]
+    }
+  },
+  "typed_functional_gates": {
+    "classification": "Reversible writes only to ap26 derived rows. Raw view and original signoz tables untouched. Controlled synthetic scalar/bounds cases alter only task projection payload and are restored by real source publication.",
+    "checks": [
+      {
+        "name": "clean_sql_equals_raw",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "statistics_aggregate",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      },
+      {
+        "name": "missing_stats_preserves_agent_traces",
+        "business_sha256": "b2bf59b12973b9d25faaf1e2522f18cf496a6f489fdfa611963e87f72adc8c9c",
+        "query_mode": "read_model",
+        "equal": null,
+        "equality_check": "not_applicable",
+        "read_model_asserted": true
+      },
+      {
+        "name": "missing_stats_preserves_agent_sessions",
+        "business_sha256": "5be0f19e556624f08cc027a67c1442da98cae0e25121f2d5fa6fa8df8d1c43df",
+        "query_mode": "read_model",
+        "equal": null,
+        "equality_check": "not_applicable",
+        "read_model_asserted": true
+      },
+      {
+        "name": "missing_stats_falls_back",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "hybrid_snapshot",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      },
+      {
+        "name": "incremental_worker_restores_sql",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "statistics_aggregate",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false,
+        "worker": {
+          "published": 1,
+          "deferred": 0,
+          "conflicts": 0,
+          "errors": 0,
+          "seen": 1,
+          "supplementSupported": true,
+          "statisticsSupported": true,
+          "afterTraceId": ""
+        },
+        "publish_ms": 204.81,
+        "source_unchanged": true
+      },
+      {
+        "name": "dirty_source_falls_back",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "hybrid_snapshot",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      },
+      {
+        "name": "other_agent_dirty_still_declines_all_candidate_gate",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "hybrid_snapshot",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      },
+      {
+        "name": "maintenance_off_falls_back",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "raw_snapshot",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      },
+      {
+        "name": "partial_trace_time_boundary_falls_back",
+        "business_sha256": "765f6da5806c13ca19f76e195515994bb9ef0707ee9e85e033868735c012fc84",
+        "query_mode": "hybrid_snapshot",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      },
+      {
+        "name": "numeric_dimensions_compact_equals_canonical",
+        "business_sha256": "707159fdf36a3b8d76dc3d6ea6a08bb03818fb19b5a5eb3614db9d7562df5195",
+        "query_mode": "hybrid_snapshot",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false,
+        "publish_ms": 142.75,
+        "no_repeated_projector_work": true
+      },
+      {
+        "name": "numeric_dimensions_restored_sql",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "statistics_aggregate",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      },
+      {
+        "name": "token_bounds_compact_equals_canonical",
+        "business_sha256": "2d8c2d6c2ae3581cf95c36b48df5fe936351975bfeb95e5a5a0f412f2a734887",
+        "query_mode": "hybrid_snapshot",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false,
+        "publish_ms": 159.03,
+        "no_repeated_projector_work": true
+      },
+      {
+        "name": "token_bounds_restored_sql",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "statistics_aggregate",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      },
+      {
+        "name": "cost_precision_compact_equals_canonical",
+        "business_sha256": "417fd0dec4b5c9a8c2ef09d1a56df5a28c986009418fda583981458b3ea4c04a",
+        "query_mode": "hybrid_snapshot",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false,
+        "publish_ms": 147.2,
+        "no_repeated_projector_work": true
+      },
+      {
+        "name": "cost_precision_restored_sql",
+        "business_sha256": "b12e1cc748b4b70f071665c8fa689da0d0fc1bcc148a111a74df4248590c266f",
+        "query_mode": "statistics_aggregate",
+        "equal": true,
+        "equality_check": "business_body",
+        "read_model_asserted": false
+      }
+    ],
+    "restored": {
+      "source_unchanged": true,
+      "statistics_receipt_equal": true
+    }
+  },
+  "fresh_initializer": {
+    "fixture_trace_count": 12,
+    "base_lists_sha256": {
+      "sessions": "414755ee78ded6b571a564abd50f22164e8d88e730ba50f1380d8b0b09070666",
+      "traces": "635b501728333cc147c9e6ba9e223d1e93f5ba3569211d307e8da0eb7e3fbf71"
+    },
+    "base_state": "true false false 2 1",
+    "base_state_unchanged": true,
+    "idempotent_retry_ms": 21.561,
+    "lease_released": true,
+    "migration_ms": 4789.352,
+    "optional_ready": true,
+    "row_storage_ddl_verified": true
+  },
+  "recent_events": {
+    "single_request_samples": [
+      {
+        "variant": "candidate",
+        "group": "eino",
+        "case": "framework.overview.event_stream",
+        "sample": 0,
+        "elapsed_ms": 41.18,
+        "status": 200,
+        "api_code": 0,
+        "response_bytes": 26126,
+        "business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "meta": {
+          "encrypted": false,
+          "query_time_ms": 35,
+          "total_time_ms": 38
+        },
+        "upstream_calls": 2,
+        "upstream_response_bytes": 99204,
+        "upstream_categories": {
+          "read-model/batch-snapshot": 1,
+          "read-model/operation-page": 1
+        },
+        "upstream_handler_ms": 22.71,
+        "db_read_bytes": 196009,
+        "db_write_bytes": 14981
+      },
+      {
+        "variant": "candidate",
+        "group": "deepagents",
+        "case": "framework.overview.event_stream",
+        "sample": 0,
+        "elapsed_ms": 36.47,
+        "status": 200,
+        "api_code": 0,
+        "response_bytes": 56370,
+        "business_sha256": "32e6d63bece9bd65652ae5495e8e8ef3d8afaf8f90e074ad294a7f52e7370b01",
+        "meta": {
+          "encrypted": false,
+          "query_time_ms": 30,
+          "total_time_ms": 33
+        },
+        "upstream_calls": 2,
+        "upstream_response_bytes": 170129,
+        "upstream_categories": {
+          "read-model/batch-snapshot": 1,
+          "read-model/operation-page": 1
+        },
+        "upstream_handler_ms": 16.79,
+        "db_read_bytes": 337689,
+        "db_write_bytes": 14981
+      },
+      {
+        "variant": "candidate",
+        "group": "dsh",
+        "case": "framework.overview.event_stream",
+        "sample": 0,
+        "elapsed_ms": 35.42,
+        "status": 200,
+        "api_code": 0,
+        "response_bytes": 29569,
+        "business_sha256": "7c6e1f1847e8305531a1c07e62067037b97c40022eef44244254ad253bb93c2e",
+        "meta": {
+          "encrypted": false,
+          "query_time_ms": 30,
+          "total_time_ms": 32
+        },
+        "upstream_calls": 2,
+        "upstream_response_bytes": 67246,
+        "upstream_categories": {
+          "read-model/batch-snapshot": 1,
+          "read-model/operation-page": 1
+        },
+        "upstream_handler_ms": 21.27,
+        "db_read_bytes": 138616,
+        "db_write_bytes": 15023
+      },
+      {
+        "variant": "candidate",
+        "group": "codex",
+        "case": "framework.overview.event_stream",
+        "sample": 0,
+        "elapsed_ms": 24.87,
+        "status": 200,
+        "api_code": 0,
+        "response_bytes": 4819,
+        "business_sha256": "d01ef0fc43d6e7a8a715e25c30959047a18e867e26ea02f2d721ccd3556fdeff",
+        "meta": {
+          "encrypted": false,
+          "query_time_ms": 20,
+          "total_time_ms": 22
+        },
+        "upstream_calls": 2,
+        "upstream_response_bytes": 23392,
+        "upstream_categories": {
+          "read-model/batch-snapshot": 1,
+          "read-model/operation-page": 1
+        },
+        "upstream_handler_ms": 10.93,
+        "db_read_bytes": 52876,
+        "db_write_bytes": 14963
+      },
+      {
+        "variant": "candidate",
+        "group": "scale-10000x3",
+        "case": "framework.overview.event_stream",
+        "sample": 0,
+        "elapsed_ms": 1061.66,
+        "status": 200,
+        "api_code": 0,
+        "response_bytes": 68103,
+        "business_sha256": "830e6eeac3fe02b28e133b0055a0b582e944cfa2b33228a2417bda4e7d268c4a",
+        "meta": {
+          "encrypted": false,
+          "query_time_ms": 1056,
+          "total_time_ms": 1058
+        },
+        "upstream_calls": 3,
+        "upstream_response_bytes": 660813,
+        "upstream_categories": {
+          "read-model/batch-snapshot": 2,
+          "read-model/operation-page": 1
+        },
+        "upstream_handler_ms": 957.09,
+        "db_read_bytes": 1051018,
+        "db_write_bytes": 29203
+      }
+    ],
+    "latest_order_and_hydrated_contents_parity": [
+      {
+        "group": "eino",
+        "event_count": 9,
+        "selected_distinct_trace_count": 3,
+        "strict_full_business_hash_equal_to_legacy": true
+      },
+      {
+        "group": "deepagents",
+        "event_count": 7,
+        "selected_distinct_trace_count": 3,
+        "strict_full_business_hash_equal_to_legacy": true
+      },
+      {
+        "group": "dsh",
+        "event_count": 7,
+        "selected_distinct_trace_count": 3,
+        "strict_full_business_hash_equal_to_legacy": true
+      },
+      {
+        "group": "codex",
+        "event_count": 5,
+        "selected_distinct_trace_count": 3,
+        "strict_full_business_hash_equal_to_legacy": true
+      },
+      {
+        "group": "scale-10000x3",
+        "event_count": 200,
+        "selected_distinct_trace_count": 104,
+        "strict_full_business_hash_equal_to_legacy": true
+      }
+    ]
+  },
+  "operation_http_gates": {
+    "classification": "Reversible task-only optional receipt/dirty/maintenance tests against actual final operation-page then hydration or legacy fallback. No original/raw changes.",
+    "checks": [
+      {
+        "name": "bounded_operation_page_matches_legacy",
+        "business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "rows": 9,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/operation-page",
+          "read-model/batch-snapshot"
+        ]
+      },
+      {
+        "name": "raw_emergency_mode_matches_legacy",
+        "business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "rows": 9,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/window"
+        ]
+      },
+      {
+        "name": "missing_optional_statistics_falls_back",
+        "business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "rows": 9,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/operation-page",
+          "read-model/metrics-window",
+          "read-model/batch-snapshot"
+        ]
+      },
+      {
+        "name": "dirty_source_falls_back",
+        "business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "rows": 9,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/operation-page",
+          "read-model/metrics-window",
+          "read-model/batch-snapshot"
+        ]
+      },
+      {
+        "name": "maintenance_off_falls_back",
+        "business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "rows": 9,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/operation-page",
+          "read-model/metrics-window"
+        ]
+      },
+      {
+        "name": "limit_1_ordering_equal",
+        "business_sha256": "7fc3e896e5956046f25c7f293b05795d4ad2d3a767735168fd66deffae808d4f",
+        "rows": 1,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/operation-page",
+          "read-model/batch-snapshot"
+        ]
+      },
+      {
+        "name": "limit_2_ordering_equal",
+        "business_sha256": "3e311096d47557c5cd79a9a17b6165e8ef40dcc9db167bae96c9ef3198fef425",
+        "rows": 2,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/operation-page",
+          "read-model/batch-snapshot"
+        ]
+      },
+      {
+        "name": "limit_200_ordering_equal",
+        "business_sha256": "d153cde9d098ec71cdff31cb1ff4a8344db892fd2264ac3d3c116d77bd4138e5",
+        "rows": 9,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/operation-page",
+          "read-model/batch-snapshot"
+        ]
+      },
+      {
+        "name": "partial_trace_window_boundary_falls_back",
+        "business_sha256": "dee2113e4d412bcdeeb602d65858ebf977d67b47c61425f5c69cbf8a16033c69",
+        "rows": 8,
+        "full_business_equal": true,
+        "upstream_categories": [
+          "read-model/operation-page",
+          "read-model/metrics-window",
+          "read-model/batch-snapshot"
+        ]
+      }
+    ],
+    "restored_exact_row_and_source": true
+  },
+  "operation_edge_gates": {
+    "classification": "Unmodified production Python query_framework invoked locally with actual private SQLite routing and real Go HTTP/CE SQL. Local client wrapper only routes old404 to frozen baseline, or performs one explicit ap26 source revision/dirty race between actual operation-page and hydration. This is a deterministic integration probe, not Django HTTP timing or raw ingestion. No original/raw mutation.",
+    "checks": [
+      {
+        "case": "old404",
+        "full_business_equal": true,
+        "row_count": 9,
+        "business_sha256": "323b6f405ca77d8f51d65f04998db261d215e5bf88c1614216bd91f53d9b5b7f",
+        "calls": [
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/operation-page",
+            "raw": null,
+            "error_code": 3019
+          },
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/metrics-window",
+            "raw": "false",
+            "success": true
+          },
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/window",
+            "raw": "true",
+            "success": true
+          }
+        ]
+      },
+      {
+        "case": "empty",
+        "full_business_equal": true,
+        "row_count": 0,
+        "business_sha256": "5021a18642f0f17c1bfce9b758550e34b4cc89b286b179e6dd71a5a4d6194c95",
+        "calls": [
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/operation-page",
+            "raw": null,
+            "success": true
+          }
+        ]
+      },
+      {
+        "case": "revision_drift",
+        "full_business_equal": true,
+        "row_count": 9,
+        "business_sha256": "323b6f405ca77d8f51d65f04998db261d215e5bf88c1614216bd91f53d9b5b7f",
+        "calls": [
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/operation-page",
+            "raw": null,
+            "success": true
+          },
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/batch-snapshot",
+            "raw": null,
+            "success": true
+          },
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/window",
+            "raw": "true",
+            "success": true
+          }
+        ]
+      },
+      {
+        "case": "generation_drift",
+        "full_business_equal": true,
+        "row_count": 9,
+        "business_sha256": "323b6f405ca77d8f51d65f04998db261d215e5bf88c1614216bd91f53d9b5b7f",
+        "calls": [
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/operation-page",
+            "raw": null,
+            "success": true
+          },
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/batch-snapshot",
+            "raw": null,
+            "success": true
+          },
+          {
+            "path": "/api/v1/ai-vision/traces/read-model/window",
+            "raw": "true",
+            "success": true
+          }
+        ]
+      }
+    ],
+    "task_source_and_generation_restored": true
+  },
+  "validation": {
+    "python": {
+      "status": "passed",
+      "test_count": 198,
+      "elapsed_seconds": 8.826,
+      "test_exit_code": 0,
+      "diff_check_exit_code": 0,
+      "log": "python-generation-fence-validation.log",
+      "log_sha256": "d324c9e66e6b2daf207f6db8ffee5c66c16565f1a167e02646156b92e6e18408",
+      "source_sha256": {
+        "apps/core/trace_query/signoz/operation_page.py": "aa9b477506073b66bc4e121cfa91855b9619a1117e4e280131576560e8fb4446",
+        "apps/core/query/framework.py": "dc539db9f931420da70f20b93f9e9013e43d0d86529e8b63d2b432cade1c9793",
+        "apps/core/tests/test_framework_operation_page.py": "f826e5ee73a7b534facc530ea54a4e370bcef04ebae702ec06cbcaf14979cbb6",
+        "apps/core/tests/test_framework_snapshot.py": "1d7b1656489831f1de107517a1f84b99cba8cfebc3d30909440f7228b5225e56",
+        "apps/core/tests/test_framework_native_dashboard.py": "0c2de1ce5796a29c9bf7f7341de7f33d849595dbb6fe725456d79eeb605feca8",
+        "apps/core/trace_query/statistics_projection.py": "14352b5c4f695be88ece3e5825f0618b06d5810919af8a47b81052d1a1e9b052",
+        "apps/core/trace_query/signoz/statistics_aggregate.py": "7ec224ae2df8be3addd75805b8c14c3f02869689820fe7dea6f355d0d62d3ead",
+        "apps/core/trace_query/semantics/usage.py": "96f9259dd7535a6c0eee956a7d3fa9b3ea493dcc0bac6953d077565a35449e7e",
+        "apps/core/trace_query/signoz/read_model_projection.py": "1ee998d1d3da06ece53a1679cf8a39ea64dc7c680499555357c8d24a3d6fbf52",
+        "apps/core/trace_query/signoz/provider.py": "a881e429056c9533fcda818377f630b3a841b2a0ca3d884ad730ba400cae4787",
+        "apps/core/tests/test_statistics_projection.py": "7fedede29dc38de0a46519225350033ef2850e28dfd89ae81e51e129e92ce3dc",
+        "apps/core/tests/test_statistics_aggregate.py": "c61c873ddc4913f724f8e54ef16c5d7c36cd736fa3799274bfcfcc4e6fc1b34c",
+        "apps/core/tests/test_dashboard_metrics_projection.py": "1322acf1b65150dd7b839b46730452e894a4cd98831cfc7f86b644de371fc2d8",
+        "apps/core/trace_query/signoz/snapshot_window.py": "27518e7662294134a7a3722c0e19e098013df5ad952b52f7ef1c0c2cf3223522"
+      },
+      "scope": "Fixture-backed Django behavior tests, no real SQL/API/AP timing claim"
+    },
+    "go": {
+      "phase": "generation-aba-final",
+      "base_head": "d6d5d94cdbfc70885f7218254464d9043ea6f326",
+      "source_sha256": {
+        "pkg/ingest/trace_statistics.go": "a25a9c9ae8766e1dbfd7ba31865022b54306a01703c2544b787b45744ef50082",
+        "pkg/ingest/trace_statistics_test.go": "f14821930c77e4072c2c9e2be89333efa388d02bc5a9bfa509b7226a2ed2146d",
+        "pkg/ingest/projection_cleanup.go": "083e681155204b1b707e4daa8e8b8e1a1ea63752120453170f351afa3bf29302",
+        "pkg/ingest/projection_statistics_cleanup_test.go": "e94a8e41972b4a8ae4c870b82ca8cf8fc7d4e9f9c623f81acc38ba05250ff80b",
+        "pkg/modules/aivision/trace_statistics.go": "5048fe20473e1d7b6ed2dbf7722f929928fe8e421b8d7042c4b6af8e861777f6",
+        "pkg/modules/aivision/trace_statistics_aggregate.go": "55fea82d20076ca876b2bb9e365c204567351fb4fd0dccc391c7b21398910d7e",
+        "pkg/modules/aivision/trace_statistics_test.go": "e98d40256b552191f6454aea620107978dd3a7e977141d6f0e706dc94aa113ee",
+        "pkg/modules/aivision/trace_statistics_behavior_test.go": "c60d3426bf9ab57b098c76a594053fededd388f65f8f7e069d4aac1488dec22a",
+        "pkg/modules/aivision/read_model.go": "b62641d9d92b4b4c1993f11bc10ddb4943ffb2eef5fe60b0281fc9a2fd67408b",
+        "pkg/modules/aivision/read_model_batch.go": "45881f3429d7650017e1788b9f3b592261ad53d8a4b6efc0f5e8747d27a83a74",
+        "pkg/apiserver/signozapiserver/aivision.go": "7ce0caf5d122814055cf221922a023236ba9cdc44abe7e8b407b7c44f8f1133e",
+        "pkg/telemetrystore/oceanbasetelemetrystore/provider.go": "b435ce2b5e34d046aece3cb6bf62cfd8b5dc3b94f8220b470e31dbb253d2d741",
+        "pkg/telemetrystore/oceanbasetelemetrystore/statistics_version_test.go": "eabacd17a09227f11655249b2db742555926d8486609c9320cb8fde29b344750",
+        "pkg/modules/aivision/trace_statistics_partitions.go": "2bd4242eebd24989c835f07185abdab8f1d1660e8d901d6aaaebaea4cd3f6972",
+        "pkg/modules/aivision/trace_statistics_partitions_test.go": "c4c05eb1d6d5dea2fc293a07cbfd4854744c3358b499c9e55f7b14c4bba5a01c",
+        "pkg/modules/aivision/operation_page.go": "bada5b810f47895fea2429bb80634105168198b178a44a7b2ca24cffa5ae0f3a",
+        "pkg/modules/aivision/operation_page_test.go": "14977f1784e8349b8facbb83722f0fdb25f6f4d67369ff5137bd96daf41839f1",
+        "pkg/modules/aivision/trace_window.go": "c0a7dd5db811c8d2434d3b7f1f312800012718f29c27696809b59ec2393a0002",
+        "pkg/modules/aivision/trace_window_test.go": "df1da06f355757e8d9966f04b65134bb9fefe01c8d3a1582867af9b8f9a6a68f"
+      },
+      "test_counts_including_subtests": {
+        "pass": 488,
+        "skip": 9,
+        "fail": 0
+      },
+      "top_level_test_counts": {
+        "pass": 193,
+        "skip": 9,
+        "fail": 0
+      },
+      "skipped_real_sql_tests": [
+        "TestOceanBaseProjectionMaintenanceLifecycle",
+        "TestOceanBaseTraceReadModel",
+        "TestOceanBaseTraceReadModelScopeRetag",
+        "TestOceanBaseProjectionMaintenanceConcurrency",
+        "TestOceanBaseCanonicalSessionReadModel",
+        "TestOceanBaseSessionTokenQuerySemantics",
+        "TestOceanBaseSkillSpans",
+        "TestOceanBaseNativeTracePage",
+        "TestOceanBaseRecoveryWindowMergesAndFallsBack"
+      ],
+      "passed_packages": [
+        "github.com/SigNoz/signoz/pkg/ingest",
+        "github.com/SigNoz/signoz/pkg/telemetrystore/oceanbasetelemetrystore",
+        "github.com/SigNoz/signoz/pkg/modules/aivision"
+      ],
+      "command": "go-check-command.json",
+      "log": "go-generation-aba-checks.jsonl",
+      "scope": "Offline unit tests; real CE SQL lifecycle/aggregate performance validated separately by lab. No release/deploy/commit/PR.",
+      "verification_receipt_sha256": {
+        "go-generation-aba-checks.jsonl": "8ce33a54b042ee58cf5e3c6155f096a983cc5a3dc9b3cc826eb4da493a421ba1",
+        "go-check-command.json": "326b4ef73b9e86d3756098325bb2fcdbd5e6ddbdca2c508810ca9c7d5ca72ba1"
+      }
+    },
+    "review": {
+      "finding_count": 7,
+      "resolved_integration_followups": 1,
+      "unresolved_finding_count": 0,
+      "product_receipt_matches_current_sources": true,
+      "go_receipt_matches_current_sources": true,
+      "scope": "Read-only source review, focused Python reproductions, final test-receipt/hash verification, and inspection of lab-emitted SQL/plan/parity receipts; reviewer made no DB or service changes and did not independently execute SQL."
+    },
+    "runtime_binding": {
+      "product": {
+        "base_commit": "historical-source-revision-redacted",
+        "production_override_files": {
+          "ai-vision/aivision-py-be/apps/core/query/framework.py": "dc539db9f931420da70f20b93f9e9013e43d0d86529e8b63d2b432cade1c9793",
+          "ai-vision/aivision-py-be/apps/core/trace_query/metrics_projection.py": "05eaf4ab9c84030c36619bd2513e0e5bd87d45cad0a706f894639bc15b8e3adb",
+          "ai-vision/aivision-py-be/apps/core/trace_query/native_query.py": "9c8062f6ed7471fec7771c92d25790cc6baa9ac82811b200b2c2e8ecc4524cb4",
+          "ai-vision/aivision-py-be/apps/core/trace_query/semantics/usage.py": "96f9259dd7535a6c0eee956a7d3fa9b3ea493dcc0bac6953d077565a35449e7e",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/operation_page.py": "aa9b477506073b66bc4e121cfa91855b9619a1117e4e280131576560e8fb4446",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py": "a881e429056c9533fcda818377f630b3a841b2a0ca3d884ad730ba400cae4787",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model.py": "b05f99ac2815c6b238bbbb1d596590f800102366006c8b7001dd328fe8d49303",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model_projection.py": "1ee998d1d3da06ece53a1679cf8a39ea64dc7c680499555357c8d24a3d6fbf52",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/snapshot_inflight.py": "2dcafc372b5ffcbd934b7167f30e5b081bf80216cf37aba3664056471de3b25d",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/snapshot_window.py": "27518e7662294134a7a3722c0e19e098013df5ad952b52f7ef1c0c2cf3223522",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/statistics_aggregate.py": "7ec224ae2df8be3addd75805b8c14c3f02869689820fe7dea6f355d0d62d3ead",
+          "ai-vision/aivision-py-be/apps/core/trace_query/statistics_projection.py": "14352b5c4f695be88ece3e5825f0618b06d5810919af8a47b81052d1a1e9b052"
+        },
+        "reviewed_files": {
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/operation_page.py": "aa9b477506073b66bc4e121cfa91855b9619a1117e4e280131576560e8fb4446",
+          "ai-vision/aivision-py-be/apps/core/query/framework.py": "dc539db9f931420da70f20b93f9e9013e43d0d86529e8b63d2b432cade1c9793",
+          "ai-vision/aivision-py-be/apps/core/tests/test_framework_operation_page.py": "f826e5ee73a7b534facc530ea54a4e370bcef04ebae702ec06cbcaf14979cbb6",
+          "ai-vision/aivision-py-be/apps/core/tests/test_framework_snapshot.py": "1d7b1656489831f1de107517a1f84b99cba8cfebc3d30909440f7228b5225e56",
+          "ai-vision/aivision-py-be/apps/core/tests/test_framework_native_dashboard.py": "0c2de1ce5796a29c9bf7f7341de7f33d849595dbb6fe725456d79eeb605feca8",
+          "ai-vision/aivision-py-be/apps/core/trace_query/statistics_projection.py": "14352b5c4f695be88ece3e5825f0618b06d5810919af8a47b81052d1a1e9b052",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/statistics_aggregate.py": "7ec224ae2df8be3addd75805b8c14c3f02869689820fe7dea6f355d0d62d3ead",
+          "ai-vision/aivision-py-be/apps/core/trace_query/semantics/usage.py": "96f9259dd7535a6c0eee956a7d3fa9b3ea493dcc0bac6953d077565a35449e7e",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model_projection.py": "1ee998d1d3da06ece53a1679cf8a39ea64dc7c680499555357c8d24a3d6fbf52",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py": "a881e429056c9533fcda818377f630b3a841b2a0ca3d884ad730ba400cae4787",
+          "ai-vision/aivision-py-be/apps/core/tests/test_statistics_projection.py": "7fedede29dc38de0a46519225350033ef2850e28dfd89ae81e51e129e92ce3dc",
+          "ai-vision/aivision-py-be/apps/core/tests/test_statistics_aggregate.py": "c61c873ddc4913f724f8e54ef16c5d7c36cd736fa3799274bfcfcc4e6fc1b34c",
+          "ai-vision/aivision-py-be/apps/core/tests/test_dashboard_metrics_projection.py": "1322acf1b65150dd7b839b46730452e894a4cd98831cfc7f86b644de371fc2d8",
+          "ai-vision/aivision-py-be/apps/core/trace_query/signoz/snapshot_window.py": "27518e7662294134a7a3722c0e19e098013df5ad952b52f7ef1c0c2cf3223522"
+        },
+        "all_current_runtime_review_equal": true
+      },
+      "signoz": {
+        "base_commit": "d6d5d94cdbfc70885f7218254464d9043ea6f326",
+        "production_override_files": {
+          "pkg/apiserver/signozapiserver/aivision.go": "7ce0caf5d122814055cf221922a023236ba9cdc44abe7e8b407b7c44f8f1133e",
+          "pkg/ingest/projection_cleanup.go": "083e681155204b1b707e4daa8e8b8e1a1ea63752120453170f351afa3bf29302",
+          "pkg/ingest/trace_statistics.go": "a25a9c9ae8766e1dbfd7ba31865022b54306a01703c2544b787b45744ef50082",
+          "pkg/modules/aivision/operation_page.go": "bada5b810f47895fea2429bb80634105168198b178a44a7b2ca24cffa5ae0f3a",
+          "pkg/modules/aivision/read_model.go": "b62641d9d92b4b4c1993f11bc10ddb4943ffb2eef5fe60b0281fc9a2fd67408b",
+          "pkg/modules/aivision/read_model_batch.go": "45881f3429d7650017e1788b9f3b592261ad53d8a4b6efc0f5e8747d27a83a74",
+          "pkg/modules/aivision/trace_metrics_window.go": "2b9f8709d4dab983bc17e7fd0a4bef0faf921dc79dd9d7deaa0ff62e762bebb9",
+          "pkg/modules/aivision/trace_statistics.go": "5048fe20473e1d7b6ed2dbf7722f929928fe8e421b8d7042c4b6af8e861777f6",
+          "pkg/modules/aivision/trace_statistics_aggregate.go": "55fea82d20076ca876b2bb9e365c204567351fb4fd0dccc391c7b21398910d7e",
+          "pkg/modules/aivision/trace_statistics_partitions.go": "2bd4242eebd24989c835f07185abdab8f1d1660e8d901d6aaaebaea4cd3f6972",
+          "pkg/modules/aivision/trace_window.go": "c0a7dd5db811c8d2434d3b7f1f312800012718f29c27696809b59ec2393a0002",
+          "pkg/modules/aivision/trace_window_budget.go": "0d48b7d7f3b96313028f31803d361c879522d436e5cf7be84e22aa0536d3709e",
+          "pkg/telemetrystore/oceanbasetelemetrystore/provider.go": "b435ce2b5e34d046aece3cb6bf62cfd8b5dc3b94f8220b470e31dbb253d2d741"
+        },
+        "reviewed_files": {
+          "pkg/ingest/trace_statistics.go": "a25a9c9ae8766e1dbfd7ba31865022b54306a01703c2544b787b45744ef50082",
+          "pkg/ingest/trace_statistics_test.go": "f14821930c77e4072c2c9e2be89333efa388d02bc5a9bfa509b7226a2ed2146d",
+          "pkg/ingest/projection_cleanup.go": "083e681155204b1b707e4daa8e8b8e1a1ea63752120453170f351afa3bf29302",
+          "pkg/ingest/projection_statistics_cleanup_test.go": "e94a8e41972b4a8ae4c870b82ca8cf8fc7d4e9f9c623f81acc38ba05250ff80b",
+          "pkg/modules/aivision/trace_statistics.go": "5048fe20473e1d7b6ed2dbf7722f929928fe8e421b8d7042c4b6af8e861777f6",
+          "pkg/modules/aivision/trace_statistics_aggregate.go": "55fea82d20076ca876b2bb9e365c204567351fb4fd0dccc391c7b21398910d7e",
+          "pkg/modules/aivision/trace_statistics_test.go": "e98d40256b552191f6454aea620107978dd3a7e977141d6f0e706dc94aa113ee",
+          "pkg/modules/aivision/trace_statistics_behavior_test.go": "c60d3426bf9ab57b098c76a594053fededd388f65f8f7e069d4aac1488dec22a",
+          "pkg/modules/aivision/read_model.go": "b62641d9d92b4b4c1993f11bc10ddb4943ffb2eef5fe60b0281fc9a2fd67408b",
+          "pkg/modules/aivision/read_model_batch.go": "45881f3429d7650017e1788b9f3b592261ad53d8a4b6efc0f5e8747d27a83a74",
+          "pkg/apiserver/signozapiserver/aivision.go": "7ce0caf5d122814055cf221922a023236ba9cdc44abe7e8b407b7c44f8f1133e",
+          "pkg/telemetrystore/oceanbasetelemetrystore/provider.go": "b435ce2b5e34d046aece3cb6bf62cfd8b5dc3b94f8220b470e31dbb253d2d741",
+          "pkg/telemetrystore/oceanbasetelemetrystore/statistics_version_test.go": "eabacd17a09227f11655249b2db742555926d8486609c9320cb8fde29b344750",
+          "pkg/modules/aivision/trace_statistics_partitions.go": "2bd4242eebd24989c835f07185abdab8f1d1660e8d901d6aaaebaea4cd3f6972",
+          "pkg/modules/aivision/trace_statistics_partitions_test.go": "c4c05eb1d6d5dea2fc293a07cbfd4854744c3358b499c9e55f7b14c4bba5a01c",
+          "pkg/modules/aivision/operation_page.go": "bada5b810f47895fea2429bb80634105168198b178a44a7b2ca24cffa5ae0f3a",
+          "pkg/modules/aivision/operation_page_test.go": "14977f1784e8349b8facbb83722f0fdb25f6f4d67369ff5137bd96daf41839f1",
+          "pkg/modules/aivision/trace_window.go": "c0a7dd5db811c8d2434d3b7f1f312800012718f29c27696809b59ec2393a0002",
+          "pkg/modules/aivision/trace_window_test.go": "df1da06f355757e8d9966f04b65134bb9fefe01c8d3a1582867af9b8f9a6a68f"
+        },
+        "all_current_runtime_review_equal": true
+      }
+    }
+  },
+  "protected_integrity": {
+    "original_engines_exact": true,
+    "raw_spans_each_engine": 109858,
+    "source_and_projection_rows_each_engine": 36612,
+    "original_services_exact": 9,
+    "global_timeout_unchanged": true,
+    "evidence": [
+      "integrity-before.json",
+      "integrity-after.json",
+      "cleanup.json"
+    ]
+  },
+  "task_data_final_readback": {
+    "typed_fact_hashes": [
+      {
+        "table": "ap26_trace_statistics",
+        "rows": 30012,
+        "sha256": "cfb4b18398c3b3e0c259ed3642c7d998b3339df30a6bc95afddda2c9429e492c"
+      },
+      {
+        "table": "ap26_call_statistics",
+        "rows": 60028,
+        "sha256": "f3f9e860c23b986d4d37458c07e8c3be8e813c2c530e579238a01375b73b0159"
+      }
+    ],
+    "equal_to_initial": true,
+    "projection": {
+      "rows": [
+        30012,
+        "328298739",
+        "30012"
+      ]
+    },
+    "all_proof_tables_retained": true
+  },
+  "cleanup": {
+    "classification": "Stop only task-owned Django listeners and two named task transports; retain every task table, view, proof index, source snapshot and container for reproduction. Original nine services preserved.",
+    "protected_services_exact_after_cleanup": true,
+    "protected_service_count": 9
+  },
+  "task_listeners_closed": true,
+  "task_query_containers_stopped": true,
+  "sampling_notes": {
+    "auth_throttle": "A fourth login series caused auth/login429 before any timed query started. Preserved concurrent-preauth-throttle.json and failed log. Natural throttle expiry, then one normal login with cookies reused over five independent connections completed remaining samples. No query sample discarded; no auth rule/config changed.",
+    "publication": "Write costs measured on exact final typed publisher/schema before read-only operation-page/generation-fence additions, in fresh ap26write with no proof index; publication implementation unchanged."
+  },
+  "limitations": [
+    "Same single local CE 4CPU/8GiB node; other OB editions, production load and larger datasets untested.",
+    "Typed publication adds measured write overhead; full history product catch-up throughput not benchmarked.",
+    "Unsupported/missing/dirty statistics and source or maintenance-generation drift intentionally fall back to complete snapshot reads; these may remain slow.",
+    "Bounded sorted latency vector is 144001 bytes for 30000 values; not an all-constant-size aggregate.",
+    "Earlier 8-query, P95 shape and literal-cursor experiments are diagnostic, excluded from final exact business-hash claims."
+  ],
+  "local_receipt_directory": "outputs/ob-ap-metrics-20261026",
+  "receipt_sha256": {
+    "final-summary.json": "f43d9ac3842cc6211143cd1522ae4aec5e3b555ba1003d19aba3e6b6a0eae649",
+    "source-binding-exact-final.json": "13d9ad84f1939fe386c5fc4dac16e789c7517bf0bf38dc28c7a6e6857239275f",
+    "python-generation-fence-validation.json": "58a6238d50dfc0af717984fc34c98811ee95eb7635f3152daba792c419f69280",
+    "go-implementation.json": "54004b4ae4fb264214ed09545942d21f5b46ba3f7c2fc80921a7e7f6089152dc",
+    "independent-review-sources.json": "9964a03dcb2383b80da28985a241b244062f264ec88635981ad92763d699b6e7",
+    "operation-functional-gates.json": "b8652987a24976b390c16c1d3c960c66b8716a3862d60d06d8cbb5ceb5dd2bf8",
+    "operation-edge-gates.json": "9748e4be2f7a6ed13112d5a54bd7d0a79c3e42eb231bb75d2e07bad5956f7470",
+    "fresh-row-initializer.json": "49093547b95031fc2e2a581d29ab630259a9da09499938a36efec0e65623a940",
+    "integrity-before.json": "8d66f5a29178509f42f209c4af312a82a1b2f1c853e7ab38cb3706834126e25b",
+    "integrity-after.json": "a68992a0e5a93228882a00af0e8940967ef4878c7a3d66839ba66d7f544ca59c",
+    "cleanup.json": "821234d6b48b3c72b99cb7d966e00b0dc74870ff4ba9b45bea02c23034f2fcc4"
+  },
+  "authentication_boundary": {
+    "additional_test_account_auto_review": "rejected_before_execution",
+    "new_account_or_grants_created": false,
+    "safe_alternative": "Retained authorized connection; mutations restricted to task prefixes; original source tables read-only."
+  }
+}

@@ -1,0 +1,56 @@
+id: openai
+logo: /assets/frameworks/openai.svg
+logoInvertInDark: true
+label: OpenAI
+marketLabel: OpenAI & OpenAI Agents SDK
+marketPreview: true
+marketSort: 4
+frontendSort: 5
+pipInstall: pip install "langfuse>=5.0.2,<6" openai
+envShell:
+- export LANGFUSE_BASE_URL="${host}"
+- export LANGFUSE_PUBLIC_KEY="${publicKey}"
+- export LANGFUSE_SECRET_KEY="${secretKey}"
+- export OPENAI_API_KEY="sk-proj-..."
+envDotenv:
+- LANGFUSE_BASE_URL="${host}"
+- LANGFUSE_PUBLIC_KEY="${publicKey}"
+- LANGFUSE_SECRET_KEY="${secretKey}"
+- OPENAI_API_KEY="sk-proj-..."
+pipExample: |-
+  from langfuse import get_client, propagate_attributes
+  from langfuse.openai import openai
+
+
+  langfuse = get_client()
+
+
+  def main():
+      with langfuse.start_as_current_observation(as_type="span", name="calculator-request") as span:
+          print("AI Vision trace_id:", langfuse.get_current_trace_id())
+          with propagate_attributes(
+              session_id="session_123",
+              user_id="user_456",
+              tags=["calculator", "framework:openai"]
+          ):
+              result = openai.chat.completions.create(
+                  model="gpt-4o",
+                  messages=[
+                      {"role": "system", "content": "You are a very accurate calculator."},
+                      {"role": "user", "content": "1 + 1 = "}
+                  ],
+                  name="test-chat",
+                  metadata={"someMetadataKey": "someValue"},
+              )
+      print(result)
+
+
+  if __name__ == "__main__":
+      try:
+          main()
+      finally:
+          # Flush after all observations have ended, including on failure.
+          try:
+              langfuse.flush()
+          finally:
+              langfuse.shutdown()

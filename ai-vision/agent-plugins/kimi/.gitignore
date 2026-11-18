@@ -1,0 +1,11 @@
+# Rust 构建产物
+kimihooks/target/
+kimihooks/Cargo.lock
+
+# 本地采集的 transcript / replay 工件，不入版本库
+transcripts/
+replays/
+
+# 本地 hook 调试日志
+*.log
+.DS_Store

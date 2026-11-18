@@ -1,0 +1,194 @@
+"""Freeze sanitized candidate acceptance; verify exact successful attempts before promotion."""
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+
+from product_registry import IMAGE_ROLES, require_product_repository
+from release_assets import release_asset_names
+from release_publish import api, validate_bundle
+
+BACKENDS = ("oceanbase", "seekdb")
+SMOKE_PLATFORM = "linux/amd64"
+SMOKE_COMPONENTS = {"database", *IMAGE_ROLES.values()}
+
+
+def asset_inventory(directory):
+    manifest = json.loads((directory / "release-manifest.json").read_text())
+    if {p.name for p in directory.iterdir()} != release_asset_names(manifest) or any(
+        p.is_symlink() or not p.is_file() or not p.stat().st_size for p in directory.iterdir()
+    ):
+        raise ValueError("candidate must contain exactly the allowed nonempty release assets")
+    return {p.name: {"size": p.stat().st_size, "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
+            for p in sorted(directory.iterdir())}
+
+
+def smoke_identity(directory, backend):
+    if backend not in BACKENDS:
+        raise ValueError("candidate smoke requires a supported database")
+    manifest = json.loads((directory / "release-manifest.json").read_text())
+    require_product_repository(manifest.get("source_repository"))
+    return {"schema_version": 1, "status": "passed", "backend": backend,
+            "platform": SMOKE_PLATFORM, "source_sha": manifest["source_sha"],
+            "build_id": manifest["build_id"], "product_version": manifest["product_version"],
+            "manifest_sha256": hashlib.sha256((directory / "release-manifest.json").read_bytes()).hexdigest(),
+            "initial_pinned_content_verified": True, "recast_pinned_content_verified": True}
+
+
+def sanitize_smoke(summary, directory, backend):
+    if backend not in BACKENDS:
+        raise ValueError("candidate smoke requires a supported database")
+    if not isinstance(summary, dict) or summary.get("status") != "passed" or summary.get("backend") != backend:
+        raise ValueError("only an actual passed pinned initial/recast smoke can issue a receipt")
+    manifest = json.loads((directory / "release-manifest.json").read_text())
+    require_product_repository(manifest.get("source_repository"))
+    expected_refs = {role: manifest["images"][component] for component, role in IMAGE_ROLES.items()}
+    expected_refs["database"] = manifest["databases"][backend]
+    for phase in ("initial_images", "recast_images"):
+        measured_images = summary.get(phase)
+        if not isinstance(measured_images, dict) or measured_images.get("pinned_content_verified") is not True:
+            raise ValueError("only an actual passed pinned initial/recast smoke can issue a receipt")
+        platforms = measured_images.get("platforms")
+        if not isinstance(platforms, dict) or set(platforms) != SMOKE_COMPONENTS:
+            raise ValueError("candidate smoke requires complete measured image platforms for " + phase)
+        for measured in platforms.values():
+            if not isinstance(measured, str) or not re.fullmatch(
+                    re.escape(SMOKE_PLATFORM) + r" sha256:[0-9a-f]{64}", measured):
+                raise ValueError("candidate smoke image platform or identity is invalid for " + phase)
+        if measured_images.get("references") != expected_refs:
+            raise ValueError("candidate smoke image references differ from the release manifest for " + phase)
+    if summary["initial_images"]["platforms"] != summary["recast_images"]["platforms"]:
+        raise ValueError("candidate smoke measured image identities changed during recast")
+    # Deliberately construct an allowlist. Raw logs, paths and runtime config never
+    # enter acceptance artifacts, even when the smoke summary contains them.
+    return smoke_identity(directory, backend)
+
+
+def freeze(directory, receipts, *, repository, source_sha, build_id):
+    plan, _ = validate_bundle(directory, source_sha, build_id, repository=repository)
+    expected_smokes = {backend: smoke_identity(directory, backend) for backend in BACKENDS}
+    if receipts != expected_smokes:
+        raise ValueError("acceptance requires both exact passed candidate smoke receipts")
+    return {"schema_version": 1, "status": "qualified", "source_repository": repository,
+            "source_sha": source_sha, "build_id": build_id,
+            "product_version": plan["product_version"], "release_tag": plan["release_tag"],
+            "assets": asset_inventory(directory), "smokes": expected_smokes}
+
+
+def verify_frozen(directory, acceptance, *, repository, source_sha, build_id):
+    if not isinstance(acceptance, dict) or acceptance != freeze(directory, acceptance.get("smokes"), repository=repository,
+                            source_sha=source_sha, build_id=build_id):
+        raise ValueError("acceptance differs from frozen source, attempt or asset bytes")
+
+
+def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
+                            candidate_run_id, candidate_run_attempt, api_fn=api,
+                            allow_dev_recovery=False):
+    require_product_repository(repository)
+    if not all(isinstance(value, str) and re.fullmatch(r"[1-9][0-9]*", value)
+               for value in (candidate_run_id, candidate_run_attempt)):
+        raise ValueError("candidate run and attempt must be canonical positive integers")
+    build_id = f"{candidate_run_id}.{candidate_run_attempt}"
+    plan = json.loads((directory / "release-plan.json").read_text())
+    if plan.get("channel") not in {"daily", "dev"} or plan.get("alias") != plan["channel"]:
+        raise ValueError("manual promotion accepts only default-branch Daily/Dev candidates")
+    verify_frozen(directory, acceptance, repository=repository, source_sha=source_sha, build_id=build_id)
+    repo = api_fn(f"repos/{repository}")
+    branch = repo.get("default_branch")
+    if (repo.get("full_name") != repository or repo.get("visibility") != "public"
+            or not isinstance(branch, str) or not branch):
+        raise ValueError("cannot identify the official public repository and current default branch")
+    from urllib.parse import quote
+    if api_fn(f"repos/{repository}/commits/{quote(branch, safe='')}").get("sha") != source_sha:
+        raise ValueError("candidate source is stale against the current default branch head")
+    base = f"repos/{repository}/actions/runs/{candidate_run_id}"
+    # A newer attempt supersedes old artifacts, even when an old attempt passed.
+    latest = api_fn(base)
+    attempt = api_fn(f"{base}/attempts/{candidate_run_attempt}")
+    publication_recovery = (allow_dev_recovery and plan["channel"] == "dev"
+                            and latest.get("conclusion") == attempt.get("conclusion") == "failure")
+    for run in (latest, attempt):
+        if (type(run.get("id")) is not int or run["id"] != int(candidate_run_id)
+                or type(run.get("run_attempt")) is not int or run["run_attempt"] != int(candidate_run_attempt)
+                or run.get("head_sha") != source_sha or run.get("head_branch") != branch
+                or run.get("path") != ".github/workflows/release-images.yml"
+                or run.get("event") != "workflow_dispatch"
+                or run.get("repository", {}).get("full_name") != repository
+                or run.get("head_repository", {}).get("full_name") != repository
+                or run.get("status") != "completed"
+                or run.get("conclusion") != ("failure" if publication_recovery else "success")):
+            raise ValueError("candidate is not the exact successful official workflow attempt")
+    jobs, page = [], 1
+    while True:
+        result = api_fn(f"{base}/attempts/{candidate_run_attempt}/jobs?per_page=100&page={page}")
+        batch = result.get("jobs")
+        if not isinstance(batch, list):
+            raise ValueError("candidate jobs response is invalid")
+        jobs.extend(batch)
+        if len(batch) < 100:
+            if result.get("total_count") != len(jobs):
+                raise ValueError("candidate job listing is incomplete")
+            break
+        page += 1
+    required_jobs = [*(f"Linux amd64 candidate deployment ({backend})" for backend in BACKENDS),
+                     "freeze qualified candidate acceptance", "verify public candidate indexes anonymously"]
+    for name in required_jobs:
+        matched = [job for job in jobs if job.get("name") == name]
+        if len(matched) != 1 or any(
+            job.get("run_id") != int(candidate_run_id) or job.get("run_attempt") != int(candidate_run_attempt)
+            or job.get("head_sha") != source_sha or job.get("status") != "completed"
+            or job.get("conclusion") != "success" for job in matched
+        ):
+            raise ValueError(f"candidate lacks a successful {name} job in the exact attempt")
+    if publication_recovery:
+        publishers = [job for job in jobs if job.get("name") == "publish verified development artifacts"]
+        if (len(publishers) != 1 or publishers[0].get("conclusion") != "failure"
+                or any(job.get("run_id") != int(candidate_run_id)
+                       or job.get("run_attempt") != int(candidate_run_attempt)
+                       or job.get("head_sha") != source_sha or job.get("status") != "completed"
+                       or (job.get("conclusion") not in {"success", "skipped"} and job is not publishers[0])
+                       for job in jobs)):
+            raise ValueError("Dev recovery requires a publication-only failure after successful qualification")
+    return {"schema_version": 1, "candidate_build_id": build_id,
+            "candidate_source_sha": source_sha, "source_repository": repository,
+            "publication_recovery": publication_recovery,
+            "qualified_smokes": [f"linux/amd64/{backend}" for backend in BACKENDS]}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("command", choices=("smoke", "freeze", "verify"))
+    parser.add_argument("--directory", type=Path, required=True)
+    parser.add_argument("--summary", type=Path)
+    parser.add_argument("--backend", choices=BACKENDS)
+    parser.add_argument("--receipts", type=Path)
+    parser.add_argument("--acceptance", type=Path)
+    parser.add_argument("--candidate-run-id")
+    parser.add_argument("--candidate-run-attempt")
+    parser.add_argument("--recover-dev-publication", action="store_true")
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+    if args.command == "smoke":
+        value = sanitize_smoke(json.loads(args.summary.read_text()), args.directory, args.backend)
+    elif args.command == "freeze":
+        receipts = {backend: json.loads((args.receipts / f"smoke-{backend}.json").read_text()) for backend in BACKENDS}
+        value = freeze(args.directory, receipts, repository=os.environ["GITHUB_REPOSITORY"],
+                       source_sha=os.environ["GITHUB_SHA"],
+                       build_id=f"{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}")
+    else:
+        value = verify_remote_candidate(args.directory, json.loads(args.acceptance.read_text()),
+                    repository=os.environ["GITHUB_REPOSITORY"], source_sha=os.environ["GITHUB_SHA"],
+                    candidate_run_id=args.candidate_run_id, candidate_run_attempt=args.candidate_run_attempt,
+                    allow_dev_recovery=args.recover_dev_publication)
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(json.dumps(value, indent=2) + "\n")
+    else:
+        print(json.dumps(value, indent=2))
+
+
+if __name__ == "__main__":
+    main()

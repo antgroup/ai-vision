@@ -1,0 +1,38 @@
+name: Feature request
+description: Describe a use case or improvement for AI Vision.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Requests may be in English or Chinese. You do not need to implement the feature yourself.
+        Cross-component contracts, major architecture changes, or governance changes may need an [RFC](https://github.com/antgroup/ai-vision/tree/main/docs/rfcs) before implementation; start by describing the need here.
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case and problem
+      description: Describe who needs this and what is difficult or missing in the current workflow.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: Explain what users should be able to do and how they would know the improvement works. A detailed implementation proposal is not required.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds
+      description: Optionally describe what you have tried and why it does not meet the need.
+    validations:
+      required: false
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and supporting context
+      description: Optionally identify affected components, limits, examples, or related issues. Redact private data from any evidence.
+    validations:
+      required: false

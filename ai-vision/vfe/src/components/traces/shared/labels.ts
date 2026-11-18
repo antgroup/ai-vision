@@ -1,0 +1,21 @@
+/** Display labels only; source column names remain stable sorting keys. */
+export const TRACE_COLUMN_LABEL_KEYS: Record<string, string> = {
+  Timestamp: "traceLabels.timestamp",
+  Name: "traceLabels.name",
+  Input: "nativeSpanUsage.input",
+  Output: "nativeSpanUsage.output",
+  Usage: "traceLabels.usage",
+  "Obs. Levels": "traceLabels.levels",
+  Latency: "traceLabels.latency",
+  Environment: "traceLabels.environment",
+  Tags: "traceLabels.tags",
+  Metadata: "traceLabels.metadata",
+  Scores: "traceLabels.scores",
+  "Last Activity": "traceLabels.lastActivity",
+  "Session ID": "traceLabels.sessionId",
+  "Trace Count": "traceLabels.traceCount",
+  Duration: "traceLabels.duration",
+  Scene: "traceLabels.scene",
+  Status: "sessionFilters.status",
+  Spans: "traceLabels.spanCount",
+}
