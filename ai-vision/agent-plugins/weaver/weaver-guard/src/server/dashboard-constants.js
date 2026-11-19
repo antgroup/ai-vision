@@ -508,7 +508,7 @@ const SUPERLOOP_AGENT_CONFIGS = {
     ],
     scenarioOverrides: {
       'tool-success': {
-        prompt: '读取这个明确 fixture 文件：$PWD/openclaw/golden/fixtures/README.fixture.md，告诉我文件有多少行，并引用第一行内容。',
+        prompt: '读取这个明确 fixture 文件：{workingDirectory}/openclaw/golden/fixtures/README.fixture.md，告诉我文件有多少行，并引用第一行内容。',
         notes: '使用固定 fixture 路径，避免 OpenClaw workspace 不是 repo 根目录时读取失败。',
       },
       'mcp-tool': {

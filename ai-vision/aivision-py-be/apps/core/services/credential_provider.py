@@ -116,5 +116,5 @@ class LangfuseCredentialProvider(CredentialProvider):
             resp.raise_for_status()
             return True
         except http_requests.RequestException:
-            logger.warning("Failed to delete Langfuse API key: %s", api_key_id)
+            logger.warning("Failed to delete Langfuse API key")
             return False

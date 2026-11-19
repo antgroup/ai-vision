@@ -588,11 +588,7 @@ fn replay_otel(turns: &[Turn], cli: &CliArgs, content: &str) {
         });
     }
 
-    eprintln!(
-        "Replayed {} turns -> OTel JSONL (session={})",
-        turns.len(),
-        session_id
-    );
+    eprintln!("Replayed {} turns -> OTel JSONL", turns.len());
 }
 
 // --- Subagent session discovery ---
@@ -911,25 +907,17 @@ fn replay_otel_with_subagents(main_turns: &[Turn], main_content: &str, dir: &Pat
     let expected_ids = &discovery.expected_ids;
     for (turn_index, plan) in discovery.turn_plans.iter().enumerate() {
         for decision in &plan.decisions {
-            let subject = decision
-                .child
-                .as_ref()
-                .map(|child| child.session_id.as_str())
-                .or(decision.activation_id.as_deref())
-                .unwrap_or("unknown-subagent");
             eprintln!(
-                "  Subagent discovery: turn={} subject={} disposition={:?} reason={}",
+                "  Subagent discovery: turn={} disposition={:?} reason={}",
                 turn_index + 1,
-                subject,
                 decision.disposition,
                 decision.reason
             );
         }
         for observation in &plan.observations {
             eprintln!(
-                "  Subagent discovery: turn={} subject={} disposition=ObservedNoMerge reason={}",
+                "  Subagent discovery: turn={} disposition=ObservedNoMerge reason={}",
                 turn_index + 1,
-                observation.child_session_id,
                 observation.reason
             );
         }

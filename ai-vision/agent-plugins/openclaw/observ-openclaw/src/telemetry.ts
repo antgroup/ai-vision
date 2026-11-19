@@ -40,7 +40,9 @@ export interface TelemetryRuntime {
  * Consistent with cchooks resolve_otel_url() behavior.
  */
 function resolveOtelUrl(host: string, defaultPath: string): string {
-  const trimmed = host.replace(/\/+$/, '');
+  let end = host.length;
+  while (host[end - 1] === '/') end--;
+  const trimmed = host.slice(0, end);
   const schemeEnd = trimmed.indexOf('://');
   if (schemeEnd >= 0) {
     const afterScheme = trimmed.slice(schemeEnd + 3);

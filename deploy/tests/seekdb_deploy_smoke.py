@@ -113,8 +113,8 @@ def ports():
 
 def private_vars(path, values):
     # JSON string scalars are valid YAML; no PyYAML dependency is required.
-    with path.open('x', encoding='utf-8') as stream:
-        path.chmod(0o600)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'w', encoding='utf-8') as stream:
         stream.write(''.join(f'{key}: {json.dumps(str(value))}\n' for key, value in values.items()))
 
 

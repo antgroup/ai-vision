@@ -53,6 +53,10 @@ _MESSAGES = {
 }
 
 
+def model_discovery_message(code: str) -> str:
+    return _MESSAGES[code]
+
+
 class ModelDiscoveryError(Exception):
     def __init__(self, code: str):
         self.code = code
@@ -66,7 +70,7 @@ class ModelDiscoveryError(Exception):
             }
             else 502
         )
-        super().__init__(_MESSAGES[code])
+        super().__init__(model_discovery_message(code))
 
 
 def normalize_endpoint(endpoint: str) -> str:

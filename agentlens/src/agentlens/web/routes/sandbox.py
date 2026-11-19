@@ -8,7 +8,13 @@ from sqlalchemy.exc import IntegrityError
 
 from agentlens.diagnoser.executors.rule.custom.enhanced_contract import CAPABILITY
 from agentlens.domain.errors import Conflict, NotFound
-from agentlens.domain.sandbox import SandboxBinding, SandboxConnection, SandboxError, SandboxStatus
+from agentlens.domain.sandbox import (
+    SandboxBinding,
+    SandboxConnection,
+    SandboxError,
+    SandboxStatus,
+    sandbox_error_message,
+)
 from agentlens.infra.ob.tables.sandbox_table import SandboxTable
 from agentlens.infra.sandbox import SandboxClient, effective_input_limit
 from agentlens.service import sandbox_enrollment
@@ -182,7 +188,9 @@ def update_connection(uuid: str, payload: SandboxConnectionUpdate, table: TableD
     try:
         table.update(uuid, payload.space_uuid, fields)
     except SandboxError as error:
-        return JSONResponse({"code": error.code, "msg": str(error)}, status_code=422)
+        return JSONResponse(
+            {"code": error.code, "msg": sandbox_error_message(error.code)}, status_code=422
+        )
     except IntegrityError as error:
         table.s.rollback()
         raise Conflict("Sandbox connection name already exists in this Space.") from error

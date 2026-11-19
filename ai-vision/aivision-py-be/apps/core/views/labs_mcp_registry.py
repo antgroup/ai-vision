@@ -27,7 +27,8 @@ REGISTRY_URL = "https://registry.modelcontextprotocol.io/v0.1/servers"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_CURSOR_LENGTH = 2048
 CACHE_SECONDS = 60
-NAME = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9.-]*/[a-zA-Z0-9][a-zA-Z0-9._-]*\Z")
+NAMESPACE = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9.-]*")
+SERVER_NAME = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9._-]*")
 PLACEHOLDER = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_.-]*)\}")
 SECRET = re.compile(r"secret|token|password|authorization|api[-_]?key", re.I)
 
@@ -122,13 +123,18 @@ def _fetch(path="", params=None):
     return key, payload
 
 
+def _registry_name(value):
+    if not isinstance(value, str) or len(value) > 200:
+        return False
+    namespace, delimiter, name = value.partition("/")
+    return bool(delimiter and NAMESPACE.fullmatch(namespace) and SERVER_NAME.fullmatch(name))
+
+
 def _server(payload):
     server = payload.get("server") if isinstance(payload, dict) else None
     if (
         not isinstance(server, dict)
-        or not isinstance(server.get("name"), str)
-        or len(server["name"]) > 200
-        or not NAME.fullmatch(server["name"])
+        or not _registry_name(server.get("name"))
         or not isinstance(server.get("description"), str)
         or not isinstance(server.get("version"), str)
     ):
@@ -273,13 +279,25 @@ def _remote(remote, template):
     return config
 
 
+def _pinned_version(value):
+    if not isinstance(value, str):
+        return False
+    core, *suffix = re.split(r"[-+]", value, maxsplit=1)
+    components = core.split(".", 3)
+    return (
+        len(components) == 3
+        and all(component.isascii() and component.isdecimal() for component in components)
+        and (not suffix or bool(re.fullmatch(r"[a-zA-Z0-9.-]+", suffix[0])))
+    )
+
+
 def _package(package, template):
     if package.get("transport", {}).get("type") != "stdio":
         raise UnsupportedConfig("Only stdio packages can be converted reliably")
     kind = package.get("registryType")
     identifier = package.get("identifier")
     version = package.get("version")
-    if not isinstance(version, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+][a-zA-Z0-9.-]+)?", version):
+    if not _pinned_version(version):
         raise UnsupportedConfig("A pinned package version is required")
     if kind == "pypi":
         # runtimeHint='uvx' names the runner, not the console entry point.
@@ -364,12 +382,69 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 SERVER_SECTIONS = {"Reference Servers", "Official Servers", "Community Servers"}
-# Upstream uses bold project links followed by a dash and description. Optional
-# badges are consumed only after the project link, never selected as projects.
-SERVER_BULLET = re.compile(
-    r"^- (?:\*\*)?\[([^\[\]\n]+)\]\((https?://[^\s]+?)\)(?:\*\*)?"
-    r"(?:\s*\[?!\[[^\]]*\]\([^\s]+?\)\]?(?:\([^\s]+?\))?)*\s+[-–]\s+(.+)$"
-)
+def _markdown_destination_end(text, start):
+    """Return the matching delimiter in one pass, with no backtracking."""
+    nesting = 0
+    for end in range(start, len(text)):
+        char = text[end]
+        if char == "(":
+            nesting += 1
+        elif char == ")":
+            if nesting == 0:
+                return end if end > start else None
+            nesting -= 1
+        elif char.isspace():
+            return None
+    return None
+
+
+def _server_bullet(line):
+    """Read a directory link, consecutive badges, and its description."""
+    if not line.startswith("- ") or len(line) > 24_576:
+        return None
+    start = 4 if line.startswith("- **") else 2
+    if not line.startswith("[", start):
+        return None
+    label_end = line.find("](", start + 1)
+    if label_end == -1:
+        return None
+    name = line[start + 1 : label_end]
+    if not name or "[" in name or "]" in name:
+        return None
+    url_start = label_end + 2
+    url_end = _markdown_destination_end(line, url_start)
+    if url_end is None:
+        return None
+    cursor = url_end + 1
+    if line.startswith("**", cursor):
+        cursor += 2
+    while cursor < len(line):
+        before_space = cursor
+        while cursor < len(line) and line[cursor].isspace():
+            cursor += 1
+        if cursor + 1 < len(line) and line[cursor] in "-–" and line[cursor + 1].isspace():
+            description = line[cursor + 2 :].lstrip()
+            if cursor > before_space and description:
+                return name, line[url_start:url_end], description
+            return None
+        linked = line.startswith("[![", cursor)
+        if not linked and not line.startswith("![", cursor):
+            return None
+        label_end = line.find("](", cursor + (3 if linked else 2))
+        if label_end == -1:
+            return None
+        badge_end = _markdown_destination_end(line, label_end + 2)
+        if badge_end is None:
+            return None
+        cursor = badge_end + 1
+        if linked:
+            if not line.startswith("](", cursor):
+                return None
+            target_end = _markdown_destination_end(line, cursor + 2)
+            if target_end is None:
+                return None
+            cursor = target_end + 1
+    return None
 
 
 def _mcpservers_parse(readme):
@@ -387,10 +462,10 @@ def _mcpservers_parse(readme):
             section = None
         if section not in SERVER_SECTIONS:
             continue
-        match = SERVER_BULLET.fullmatch(line)
-        if not match:
+        parsed = _server_bullet(line)
+        if parsed is None:
             continue
-        name, url, description = match.groups()
+        name, url, description = parsed
         url = _public_url(url)
         if not url or not name.strip() or len(name) > 200 or len(description) > 10000:
             continue
@@ -553,8 +628,12 @@ class McpRegistryDetailView(APIView):
             return denied
         identifier = request.query_params.get("id", "")
         source = request.query_params.get("source", "official")
-        pattern = MCPSERVERS_ID if source == "mcpservers" else NAME
-        if source not in {"official", "mcpservers"} or len(identifier) > 200 or not pattern.fullmatch(identifier):
+        valid_id = (
+            len(identifier) == 64 and MCPSERVERS_ID.fullmatch(identifier)
+            if source == "mcpservers"
+            else _registry_name(identifier)
+        )
+        if source not in {"official", "mcpservers"} or not valid_id:
             return error_response("Invalid registry source or server id", 3003)
         try:
             if source == "mcpservers":

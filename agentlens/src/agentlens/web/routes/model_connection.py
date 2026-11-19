@@ -11,6 +11,7 @@ from agentlens.infra.llm_judge import JudgeUnavailable, LLMJudge
 from agentlens.infra.llm_judge.model_discovery import (
     ModelDiscoveryError,
     discover_models,
+    model_discovery_message,
     normalize_endpoint,
 )
 from agentlens.infra.ob.tables.diagnoser_table import DiagnoserTable
@@ -39,7 +40,7 @@ def _discovery_error(error: ModelDiscoveryError) -> JSONResponse:
     return JSONResponse(
         {
             "code": "validation" if error.status == 422 else "external_unavailable",
-            "msg": str(error),
+            "msg": model_discovery_message(error.code),
             "discovery_error": error.code,
         },
         status_code=error.status,

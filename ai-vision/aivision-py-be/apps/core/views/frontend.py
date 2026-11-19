@@ -86,17 +86,14 @@ class FrontendIndexView(View):
                 timeout=(settings.FRONTEND_CDN_TIMEOUT, 30),
             )
         except requests.RequestException as exc:
-            logger.error("Frontend CDN unreachable: %s url=%s", exc, url)
-            return _502_cdn_error(f"CDN unreachable: {exc}")
+            logger.error("Frontend CDN unreachable: %s", type(exc).__name__)
+            return _502_cdn_error("CDN unreachable")
 
         if upstream.status_code not in (200, 304):
-            logger.error(
-                "Frontend CDN non-200: status=%s url=%s body=%s",
-                upstream.status_code,
-                url,
-                upstream.text[:200],
-            )
-            return _502_cdn_error(f"CDN returned {upstream.status_code}")
+            status = upstream.status_code
+            upstream.close()
+            logger.error("Frontend CDN returned HTTP %s", status)
+            return _502_cdn_error(f"CDN returned {status}")
 
         if upstream.status_code == 304:
             resp: HttpResponse = HttpResponse(status=304)
@@ -145,7 +142,7 @@ class CdnAssetProxyView(View):
                 timeout=(settings.FRONTEND_CDN_TIMEOUT, 30),  # (connect, read)
             )
         except requests.RequestException as exc:
-            logger.error("CDN asset unreachable: %s url=%s", exc, target)
+            logger.error("CDN asset unreachable: %s", type(exc).__name__)
             return HttpResponse(status=502)
 
         # 204 / 304 无 body

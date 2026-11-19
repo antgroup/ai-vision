@@ -22,7 +22,12 @@ function stringValue(...values: unknown[]): string | undefined {
 }
 
 function safePart(value: string): string {
-  return value.replace(/[^a-zA-Z0-9._-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 120) || 'unknown';
+  const part = value.replace(/[^a-zA-Z0-9._-]+/g, '_');
+  let start = 0;
+  let end = part.length;
+  while (part[start] === '_') start++;
+  while (end > start && part[end - 1] === '_') end--;
+  return part.slice(start, Math.min(end, start + 120)) || 'unknown';
 }
 
 export class SessionTranscriptWriter {

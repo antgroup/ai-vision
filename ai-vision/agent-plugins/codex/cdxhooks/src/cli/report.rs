@@ -76,10 +76,8 @@ fn run_session_path(
     let version = env!("CARGO_PKG_VERSION");
 
     eprintln!(
-        "Reporting {} turns from '{}' (session={}, profile={})",
+        "Reporting {} transcript turns (profile={:?})",
         turns.len(),
-        session_path,
-        session_id,
         profile.as_deref().unwrap_or("default"),
     );
 
@@ -144,10 +142,8 @@ fn run_otel_json(
     let logger = session_logger(&session_id, debug)?;
 
     eprintln!(
-        "Posting {} OTLP request(s) from '{}' (session={}, profile={}{})",
+        "Posting {} OTLP request(s) (profile={:?}{})",
         lines.len(),
-        otel_path,
-        session_id,
         profile.as_deref().unwrap_or("default"),
         if shift { ", shifted" } else { "" },
     );

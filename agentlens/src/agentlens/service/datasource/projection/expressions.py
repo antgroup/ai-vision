@@ -18,6 +18,7 @@ Usage:
 
 import json
 import re
+from collections.abc import Callable, Iterator
 from typing import Any
 
 # ── Preprocessing: build tree + parse JSON strings ──
@@ -101,12 +102,20 @@ def _parse_bracket(bracket_content: str) -> dict:
 
 def parse(expr: str) -> list[dict]:
     segments = []
-    tokens = re.findall(r"[^.\[\]]+|\[[^\]]*\]", expr)
-    for token in tokens:
-        if token.startswith("[") and token.endswith("]"):
-            segments.append(_parse_bracket(token[1:-1]))
-        elif token:
-            segments.append({"key": token})
+    index = 0
+    last_close = expr.rfind("]")
+    while index < len(expr):
+        if expr[index] == "[" and index < last_close:
+            end = expr.index("]", index + 1)
+            segments.append(_parse_bracket(expr[index + 1 : end]))
+            index = end + 1
+        elif expr[index] in ".[]":
+            index += 1
+        else:
+            start = index
+            while index < len(expr) and expr[index] not in ".[]":
+                index += 1
+            segments.append({"key": expr[start:index]})
     return segments
 
 
@@ -247,16 +256,40 @@ def serialize(value: Any) -> str:
 # ── Template engine ──
 
 
+def iter_template_expressions(template: str) -> Iterator[tuple[int, int, str]]:
+    """Find non-overlapping, nonempty placeholders on each line in one pass."""
+    offset = 0
+    for line in template.split("\n"):
+        cursor = 0
+        while (start := line.find("{{", cursor)) >= 0:
+            end = line.find("}}", start + 3)
+            if end < 0:
+                break
+            cursor = end + 2
+            yield offset + start, offset + cursor, line[start + 2 : end]
+        offset += len(line) + 1
+
+
+def replace_template_expressions(template: str, replace: Callable[[str], str]) -> str:
+    parts: list[str] = []
+    previous = 0
+    for start, end, expression in iter_template_expressions(template):
+        parts.extend((template[previous:start], replace(expression)))
+        previous = end
+    parts.append(template[previous:])
+    return "".join(parts)
+
+
 def render(template: str, data: Any) -> str:
-    def replacer(match: re.Match) -> str:
-        expr = match.group(1).strip()
+    def replacer(expression: str) -> str:
+        expr = expression.strip()
         if expr == "*":
             return json.dumps(data, ensure_ascii=False, indent=2)
         segments = parse(expr)
         result = resolve(data, segments)
         return serialize(result)
 
-    return re.sub(r"\{\{(.+?)\}\}", replacer, template)
+    return replace_template_expressions(template, replacer)
 
 
 def query(expr: str, data: Any) -> Any:

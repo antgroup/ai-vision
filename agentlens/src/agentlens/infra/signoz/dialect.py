@@ -101,7 +101,7 @@ class ColumnDialect(Protocol):
     def rewrite_where(self, where: str) -> str:
         """Rewrite a caller-provided WHERE fragment whose identifiers are backtick-quoted."""
 
-    def base_predicates(self) -> tuple[str, ...]:
+    def base_predicates(self, *, parameters: dict[str, str] | None = None) -> tuple[str, ...]:
         """Predicates that must be appended to every query (tenant isolation etc.)."""
 
 
@@ -126,7 +126,7 @@ class FlatColumnDialect:
     def rewrite_where(self, where: str) -> str:
         return where
 
-    def base_predicates(self) -> tuple[str, ...]:
+    def base_predicates(self, *, parameters: dict[str, str] | None = None) -> tuple[str, ...]:
         return ()
 
 
@@ -190,7 +190,10 @@ class SignozObDialect:
 
         return _BACKTICK_IDENT.sub(_replace, where)
 
-    def base_predicates(self) -> tuple[str, ...]:
+    def base_predicates(self, *, parameters: dict[str, str] | None = None) -> tuple[str, ...]:
+        if parameters is not None:
+            parameters["org_id"] = self.org_id
+            return ("`org_id` = :org_id",)
         return (f"`org_id` = {quote_literal(self.org_id)}",)
 
 

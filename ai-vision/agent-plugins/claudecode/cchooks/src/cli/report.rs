@@ -105,10 +105,8 @@ fn run_session_path(
     };
 
     eprintln!(
-        "Reporting {} turns from '{}' (session={}, profile={})",
+        "Reporting {} transcript turns (profile={:?})",
         turns.len(),
-        session_path,
-        session_id,
         profile.as_deref().unwrap_or("default"),
     );
 
@@ -197,10 +195,8 @@ fn run_otel_json(
         extract_session_id_from_otel(&lines).unwrap_or_else(|| "otel-report".to_string());
 
     eprintln!(
-        "Posting {} OTLP request(s) from '{}' (session={}, profile={}{})",
+        "Posting {} OTLP request(s) (profile={:?}{})",
         lines.len(),
-        otel_path,
-        session_id,
         profile.as_deref().unwrap_or("default"),
         if shift { ", shifted" } else { "" },
     );

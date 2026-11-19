@@ -75,7 +75,7 @@ class InMemorySignozClient:
                     continue
             result.append(r)
         order_sql = sql.replace("`", "")
-        if re.match(r"\s*SELECT\s+DISTINCT\s+trace_id\s+FROM\b", order_sql, re.IGNORECASE):
+        if re.match(r"SELECT\s+DISTINCT\s+trace_id\s+FROM\b", order_sql.lstrip(), re.IGNORECASE):
             result = [
                 {"trace_id": key} for key in dict.fromkeys(row.get("trace_id") for row in result)
             ]
@@ -142,12 +142,9 @@ def _parse_simple_sql(
     if "WHERE" in sql_upper:
         where_idx = sql_upper.index("WHERE") + 6
         where_clause = sql[where_idx:].strip()
-        where_clause = re.split(
-            r"\s+ORDER\s+BY\s+",
-            where_clause,
-            maxsplit=1,
-            flags=re.IGNORECASE,
-        )[0]
+        order = re.search(r"(?<=\s)ORDER\s+BY(?=\s)", where_clause, re.IGNORECASE)
+        if order is not None:
+            where_clause = where_clause[: order.start()]
         # Flatten conjunction groups without altering quoted literals or IN lists.
         where_clause = _CONJUNCTION_GROUPING.sub(lambda match: match.group(1) or "", where_clause)
         for token in where_clause.split(" AND "):

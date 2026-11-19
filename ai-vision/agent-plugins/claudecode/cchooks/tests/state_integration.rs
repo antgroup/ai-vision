@@ -262,7 +262,7 @@ fn test_lock_guarded_concurrent_updates_preserve_both_writes() {
         handles.push(thread::spawn(move || {
             barrier.wait();
             let state_lock = cchooks::hooks::langfuse::state::StateLock::acquire(&path, 2_000);
-            assert!(state_lock.is_acquired(), "{session_id} must acquire lock");
+            assert!(state_lock.is_acquired(), "each state writer must acquire the lock");
             let mut state = agentic_otel_common::state::load_state(&path);
             state[session_id] = json!({"offset": offset});
             cchooks::hooks::langfuse::state::save_state(&path, &state)

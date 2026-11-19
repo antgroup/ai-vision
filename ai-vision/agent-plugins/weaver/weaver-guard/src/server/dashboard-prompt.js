@@ -1128,11 +1128,15 @@ function aiSuperloopPromptText(options = superloopPromptOptions()) {
   const cleanupLines = superloopCommandLines(agentConfig.cleanupCommands, agentConfig, agentId);
   const fixtureSetupLines = superloopFixtureSetupLines(agentConfig, agentId);
   const hasRuntimeEnvList = Array.isArray(agentConfig.envVars?.runtime);
-  const scenarioCommands = scenarios.map((s, i) =>
-    `echo "--- [${i + 1}/${scenarios.length}] ${s.id}: ${s.title} ---"\n${agentConfig.cli
+  const scenarioCommands = scenarios.map((s, i) => {
+    // Expand the authored fixture's working-directory marker inside the quoted argument.
+    const prompt = s.prompt.split('{workingDirectory}')
+      .map(part => `'${part.replaceAll("'", "'\"'\"'")}'`)
+      .join('"$PWD"');
+    return `echo "--- [${i + 1}/${scenarios.length}] ${s.id}: ${s.title} ---"\n${agentConfig.cli
       .replace('{scenarioId}', s.id.replace(/[^a-zA-Z0-9_.:-]+/g, '-'))
-      .replace('{prompt}', s.prompt.replace(/"/g, '\\"'))}`
-  );
+      .replace('"{prompt}"', () => prompt)}`;
+  });
   const isGateway = agentConfig.arch === 'gateway';
   const dirs = superloopRuntimeDirs(agentConfig, agentId).join(' ');
 

@@ -17,6 +17,8 @@ from apps.core.services.credential_service import create_credential_records
 
 logger = logging.getLogger(__name__)
 
+PROVISION_FAILURE_MESSAGE = "Observation project provisioning failed"
+
 
 class SpaceObservationProvisioningError(Exception):
     """Raised when upstream provisioning fails or local config is invalid."""
@@ -328,11 +330,12 @@ def provision_space_observation_project(
         return project
     except Exception as exc:
         project.provision_status = 2
-        project.last_error = str(exc)[:2000]
+        project.last_error = PROVISION_FAILURE_MESSAGE
         project.save(update_fields=["provision_status", "last_error", "gmt_modified"])
-        logger.exception(
-            "Failed to provision observation project for space=%s endpoint=%s",
+        logger.error(
+            "Failed to provision observation project for space=%s endpoint=%s (%s)",
             space.id,
             endpoint.id,
+            type(exc).__name__,
         )
         raise

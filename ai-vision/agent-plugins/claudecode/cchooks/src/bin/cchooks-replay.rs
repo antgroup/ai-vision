@@ -628,11 +628,7 @@ fn replay_otel(turns: &[Turn], cli: &CliArgs, parsed_lines: &[serde_json::Value]
         }
     }
 
-    eprintln!(
-        "Replayed {} turns → OTel JSONL (session={})",
-        turns.len(),
-        session_id
-    );
+    eprintln!("Replayed {} turns → OTel JSONL", turns.len());
 }
 
 // ─── Main ───

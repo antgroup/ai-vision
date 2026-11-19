@@ -470,32 +470,23 @@ impl EditionConfig {
             .or(self.metrics_endpoint.as_deref())
     }
 
-    /// 输出一段适合人读的诊断摘要（仅显示 endpoint，**不打印 secret_key**）。
+    /// 输出配置状态、计数和日志开关，避免将凭据或身份写入诊断日志。
     pub fn human_summary(&self) -> String {
-        let mask = |s: &Option<String>| match s {
-            Some(v) if v.len() >= 8 => format!("{}…(len={})", &v[..6], v.len()),
-            Some(_) => "***".to_string(),
-            None => "(unset)".to_string(),
-        };
         format!(
-            "edition={} profile={:?} enable_telemetry={} agent_product={} agent_type={} agent_instance={} username={} \
-             traces={} metrics={} logs={} status={} \
-             public_key={} secret_key={} \
+            "edition={} profile={:?} enable_telemetry={} \
+             traces_configured={} metrics_configured={} logs_configured={} status_configured={} \
+             public_key_configured={} secret_key_configured={} \
              headers={} metrics_headers={} logs_headers={} status_headers={} \
              log_spans=[u={},m={},t={},o={}] log_events=[u={},m={},t={},o={}]",
             self.edition,
             self.profile,
             self.enable_telemetry,
-            self.agent_product.as_deref().unwrap_or("(unset)"),
-            self.agent_type,
-            self.agent_instance,
-            self.username,
-            self.traces_endpoint.as_deref().unwrap_or("(unset)"),
-            self.metrics_endpoint.as_deref().unwrap_or("(unset)"),
-            self.logs_endpoint.as_deref().unwrap_or("(unset)"),
-            self.status_endpoint.as_deref().unwrap_or("(unset)"),
-            self.public_key.as_deref().unwrap_or("(unset)"),
-            mask(&self.secret_key),
+            self.traces_endpoint.is_some(),
+            self.metrics_endpoint.is_some(),
+            self.logs_endpoint.is_some(),
+            self.status_endpoint.is_some(),
+            self.public_key.is_some(),
+            self.secret_key.is_some(),
             self.headers.len(),
             self.metrics_headers.len(),
             self.logs_headers.len(),
@@ -621,6 +612,27 @@ fn resolve_agent_instance() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn human_summary_uses_configuration_status() {
+        let config = EditionConfig {
+            edition: "common",
+            username: "fixture-user".into(),
+            agent_instance: "fixture-host".into(),
+            traces_endpoint: Some("https://collector.example/v1/traces".into()),
+            public_key: Some("fixture-public-key".into()),
+            secret_key: Some("fixture-secret-key".into()),
+            ..EditionConfig::default()
+        };
+        let summary = config.human_summary();
+        assert!(summary.contains("edition=common"));
+        assert!(summary.contains("traces_configured=true"));
+        assert!(summary.contains("metrics_configured=false"));
+        assert!(summary.contains("public_key_configured=true"));
+        assert!(summary.contains("secret_key_configured=true"));
+        assert!(!summary.contains("fixture-"));
+        assert!(!summary.contains("collector.example"));
+    }
 
     #[test]
     fn edition_name_known() {

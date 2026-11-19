@@ -699,7 +699,7 @@ def find_sensitive_findings(
 
 _DATABASE_CLIENT_RE = re.compile(r"^(?:mysql|psql|sqlite3|duckdb|sqlcmd|clickhouse-client)\b", re.I)
 _HEREDOC_START_RE = re.compile(r"<<-?\s*['\"]?(?P<delimiter>[A-Za-z_][A-Za-z0-9_]*)['\"]?")
-_ENV_PREFIX_RE = re.compile(r"^(?:(?:env\s+)?(?:[A-Za-z_][A-Za-z0-9_]*=[^\s]+\s+)+)")
+_ENV_ASSIGNMENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*=\S+")
 _CODEX_HIGH_RISK_COMMAND_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"^rm\b", re.I), "Codex 禁止直接删除命令"),
     (re.compile(r"^(?:curl|wget)\b", re.I), "Codex 禁止直接网络请求"),
@@ -887,10 +887,28 @@ def _split_shell_segments(command: str, *, split_pipe: bool = False) -> list[str
     return segments
 
 
+def _strip_env_prefix(segment: str) -> str:
+    command = segment.strip()
+    position = 0
+    if command.startswith("env") and len(command) > 3 and command[3].isspace():
+        position = 4
+        while position < len(command) and command[position].isspace():
+            position += 1
+    consumed = 0
+    while (assignment := _ENV_ASSIGNMENT_RE.match(command, position)) is not None:
+        position = assignment.end()
+        if position == len(command):
+            break
+        while position < len(command) and command[position].isspace():
+            position += 1
+        consumed = position
+    return command[consumed:]
+
+
 def _iter_shell_segments(command: str):
     """Yield top-level shell segments, not strings embedded in scripts or docs."""
     for segment in _split_shell_segments(command):
-        normalized = _ENV_PREFIX_RE.sub("", segment.strip()).strip()
+        normalized = _strip_env_prefix(segment)
         if normalized:
             yield normalized
 
@@ -1209,7 +1227,7 @@ def is_sensitive_file_access_or_transfer_command(command: str) -> bool:
         return True
     for variant in _iter_command_variants(command):
         for part in _split_shell_segments(variant, split_pipe=True):
-            normalized = _ENV_PREFIX_RE.sub("", part.strip()).strip()
+            normalized = _strip_env_prefix(part)
             tokens = _strip_leading_wrappers(_shell_tokens(normalized))
             if _has_sensitive_file_reader(normalized):
                 return True

@@ -280,7 +280,6 @@ DIAGNOSTIC_CODES = {
     "deployment_not_found",
     "deployment_ambiguous",
 }
-DIAGNOSTIC_NUMBER = re.compile(r"[0-9]+(?:\.[0-9]+)*\Z")
 
 
 def _validate_diagnostic(raw, event, operation):
@@ -306,7 +305,9 @@ def _validate_diagnostic(raw, event, operation):
         if key in raw and (
             not isinstance(raw[key], str)
             or not 1 <= len(raw[key]) <= 64
-            or not DIAGNOSTIC_NUMBER.fullmatch(raw[key])
+            or not all(
+                part.isascii() and part.isdecimal() for part in raw[key].split(".")
+            )
         ):
             raise InstallationError()
     return copy.deepcopy(raw)

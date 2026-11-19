@@ -62,6 +62,7 @@ from agentlens.infra.ob.tables.job_table import JobTable
 from agentlens.infra.ob.tables.model_connection_table import ModelConnectionTable
 from agentlens.infra.ob.tables.sandbox_table import SandboxTable
 from agentlens.logging import get_logger
+from agentlens.service.datasource.projection.expressions import iter_template_expressions
 from agentlens.service.datasource.projection.service import project_trace
 from agentlens.service.datasource.signoz import (
     DEFAULT_TRACE_CONTEXT_WINDOW_MIN,
@@ -114,7 +115,6 @@ JobsDep = Annotated[JobTable, Depends(get_job_table)]
 TraceDep = Annotated[TraceStore, Depends(get_trace_store)]
 ModelConnectionsDep = Annotated[ModelConnectionTable, Depends(get_model_connection_table)]
 
-_VAR_RE = re.compile(r"\{\{(.+?)\}\}")
 _log = get_logger("diagnoser")
 
 
@@ -130,7 +130,7 @@ def _prompt_var_root(expression: str) -> str | None:
 def _validate_prompt_vars(prompt: str, runtime_type: str = "other") -> None:
     """校验 prompt 里的 {{var}} 变量名在该 runtime_type 投影器的可用变量集内。"""
     available = available_vars_for(runtime_type)
-    for expression in _VAR_RE.findall(prompt):
+    for _, _, expression in iter_template_expressions(prompt):
         root = _prompt_var_root(expression)
         if root is not None and root not in available:
             raise Validation(
@@ -1533,7 +1533,7 @@ def rule_trial(payload: RuleTrialRequest, session: SessionDep = None) -> RuleTri
 def _trial_prompt_inputs(prompt: str, trace: Any) -> dict[str, Any]:
     """Resolve trial variables through the shared Prompt contract."""
     return resolve_prompt_vars(
-        trace, {expression.strip() for expression in re.findall(r"\{\{(.+?)\}\}", prompt)}
+        trace, {expression.strip() for _, _, expression in iter_template_expressions(prompt)}
     )
 
 

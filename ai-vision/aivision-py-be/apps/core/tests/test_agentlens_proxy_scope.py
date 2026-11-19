@@ -546,6 +546,7 @@ class ModelConnectionTimeoutTests(SimpleTestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["code"], 5001)
+        self.assertEqual(response.data["message"], "AgentLens request failed")
         self.assertEqual(self.post.call_args.kwargs["timeout"], 15)
 
     def test_completed_probe_unavailable_status_is_preserved(self):

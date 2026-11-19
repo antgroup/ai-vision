@@ -408,8 +408,8 @@ mod tests {
     fn test_session_key_adds_stable_hash_suffix() {
         let first = session_key("abc/def").unwrap();
         let second = session_key("abc:def").unwrap();
-        assert!(first.starts_with("abc_def-"), "key={}", first);
-        assert!(second.starts_with("abc_def-"), "key={}", second);
+        assert!(first.starts_with("abc_def-"));
+        assert!(second.starts_with("abc_def-"));
         assert_ne!(first, second, "distinct raw ids must not collide");
         assert_eq!(first, session_key("abc/def").unwrap());
         assert!(session_key("").is_none());

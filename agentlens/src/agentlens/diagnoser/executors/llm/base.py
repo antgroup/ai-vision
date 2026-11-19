@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -21,14 +20,16 @@ from agentlens.domain.metric_definition import MetricDefinition, metric_definiti
 from agentlens.infra.llm_judge import JudgeUnavailable, LLMJudge
 from agentlens.infra.llm_judge.attempts import AttemptAuditError, AttemptHooks, AttemptRefused
 from agentlens.service.datasource.projection import Projection
+from agentlens.service.datasource.projection.expressions import (
+    iter_template_expressions,
+    replace_template_expressions,
+)
 from agentlens.service.datasource.trace import Trace
 from agentlens.service.datasource.variables import (
     ImageVariableError,
     resolve_image_vars,
     resolve_prompt_vars,
 )
-
-_VAR_RE = re.compile(r"\{\{(.+?)\}\}")
 
 
 @dataclass(frozen=True)
@@ -39,13 +40,13 @@ class PreparedLlmInput:
 
 
 def _render_prompt(prompt: str, inputs: dict[str, Any]) -> str:
-    def _replace(match: re.Match[str]) -> str:
-        value = inputs.get(match.group(1), "")
+    def _replace(expression: str) -> str:
+        value = inputs.get(expression, "")
         if isinstance(value, (dict, list)):
             return json.dumps(value, ensure_ascii=False, default=str)
         return str(value) if value is not None else ""
 
-    return _VAR_RE.sub(_replace, prompt)
+    return replace_template_expressions(prompt, _replace)
 
 
 def append_metric_keys(prompt: str, definitions: list[MetricDefinition]) -> str:
@@ -55,7 +56,7 @@ def append_metric_keys(prompt: str, definitions: list[MetricDefinition]) -> str:
 
 
 def _extract_var_names(prompt: str) -> set[str]:
-    return set(_VAR_RE.findall(prompt))
+    return {expression for _, _, expression in iter_template_expressions(prompt)}
 
 
 def _resolve_llm_inputs(trace: Trace, var_names: set[str]) -> dict[str, Any]:

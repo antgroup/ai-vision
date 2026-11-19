@@ -69,7 +69,7 @@ class PrivacyTests(unittest.TestCase):
             "github_pat_11_AAabcdefghijklmnopqrstuvwxyz123456",
             "xoxb-ci-fixture",
             "AKIAABCDEFGHIJKLMNOP",
-            "AIzaabcdefghijklmnopqrstuvwxyz123456789",
+            "AI" + "za" + "0" * 35,
             "sk_test_fixtureonly00000",
             "hf_abcdefghijklmnopqrstuvwxyz123456",
         ]

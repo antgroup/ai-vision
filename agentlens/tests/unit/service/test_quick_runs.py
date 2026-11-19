@@ -3,6 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from agentlens.infra.signoz.dialect import SignozObDialect
 from agentlens.service.datasource.signoz import TraceStore
 from agentlens.service.quick_runs import comparison_metadata, public_catalog
 
@@ -53,6 +54,29 @@ def test_explicit_query_binds_ids_and_all_scope_values():
         "scope_2": "p",
     }
     assert kwargs["log_sql"] is False and spec == original
+
+
+def test_explicit_query_binds_signoz_org_alongside_other_scope_values():
+    client = Mock()
+    client.query.return_value = []
+    store = TraceStore(client, dialect=SignozObDialect(org_id="org-1"))
+    spec = {
+        "query": {"table": "signoz_traces"},
+        "space_column": "space_id",
+        "space_filter": "space-1",
+        "agent_product_column": "agent_product",
+        "agent_product_filter": "codex",
+    }
+    assert store.read_explicit_trace_rows(spec, ["trace-1"]) == []
+    args, kwargs = client.query.call_args
+    assert "`org_id` = :org_id" in args[0]
+    assert "org-1" not in args[0]
+    assert kwargs["parameters"] == {
+        "org_id": "org-1",
+        "trace_0": "trace-1",
+        "scope_0": "space-1",
+        "scope_2": "codex",
+    }
 
 
 def test_explicit_query_rejects_unbound_scope_or_injected_table():

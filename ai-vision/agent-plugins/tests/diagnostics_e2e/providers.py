@@ -95,7 +95,11 @@ def _tool_call(tools: list[dict], workspace: Path, step: dict, number: int) -> d
 
 
 def _exit_code(text: str) -> int | None:
-    match = re.search(r"(?:process exited with code|exit status|exit[ _]code[\"']?\s*[:=]?)\s*(-?\d+)", text, re.I)
+    match = re.search(
+        r"""(?:process exited with code\s*|exit status\s*|exit[ _]code["']?\s*(?:[:=]\s*)?)(-?\d+)""",
+        text,
+        re.I,
+    )
     return int(match.group(1)) if match else None
 
 
