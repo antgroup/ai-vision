@@ -33,26 +33,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Resolve the Eino dependency updates
+      - name: Verify the committed Eino module metadata
         working-directory: ai-vision/agent-plugins/langfuse/examples/eino
         run: |
-          go get github.com/buger/jsonparser@v1.1.2 \
-            go.opentelemetry.io/otel/trace@v1.47.0 \
-            go.opentelemetry.io/otel/sdk@v1.47.0 \
-            go.opentelemetry.io/otel/exporters/otlp/otlptrace@v1.47.0 \
-            go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.47.0 \
-            google.golang.org/grpc@v1.83.2
-          go mod tidy
+          go mod tidy -diff
           go mod verify
-      - name: Upload resolved Eino module metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: eino-module-${{ github.run_attempt }}
-          path: |
-            ai-vision/agent-plugins/langfuse/examples/eino/go.mod
-            ai-vision/agent-plugins/langfuse/examples/eino/go.sum
-          if-no-files-found: error
-          retention-days: 3
       - name: Test the official callback and trace verifier
         working-directory: ai-vision/agent-plugins/langfuse
         run: make test-eino
+        env:
+          GOFLAGS: -mod=readonly
+      - name: Confirm the test preserved the module files
+        working-directory: ai-vision/agent-plugins/langfuse/examples/eino
+        run: git diff --exit-code -- go.mod go.sum
