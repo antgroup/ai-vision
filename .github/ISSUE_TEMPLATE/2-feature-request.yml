@@ -6,27 +6,27 @@ body:
   - type: markdown
     attributes:
       value: |
-        Requests may be in English or Chinese. You do not need to implement the feature yourself.
-        Cross-component contracts, major architecture changes, or governance changes may need an [RFC](https://github.com/antgroup/ai-vision/tree/main/docs/rfcs) before implementation; start by describing the need here.
+        English and Chinese are welcome. Use a title that describes the capability users need.
+        Start with the use case. Changes to shared contracts, architecture, or governance may later need an [RFC](https://github.com/antgroup/ai-vision/tree/HEAD/docs/rfcs).
   - type: textarea
     id: use-case
     attributes:
       label: Use case and problem
-      description: Describe who needs this and what is difficult or missing in the current workflow.
+      description: Describe who is affected, what they are trying to do, and where the current workflow falls short.
     validations:
       required: true
   - type: textarea
     id: outcome
     attributes:
       label: Desired outcome
-      description: Explain what users should be able to do and how they would know the improvement works. A detailed implementation proposal is not required.
+      description: Describe what users should be able to do and give an example of an observable result that would meet the need.
     validations:
       required: true
   - type: textarea
     id: alternatives
     attributes:
-      label: Alternatives or workarounds
-      description: Optionally describe what you have tried and why it does not meet the need.
+      label: Workarounds or proposed approach
+      description: Share a workaround you tried or a possible implementation if you have one.
     validations:
       required: false
   - type: textarea

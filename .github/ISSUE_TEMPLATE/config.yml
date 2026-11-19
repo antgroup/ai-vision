@@ -4,5 +4,5 @@ contact_links:
     url: https://aivision.mintlify.site/en/introduction
     about: Find installation, integration, and usage guidance.
   - name: Security reporting guidance
-    url: https://github.com/antgroup/ai-vision/blob/main/SECURITY.md
+    url: https://github.com/antgroup/ai-vision/security/policy
     about: Read how to request a private contact channel without posting vulnerability details publicly.
