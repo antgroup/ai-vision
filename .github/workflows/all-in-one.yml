@@ -1,0 +1,39 @@
+name: All-in-One contracts
+
+on:
+  pull_request:
+    paths:
+      - 'deploy/all-in-one/**'
+      - 'scripts/ci/release*.py'
+      - 'scripts/ci/test_release_personal.py'
+      - '.github/workflows/all-in-one.yml'
+      - '.github/workflows/release-images.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  contracts:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Exercise supervisor and candidate contracts
+        run: |
+          set -euo pipefail
+          if ! command -v zstd >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends zstd
+          fi
+          go test deploy/all-in-one/main.go deploy/all-in-one/main_test.go
+          python3 -m unittest discover -s deploy/all-in-one
+          python3 -m unittest discover -s scripts/ci -p 'test_release_personal.py'

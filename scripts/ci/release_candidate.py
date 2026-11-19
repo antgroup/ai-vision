@@ -8,7 +8,8 @@ from pathlib import Path
 import re
 
 from product_registry import IMAGE_ROLES, require_product_repository
-from release_assets import release_asset_names
+from release_assets import PERSONAL_ARCHITECTURES, file_sha256, release_asset_names
+from release_personal import expected_receipts
 from release_publish import api, validate_bundle
 
 BACKENDS = ("oceanbase", "seekdb")
@@ -16,13 +17,12 @@ SMOKE_PLATFORM = "linux/amd64"
 SMOKE_COMPONENTS = {"database", *IMAGE_ROLES.values()}
 
 
-def asset_inventory(directory):
-    manifest = json.loads((directory / "release-manifest.json").read_text())
-    if {p.name for p in directory.iterdir()} != release_asset_names(manifest) or any(
+def asset_inventory(directory, manifest, *, base_only=False):
+    if {p.name for p in directory.iterdir()} != release_asset_names(manifest, base_only=base_only) or any(
         p.is_symlink() or not p.is_file() or not p.stat().st_size for p in directory.iterdir()
     ):
         raise ValueError("candidate must contain exactly the allowed nonempty release assets")
-    return {p.name: {"size": p.stat().st_size, "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
+    return {p.name: {"size": p.stat().st_size, "sha256": file_sha256(p)}
             for p in sorted(directory.iterdir())}
 
 
@@ -67,20 +67,36 @@ def sanitize_smoke(summary, directory, backend):
     return smoke_identity(directory, backend)
 
 
-def freeze(directory, receipts, *, repository, source_sha, build_id):
-    plan, _ = validate_bundle(directory, source_sha, build_id, repository=repository)
+def freeze(directory, receipts, *, repository, source_sha, build_id, base_only=False, personal=None):
+    plan, _ = validate_bundle(directory, source_sha, build_id, repository=repository, base_only=base_only)
     expected_smokes = {backend: smoke_identity(directory, backend) for backend in BACKENDS}
     if receipts != expected_smokes:
         raise ValueError("acceptance requires both exact passed candidate smoke receipts")
-    return {"schema_version": 1, "status": "qualified", "source_repository": repository,
-            "source_sha": source_sha, "build_id": build_id,
-            "product_version": plan["product_version"], "release_tag": plan["release_tag"],
-            "assets": asset_inventory(directory), "smokes": expected_smokes}
+    manifest = json.loads((directory / "release-manifest.json").read_text())
+    assets = asset_inventory(directory, manifest, base_only=base_only)
+    acceptance = {"schema_version": 1, "status": "qualified", "source_repository": repository,
+                  "source_sha": source_sha, "build_id": build_id,
+                  "product_version": plan["product_version"], "release_tag": plan["release_tag"],
+                  "assets": assets, "smokes": expected_smokes}
+    if base_only:
+        if not manifest.get("personal_edition") or personal is not None:
+            raise ValueError("only a Personal Edition candidate can use base-only acceptance")
+        acceptance["phase"] = "base"
+    elif manifest.get("personal_edition"):
+        expected = expected_receipts(directory, assets, manifest)
+        if personal != expected:
+            raise ValueError("qualification requires both exact native Personal Edition receipts")
+        acceptance["personal_edition"] = expected
+    elif personal is not None:
+        raise ValueError("unexpected Personal Edition receipts")
+    return acceptance
 
 
-def verify_frozen(directory, acceptance, *, repository, source_sha, build_id):
-    if not isinstance(acceptance, dict) or acceptance != freeze(directory, acceptance.get("smokes"), repository=repository,
-                            source_sha=source_sha, build_id=build_id):
+def verify_frozen(directory, acceptance, *, repository, source_sha, build_id, base_only=False):
+    if not isinstance(acceptance, dict) or acceptance != freeze(
+        directory, acceptance.get("smokes"), repository=repository, source_sha=source_sha,
+        build_id=build_id, base_only=base_only, personal=acceptance.get("personal_edition"),
+    ):
         raise ValueError("acceptance differs from frozen source, attempt or asset bytes")
 
 
@@ -135,6 +151,9 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
         page += 1
     required_jobs = [*(f"Linux amd64 candidate deployment ({backend})" for backend in BACKENDS),
                      "freeze qualified candidate acceptance", "verify public candidate indexes anonymously"]
+    if acceptance.get("personal_edition"):
+        required_jobs.extend(f"Personal Edition (linux/{arch})" for arch in PERSONAL_ARCHITECTURES)
+        required_jobs.append("freeze qualified Personal Edition acceptance")
     for name in required_jobs:
         matched = [job for job in jobs if job.get("name") == name]
         if len(matched) != 1 or any(
@@ -165,6 +184,8 @@ def main():
     parser.add_argument("--summary", type=Path)
     parser.add_argument("--backend", choices=BACKENDS)
     parser.add_argument("--receipts", type=Path)
+    parser.add_argument("--base-only", action="store_true")
+    parser.add_argument("--personal-receipts", type=Path)
     parser.add_argument("--acceptance", type=Path)
     parser.add_argument("--candidate-run-id")
     parser.add_argument("--candidate-run-attempt")
@@ -175,7 +196,12 @@ def main():
         value = sanitize_smoke(json.loads(args.summary.read_text()), args.directory, args.backend)
     elif args.command == "freeze":
         receipts = {backend: json.loads((args.receipts / f"smoke-{backend}.json").read_text()) for backend in BACKENDS}
-        value = freeze(args.directory, receipts, repository=os.environ["GITHUB_REPOSITORY"],
+        personal = None
+        if args.personal_receipts:
+            personal = {arch: json.loads((args.personal_receipts / f"personal-{arch}.json").read_text())
+                        for arch in PERSONAL_ARCHITECTURES}
+        value = freeze(args.directory, receipts, base_only=args.base_only, personal=personal,
+                       repository=os.environ["GITHUB_REPOSITORY"],
                        source_sha=os.environ["GITHUB_SHA"],
                        build_id=f"{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}")
     else:

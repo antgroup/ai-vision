@@ -2,11 +2,29 @@
 
 The All-in-One image runs the frontend, backend, ingest gateway, diagnosis engine, and data backend alongside an embedded seekdb instance. One process owns `pylibseekdb`. The backend, diagnosis engine, and data backend share its local MySQL Unix socket. The image and CLI are specific to a Linux architecture.
 
+## Qualify the Personal Edition in Daily CI
+
+Select `personal_edition=true` and `publish=false` in the product release
+workflow. The two native Linux jobs consume the same frozen distributed base
+and produce an amd64 and an arm64 bundle. Each job verifies archive format and
+identity, installs the bundled CLI and the actual Docker payload, and checks
+registration, synthetic Quickstart traces, a persisted rule diagnosis, clean
+shutdown, and same-volume recreation. The final acceptance includes both passed
+receipts and a single checksum inventory for the release. Use the hosted job
+receipts for each architecture when recording qualification.
+
+The user-facing bundle contains `install-all-in-one.py`, `sample-trace.py`, an
+architecture manifest, the matching Linux CLI, and gzip and zstd archives of
+the same image. Use `--from-dir` with the qualified candidate directory for
+an offline install. A published version is accessed with `--tag` and its exact
+versioned tag. Both routes validate the manifest and SHA-256 before loading the
+selected archive. A fresh installation stores its state in a named Docker volume.
+
 ## Prepare an offline candidate from a qualified Daily
 
 Use the exact source checkout, `release-assets-<attempt>` directory, and `candidate-acceptance.json` from a successful public Daily. Keep the assets as downloaded. The preparation command checks the frozen acceptance, resolves each of the five image indexes to its target Linux manifest and config digest, and stages files from the exact locally loaded images. The backend and diagnosis images must share the pinned Python 3.11 Bookworm base. Preload that base and the accepted images for the selected architecture.
 
-Build the supervisor and seekdb owner as shown below. Pass the two pinned PyPI wheels for the selected architecture. This example targets Linux ARM64 and stages a gzip bundle for the deployment Skill's offline installer.
+Build the supervisor and seekdb owner as shown below. Pass the two pinned PyPI wheels for the selected architecture. This example targets Linux ARM64. A Personal Edition-enabled Daily stages both archive formats and the product installer. Historical distributed-only Daily inputs continue to produce a gzip-only compatibility bundle.
 
 ```sh
 python3 deploy/all-in-one/build.py prepare-daily \

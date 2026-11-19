@@ -23,6 +23,39 @@ RELEASE_ASSETS = {
 } | {"install-aiv.sh", "SHA256SUMS", "plugin-dist.tar.gz", "release-plan.json",
      "release-manifest.json", "release-images.vars.yaml", "release-seekdb.vars.yaml"}
 
+PERSONAL_ARCHITECTURES = ("amd64", "arm64")
+PERSONAL_ATTACHMENTS = {"install-all-in-one.py", "sample-trace.py"}
+PERSONAL_MAX_ATTACHMENT_SIZE = 2 * 1024**3
+
+
+def personal_files(architecture):
+    if architecture not in PERSONAL_ARCHITECTURES:
+        raise ValueError("unsupported Personal Edition architecture")
+    suffix = "-arm64" if architecture == "arm64" else ""
+    image = f"aiv-all-in-one-linux-{architecture}.tar"
+    return f"all-in-one-manifest{suffix}.json", f"{image}.gz", f"{image}.zst"
+
+
+PERSONAL_ASSETS = PERSONAL_ATTACHMENTS | {
+    name for architecture in PERSONAL_ARCHITECTURES for name in personal_files(architecture)
+}
+
+
+def file_sha256(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def write_checksums(directory):
+    files = sorted(path for path in directory.iterdir() if path.name != "SHA256SUMS")
+    (directory / "SHA256SUMS").write_text(
+        "".join(f"{file_sha256(path)}  {path.name}\n" for path in files)
+    )
+
+
 IMAGE_VARS = {
     "signoz-ob": "SIGNOZ_IMAGE",
     "antcollector-gw": "GATEWAY_IMAGE",
@@ -32,11 +65,14 @@ IMAGE_VARS = {
 }
 
 
-def release_asset_names(manifest):
+def release_asset_names(manifest, *, base_only=False):
     """Keep publication and frozen acceptance on the same asset contract."""
     if "plugins" in manifest:
         raise ValueError("optional plugin catalogs are not part of the standard product release")
-    return RELEASE_ASSETS
+    personal = manifest.get("personal_edition", False)
+    if type(personal) is not bool or (personal and manifest.get("channel") != "daily"):
+        raise ValueError("Personal Edition requires a Daily manifest")
+    return RELEASE_ASSETS | (PERSONAL_ASSETS if personal and not base_only else set())
 
 
 def assemble(directory, image_refs, *, source_sha, build_id, repository):
@@ -108,6 +144,9 @@ def assemble(directory, image_refs, *, source_sha, build_id, repository):
         "required_artifact_smoke": ["linux/amd64/oceanbase", "linux/amd64/seekdb"],
         "workflow_url": f"https://github.com/{repository}/actions/runs/{build_id.split('.')[0]}/attempts/{build_id.split('.')[1]}",
     }
+    if plan.get("personal_edition", False):
+        manifest["personal_edition"] = True
+    release_asset_names(manifest, base_only=True)
     (directory / "release-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n"
     )
@@ -133,13 +172,7 @@ def assemble(directory, image_refs, *, source_sha, build_id, repository):
     (directory / "component-plan.json").unlink()
     if mirror is not None:
         mirror_path.unlink()
-    files = sorted(path for path in directory.iterdir() if path.name != "SHA256SUMS")
-    (directory / "SHA256SUMS").write_text(
-        "".join(
-            f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n"
-            for path in files
-        )
-    )
+    write_checksums(directory)
 
 
 def main():

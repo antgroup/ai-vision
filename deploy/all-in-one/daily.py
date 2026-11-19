@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "scripts/ci"))
 from product_registry import PUBLIC_REPOSITORY
 from public_registry import _anonymous_reader, _checked_json, _descriptor_digest, _index
 from release_candidate import verify_frozen
+from release_assets import PERSONAL_MAX_ATTACHMENT_SIZE, write_checksums
 
 
 PROFILE = "daily-source"
@@ -52,7 +53,7 @@ def candidate(directory, acceptance_path, *, expected_source):
             or not re.fullmatch(r"\d+\.\d+\.\d+-daily\.\d{8}(?:\.\d+)?", manifest.get("product_version", ""))):
         raise ValueError("All-in-One requires a frozen Daily for the selected source checkout")
     verify_frozen(directory, acceptance, repository=PUBLIC_REPOSITORY, source_sha=expected_source,
-                  build_id=manifest["build_id"])
+                  build_id=manifest["build_id"], base_only=manifest.get("personal_edition", False))
     return manifest, acceptance
 
 
@@ -197,10 +198,25 @@ def package(directory, manifest, acceptance, image_archive, image_receipt, outpu
         staged.mkdir()
         shutil.copyfile(image_archive, staged / archive_name)
         shutil.copyfile(cli_path, staged / cli_path.name)
+        if manifest.get("personal_edition"):
+            from repack import compress
+
+            compact = staged / archive_name.replace(".tar.gz", ".tar.zst")
+            tar_sha256 = compress(staged / archive_name, compact)
+            if max(image_receipt["archive_bytes"], compact.stat().st_size) >= PERSONAL_MAX_ATTACHMENT_SIZE:
+                raise ValueError("Personal Edition archives must be smaller than GitHub's attachment limit")
+            local_manifest.update(
+                profile="all-in-one", release_tag=manifest["release_tag"], base_release=manifest["release_tag"],
+                tar_sha256=tar_sha256, zstd_archive=compact.name, zstd_archive_bytes=compact.stat().st_size,
+                zstd_archive_sha256=file_digest(compact),
+            )
+            shutil.copyfile(directory / "release-manifest.json", staged / "release-manifest.json")
+            for source, name in (("install-all-in-one.py", "install-all-in-one.py"),
+                                 ("sample_trace.py", "sample-trace.py")):
+                shutil.copyfile(Path(__file__).with_name(source), staged / name)
         manifest_path = staged / f"all-in-one-manifest{suffix}.json"
         manifest_path.write_text(json.dumps(local_manifest, indent=2, sort_keys=True) + "\n")
-        checksums = "".join(f"{file_digest(path)}  {path.name}\n" for path in sorted(staged.iterdir()))
-        (staged / "SHA256SUMS").write_text(checksums)
+        write_checksums(staged)
         staged.rename(output)
 
 
