@@ -7,15 +7,18 @@ is read in fake mode. All child commands execute once, without suite retries.
 """
 import argparse
 import base64
+from contextlib import contextmanager
 from http.cookiejar import Cookie
 import json
 import os
 from pathlib import Path
 import re
 import signal
+import socketserver
 import stat
 import sys
 import tempfile
+from threading import Thread
 from urllib.parse import urlsplit
 
 import httpx
@@ -27,6 +30,7 @@ NVIDIA_BASE_URL = 'https://integrate.api.nvidia.com/v1'
 NVIDIA_MODEL = 'nvidia/nemotron-3.5-lightning-30b-a3b'
 SDK_VERSIONS = {'js5': '5.14.0', 'js6': '6.0.0'}
 HERE = Path(__file__).resolve().parent
+MAX_BROWSER_AUTH_BYTES = 65536
 
 
 def install_signal_handlers():
@@ -113,7 +117,7 @@ def client_state(client, origin, private, expected_user=None):
 
 
 def login_state(origin, email, password, private, expected_user=None):
-    """Public auth only; tokens remain in process/private storageState."""
+    """Public auth only; tokens remain in memory."""
     origin = loopback_origin(origin)
     with httpx.Client(base_url=origin, timeout=30, trust_env=False) as client:
         csrf = client.get('/api/v1/auth/csrf')
@@ -126,7 +130,7 @@ def login_state(origin, email, password, private, expected_user=None):
         return client_state(client, origin, private, expected_user)
 
 
-def prepare_browser_auth(origin, runtime, private, *, auth_file=None, login_credentials=None, out, expected_user=None):
+def prepare_browser_auth(origin, private, *, auth_file=None, login_credentials=None, out, expected_user=None):
     """Obtain fresh access immediately before pages; never rewrite supplied state."""
     origin = loopback_origin(origin)
     if login_credentials is not None:
@@ -155,9 +159,37 @@ def prepare_browser_auth(origin, runtime, private, *, auth_file=None, login_cred
             if response.status_code != 200 or response.json().get('code') != 0:
                 raise RuntimeError('Browser public session refresh failed with HTTP ' + str(response.status_code))
             state = client_state(client, origin, private, expected_user)
-    path = runtime / 'browser-auth.json'
-    write_private(path, json.dumps(state))
-    return path
+    return state
+
+
+@contextmanager
+def browser_auth_socket(state):
+    """Share state with separate Playwright workers without a credential file."""
+    payload = json.dumps(state, separators=(',', ':')).encode('utf-8')
+    if len(payload) > MAX_BROWSER_AUTH_BYTES:
+        raise ValueError('Browser authentication state is too large')
+
+    class AuthHandler(socketserver.BaseRequestHandler):
+        def handle(self):
+            self.request.settimeout(2)
+            try:
+                self.request.sendall(payload)
+            except OSError:
+                # A terminating worker may disconnect before receiving the state.
+                pass
+
+    # Use a short path for Darwin's AF_UNIX limit. mkdtemp grants access only
+    # to its owner; the socket is removed with that directory on all exits.
+    with tempfile.TemporaryDirectory(prefix='aiv-browser-auth-', dir='/tmp') as directory:
+        path = Path(directory) / 'state.sock'
+        with socketserver.UnixStreamServer(str(path), AuthHandler) as server:
+            worker = Thread(target=server.serve_forever, kwargs={'poll_interval': 0.05}, daemon=True)
+            worker.start()
+            try:
+                yield path
+            finally:
+                server.shutdown()
+                worker.join()
 
 
 def audit_artifacts(out, private):
@@ -251,9 +283,9 @@ def verify_collection(out, source):
             'provider_request_budget': 0 if source == 'fake' else 7}
 
 
-def browser_environment(env, manifest, auth_file, out, browser_origin, api_origin):
+def browser_environment(env, manifest, auth_socket, out, browser_origin, api_origin):
     return {**child_environment(env), 'AIVISION_BROWSER_MANIFEST': str(manifest),
-        'AIVISION_BROWSER_AUTH_FILE': str(auth_file), 'AIVISION_BROWSER_OUTPUT_DIR': str(out),
+        'AIVISION_BROWSER_AUTH_SOCKET': str(auth_socket), 'AIVISION_BROWSER_OUTPUT_DIR': str(out),
         'AIVISION_BROWSER_BASE_URL': loopback_origin(browser_origin),
         'VITE_DEV_API_TARGET': loopback_origin(api_origin), 'VITE_DEV_API_PRESERVE_HOST': '1'}
 
@@ -323,14 +355,15 @@ def run_acceptance(*, repo, out, runtime, smoke, targets, auth_file, source,
             '--target-public', str(out / 'target-public.json'), '--out', str(manifest)]
         smoke.run('manifest', command, env=child_environment(smoke.env))
         report['completed_stages'].append('manifest')
-        page_auth = prepare_browser_auth(target['endpoint'], runtime, smoke.private, auth_file=auth_file,
+        page_auth = prepare_browser_auth(target['endpoint'], smoke.private, auth_file=auth_file,
             login_credentials=login_credentials, out=out, expected_user=target.get('authenticated_user_id'))
         report['browser_auth'] = 'fresh login after collection' if login_credentials is not None else 'public refresh after collection'
         frontend = repo / 'ai-vision/vfe'
-        browser_env = browser_environment(smoke.env, manifest, page_auth, out / 'browser', browser_origin, target['endpoint'])
-        result = smoke.run('browser', [node, str(frontend / 'node_modules/@playwright/test/cli.js'),
-            'test', '--config', 'playwright.platform.config.ts', r'collection\.spec\.ts$'],
-            cwd=frontend, env=browser_env, timeout=900, check=False)
+        with browser_auth_socket(page_auth) as auth_socket:
+            browser_env = browser_environment(smoke.env, manifest, auth_socket, out / 'browser', browser_origin, target['endpoint'])
+            result = smoke.run('browser', [node, str(frontend / 'node_modules/@playwright/test/cli.js'),
+                'test', '--config', 'playwright.platform.config.ts', r'collection\.spec\.ts$'],
+                cwd=frontend, env=browser_env, timeout=900, check=False)
         if result.returncode:
             raise RuntimeError('Browser assertions failed; see sanitized screenshots and report')
         report['browser_tests'] = verify_browser_report(read_json(out / 'browser/results.json'), source)
@@ -345,7 +378,7 @@ def run_acceptance(*, repo, out, runtime, smoke, targets, auth_file, source,
         if not audit['passed']:
             report['status'] = 'failed'
         smoke.write('browser-summary.json', json.dumps(report, indent=2) + '\n')
-        for name in ('targets.json', 'provider.env', 'browser-auth.json'):
+        for name in ('targets.json', 'provider.env'):
             (runtime / name).unlink(missing_ok=True)
     if report['status'] != 'passed':
         raise RuntimeError('Artifact audit rejected unsafe output')

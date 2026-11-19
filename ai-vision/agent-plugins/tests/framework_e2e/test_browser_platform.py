@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import stat
 import signal
+import socket
 import subprocess
 import tempfile
 import unittest
@@ -16,9 +17,9 @@ import browser_platform as browser
 
 class BrowserPlatformTests(unittest.TestCase):
     @unittest.skipIf(os.name == 'nt', 'POSIX private state permissions')
-    def test_refresh_uses_public_csrf_flow_and_private_copy_without_overwriting_input(self):
+    def test_refresh_uses_public_csrf_flow_and_returns_state_without_overwriting_input(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory); runtime = root / 'runtime'; runtime.mkdir()
+            root = Path(directory)
             auth = root / 'auth.json'
             auth.write_text(json.dumps({'cookies': [
                 {'name': 'aivision_access', 'value': 'expired-access', 'domain': '127.0.0.1', 'path': '/', 'expires': 1},
@@ -38,12 +39,12 @@ class BrowserPlatformTests(unittest.TestCase):
                 return httpx.Response(200, json={'code': 0, 'data': {'user': {'user_uuid': 'test-user'}}})
             client = httpx.Client
             with patch.object(browser.httpx, 'Client', side_effect=lambda **kwargs: client(**kwargs, transport=httpx.MockTransport(reply))):
-                fresh = browser.prepare_browser_auth('http://127.0.0.1:8000', runtime, private, auth_file=auth,
+                fresh = browser.prepare_browser_auth('http://127.0.0.1:8000', private, auth_file=auth,
                                                      out=root / 'artifacts', expected_user='test-user')
             self.assertEqual(calls, ['/api/v1/auth/csrf', '/api/v1/auth/refresh', '/api/v1/auth/me'])
             self.assertEqual(auth.read_bytes(), original)
-            self.assertEqual(stat.S_IMODE(fresh.stat().st_mode), 0o600)
-            values = {row['name']: row['value'] for row in json.loads(fresh.read_text())['cookies']}
+            self.assertEqual(list(root.iterdir()), [auth])
+            values = {row['name']: row['value'] for row in fresh['cookies']}
             self.assertEqual(values['aivision_access'], 'new-access')
             self.assertEqual(values['aivision_refresh'], 'new-refresh')
             self.assertTrue({'old-refresh', 'new-refresh', 'new-access', 'csrf-new'} <= private)
@@ -60,8 +61,8 @@ class BrowserPlatformTests(unittest.TestCase):
                                       json={'code': 0 if request.url.path.endswith('/csrf') else 401})
             with patch.object(browser.httpx, 'Client', side_effect=lambda **kwargs: client(**kwargs, transport=httpx.MockTransport(reply))):
                 with self.assertRaises(RuntimeError):
-                    browser.prepare_browser_auth('http://127.0.0.1:8000', root, set(), auth_file=auth, out=root / 'artifacts')
-            self.assertFalse((root / 'browser-auth.json').exists())
+                    browser.prepare_browser_auth('http://127.0.0.1:8000', set(), auth_file=auth, out=root / 'artifacts')
+            self.assertEqual(list(root.iterdir()), [auth])
 
     def test_termination_handler_unwinds_owned_process_and_runtime_cleanup(self):
         callbacks = {}
@@ -155,9 +156,11 @@ class BrowserPlatformTests(unittest.TestCase):
                 self.assertNotIn('NVIDIA_API_KEY=', ' '.join(command['argv']))
 
     def test_browser_command_uses_dedicated_config_and_private_auth(self):
-        env = browser.browser_environment({}, Path('/safe/manifest.json'), Path('/private/auth.json'),
+        env = browser.browser_environment({'AIVISION_BROWSER_AUTH_FILE': 'stale'},
+                                          Path('/safe/manifest.json'), Path('/private/auth.sock'),
                                           Path('/safe/browser'), 'http://127.0.0.1:41966', 'http://127.0.0.1:8000')
-        self.assertEqual(env['AIVISION_BROWSER_AUTH_FILE'], str(Path('/private/auth.json')))
+        self.assertNotIn('AIVISION_BROWSER_AUTH_FILE', env)
+        self.assertEqual(env['AIVISION_BROWSER_AUTH_SOCKET'], '/private/auth.sock')
         self.assertEqual(env['VITE_DEV_API_TARGET'], 'http://127.0.0.1:8000')
         self.assertEqual(env['VITE_DEV_API_PRESERVE_HOST'], '1')
         self.assertEqual(env['AIVISION_BROWSER_OUTPUT_DIR'], str(Path('/safe/browser')))
@@ -231,11 +234,23 @@ class BrowserPlatformTests(unittest.TestCase):
                       'agent_product': 'langfuse', 'space_key': 'private-space-key', 'data_backend': 'oceanbase'}
             smoke = browser.shared.Smoke(out, {}, set())
             calls = []
+            auth_sockets = []
             def run(name, command, **kwargs):
                 calls.append((name, command, kwargs.get('env', {})))
                 self.assertTrue((runtime / 'provider.env').exists())
                 self.assertEqual(stat.S_IMODE((runtime / 'provider.env').stat().st_mode), 0o600)
                 if name == 'browser':
+                    endpoint = Path(kwargs['env']['AIVISION_BROWSER_AUTH_SOCKET'])
+                    auth_sockets.append(endpoint)
+                    self.assertEqual(stat.S_IMODE(endpoint.parent.stat().st_mode), 0o700)
+                    self.assertEqual(list(endpoint.parent.iterdir()), [endpoint])
+                    self.assertTrue(endpoint.is_socket())
+                    for _ in range(2):
+                        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as worker:
+                            worker.settimeout(2)
+                            worker.connect(str(endpoint))
+                            with worker.makefile('r') as state:
+                                self.assertEqual(json.load(state), json.loads(auth.read_text()))
                     path = out / 'browser'; path.mkdir()
                     rows = [{'status': 'expected', 'results': [{'status': 'passed'}]} for _ in range(11)]
                     (path / 'results.json').write_text(json.dumps({'stats': {'expected': 11, 'unexpected': 0, 'flaky': 0, 'skipped': 0},
@@ -243,9 +258,7 @@ class BrowserPlatformTests(unittest.TestCase):
                 return subprocess.CompletedProcess(command, 0, '', '')
             def fresh_auth(*_args, **_kwargs):
                 self.assertEqual([row[0] for row in calls], ['python5', 'js5', 'js6', 'manifest'])
-                path = runtime / 'browser-auth.json'
-                browser.write_private(path, auth.read_text())
-                return path
+                return json.loads(auth.read_text())
             with patch.object(smoke, 'run', side_effect=run), \
                     patch.object(browser, 'prepare_browser_auth', side_effect=fresh_auth), \
                     patch.object(browser, 'verify_collection', return_value={'provider_request_budget': 7}):
@@ -257,11 +270,13 @@ class BrowserPlatformTests(unittest.TestCase):
             for name, command, env in calls[1:]:
                 self.assertNotIn('nv-private', json.dumps(command))
                 self.assertNotIn('nv-private', json.dumps(env))
+                self.assertNotIn('cookie-private', json.dumps(command))
+                self.assertNotIn('cookie-private', json.dumps(env))
             self.assertFalse((runtime / 'provider.env').exists())
             self.assertFalse((runtime / 'targets.json').exists())
             self.assertFalse((runtime / 'browser-auth.json').exists())
+            self.assertFalse(auth_sockets[0].parent.exists())
             self.assertEqual(calls[-1][1][-3:], ['--config', 'playwright.platform.config.ts', r'collection\.spec\.ts$'])
-            self.assertEqual(calls[-1][2]['AIVISION_BROWSER_AUTH_FILE'], str(runtime / 'browser-auth.json'))
 
 
 if __name__ == '__main__': unittest.main()

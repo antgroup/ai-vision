@@ -104,8 +104,8 @@ def _lease_key(root):
 class CredentialLease:
     """Portable exclusive credential lock. Crash leftovers fail closed.
 
-    The identifier is an HMAC of the credential under a private lease-directory
-    key. No credential or environment contents enter lock files.
+    The identifier is derived with scrypt and a private lease-directory salt.
+    No credential or environment contents enter lock files.
     All orchestrated source/probe/Judge work must retain this same lease/budget.
     Never unlink a competing owner's file or automatically break stale locks.
     """
@@ -150,7 +150,10 @@ class CredentialLease:
         return (current.st_dev, current.st_ino) == (self._identity.st_dev, self._identity.st_ino)
 
     def _lock_name(self, credential):
-        return hmac.digest(self._key, credential.encode(), 'sha256').hex() + '.lock'
+        identifier = hashlib.scrypt(
+            credential.encode(), salt=self._key, n=2**14, r=8, p=1, dklen=32
+        )
+        return identifier.hex() + '.lock'
 
     def matches_credential(self, credential):
         return hmac.compare_digest(self.path.name, self._lock_name(credential))
