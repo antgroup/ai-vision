@@ -4,8 +4,8 @@ package compose
 
 import (
 	"context"
+	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,7 +13,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -173,7 +172,11 @@ func (p *Project) Publish() (string, error) {
 		}
 	}
 	parent := filepath.Join(root, "compose", "bundles")
-	bundle := filepath.Join(parent, digest(files))
+	key, err := loadOrCreateBundleKey(parent)
+	if err != nil {
+		return "", err
+	}
+	bundle := filepath.Join(parent, keyedBundleIdentity(key, files))
 	if _, err := os.Lstat(bundle); err == nil {
 		return bundle, verifyBundle(bundle)
 	} else if !os.IsNotExist(err) {
@@ -341,23 +344,19 @@ func nativeCompose(ctx context.Context, docker, file, envFile, namespace, action
 	return nil
 }
 
-func digest(files []generate.File) string {
-	ordered := append([]generate.File(nil), files...)
-	sort.Slice(ordered, func(i, j int) bool { return ordered[i].Path < ordered[j].Path })
-	hash := sha256.New()
-	for _, file := range ordered {
-		_ = binary.Write(hash, binary.BigEndian, uint64(len(file.Path)))
-		_, _ = hash.Write([]byte(file.Path))
-		_ = binary.Write(hash, binary.BigEndian, uint64(len(file.Content)))
-		_, _ = hash.Write(file.Content)
-	}
-	return hex.EncodeToString(hash.Sum(nil))
-}
-
 func verifyBundle(bundle string) error {
 	name := filepath.Base(bundle)
-	if decoded, err := hex.DecodeString(name); err != nil || len(decoded) != sha256.Size || strings.ToLower(name) != name {
+	suffix, keyed := strings.CutPrefix(name, bundleIdentityPrefix)
+	if decoded, err := hex.DecodeString(suffix); err != nil || len(decoded) != sha256.Size || strings.ToLower(suffix) != suffix {
 		return fmt.Errorf("invalid Compose bundle content identity")
+	}
+	var key []byte
+	if keyed {
+		var err error
+		key, err = readSavedBundleKey(filepath.Dir(filepath.Dir(bundle)))
+		if err != nil {
+			return err
+		}
 	}
 	var files []generate.File
 	err := filepath.WalkDir(bundle, func(path string, entry fs.DirEntry, err error) error {
@@ -391,7 +390,13 @@ func verifyBundle(bundle string) error {
 	if err != nil {
 		return err
 	}
-	if digest(files) != name {
+	var identity string
+	if keyed {
+		identity = keyedBundleIdentity(key, files)
+	} else {
+		identity = digest(files)
+	}
+	if !hmac.Equal([]byte(identity), []byte(name)) {
 		return fmt.Errorf("Compose bundle integrity check failed; restore the original immutable bundle")
 	}
 	return nil
