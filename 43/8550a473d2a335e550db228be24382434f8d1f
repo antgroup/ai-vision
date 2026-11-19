@@ -1,0 +1,19 @@
+.github/workflows/framework-e2e.yml
+  s_7ddb4c6ac82aba::t_2b69e168e6b611 5-9,22-23,25-26,29,32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "438550a473d2a335e550db228be24382434f8d1f",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
