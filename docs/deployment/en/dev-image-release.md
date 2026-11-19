@@ -118,6 +118,19 @@ Retain the actual target, namespace, workdir and blueprint on subsequent operati
 
 When upgrading an existing deployment, update all five image overrides and the release metadata in the original private vars file. Preserve the original database type and configuration, credentials, namespace and storage. If the file uses role aliases such as `DATA_BACKEND_IMAGE`, update that spelling since it takes precedence over `SIGNOZ_IMAGE` in the same file. Check environment and CLI overrides before casting. About checks each observed component against its own manifest entry, including reused builds that retain their original SHA and version.
 
+
+For an existing OpenShell deployment with unkeyed enrollment fingerprints, first
+deploy a backend that writes keyed fingerprints and can still verify old retries
+([introduced in #8](https://github.com/antgroup/ai-vision/pull/8)). Wait at least
+60 minutes after the last backend instance that writes unkeyed fingerprints
+stops serving before deploying the backend that requires keyed fingerprints.
+If you skip the intermediate backend, pause issuance of new OpenShell setup
+commands at least 60 minutes before upgrading and keep it paused until the
+upgrade finishes.
+Keep saved connections and their owned host state. If an earlier command can no
+longer confirm its registration, generate a new command from the
+[OpenShell setup drawer](sandbox-plugins.md#recommended-install-on-the-ai-vision-deployment-host).
+
 ## Reuse, failures and recovery
 
 The latest published versioned product Release is the default reuse baseline; `reuse_release` selects one explicitly. CI verifies its manifest, checksum and source tag. Unchanged tracked build contexts may retain their image digest and actual original identity; missing metadata or changed inputs trigger a new build. `force_rebuild=true` refreshes builds/base images. Source and deployment test success are never reused.

@@ -118,6 +118,14 @@ aiv logs --namespace aivision -n 80 backend
 
 升级已有部署时，在原私有变量文件中更新五个镜像引用和发布元数据，保留数据库类型及配置、凭据、namespace 和存储目录。若已使用 `DATA_BACKEND_IMAGE` 等角色键，请直接修改该键。同一文件中的角色键优先于 `SIGNOZ_IMAGE` 等旧键。执行 cast 前还需检查环境变量和命令行覆盖项。关于页面按 manifest 核对实际组件，复用镜像仍显示原始 SHA 和版本。
 
+
+如果现有 OpenShell 部署还会写入无密钥的注册凭据指纹，先升级到写入带密钥指纹、
+仍兼容旧重试的后端（[由 #8 引入](https://github.com/antgroup/ai-vision/pull/8)）。
+最后一个写入无密钥指纹的后端实例停止服务后，至少等待 60 分钟，再升级到要求带密钥
+指纹的后端。如果跳过过渡版本，至少提前 60 分钟暂停签发 OpenShell 安装命令，
+等后端升级完成再恢复签发。保留已保存的连接及其主机归属状态。旧命令无法确认注册时，
+在 [OpenShell 安装侧栏](sandbox-plugins.md#推荐在-ai-vision-部署主机上自动安装)重新生成命令。
+
 ## 复用、失败与恢复
 
 默认复用基线是最近发布的带版本号产品 Release，`reuse_release` 可明确指定。CI 校验 manifest、校验和和源码 tag。构建上下文未变时可保留镜像 digest 与真实原始身份；元数据缺失或输入改变时重新构建。`force_rebuild=true` 用于刷新构建／基础镜像。源码测试和部署验收结论始终重新获取。

@@ -317,6 +317,10 @@ class SandboxBootstrapTests(TestCase):
         self.assertNotIn(body["api_key"], str(stored.__dict__))
         self.assertNotIn(body["api_key"], str(response.data))
         self.assertEqual(
+            stored.enrollment_key_hash,
+            salted_hmac("aivision.sandbox.enrollment", body["api_key"], algorithm="sha256").hexdigest(),
+        )
+        self.assertEqual(
             self.report(
                 grant,
                 [event(13, "registration"), event(14, "registration", "done", "ready")],
@@ -344,7 +348,7 @@ class SandboxBootstrapTests(TestCase):
             self.machine_post(grant, "enroll", "report_token", body).status_code, 401
         )
 
-    def test_existing_enrollment_replay_upgrades_its_legacy_fingerprint(self):
+    def test_saved_enrollment_replay_requires_a_keyed_fingerprint(self):
         from apps.core.services.sandbox_installation import digest
 
         grant = self.issue()
@@ -361,18 +365,25 @@ class SandboxBootstrapTests(TestCase):
         existing.registration_state = "saved"
         existing.connection_uuid = "b" * 32
         existing.enrollment_platform = body["platform"]
-        existing.enrollment_key_hash = digest(fixture_key)
-        existing.save(update_fields=["registration_state", "connection_uuid",
-                                     "enrollment_platform", "enrollment_key_hash"])
-        with patch("apps.core.services.sandbox_bootstrap.enrollment_remote") as remote:
-            response = self.machine_post(grant, "enroll", "enrollment_token", body)
-            self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.data["data"]["connection_uuid"], existing.connection_uuid)
-            remote.assert_not_called()
-        self.assertEqual(
-            self.model(grant).enrollment_key_hash,
-            salted_hmac("aivision.sandbox.enrollment", fixture_key, algorithm="sha256").hexdigest(),
-        )
+        existing.save(update_fields=[
+            "registration_state", "connection_uuid", "enrollment_platform",
+        ])
+        for case, fingerprint in (
+            ("legacy", digest(fixture_key)),
+            ("missing", ""),
+        ):
+            with self.subTest(case=case):
+                existing.enrollment_key_hash = fingerprint
+                existing.save(update_fields=["enrollment_key_hash"])
+                with patch("apps.core.services.sandbox_bootstrap.enrollment_remote") as remote:
+                    response = self.machine_post(grant, "enroll", "enrollment_token", body)
+                self.assertEqual(response.status_code, 409)
+                self.assertEqual(response.data["message"], "SANDBOX_REPORT_CONFLICT")
+                remote.assert_not_called()
+                stored = self.model(grant)
+                self.assertEqual(stored.enrollment_key_hash, fingerprint)
+                self.assertEqual(stored.registration_state, "saved")
+                self.assertEqual(stored.connection_uuid, existing.connection_uuid)
 
     def test_enrollment_unready_and_secret_change_do_not_claim_saved_connection(self):
         grant = self.issue()
