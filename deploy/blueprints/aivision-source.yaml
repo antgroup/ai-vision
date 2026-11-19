@@ -44,6 +44,9 @@ config:
   goModCacheVolume: aivforge-gomodcache
 
   vars:
+    # Build and run the vendored gateway with its own Go toolchain.
+    GATEWAY_GOLANG_IMAGE: golang:1.26.11-bookworm
+
     # Source deployments have no installed Release metadata by default.
     AIVISION_RELEASE_MANIFEST_BASE64: ""
     # --- source coordinates (edit these to deploy a different fork/branch) ---
@@ -301,9 +304,9 @@ components:
       - name: build gateway binary (linux, in docker, vendored => offline)
         shell: |
           docker run --rm -v ${COMPONENT_DIR}:/src -w /src \
-            -e CGO_ENABLED=1 -e GOFLAGS=-mod=vendor -e GOTOOLCHAIN=local ${GOLANG_IMAGE} \
+            -e CGO_ENABLED=1 -e GOFLAGS=-mod=vendor -e GOTOOLCHAIN=local ${GATEWAY_GOLANG_IMAGE} \
             go build -o /src/app ./cmd/app
-    image: ${GOLANG_IMAGE}
+    image: ${GATEWAY_GOLANG_IMAGE}
     containerName: ${GATEWAY_CONTAINER}
     network: ${DOCKER_NETWORK}
     command: ["/app/collector", "--config", "/etc/otelcol/config.yaml"]

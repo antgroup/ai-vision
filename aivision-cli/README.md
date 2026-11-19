@@ -954,9 +954,9 @@ to keep straight.
   and run **in containers**, so host `node`/`pnpm` are optional.
 - **cargo** / **npm** if you want host-platform Agent-market plugins built at
   cast time (best-effort; missing toolchains skip that agent).
-- Images: the selected OceanBase CE or seekdb image, `golang:1.25`,
-  `ghcr.io/astral-sh/uv:python3.11-bookworm`, `node:22-bookworm` (pulled on first
-  cast).
+- The first cast pulls the selected OceanBase CE or seekdb image,
+  `golang:1.25` for SigNoz, `golang:1.26.11-bookworm` for the gateway,
+  `ghcr.io/astral-sh/uv:python3.11-bookworm`, and `node:22-bookworm`.
 - Network for the **first** SigNoz community build (it has no vendor dir); the
   gateway build is vendored and fully offline.
 

@@ -13,7 +13,7 @@
 # Mount a different file at /etc/otelcol/config.yaml to override the pipeline.
 
 # ── Stage 1: build (vendored modules => fully offline, cross-compiled) ──────
-FROM --platform=$BUILDPLATFORM golang:1.25-bookworm AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26.11-bookworm AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
