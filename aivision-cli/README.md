@@ -41,8 +41,35 @@ Unstamped developer builds report `dev`.
 When a version includes `aiv-windows-x64.zip`, download it together with
 `SHA256SUMS` from the same [AI Vision Release](https://github.com/antgroup/ai-vision/releases).
 The PowerShell 7 [offline installer](scripts/install-windows-cli.ps1) verifies
-that archive and installs `aiv.exe` under `%LOCALAPPDATA%\AI Vision\bin`.
+the archive, installs `aiv.exe` under `%LOCALAPPDATA%\AI Vision\bin`, and adds
+that directory to your user PATH. Save the script alongside the downloaded
+assets and run these commands from that directory.
+
+```powershell
+pwsh -File .\install-windows-cli.ps1 -AssetDirectory .
+```
+
 Open a new terminal and run `aiv --version` to verify the selected release.
+If your execution policy blocks the script, paste the following commands into
+an interactive PowerShell 7 session in the download directory. Then use the
+full executable path shown in the last command.
+
+```powershell
+& {
+    $ErrorActionPreference = 'Stop'
+    $zip = (Get-Item -LiteralPath '.\aiv-windows-x64.zip').FullName
+    $checksums = @(Get-Content -LiteralPath '.\SHA256SUMS' | Where-Object {
+        $_ -cmatch '^[a-f0-9]{64}  aiv-windows-x64\.zip$'
+    })
+    $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
+    if ($checksums.Count -ne 1 -or $hash -ine $checksums[0].Substring(0, 64)) {
+        throw 'SHA-256 verification failed for aiv-windows-x64.zip.'
+    }
+    $bin = Join-Path $env:LOCALAPPDATA 'AI Vision\bin'
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($zip, $bin, $true)
+    & (Join-Path $bin 'aiv.exe') --version
+}
+```
 
 The Windows client supports `auth`, `space`, `key`, and `query` against an
 existing AI Vision server. It saves profiles in the current user's config

@@ -218,7 +218,7 @@ func AtomicWrite(path string, b []byte) error {
 	if closeErr != nil {
 		return closeErr
 	}
-	return os.Rename(f.Name(), path)
+	return replaceFile(f.Name(), path)
 }
 
 // Active returns the active profile name.
