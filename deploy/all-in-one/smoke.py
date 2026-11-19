@@ -254,7 +254,7 @@ def read_diagnosis(client, space_id, demo, receipt):
             listing = client.api(base + "/records", params={"task_uuid": task_id, "job_uuid": job_id})
             records = listing.get("items", [])
             if listing.get("total") == 1 and len(records) == 1:
-                record_id = resource_id(records[0]["uuid"])
+                record_id = resource_id(records[0]["uuid"], "diagnosis record")
                 record = client.api(f"{base}/records/{record_id}")
                 break
         time.sleep(2)

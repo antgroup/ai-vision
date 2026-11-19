@@ -79,11 +79,16 @@ class Platform:
         return user
 
 
-def resource_id(value):
-    if not isinstance(value, str) or not re.fullmatch(
-        r"(?:[0-9a-f]{32}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})", value
-    ):
-        raise DemoError("AI Vision returned an invalid resource identity.")
+RESOURCE_IDS = {
+    "resource": r"(?:[0-9a-f]{32}|[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})",
+    "diagnoser": r"dg-[a-z0-9]{8}",
+    "diagnosis record": r"r-[0-9a-f]{16}",
+}
+
+
+def resource_id(value, kind="resource"):
+    if not isinstance(value, str) or not re.fullmatch(RESOURCE_IDS[kind], value):
+        raise DemoError(f"AI Vision returned an invalid {kind} identity.")
     return value
 
 
@@ -99,8 +104,8 @@ def prepare_demo(client, space_id):
             if error.status != 503 or time.monotonic() + 2 >= deadline:
                 raise
             time.sleep(2)
-    for key in ("agent_uuid", "diagnoser_uuid"):
-        resource_id(receipt[key])
+    resource_id(receipt["agent_uuid"])
+    resource_id(receipt["diagnoser_uuid"], "diagnoser")
     for key in ("trace_id", "comparison_trace_id"):
         value = receipt[key]
         if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{32}", value) or not int(value, 16):

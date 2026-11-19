@@ -10,7 +10,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
 
-from sample_trace import trace_complete
+from sample_trace import prepare_demo, trace_complete
 from smoke import QualificationError, inspect, read_candidate, read_diagnosis, require_archive_parity
 
 
@@ -119,6 +119,16 @@ class DockerResourceTests(unittest.TestCase):
 
 
 class ReadbackTests(unittest.TestCase):
+    def test_demo_accepts_the_product_rule_identity(self):
+        client = Mock()
+        receipt = {
+            "agent_uuid": "12345678-1234-1234-1234-1234567890ab",
+            "diagnoser_uuid": "dg-a1b2c3d4", "trace_id": "a" * 32,
+            "comparison_trace_id": "b" * 32,
+        }
+        client.api.return_value = receipt
+        self.assertEqual(prepare_demo(client, "c" * 32), receipt)
+
     def test_trace_cannot_pass_on_partial_or_duplicate_spans(self):
         trace_id = "a" * 32
         spans = [{"trace_id": trace_id, "span_id": f"{index:016x}"} for index in (1, 2)]
@@ -129,7 +139,7 @@ class ReadbackTests(unittest.TestCase):
 
     def test_diagnosis_must_persist_the_expected_tool_failure(self):
         client = Mock()
-        job_id, task_id, record_id = "a" * 32, "b" * 32, "c" * 32
+        job_id, task_id, record_id = "a" * 32, "b" * 32, "r-" + "c" * 16
         demo = {"trace_id": "d" * 32, "diagnoser_uuid": "e" * 32}
         receipt = {"job_uuid": job_id, "task_uuid": task_id}
         task = {"uuid": task_id, "job_uuid": job_id, "status": "succeeded"}
