@@ -292,18 +292,22 @@ class TaskStatsStore:
     ) -> list[TaskStatsSnapshot]:
         scope = "owner" if owner_id is not None else "global"
         resolved_owner_id = owner_id or ""
-        escaped_owner_id = _esc(resolved_owner_id) if resolved_owner_id else ""
+        parameters = {
+            "job_uuid": _esc(job_uuid),
+            "owner_id": _esc(resolved_owner_id) if resolved_owner_id else "",
+        }
         col = self.dialect.col
         where = [
-            *self.dialect.base_predicates(),
+            *self.dialect.base_predicates(parameters=parameters),
             f"{col('name')} = '{TASK_STATS_SPAN_NAME}'",
-            f"{col('attributes.job_uuid')} = '{_esc(job_uuid)}'",
+            f"{col('attributes.job_uuid')} = :job_uuid",
             f"{col('attributes.status')} = 'succeeded'",
             f"{col('attributes.stats_scope')} = '{scope}'",
-            f"{col('attributes.owner_id')} = '{escaped_owner_id}'",
+            f"{col('attributes.owner_id')} = :owner_id",
         ]
         if task_uuid:
-            where.append(f"{col('attributes.task_uuid')} = '{_esc(task_uuid)}'")
+            parameters["task_uuid"] = _esc(task_uuid)
+            where.append(f"{col('attributes.task_uuid')} = :task_uuid")
         else:
             start, end = resolve_task_stats_window(start_time, end_time)
             where.extend(
@@ -320,7 +324,7 @@ class TaskStatsStore:
             + f" ORDER BY {self.dialect.int_col('attributes.attempt')} DESC,"
             f" {col('end_time_unix_nano')} DESC"
         )
-        rows = self.reader.query(sql)
+        rows = self.reader.query(sql, parameters=parameters)
         snapshots = self._latest_logical_snapshots(rows)
         if task_uuid:
             snapshots = [snapshot for snapshot in snapshots if snapshot.task_uuid == task_uuid]

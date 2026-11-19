@@ -144,7 +144,7 @@ class BrowserPlatformTests(unittest.TestCase):
     def test_live_commands_have_fixed_endpoint_caps_and_no_key_in_argv(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            commands = browser.collection_commands(Path('/repo'), root, root / 'private', source='nvidia',
+            commands = browser.collection_commands(Path('/repo'), root, source='nvidia',
                                                    python='/python', node='/node')
             self.assertEqual(len(commands), 3)
             self.assertEqual(sum(item['requests'] for item in commands), 7)
@@ -237,8 +237,8 @@ class BrowserPlatformTests(unittest.TestCase):
             auth_sockets = []
             def run(name, command, **kwargs):
                 calls.append((name, command, kwargs.get('env', {})))
-                self.assertTrue((runtime / 'provider.env').exists())
-                self.assertEqual(stat.S_IMODE((runtime / 'provider.env').stat().st_mode), 0o600)
+                self.assertFalse((runtime / 'provider.env').exists())
+                self.assertFalse((runtime / 'targets.json').exists())
                 if name == 'browser':
                     endpoint = Path(kwargs['env']['AIVISION_BROWSER_AUTH_SOCKET'])
                     auth_sockets.append(endpoint)
@@ -266,10 +266,15 @@ class BrowserPlatformTests(unittest.TestCase):
                     targets={'langfuse': target}, auth_file=auth, source='nvidia', key='nv-private')
             self.assertTrue(result['verified'])
             self.assertEqual([row[0] for row in calls], ['python5', 'js5', 'js6', 'manifest', 'browser'])
-            self.assertEqual(calls[0][2]['AIVISION_LIVE_PROVIDER_KEY'], 'nv-private')
-            for name, command, env in calls[1:]:
+            for _name, command, env in calls[:3]:
+                self.assertEqual(env['AIVISION_LIVE_PROVIDER_KEY'], 'nv-private')
+                self.assertEqual(json.loads(env['AIVISION_E2E_TARGETS_JSON']), {'langfuse': target})
+                self.assertNotIn('nv-private', json.dumps(command))
+                self.assertNotIn('private-space-key', json.dumps(command))
+            for _name, command, env in calls[3:]:
                 self.assertNotIn('nv-private', json.dumps(command))
                 self.assertNotIn('nv-private', json.dumps(env))
+                self.assertNotIn('private-space-key', json.dumps(env))
                 self.assertNotIn('cookie-private', json.dumps(command))
                 self.assertNotIn('cookie-private', json.dumps(env))
             self.assertFalse((runtime / 'provider.env').exists())

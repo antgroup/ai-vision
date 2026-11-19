@@ -7,7 +7,9 @@ import { pathToFileURL } from "node:url";
 import { canonicalUsageKeys, generationUsageContract, rawUsageKey } from "./usage_contract.mjs";
 
 export async function loadTarget(path, key = "langfuse") {
-  const targets = JSON.parse(await readFile(path, "utf8"));
+  const payload = path ? await readFile(path, "utf8") : process.env.AIVISION_E2E_TARGETS_JSON;
+  assert.ok(payload, "Pass --targets FILE or set AIVISION_E2E_TARGETS_JSON");
+  const targets = JSON.parse(payload);
   const target = targets[key] ?? targets;
   for (const name of ["agent_uuid", "space_key", "space_id", "agent_product"]) assert.ok(target[name], `Target requires ${name}`);
   assert.ok(target.endpoint ?? target.base_url, "Target requires endpoint");
