@@ -81,7 +81,7 @@ const frameworks = [
     frameworkId: "eino",
     label: "Eino",
     language: "go",
-    runtime: "Go 1.23+",
+    runtime: "Go 1.25+",
     install:
       "go mod init eino-example\ngo get github.com/cloudwego/eino@v0.9.22",
     code: 'package main\nimport "fmt"\nfunc main() { fmt.Println("complete Eino example") }\n',

@@ -3843,7 +3843,7 @@
     "language": "开发语言",
     "nodeOnly": "JavaScript / TypeScript 示例运行在 Node.js 服务端。上报凭证应保留在服务端，不放入浏览器应用。",
     "goScope": "Go 目前支持 Eino。通过 Eino 官方 Langfuse v2 回调接入，复用下方项目、凭据和轨迹验证流程；其他 Go 框架尚未提供接入示例。",
-    "langfuseGoVersions": "Go 1.23+；示例固定使用 Eino v0.9.22、官方 Langfuse 回调 v2.0.2 和 OpenAI 组件 v0.1.13。在新的示例目录中执行安装命令；接入现有模块时，请先检查依赖兼容性。",
+    "langfuseGoVersions": "Go 1.25+；示例固定使用 Eino v0.9.22、官方 Langfuse 回调 v2.0.2 和 OpenAI 组件 v0.1.13。在新的示例目录中执行安装命令；接入现有模块时，请先检查依赖兼容性。",
     "existingGoVariables": "启动时创建一次回调，将其追加到现有调用选项，保留业务回调和模型配置，并在服务关闭时执行 Shutdown。首次试跑可切换到“运行完整示例”。",
     "langfuseJsVersions": "Node.js 22+；JavaScript 示例使用 @langfuse/* 6.0.0。已有 OpenTelemetry SDK 时，将 LangfuseSpanProcessor 和示例中的 protobuf 导出器加入原配置。",
     "existingJsVariables": "将 existing_* 和 session_id 替换为项目已有变量；启动配置执行一次，请求部分放在 async 处理函数中。",

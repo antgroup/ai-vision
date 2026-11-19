@@ -3846,7 +3846,7 @@
     "language": "開発言語",
     "nodeOnly": "JavaScript / TypeScript の例は Node.js サーバーで実行します。送信認証情報はサーバー側で管理し、ブラウザーアプリには含めないでください。",
     "goScope": "Goでは現在Einoに対応しています。Eino公式のLangfuse v2コールバックを使用し、以下のプロジェクト、認証情報、トレース検証の手順で接続します。他のGoフレームワークの例はまだありません。",
-    "langfuseGoVersions": "Go 1.23以上。サンプルはEino v0.9.22、公式Langfuseコールバック v2.0.2、OpenAIコンポーネント v0.1.13を使用します。新しいサンプルディレクトリでインストールし、既存モジュールへの追加前に依存関係の互換性を確認してください。",
+    "langfuseGoVersions": "Go 1.25以上。サンプルはEino v0.9.22、公式Langfuseコールバック v2.0.2、OpenAIコンポーネント v0.1.13を使用します。新しいサンプルディレクトリでインストールし、既存モジュールへの追加前に依存関係の互換性を確認してください。",
     "existingGoVariables": "起動時にコールバックを一度作成し、既存の呼び出しオプションに追加します。業務コールバックとモデル設定を維持し、サービス終了時にShutdownを実行してください。初回は完全なサンプルを実行できます。",
     "langfuseJsVersions": "Node.js 22+。JS の例は @langfuse/* 6.0.0 を使用します。OpenTelemetry を設定済みの場合は、LangfuseSpanProcessor と例の protobuf exporter を既存 SDK に追加してください。",
     "existingJsVariables": "existing_* と session_id を既存の変数に置き換えます。初期化は起動時に一度だけ実行し、リクエスト部分は async ハンドラーに配置します。",

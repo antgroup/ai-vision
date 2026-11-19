@@ -3846,7 +3846,7 @@
     "language": "Development language",
     "nodeOnly": "JavaScript / TypeScript examples run on the Node.js server. Keep ingestion credentials on the server, outside browser applications.",
     "goScope": "Go currently supports Eino through its official Langfuse v2 callback. Use the project, credentials, and trace verification below. Examples for other Go frameworks are not yet available.",
-    "langfuseGoVersions": "Go 1.23+; the example pins Eino v0.9.22, the official Langfuse callback v2.0.2, and the OpenAI component v0.1.13. Run the install command in a new example directory; check dependency compatibility before adding it to an existing module.",
+    "langfuseGoVersions": "Go 1.25+; the example pins Eino v0.9.22, the official Langfuse callback v2.0.2, and the OpenAI component v0.1.13. Run the install command in a new example directory; check dependency compatibility before adding it to an existing module.",
     "existingGoVariables": "Create the callback once at startup, append it to your existing invocation options, preserve business callbacks and model configuration, and call Shutdown when the service stops. Use the complete example for a first run.",
     "langfuseJsVersions": "Node.js 22+; JS examples use @langfuse/* 6.0.0. If OpenTelemetry is already configured, add LangfuseSpanProcessor and the example protobuf exporter to that SDK.",
     "existingJsVariables": "Replace existing_* and session_id with your project variables. Run startup configuration once and place the request section in an async handler.",
