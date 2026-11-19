@@ -222,6 +222,36 @@ def test_dataset_limit_must_be_a_positive_integer(client):
     assert client.post("/api/v1/dataset", json=payload).status_code == 201
 
 
+def test_dataset_validates_candidate_filters_before_saving(client):
+    where = "(`name` = 'first' OR `name` = 'second') AND `parent_span_id` = ''"
+    payload = {
+        "space_uuid": "s",
+        "agent_uuid": "a",
+        "name": "filter-check",
+        "type": "signoz",
+        "spec": {
+            "query": {"table": "trace", "where": where},
+            "runtime_type": "custom-runtime",
+        },
+    }
+    response = client.post("/api/v1/dataset", json=payload)
+    assert response.status_code == 201
+    dataset_url = f"/api/v1/dataset/{response.json()['uuid']}"
+    payload["spec"]["query"]["where"] = "name"
+    assert client.patch(dataset_url, json={"spec": payload["spec"]}).status_code == 422
+    payload["name"] = "another-filter"
+    assert client.post("/api/v1/dataset", json=payload).status_code == 422
+    assert client.get(dataset_url).json()["spec"]["query"]["where"] == where
+
+    payload["spec"]["query"] = {"table": " `trace` ", "where": None}
+    updated = client.patch(dataset_url, json={"spec": payload["spec"]})
+    assert updated.status_code == 200
+    assert updated.json()["spec"]["query"] == payload["spec"]["query"]
+
+    payload["spec"]["query"]["table"] = "Trace samples"
+    assert client.patch(dataset_url, json={"spec": payload["spec"]}).status_code == 422
+
+
 def test_signoz_scope_fields_must_be_non_empty_pairs(client):
     base = {
         "space_uuid": "s",

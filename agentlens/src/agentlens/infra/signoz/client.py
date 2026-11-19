@@ -46,11 +46,13 @@ class InMemorySignozClient:
             # Test adapter only; production uses SQLAlchemy bound parameters.
             from agentlens.infra.signoz.dialect import quote_literal
 
-            sql = re.sub(
-                r":([A-Za-z_][A-Za-z0-9_]*)",
-                lambda m: quote_literal(str(parameters[m.group(1)])),
-                sql,
-            )
+            def render_parameter(match: re.Match[str]) -> str:
+                value = parameters[match[1]]
+                if type(value) is int:
+                    return str(value)
+                return quote_literal(str(value))
+
+            sql = re.sub(r":([A-Za-z_][A-Za-z0-9_]*)", render_parameter, sql)
         table, where, where_in, where_not, where_not_null, where_gte, where_lt = _parse_simple_sql(
             sql
         )

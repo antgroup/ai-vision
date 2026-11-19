@@ -1,5 +1,7 @@
 import re
+from dataclasses import replace
 from datetime import datetime, timedelta
+from typing import Any
 
 from agentlens.domain.dataset import TraceQuerySpec
 from agentlens.domain.diagnosis_input import validate_explicit_trace_ids
@@ -10,6 +12,10 @@ from agentlens.infra.signoz.dialect import (
     parse_period,
     quote_identifier,
     quote_literal,
+)
+from agentlens.service.datasource.dataset_filter import (
+    compile_dataset_filter,
+    normalize_dataset_table,
 )
 from agentlens.utils.duration import parse_duration
 
@@ -42,15 +48,6 @@ def dataset_scope_predicates(dataset_spec: dict) -> list[str]:
     return predicates
 
 
-def _where_suffix(spec: TraceQuerySpec, dialect: ColumnDialect) -> str:
-    return f" AND ({dialect.rewrite_where(spec.where)})" if spec.where else ""
-
-
-def _base_suffix(dialect: ColumnDialect) -> str:
-    predicates = dialect.base_predicates()
-    return "".join(f" AND {predicate}" for predicate in predicates)
-
-
 def _parse_time_range(value: str) -> timedelta:
     try:
         return parse_duration(value)
@@ -60,41 +57,59 @@ def _parse_time_range(value: str) -> timedelta:
         ) from exc
 
 
+def _trace_limit(value: int | str) -> int:
+    if isinstance(value, str) and re.fullmatch(r"[0-9]+", value):
+        value = int(value)
+    if type(value) is not int or value < 0:
+        raise ValueError("Dataset query.limit must be a nonnegative integer")
+    return value
+
+
+def _trace_ids_condition(column: str, trace_ids: list[str], parameters: dict[str, Any]) -> str:
+    names = [f"selected_trace_{i}" for i in range(len(trace_ids))]
+    parameters.update(zip(names, trace_ids, strict=True))
+    return f"{column} IN ({', '.join(':' + name for name in names)})"
+
+
 def build_sql(
     spec: TraceQuerySpec,
     *,
     dialect: ColumnDialect | None = None,
     required_conditions: tuple[str, ...] = (),
+    parameters: dict[str, Any] | None = None,
     include_limit: bool = True,
-) -> str:
-    """Render the bounded source scan for one Dataset spec.
-
-    ``spec.where`` 与 ``required_conditions`` 均按 SigNoz 逻辑列（反引号包裹）书写，
-    由 ``dialect.rewrite_where`` 翻译为物理列；时间边界与租户谓词由 dialect 直接渲染。
-    """
+) -> tuple[str, dict[str, Any]]:
+    """Build a bounded scan. Extra predicates are authored by TraceStore."""
     dialect = dialect or FlatColumnDialect()
+    table = ".".join(
+        quote_identifier(part) for part in normalize_dataset_table(spec.table).split(".")
+    )
+
     now = datetime.now()
-
-    if spec.start_time and spec.end_time:
-        since = spec.start_time
-        until = spec.end_time
-    else:
-        until = spec.end_time or now.strftime("%Y-%m-%d %H:%M:%S")
-        since = spec.start_time or (now - _parse_time_range(spec.time_range)).strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
+    until = spec.end_time or now.strftime("%Y-%m-%d %H:%M:%S")
+    since = spec.start_time or (now - _parse_time_range(spec.time_range)).strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
+    bound = dict(parameters or {})
+    bound.update(
+        window_start=dialect.period_value(since),
+        window_end=dialect.period_value(until),
+    )
+    period = dialect.col("period")
     conditions = [
-        *dialect.base_predicates(),
-        f"{dialect.time_ge('period', since)} AND {dialect.time_lt('period', until)}",
+        *dialect.base_predicates(parameters=bound),
+        f"{period} >= :window_start",
+        f"{period} < :window_end",
     ]
 
-    if spec.where:
-        conditions.append(f"({dialect.rewrite_where(spec.where)})")
-    conditions.extend(dialect.rewrite_where(condition) for condition in required_conditions)
-
-    limit_clause = f" LIMIT {spec.limit}" if include_limit else ""
-    return f"SELECT * FROM {spec.table} WHERE {' AND '.join(conditions)}{limit_clause}"
+    where = compile_dataset_filter(spec.where, dialect, bound)
+    if where:
+        conditions.append(f"({where})")
+    conditions.extend(required_conditions)
+    if include_limit:
+        bound["trace_limit"] = _trace_limit(spec.limit)
+    limit_clause = " LIMIT :trace_limit" if include_limit else ""
+    return f"SELECT * FROM {table} WHERE {' AND '.join(conditions)}{limit_clause}", bound
 
 
 class TraceStore:
@@ -130,7 +145,8 @@ class TraceStore:
             if not isinstance(column, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]*", column):
                 raise ValueError("invalid scope column")
             params[f"scope_{i}"] = str(value)
-            conditions.append(f"{self.dialect.col(column)} = :scope_{i}")
+            scoped_column = self.dialect.col(column, parameters=params)
+            conditions.append(f"{scoped_column} = :scope_{i}")
         sql = (
             f"SELECT * FROM {quote_identifier(table)} WHERE {' AND '.join(conditions)}"
             f" ORDER BY {self.dialect.col('period')} ASC"
@@ -146,36 +162,6 @@ class TraceStore:
             )
         return self.client.query(sql, parameters=params, log_sql=False)
 
-    def _sql(
-        self,
-        spec: TraceQuerySpec,
-        *,
-        required_conditions: tuple[str, ...] = (),
-        include_limit: bool = True,
-    ) -> str:
-        return build_sql(
-            spec,
-            dialect=self.dialect,
-            required_conditions=required_conditions,
-            include_limit=include_limit,
-        )
-
-    def _trace_window_sql(
-        self,
-        base_spec: TraceQuerySpec,
-        trace_predicate: str,
-        start_time: str,
-        end_time: str,
-    ) -> str:
-        d = self.dialect
-        return (
-            f"SELECT * FROM {base_spec.table}"
-            f" WHERE {d.rewrite_where(trace_predicate)}"
-            f" AND {d.time_ge('period', start_time)}"
-            f" AND {d.time_lt('period', end_time)}"
-            f"{_where_suffix(base_spec, d)}{_base_suffix(d)}"
-        )
-
     def read_trace_rows_by_id(
         self,
         spec: TraceQuerySpec,
@@ -185,19 +171,18 @@ class TraceStore:
         normalized_trace_id = trace_id.strip()
         if not normalized_trace_id:
             return []
-        sql = (
-            self._sql(
-                spec,
-                required_conditions=(
-                    "`trace_id` IS NOT NULL",
-                    f"`trace_id` = {quote_literal(normalized_trace_id)}",
-                ),
-                include_limit=False,
-            )
-            + f" ORDER BY {self.dialect.col('period')} ASC"
+        d = self.dialect
+        trace = d.col("trace_id")
+        sql, params = build_sql(
+            spec,
+            dialect=d,
+            required_conditions=(f"{trace} IS NOT NULL", f"{trace} = :trace_id"),
+            parameters={"trace_id": normalized_trace_id},
+            include_limit=False,
         )
         return self.client.query(
-            sql,
+            sql + f" ORDER BY {d.col('period')} ASC",
+            parameters=params,
         )
 
     def read_recent_trace_rows(
@@ -211,23 +196,18 @@ class TraceStore:
         """Read recent complete traces using the Runner's bounded hydration shape."""
 
         d = self.dialect
-        latest_sql = (
-            self._sql(
-                spec,
-                required_conditions=(
-                    "`trace_id` IS NOT NULL",
-                    "`trace_id` != ''",
-                ),
-                include_limit=False,
-            ).replace(
-                "SELECT *",
-                f"SELECT {d.col('trace_id')}, MAX({d.col('period')}) AS `period`",
-                1,
-            )
-            + f" GROUP BY {d.col('trace_id')} ORDER BY `period` DESC LIMIT {max(1, count)}"
+        trace = d.col("trace_id")
+        latest_sql, latest_params = build_sql(
+            spec,
+            dialect=d,
+            required_conditions=(f"{trace} IS NOT NULL", f"{trace} != ''"),
+            parameters={"recent_count": max(1, count)},
+            include_limit=False,
         )
         candidates = self.client.query(
-            latest_sql,
+            latest_sql.replace("SELECT *", f"SELECT {trace}, MAX({d.col('period')}) AS `period`", 1)
+            + f" GROUP BY {trace} ORDER BY `period` DESC LIMIT :recent_count",
+            parameters=latest_params,
         )
         trace_ids = list(
             dict.fromkeys(
@@ -256,16 +236,18 @@ class TraceStore:
         except ValueError:
             rows_spec = base_trace_spec
 
-        trace_id_sql = ", ".join(quote_literal(trace_id) for trace_id in trace_ids)
-        rows_sql = (
-            self._sql(
-                rows_spec,
-                required_conditions=(f"`trace_id` IN ({trace_id_sql})",),
-                include_limit=False,
-            )
-            + f" ORDER BY {d.col('period')} ASC"
+        selected: dict[str, Any] = {}
+        rows_sql, params = build_sql(
+            rows_spec,
+            dialect=d,
+            required_conditions=(_trace_ids_condition(trace, trace_ids, selected),),
+            parameters=selected,
+            include_limit=False,
         )
-        rows = self.client.query(rows_sql)
+        rows = self.client.query(
+            rows_sql + f" ORDER BY {d.col('period')} ASC",
+            parameters=params,
+        )
         grouped: dict[str, list[dict]] = {}
         for row in rows:
             trace_id = str(row.get("trace_id") or "")
@@ -280,27 +262,30 @@ class TraceStore:
         span_names: set[str],
     ) -> tuple[list[str], list[dict]]:
         """Limit distinct targets, then read all matching lightweight Span rows."""
-        selected = ["trace_id", "start_time_unix_nano", "name", *sorted(fields)]
-        select_clause = ", ".join(
-            self.dialect.select_col(field) for field in dict.fromkeys(selected)
+        d = self.dialect
+        trace = d.col("trace_id")
+        required_conditions = [f"{trace} IS NOT NULL", f"{trace} != ''"]
+        name_params: dict[str, Any] = {}
+        where_is_empty = spec.where is None or (
+            isinstance(spec.where, str) and not spec.where.strip()
         )
-        required_conditions = [
-            "`trace_id` IS NOT NULL",
-            "`trace_id` != ''",
-        ]
-        if not spec.where and span_names:
-            names = ", ".join(quote_literal(name) for name in sorted(span_names))
-            required_conditions.append(f"`name` IN ({names})")
+        if where_is_empty and span_names:
+            names = [f"required_name_{i}" for i in range(len(span_names))]
+            name_params.update(zip(names, sorted(span_names), strict=True))
+            placeholders = ", ".join(f":{name}" for name in names)
+            required_conditions.append(f"{d.col('name')} IN ({placeholders})")
         # Render once so relative windows cannot drift between the two reads.
-        base_sql = self._sql(
+        base_sql, base_params = build_sql(
             spec,
+            dialect=d,
             required_conditions=tuple(required_conditions),
+            parameters=name_params,
             include_limit=False,
         )
-        trace_id_col = self.dialect.col("trace_id")
-        candidate_sql = base_sql.replace("SELECT *", f"SELECT DISTINCT {trace_id_col}", 1)
+        candidate_sql = base_sql.replace("SELECT *", f"SELECT DISTINCT {trace}", 1)
         candidates = self.client.query(
-            candidate_sql + f" ORDER BY {trace_id_col} ASC LIMIT {spec.limit}"
+            candidate_sql + f" ORDER BY {trace} ASC LIMIT :trace_limit",
+            parameters={**base_params, "trace_limit": _trace_limit(spec.limit)},
         )
         seen: set[str] = set()
         keys: list[str] = []
@@ -312,14 +297,18 @@ class TraceStore:
         if not keys:
             return [], []
 
-        trace_ids = ", ".join(quote_literal(key) for key in keys)
+        fields_params = base_params.copy()
+        selected = ["trace_id", "start_time_unix_nano", "name", *sorted(fields)]
+        select_clause = ", ".join(
+            d.select_col(field, parameters=fields_params) for field in dict.fromkeys(selected)
+        )
         fields_sql = (
             base_sql.replace("SELECT *", f"SELECT {select_clause}", 1)
-            + f" AND {trace_id_col} IN ({trace_ids})"
-            + f" ORDER BY {trace_id_col} ASC, {self.dialect.col('start_time_unix_nano')} ASC, "
-            + f"{self.dialect.col('span_id')} ASC"
+            + f" AND {_trace_ids_condition(trace, keys, fields_params)}"
+            + f" ORDER BY {trace} ASC, {d.col('start_time_unix_nano')} ASC, "
+            + f"{d.col('span_id')} ASC"
         )
-        rows = self.client.query(fields_sql)
+        rows = self.client.query(fields_sql, parameters=fields_params)
         return keys, rows
 
     def read_trace_spans(
@@ -342,14 +331,7 @@ class TraceStore:
         end_time: str,
     ) -> list[dict]:
         """Read one known trace inside a caller-provided bounded source window."""
-        sql = self._trace_window_sql(
-            base_spec,
-            f"`trace_id` = {quote_literal(trace_id)}",
-            start_time,
-            end_time,
-        )
-
-        return self.client.query(sql)
+        return self.read_trace_spans_batch_range(base_spec, [trace_id], start_time, end_time)
 
     def read_trace_spans_batch(
         self,
@@ -370,9 +352,15 @@ class TraceStore:
     ) -> list[dict]:
         if not trace_ids:
             return []
-        in_clause = ", ".join(quote_literal(value) for value in trace_ids)
-        sql = self._trace_window_sql(
-            base_spec, f"`trace_id` IN ({in_clause})", start_time, end_time
+        if not start_time or not end_time:
+            raise ValueError("Trace hydration requires a bounded time window")
+        d = self.dialect
+        selected: dict[str, Any] = {}
+        sql, params = build_sql(
+            replace(base_spec, start_time=start_time, end_time=end_time),
+            dialect=d,
+            required_conditions=(_trace_ids_condition(d.col("trace_id"), trace_ids, selected),),
+            parameters=selected,
+            include_limit=False,
         )
-
-        return self.client.query(sql)
+        return self.client.query(sql, parameters=params)

@@ -701,6 +701,7 @@ not supported by the current connection form.
 
 `spec.query` 必须是对象，包含 `table`；`runtime_type` 必须非空；typed能力由现役Projector映射决定，raw路径保持。
 查询窗口、过滤、数量上限与分组补拉设置见 [配置手册](configuration.md#signoz-数据读取)。
+创建或更新时，`spec.query.where` 必须使用配置手册中的 Trace 选样谓词语法。格式不受支持时返回 422，已保存的数据集保持原值。
 `spec.query.limit` caps distinct Trace candidates before the optional Selector, ordered by
 Trace ID ascending. It does not limit lightweight Span rows or guarantee a final diagnosis
 count when fewer candidates exist or the Selector rejects candidates.

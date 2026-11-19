@@ -2,6 +2,7 @@ import json
 from datetime import date, datetime, timedelta, timezone
 
 import pytest
+from sqlalchemy import text
 
 from agentlens.domain.dataset import TraceQuerySpec
 from agentlens.infra.signoz.dialect import (
@@ -81,13 +82,37 @@ def test_build_sql_with_signoz_dialect_appends_scope_and_tenant():
         end_time="2026-06-02 00:00:00",
         limit=5,
     )
-    sql = build_sql(spec, dialect=d, required_conditions=("`trace_id` IS NOT NULL",))
-    assert sql.startswith("SELECT * FROM signoz_traces WHERE `org_id` = 'org-1' AND `timestamp` >=")
-    assert "`space_id` = 'sp-1'" in sql
-    assert "`user_id` = 'test001'" in sql
-    assert "`agent_product` = 'Codex'" in sql
+    sql, params = build_sql(spec, dialect=d, required_conditions=("`trace_id` IS NOT NULL",))
+    assert sql.startswith(
+        "SELECT * FROM `signoz_traces` WHERE `org_id` = :org_id AND `timestamp` >="
+    )
+    assert "`space_id` = :filter_3" in sql
+    assert "`user_id` = :filter_4" in sql
+    assert "`agent_product` = :filter_5" in sql
     assert "`trace_id` IS NOT NULL" in sql
-    assert sql.endswith("LIMIT 5")
+    assert sql.endswith("LIMIT :trace_limit")
+    assert params == {
+        "org_id": "org-1",
+        "window_start": period_to_unix_nano("2026-06-01 00:00:00"),
+        "window_end": period_to_unix_nano("2026-06-02 00:00:00"),
+        "filter_3": "sp-1",
+        "filter_4": "test001",
+        "filter_5": "Codex",
+        "trace_limit": 5,
+    }
+
+
+def test_dataset_json_attribute_path_is_bound_before_sqlalchemy_compilation():
+    spec = TraceQuerySpec(
+        table="signoz_traces",
+        where="`attributes.service:label` = 'O''Brien: 当前渠道'",
+    )
+    sql, parameters = build_sql(spec, dialect=SignozObDialect(org_id="org-1"))
+
+    assert "JSON_EXTRACT(`attributes`, :attribute_path_3)" in sql
+    assert parameters["attribute_path_3"] == '$."service:label"'
+    assert parameters["filter_4"] == "O'Brien: 当前渠道"
+    assert set(text(sql).compile().params) == set(parameters)
 
 
 def test_flat_dialect_keeps_signoz_shape():

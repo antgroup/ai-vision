@@ -62,6 +62,7 @@ from agentlens.infra.ob.tables.job_table import JobTable
 from agentlens.infra.ob.tables.model_connection_table import ModelConnectionTable
 from agentlens.infra.ob.tables.sandbox_table import SandboxTable
 from agentlens.logging import get_logger
+from agentlens.service.datasource.dataset_filter import validate_dataset_filter
 from agentlens.service.datasource.projection.expressions import iter_template_expressions
 from agentlens.service.datasource.projection.service import project_trace
 from agentlens.service.datasource.signoz import (
@@ -1035,13 +1036,18 @@ def sync_common_builtin_diagnosers(
 
 def _with_dataset_scope(spec: TraceQuerySpec, dataset_spec: dict[str, Any]) -> TraceQuerySpec:
     """Apply scope filters and use a recent-history window for the sample."""
-    filters = _dataset_scope_filters(dataset_spec)
-    where = spec.where
-    for item in filters:
-        where = f"{where} AND {item}" if where else item
+    try:
+        validate_dataset_filter(spec.where)
+    except ValueError:
+        raise Validation(
+            "dataset spec field 'query.where' is not a supported trace predicate"
+        ) from None
+    where = (spec.where or "").strip()
+    filters = [f"({where})"] if where else []
+    filters.extend(_dataset_scope_filters(dataset_spec))
     return TraceQuerySpec(
         table=spec.table,
-        where=where,
+        where=" AND ".join(filters),
         time_range="7d",
         start_time=None,
         end_time=None,
@@ -1325,7 +1331,6 @@ def trace_sample(
 
     if payload.dataset_type == DatasetType.SIGNOZ:
         base_spec = TraceQuerySpec.from_dict(dataset_spec)
-        candidate_spec = _with_dataset_scope(base_spec, dataset_spec)
         trace_scope_spec = _sample_trace_scope_spec(base_spec, dataset_spec)
         requested_trace_id = str(payload.trace_id or "").strip()
         if requested_trace_id:
@@ -1346,6 +1351,7 @@ def trace_sample(
                 samples=[TraceSampleItem(trace_id=trace_id, test_input=compacted)],
             )
 
+        candidate_spec = _with_dataset_scope(base_spec, dataset_spec)
         samples: list[TraceSampleItem] = []
         recent_limit = payload.recent_limit
         query_spec = dataset_spec.get("query")

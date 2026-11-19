@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import Protocol
+from typing import Any, Protocol
 
 _BACKTICK_IDENT = re.compile(r"`((?:[^`]|``)+)`")
 
@@ -83,10 +83,10 @@ def unix_nano_to_period(value: int | float) -> str:
 
 
 class ColumnDialect(Protocol):
-    def col(self, name: str) -> str:
+    def col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
         """Render one logical column as a SQL expression usable in WHERE / ORDER BY."""
 
-    def select_col(self, name: str) -> str:
+    def select_col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
         """Render one logical column for a SELECT list (aliased back to its logical name)."""
 
     def int_col(self, name: str) -> str:
@@ -98,20 +98,23 @@ class ColumnDialect(Protocol):
     def time_lt(self, name: str, period: str) -> str:
         """Render ``<time column> < <period literal>``."""
 
+    def period_value(self, period: str) -> str | int:
+        """Convert a logical period to the column's parameter type."""
+
     def rewrite_where(self, where: str) -> str:
         """Rewrite a caller-provided WHERE fragment whose identifiers are backtick-quoted."""
 
-    def base_predicates(self, *, parameters: dict[str, str] | None = None) -> tuple[str, ...]:
+    def base_predicates(self, *, parameters: dict[str, Any] | None = None) -> tuple[str, ...]:
         """Predicates that must be appended to every query (tenant isolation etc.)."""
 
 
 class FlatColumnDialect:
     """Logical columns are physical columns (SigNoz-shaped flat tables)."""
 
-    def col(self, name: str) -> str:
+    def col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
         return quote_identifier(name)
 
-    def select_col(self, name: str) -> str:
+    def select_col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
         return quote_identifier(name)
 
     def int_col(self, name: str) -> str:
@@ -123,10 +126,13 @@ class FlatColumnDialect:
     def time_lt(self, name: str, period: str) -> str:
         return f"{self.col(name)} < {quote_literal(period)}"
 
+    def period_value(self, period: str) -> str:
+        return period
+
     def rewrite_where(self, where: str) -> str:
         return where
 
-    def base_predicates(self, *, parameters: dict[str, str] | None = None) -> tuple[str, ...]:
+    def base_predicates(self, *, parameters: dict[str, Any] | None = None) -> tuple[str, ...]:
         return ()
 
 
@@ -149,24 +155,32 @@ class SignozObDialect:
 
     # ── 列渲染 ──────────────────────────────────────────────────────────────
     @staticmethod
-    def _json_path(key: str) -> str:
+    def _attribute_col(column: str, key: str, parameters: dict[str, Any] | None) -> str:
         escaped = key.replace("\\", "\\\\").replace('"', '\\"')
-        return quote_literal(f'$."{escaped}"')
+        path = f'$."{escaped}"'
+        if parameters is None:
+            expression = quote_literal(path)
+        else:
+            name = f"attribute_path_{len(parameters)}"
+            parameters[name] = path
+            expression = f":{name}"
+        return f"JSON_UNQUOTE(JSON_EXTRACT(`{column}`, {expression}))"
 
-    def col(self, name: str) -> str:
+    def col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
         if name.startswith(RESOURCE_ATTRIBUTES_PREFIX):
             key = name[len(RESOURCE_ATTRIBUTES_PREFIX) :]
-            return f"JSON_UNQUOTE(JSON_EXTRACT(`resource_attributes`, {self._json_path(key)}))"
+            return self._attribute_col("resource_attributes", key, parameters)
         if name.startswith(ATTRIBUTES_PREFIX):
             key = name[len(ATTRIBUTES_PREFIX) :]
-            return f"JSON_UNQUOTE(JSON_EXTRACT(`attributes`, {self._json_path(key)}))"
+            return self._attribute_col("attributes", key, parameters)
         return quote_identifier(LOGICAL_TO_PHYSICAL.get(name, name))
 
-    def select_col(self, name: str) -> str:
-        rendered = self.col(name)
-        if rendered == quote_identifier(name):
+    def select_col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
+        rendered = self.col(name, parameters=parameters)
+        quoted = quote_identifier(name)
+        if rendered == quoted:
             return rendered
-        return f"{rendered} AS {quote_identifier(name)}"
+        return f"{rendered} AS {quoted}"
 
     def int_col(self, name: str) -> str:
         rendered = self.col(name)
@@ -180,6 +194,9 @@ class SignozObDialect:
     def time_lt(self, name: str, period: str) -> str:
         return f"{self.col(name)} < {period_to_unix_nano(period)}"
 
+    def period_value(self, period: str) -> int:
+        return period_to_unix_nano(period)
+
     def rewrite_where(self, where: str) -> str:
         if not where:
             return where
@@ -190,7 +207,7 @@ class SignozObDialect:
 
         return _BACKTICK_IDENT.sub(_replace, where)
 
-    def base_predicates(self, *, parameters: dict[str, str] | None = None) -> tuple[str, ...]:
+    def base_predicates(self, *, parameters: dict[str, Any] | None = None) -> tuple[str, ...]:
         if parameters is not None:
             parameters["org_id"] = self.org_id
             return ("`org_id` = :org_id",)
