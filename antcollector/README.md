@@ -97,6 +97,10 @@ regression test at `scripts/test/receiver/otlphttp_test.go` runs in the normal
 `go test -mod=vendor ./...` suite and checks all three signals, default and
 custom routes, JSON and protobuf, recovery, malformed input, and authentication.
 
+The vendored HTTP configuration applies the configured body size to both
+wire bytes and decoded bytes, and streams Snappy requests. The gateway carries the upstream body-limit behavior.
+[OpenTelemetry Collector change #10289](https://github.com/open-telemetry/opentelemetry-collector/pull/10289)
+
 The gateway uses OpenTelemetry Collector's built-in receiver and exporter
 self-telemetry. Its vendored exporter modules come from upstream `v0.96.0`,
 with the trace request limit applied in the `exporter/boundedotlphttpexporter`
