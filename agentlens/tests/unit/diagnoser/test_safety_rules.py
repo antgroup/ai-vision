@@ -2,6 +2,7 @@ import pytest
 
 from agentlens.diagnoser.executors.rule.builtin.common.safety import (
     MAX_SAFETY_SCAN_CHARS,
+    _strip_env_prefix,
     bound_safety_text,
     find_first_sensitive_finding,
     find_high_risk_commands,
@@ -434,3 +435,9 @@ def test_high_risk_command_ignores_non_exfiltration_sensitive_file_commands():
         findings = find_high_risk_commands(command)
         assert [finding.category for finding in findings] == expected_categories, command
         assert "敏感文件外传" not in expected_categories, command
+
+
+def test_strip_shell_environment_preserves_command_and_non_assignment_tokens():
+    assert _strip_env_prefix(" env  LANG=C PYTHONUTF8=1 python --version ") == "python --version"
+    assert _strip_env_prefix("LANG=C python --version") == "python --version"
+    assert _strip_env_prefix("env -- python --version") == "env -- python --version"

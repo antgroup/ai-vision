@@ -32,6 +32,7 @@ from apps.core.services.space_observation_provisioning import (
 )
 from apps.core.views import (
     SpaceAgentsCreateView,
+    SpaceSettingsView,
 )
 
 
@@ -79,6 +80,23 @@ class SpaceObservationProvisioningTests(TestCase):
             display_scope="ALL",
             status=1,
         )
+
+    @patch("apps.core.services.space_observation_provisioning._call_provision_api")
+    def test_provisioning_failure_reports_only_public_status(self, provision):
+        provision.side_effect = http_requests.ConnectionError("upstream connection details")
+        with self.assertRaises(http_requests.ConnectionError):
+            provision_space_observation_project(self.space, self.endpoint)
+        project = SpaceObservationProject.objects.get(space=self.space)
+        self.assertEqual(project.last_error, "Observation project provisioning failed")
+        # Existing rows from before redaction may still carry old provider details.
+        project.last_error = "prior upstream connection details"
+        project.save(update_fields=["last_error"])
+        request = APIRequestFactory().get("/settings")
+        force_authenticate(request, user=self.user)
+        response = SpaceSettingsView.as_view()(request, space_id=self.space.uuid)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["data"]["observation"]["last_error"],
+                         "Observation project provisioning failed")
 
     @patch("apps.core.services.space_observation_provisioning.http_requests.post")
     def test_provision_business_space_successfully(self, mock_post):

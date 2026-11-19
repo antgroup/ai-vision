@@ -64,17 +64,47 @@ def public_base_url(request) -> str:
 
 
 def safe_component(value: str) -> bool:
-    return bool(re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value)) and ".." not in value
+    return len(value) <= 255 and ".." not in value and bool(
+        re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", value)
+    )
+
+
+def _artifact_names(plugin: dict, version: str):
+    """Names produced by agent-plugins/scripts/build_plugins.py, including older builds."""
+    if binary := plugin.get("binary"):
+        for system in ("darwin", "linux-gnu", "linux-musl", "windows"):
+            extension = ".exe" if system == "windows" else ""
+            for arch in ("arm64", "x64"):
+                yield f"{binary}-{version}-{system}-{arch}{extension}"
+    elif package := plugin.get("package"):
+        yield f"{package}-{version}.tgz"
 
 
 def artifact_path(key: str, version: str, filename: str) -> Path | None:
-    if not all(safe_component(x) for x in (key, version, filename)):
+    if not all(safe_component(value) for value in (key, version, filename)):
         return None
-    if key not in {p["key"] for p in plugin_catalog()}:
+    plugin = next((item for item in plugin_catalog() if item["key"] == key), None)
+    if plugin is None or plugin.get("source_install"):
         return None
-    root = artifacts_root().resolve()
-    candidate = (root / key / version / filename).resolve()
-    return candidate if candidate.is_relative_to(root) and candidate.is_file() else None
+    try:
+        plugin_dir = artifacts_root().resolve() / plugin["key"]
+        if plugin_dir.is_symlink():
+            return None
+        version_dir = next(
+            (entry for entry in plugin_dir.iterdir() if entry.name == version), None
+        )
+        if version_dir is None or version_dir.is_symlink() or not version_dir.is_dir():
+            return None
+        name = next(
+            (name for name in _artifact_names(plugin, version_dir.name) if name == filename),
+            None,
+        )
+        if name is None:
+            return None
+        candidate = version_dir / name
+        return candidate if not candidate.is_symlink() and candidate.is_file() else None
+    except OSError:
+        return None
 
 
 def latest_plugin(plugin: dict, base: str) -> dict:

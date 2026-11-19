@@ -220,8 +220,9 @@ python ai-vision/agent-plugins/tests/framework_e2e/browser_platform.py \
 
 登录放在采集、API 对账和 manifest 完成之后，避免15分钟 access cookie 在页面验证前过期。
 fresh 部署和 `--login-file` 在此时通过公开登录接口取得新会话；`--auth-file` 通过公开
-CSRF、refresh、me 接口续期并验证身份，将新 storageState 写到私有临时目录，保持原输入文件
-内容不变。refresh 会正常轮换服务端 token，因此需要多次运行时优先使用 `--login-file`，
+CSRF、refresh、me 接口续期并验证身份，保持原输入文件内容不变。新 storageState 在内存中
+保存，并通过私有临时 Unix socket 传给 Playwright worker。refresh 会正常轮换服务端 token，
+因此需要多次运行时优先使用 `--login-file`，
 不要反复使用已被轮换的旧 storageState。续期失败则保留失败报告，不发送新的 SDK 或模型请求。
 
 existing 模式仅管理自己启动的 SDK、Playwright 与 Vite 进程，不停止现有平台或删除数据。

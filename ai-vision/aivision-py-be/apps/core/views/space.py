@@ -34,6 +34,7 @@ from apps.core.services.credential_service import (
     mask_public_key,
 )
 from apps.core.services.operation_log_service import log_op
+from apps.core.services.space_observation_provisioning import PROVISION_FAILURE_MESSAGE
 
 from .common import error_response, get_active_observation_endpoint, success_response
 
@@ -338,7 +339,7 @@ class SpaceSettingsView(APIView):
                 "project_id": project.upstream_project_id,
                 "project_name": project.upstream_project_name,
                 "provision_status": project.provision_status,
-                "last_error": project.last_error,
+                "last_error": PROVISION_FAILURE_MESSAGE if project.provision_status == 2 else None,
             }
             for credential in project.credentials.filter(
                 status=1, gmt_deleted__isnull=True

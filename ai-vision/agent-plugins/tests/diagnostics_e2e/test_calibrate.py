@@ -1,6 +1,7 @@
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
-import hashlib
 import json
+import os
 from pathlib import Path
 import tempfile
 import threading
@@ -81,8 +82,8 @@ class CalibrationTests(unittest.TestCase):
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.key_id = hashlib.sha256(b'public fixture identity').hexdigest()
-        self.lease = CredentialLease(self.key_id, Path(self.tmp.name) / 'locks')
+        self.credential = 'public fixture identity'
+        self.lease = CredentialLease(self.credential, Path(self.tmp.name) / 'locks')
         self.lease.__enter__()
 
     def tearDown(self):
@@ -190,13 +191,39 @@ class CalibrationTests(unittest.TestCase):
         self.lease.path.write_text('new owner')
         with self.assertRaises(CalibrationError): self.lease.reserve()
 
-    def test_lock_contention_hash_only_and_unowned_budget_rejected(self):
+    def test_lock_contention_and_unowned_budget_rejected(self):
+        root = self.lease.path.parent
         with self.assertRaises(CalibrationError):
-            with CredentialLease(self.key_id, Path(self.tmp.name) / 'locks'): pass
-        names = [p.name for p in (Path(self.tmp.name) / 'locks').iterdir()]
-        self.assertEqual(names, [self.key_id + '.lock'])
+            with CredentialLease(self.credential, root):
+                pass
+        with CredentialLease('different public fixture', root):
+            self.assertEqual(len(list(root.glob('*.lock'))), 2)
+        self.assertEqual(self.lease.path.read_bytes(), b'')
+        self.assertRegex(self.lease.path.name, r'^[0-9a-f]{64}\.lock$')
+        self.assertEqual({p.name for p in root.iterdir()}, {self.lease.path.name, '.lease-key'})
         with self.assertRaises(CalibrationError):
             run_calibration(package(), execute=lambda *a, **k: {}, budget=object(), frozen=config(), mode='real')
+
+    def test_simultaneous_initializers_agree_on_one_private_key(self):
+        root = Path(self.tmp.name) / 'fresh-locks'
+        ready = threading.Barrier(2)
+
+        def initialize(_worker):
+            ready.wait(timeout=10)
+            return CredentialLease(self.credential, root).path
+
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            first, second = pool.map(initialize, range(2))
+        self.assertEqual(first, second)
+        self.assertEqual([path.name for path in root.iterdir()], ['.lease-key'])
+        self.assertEqual((root / '.lease-key').stat().st_size, 32)
+        if os.name == 'posix':
+            self.assertEqual((root / '.lease-key').stat().st_mode & 0o777, 0o600)
+
+    def test_missing_key_with_existing_lease_fails_closed(self):
+        (self.lease.path.parent / '.lease-key').unlink()
+        with self.assertRaisesRegex(CalibrationError, 'Existing credential locks'):
+            CredentialLease(self.credential, self.lease.path.parent)
 
     def test_five_by_three_stability_and_critical_flip_gate(self):
         value = package()

@@ -13,6 +13,7 @@ import requests
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
+from django.utils.crypto import constant_time_compare, salted_hmac
 
 from apps.core.models import SandboxInstallationSession
 from apps.core.permissions.constants import SANDBOX_CONNECTION_MANAGE
@@ -258,12 +259,19 @@ def enroll(*, session_id, token_hash, body):
         )
     ):
         raise InstallationError("SANDBOX_REPORT_CONFLICT", 409)
-    key_hash = digest(body["api_key"])
-    if session.enrollment_key_hash and (
-        session.enrollment_key_hash != key_hash
-        or session.enrollment_platform != body["platform"]
-    ):
-        raise InstallationError("SANDBOX_REPORT_CONFLICT", 409)
+    api_key = body["api_key"]
+    key_hash = salted_hmac("aivision.sandbox.enrollment", api_key, algorithm="sha256").hexdigest()
+    stored_hash = session.enrollment_key_hash
+    if stored_hash:
+        if session.enrollment_platform != body["platform"]:
+            raise InstallationError("SANDBOX_REPORT_CONFLICT", 409)
+        if not constant_time_compare(stored_hash, key_hash):
+            # Replay of an in-flight grant from before keyed fingerprints.
+            # Grants expire after an hour. A matching retry upgrades under the row lock.
+            if not constant_time_compare(stored_hash, digest(api_key)):
+                raise InstallationError("SANDBOX_REPORT_CONFLICT", 409)
+            session.enrollment_key_hash = key_hash
+            session.save(update_fields=["enrollment_key_hash", "gmt_modified"])
     if session.registration_state == "saved":
         return {
             "connection_uuid": session.connection_uuid,
@@ -276,7 +284,7 @@ def enroll(*, session_id, token_hash, body):
         "name": f"OpenShell ({key})",
         "provider": "openshell",
         "endpoint": plan["target"]["endpoint"],
-        "api_key": body["api_key"],
+        "api_key": api_key,
         "image": plan["catalog"]["images"][body["platform"]]["worker"],
         "cpu": 1,
         "memory": "1Gi",

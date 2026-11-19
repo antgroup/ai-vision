@@ -1,6 +1,8 @@
 package compose
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -20,6 +22,9 @@ func TestBundlesArePrivateImmutableAndSavedOperationsVerifyIntegrity(t *testing.
 	bundle, err := project.Publish()
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !strings.HasPrefix(filepath.Base(bundle), "hmac-v1-") {
+		t.Fatal("new bundles must have a keyed content identity")
 	}
 	if again, err := project.Publish(); err != nil || again != bundle {
 		t.Fatalf("identical configuration must reuse immutable bundle: %q %v", again, err)
@@ -80,6 +85,102 @@ func TestSavedBundleRejectsEscapesAndSymlinks(t *testing.T) {
 	writePointer(t, app, bundle)
 	if _, err := project.Saved(); err == nil {
 		t.Fatal("saved bundle followed a script symlink")
+	}
+}
+
+func TestConcurrentPublishersUseOnePrivateIdentityKey(t *testing.T) {
+	composeDir := filepath.Join(t.TempDir(), "compose")
+	bundlesDir := filepath.Join(composeDir, "bundles")
+	if err := os.MkdirAll(bundlesDir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	type result struct {
+		key []byte
+		err error
+	}
+	const publishers = 8
+	results := make(chan result, publishers)
+	start := make(chan struct{})
+	for i := 0; i < publishers; i++ {
+		go func() {
+			<-start
+			key, err := loadOrCreateBundleKey(bundlesDir)
+			results <- result{key, err}
+		}()
+	}
+	close(start)
+	var expected []byte
+	for i := 0; i < publishers; i++ {
+		result := <-results
+		if result.err != nil || len(result.key) != sha256.Size {
+			t.Fatalf("initialize private bundle identity key: %v", result.err)
+		}
+		if expected == nil {
+			expected = result.key
+		} else if !bytes.Equal(result.key, expected) {
+			t.Fatal("concurrent publishers did not reuse the same key")
+		}
+	}
+	info, err := os.Stat(filepath.Join(composeDir, bundleKeyName))
+	if err != nil || info.Mode().Perm() != 0600 {
+		t.Fatalf("saved identity key must be private: %v", err)
+	}
+}
+
+func TestLegacySavedBundleRemainsReadableAfterPublishingKeyedBundle(t *testing.T) {
+	app := productApp(t)
+	project := New(app)
+	root, err := canonicalPath(app.State.StateDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files, err := project.files()
+	if err != nil {
+		t.Fatal(err)
+	}
+	bundle := filepath.Join(root, "compose", "bundles", digest(files))
+	if err := os.MkdirAll(bundle, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeFiles(bundle, files); err != nil {
+		t.Fatal(err)
+	}
+	writePointer(t, app, bundle)
+	if got, err := project.Saved(); err != nil || got != bundle {
+		t.Fatalf("legacy project not recovered: %q %v", got, err)
+	}
+	keyed, err := project.Publish()
+	if err != nil || !strings.HasPrefix(filepath.Base(keyed), bundleIdentityPrefix) {
+		t.Fatalf("recast did not publish a keyed bundle: %v", err)
+	}
+	if got, err := project.Saved(); err != nil || got != bundle {
+		t.Fatalf("publishing must retain the original pointer until acceptance: %q %v", got, err)
+	}
+}
+
+func TestKeyedBundleRequiresOriginalKeyEvenAfterAnIncompleteRestore(t *testing.T) {
+	app := productApp(t)
+	project := New(app)
+	bundle, err := project.Publish()
+	if err != nil {
+		t.Fatal(err)
+	}
+	writePointer(t, app, bundle)
+	keyPath := filepath.Join(filepath.Dir(filepath.Dir(bundle)), bundleKeyName)
+	if err := os.Remove(keyPath); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := project.Saved(); err == nil || !strings.Contains(err.Error(), "original private identity key") {
+		t.Fatalf("reading keyed state without the original key must fail: %v", err)
+	}
+	if _, err := project.Publish(); err == nil || !strings.Contains(err.Error(), "original private identity key") {
+		t.Fatalf("publishing must preserve keyed state until its key is restored: %v", err)
+	}
+	if err := os.RemoveAll(bundle); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := project.Publish(); err == nil || !strings.Contains(err.Error(), "original private identity key") {
+		t.Fatalf("the recorded project identity survives a partial restore: %v", err)
 	}
 }
 

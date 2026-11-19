@@ -323,8 +323,8 @@ def _forward_get(
     except http_requests.RequestException as e:
         if model_test:
             return _model_connection_test_transport_error(e)
-        logger.error("AgentLens GET %s failed: %s", agentlens_path, e)
-        return error_response(f"AgentLens request failed: {e}", 5001)
+        logger.error("AgentLens GET transport failed: %s", type(e).__name__)
+        return error_response("AgentLens request failed", 5001)
 
     if not resp.ok:
         if model_test:
@@ -374,8 +374,8 @@ def _forward_get_cached(
             timeout=_FORWARD_TIMEOUT,
         )
     except http_requests.RequestException as e:
-        logger.error("AgentLens GET %s failed: %s", agentlens_path, e)
-        return error_response(f"AgentLens request failed: {e}", 5001)
+        logger.error("AgentLens GET transport failed: %s", type(e).__name__)
+        return error_response("AgentLens request failed", 5001)
 
     if not resp.ok:
         return _agentlens_error_response(resp, agentlens_path)
@@ -416,8 +416,8 @@ def _forward_post(
                 else "诊断试运行暂时无法连接诊断服务，请稍后重试。"
             )
             return error_response(message, 5001, status=status)
-        logger.error("AgentLens POST %s failed: %s", agentlens_path, e)
-        return error_response(f"AgentLens request failed: {e}", 5001, status=status)
+        logger.error("AgentLens POST transport failed: %s", type(e).__name__)
+        return error_response("AgentLens request failed", 5001, status=status)
 
     if resp.status_code == 204:
         return success_response(None)
@@ -448,8 +448,8 @@ def _forward_patch(
             timeout=_FORWARD_TIMEOUT,
         )
     except http_requests.RequestException as e:
-        logger.error("AgentLens PATCH %s failed: %s", agentlens_path, e)
-        return error_response(f"AgentLens request failed: {e}", 5001)
+        logger.error("AgentLens PATCH transport failed: %s", type(e).__name__)
+        return error_response("AgentLens request failed", 5001)
 
     if not resp.ok:
         return _agentlens_error_response(resp, agentlens_path)
@@ -465,8 +465,8 @@ def _forward_delete(agentlens_path: str, query_params: dict | None = None):
             timeout=_FORWARD_TIMEOUT,
         )
     except http_requests.RequestException as e:
-        logger.error("AgentLens DELETE %s failed: %s", agentlens_path, e)
-        return error_response(f"AgentLens request failed: {e}", 5001)
+        logger.error("AgentLens DELETE transport failed: %s", type(e).__name__)
+        return error_response("AgentLens request failed", 5001)
 
     # 204 No Content: spec 写明 DELETE 返回 204
     if resp.status_code == 204:
@@ -1537,8 +1537,8 @@ class DiagnoseSystemHealthView(APIView):
                 timeout=_FORWARD_TIMEOUT,
             )
         except http_requests.RequestException as e:
-            logger.error("AgentLens GET /internal/healthz failed: %s", e)
-            return error_response(f"AgentLens request failed: {e}", 5001)
+            logger.error("AgentLens GET health check failed: %s", type(e).__name__)
+            return error_response("AgentLens request failed", 5001)
         if not resp.ok:
             return _agentlens_error_response(resp, "/internal/healthz")
         return success_response(resp.json())

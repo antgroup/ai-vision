@@ -187,8 +187,10 @@ supported through their original Go workflow and are not converted automatically
 Do not mix ownership or remove markers/labels to adopt resources.
 
 Only CLI-managed Compose creates immutable private bundles under
-`<namespace-state>/compose/bundles/<hash>/`. Cast/status display the actual path.
-Keep the complete bundle and CLI state private. Change configuration/images
+`<namespace-state>/compose/bundles/<identity>/`. Cast and status display the path.
+New bundles use a keyed identity. Keep the original owner-only key with the full
+namespace state when backing up or restoring a deployment. The CLI can read a
+legacy bundle and writes a keyed bundle on the next cast. Change configuration/images
 through original vars/flags and cast, not generated-file edits. Status/logs/destroy
 reuse the validated saved bundle instead of regenerating from new defaults or
 ambient deployment variables. Saved image references take precedence over

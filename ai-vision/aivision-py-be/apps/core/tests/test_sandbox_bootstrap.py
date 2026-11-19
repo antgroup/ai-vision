@@ -10,6 +10,7 @@ from uuid import NAMESPACE_URL, uuid5
 
 from django.db import close_old_connections, connection, connections
 from django.test import TestCase, TransactionTestCase, override_settings
+from django.utils.crypto import salted_hmac
 from rest_framework.test import APIClient
 
 from apps.core.tests.test_sandbox_installation import SandboxInstallationTests, event
@@ -341,6 +342,36 @@ class SandboxBootstrapTests(TestCase):
         )
         self.assertEqual(
             self.machine_post(grant, "enroll", "report_token", body).status_code, 401
+        )
+
+    def test_existing_enrollment_replay_upgrades_its_legacy_fingerprint(self):
+        from apps.core.services.sandbox_installation import digest
+
+        grant = self.issue()
+        plan = self.claim(grant).data["data"]["plan"]
+        self.readiness(grant)
+        fixture_key = "sample-enrollment-key"
+        body = {
+            "run_id": "a" * 32,
+            "plan_id": plan["plan_id"],
+            "platform": "linux/arm64",
+            "api_key": fixture_key,
+        }
+        existing = self.model(grant)
+        existing.registration_state = "saved"
+        existing.connection_uuid = "b" * 32
+        existing.enrollment_platform = body["platform"]
+        existing.enrollment_key_hash = digest(fixture_key)
+        existing.save(update_fields=["registration_state", "connection_uuid",
+                                     "enrollment_platform", "enrollment_key_hash"])
+        with patch("apps.core.services.sandbox_bootstrap.enrollment_remote") as remote:
+            response = self.machine_post(grant, "enroll", "enrollment_token", body)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.data["data"]["connection_uuid"], existing.connection_uuid)
+            remote.assert_not_called()
+        self.assertEqual(
+            self.model(grant).enrollment_key_hash,
+            salted_hmac("aivision.sandbox.enrollment", fixture_key, algorithm="sha256").hexdigest(),
         )
 
     def test_enrollment_unready_and_secret_change_do_not_claim_saved_connection(self):

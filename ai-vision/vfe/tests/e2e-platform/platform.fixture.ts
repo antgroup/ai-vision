@@ -2,13 +2,13 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import {
   expect,
-  test as base,
   type Locator,
   type Page,
   type Request,
   type TestInfo,
 } from "@playwright/test"
 import { assertNativeExport } from "../platformAssertions"
+import { test as base } from "./auth.fixture"
 export { uiText } from "../e2e/traceLabs.fixtures"
 
 export type Json =

@@ -50,6 +50,10 @@ _MESSAGES = {
 }
 
 
+def sandbox_error_message(code: str) -> str:
+    return _MESSAGES.get(code, _MESSAGES["sandbox_protocol_error"])
+
+
 def input_limit_details(value: Any) -> dict[str, Any]:
     """Only bounded numeric facts and fixed stages may cross the provider boundary."""
     if (
@@ -76,7 +80,7 @@ class SandboxError(DomainError):
         self.code = code if code in _MESSAGES else "sandbox_protocol_error"
         self.failure_code = self.code
         self.details = input_limit_details(details) if self.code == "sandbox_input_limit" else {}
-        message = _MESSAGES[self.code]
+        message = sandbox_error_message(self.code)
         if self.details:
             message += (
                 f" Received {self.details['actual_bytes']} bytes; "

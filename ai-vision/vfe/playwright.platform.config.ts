@@ -15,21 +15,27 @@ if (!process.env.VITE_DEV_API_TARGET)
     "VITE_DEV_API_TARGET must identify the real isolated platform"
   )
 const auth = process.env.AIVISION_BROWSER_AUTH_FILE
-if (!auth || !path.isAbsolute(auth) || !statSync(auth).isFile())
-  throw new Error(
-    "AIVISION_BROWSER_AUTH_FILE must be an absolute private storageState file"
-  )
-if (process.platform !== "win32" && (statSync(auth).mode & 0o077) !== 0)
-  throw new Error(
-    "Browser storageState must not be readable by group or others"
-  )
+const authSocket = process.env.AIVISION_BROWSER_AUTH_SOCKET
 const outputDir = path.resolve(
   process.env.AIVISION_BROWSER_OUTPUT_DIR || "test-results/platform"
 )
-if (auth === outputDir || auth.startsWith(outputDir + path.sep))
-  throw new Error(
-    "Private browser storageState must be outside public artifacts"
-  )
+if (authSocket) {
+  if (auth || !path.isAbsolute(authSocket))
+    throw new Error("Browser acceptance requires one private auth source")
+} else {
+  if (!auth || !path.isAbsolute(auth) || !statSync(auth).isFile())
+    throw new Error(
+      "AIVISION_BROWSER_AUTH_FILE must be an absolute private storageState file"
+    )
+  if (process.platform !== "win32" && (statSync(auth).mode & 0o077) !== 0)
+    throw new Error(
+      "Browser storageState must not be readable by group or others"
+    )
+  if (auth === outputDir || auth.startsWith(outputDir + path.sep))
+    throw new Error(
+      "Private browser storageState must be outside public artifacts"
+    )
+}
 mkdirSync(outputDir, { recursive: true })
 
 export default defineConfig({
@@ -61,6 +67,7 @@ export default defineConfig({
   webServer: {
     command: `npm run dev -- --host ${origin.hostname} --port ${origin.port || "80"} --strictPort`,
     url: baseURL,
+    env: { AIVISION_BROWSER_AUTH_SOCKET: "", AIVISION_BROWSER_AUTH_FILE: "" },
     reuseExistingServer: false,
     timeout: 60_000,
   },

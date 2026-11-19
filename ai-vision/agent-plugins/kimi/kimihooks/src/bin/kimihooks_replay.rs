@@ -181,7 +181,7 @@ fn main() {
         }
     };
 
-    // 启动横幅：edition + endpoints 摘要（不打印 secret_key 完整内容）
+    // 启动横幅仅报告 edition 和配置状态。
     let edition_cfg = EditionConfig::resolve();
     eprintln!("kimihooks-replay {} | {}", VERSION, edition_cfg.human_summary());
 
@@ -322,10 +322,9 @@ fn main() {
         let request = kimi_otel::finalize_export_resource(wrap_logs_export(events, &ctx), &edition_cfg.agent_instance);
         write_export_jsonl(out, &request);
         eprintln!(
-            "kimihooks-replay: logs   -> {} events={} session={}",
+            "kimihooks-replay: logs   -> {} events={}",
             out.display(),
-            n_events,
-            session_id
+            n_events
         );
         logs_request = Some(request);
     }

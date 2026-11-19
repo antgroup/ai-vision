@@ -9,6 +9,7 @@ from agentlens.diagnoser.executors.llm.base import (
 from agentlens.diagnoser.executors.llm.builtin.one_shot import LlmBuiltinExecutor
 from agentlens.domain.enums import Verdict
 from agentlens.infra.llm_judge import JudgeUnavailable
+from agentlens.service.datasource.projection.expressions import render
 from agentlens.service.datasource.projection.models import TraceOutcome
 from agentlens.service.datasource.projection.projectors.coding.models import CodingProjection
 from agentlens.service.datasource.trace import ProjectionUnavailable, Trace
@@ -158,3 +159,18 @@ def test_prompt_resolver_keeps_raw_spans_without_projection():
     inputs = _resolve_llm_inputs(trace, {"spans[0].name", "trace_id", "user_query"})
 
     assert inputs == {"spans[0].name": "raw-root", "trace_id": "raw-trace"}
+
+
+def test_prompt_placeholders_preserve_line_breaks_and_projection_paths():
+    prompt = "{{user_query}}\n{{agent_output}}\nExample literal: {{}}"
+    assert _extract_var_names(prompt) == {"user_query", "agent_output"}
+    assert _render_prompt(prompt, {"user_query": "question", "agent_output": "answer"}) == (
+        "question\nanswer\nExample literal: {{}}"
+    )
+    assert (
+        render(
+            "{{spans[0].name}} / {{spans[-1].name}}",
+            {"spans": [{"name": "start"}, {"name": "finish"}]},
+        )
+        == "start / finish"
+    )

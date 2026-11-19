@@ -10,12 +10,14 @@ from contextlib import contextmanager
 from copy import deepcopy
 import argparse
 import hashlib
+import hmac
 import getpass
 import json
 import math
 import os
 from pathlib import Path
-import re
+import secrets
+import stat
 import sys
 import threading
 import tempfile
@@ -48,29 +50,79 @@ def _require(condition, message):
         raise CalibrationError(message)
 
 
+def _private_owner(metadata):
+    return os.name != 'posix' or (
+        metadata.st_uid == os.geteuid() and metadata.st_mode & 0o077 == 0
+    )
+
+
+def _lease_key(root):
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    metadata = root.lstat()
+    _require(stat.S_ISDIR(metadata.st_mode) and _private_owner(metadata),
+        'Credential leases require a private directory owned by this user')
+    path = root / '.lease-key'
+
+    def read_key():
+        flags = (os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0)
+            | getattr(os, 'O_NONBLOCK', 0) | getattr(os, 'O_BINARY', 0))
+        with os.fdopen(os.open(path, flags), 'rb') as stream:
+            metadata = os.fstat(stream.fileno())
+            _require(stat.S_ISREG(metadata.st_mode) and _private_owner(metadata),
+                'Credential lease key must be a private regular file owned by this user')
+            key = stream.read(33)
+        _require(len(key) == 32, 'Credential lease key requires owner review')
+        return key
+
+    try:
+        return read_key()
+    except FileNotFoundError:
+        if any(root.glob('*.lock')):
+            # A peer may have initialized the key and acquired a lock while
+            # this process was checking the directory.
+            try:
+                return read_key()
+            except FileNotFoundError:
+                raise CalibrationError('Existing credential locks require owner review before key initialization') from None
+
+    descriptor, temporary = tempfile.mkstemp(prefix='.lease-key-', dir=root)
+    try:
+        with os.fdopen(descriptor, 'wb') as stream:
+            stream.write(secrets.token_bytes(32))
+            stream.flush()
+            os.fsync(stream.fileno())
+        # Publish the complete key atomically. Never replace a peer's key.
+        try:
+            os.link(temporary, path)
+        except FileExistsError:
+            pass
+    finally:
+        os.unlink(temporary)
+    return read_key()
+
+
 class CredentialLease:
     """Portable exclusive credential lock. Crash leftovers fail closed.
 
-    The identifier is a SHA256 of the credential, computed in memory by the
-    credential owner. No credential or environment contents enter lock files.
+    The identifier is derived with scrypt and a private lease-directory salt.
+    No credential or environment contents enter lock files.
     All orchestrated source/probe/Judge work must retain this same lease/budget.
     Never unlink a competing owner's file or automatically break stale locks.
     """
-    def __init__(self, key_identifier, lock_dir=None, *, budget=None):
-        _require(isinstance(key_identifier, str) and re.fullmatch('[0-9a-f]{64}', key_identifier),
-            'Credential lock requires a hashed identifier')
+    def __init__(self, credential, lock_dir=None, *, budget=None):
+        _require(isinstance(credential, str) and bool(credential), 'Private provider credential is required')
         _require(budget is None or isinstance(budget, RateBudget), 'Reuse the existing RateBudget')
         # A stable per-user location makes standalone invocations contend.
         user_id = hashlib.sha256(getpass.getuser().encode()).hexdigest()[:20]
         root = Path(lock_dir) if lock_dir is not None else Path(tempfile.gettempdir()) / ('aiv-provider-leases-' + user_id)
-        self.path = root / (key_identifier + '.lock')
+        self._key = _lease_key(root)
+        self.path = root / self._lock_name(credential)
         self.rate_budget = budget if budget is not None else RateBudget()
         self.active = False
         self._descriptor = None
 
     def __enter__(self):
         _require(not self.active, 'Credential lease is already active')
-        self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         try:
             self._descriptor = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         except FileExistsError:
@@ -92,10 +144,19 @@ class CredentialLease:
 
     def _owns_path(self):
         try:
-            current = self.path.stat()
+            current = self.path.lstat()
         except OSError:
             return False
         return (current.st_dev, current.st_ino) == (self._identity.st_dev, self._identity.st_ino)
+
+    def _lock_name(self, credential):
+        identifier = hashlib.scrypt(
+            credential.encode(), salt=self._key, n=2**14, r=8, p=1, dklen=32
+        )
+        return identifier.hex() + '.lock'
+
+    def matches_credential(self, credential):
+        return hmac.compare_digest(self.path.name, self._lock_name(credential))
 
     @property
     def attempts(self):
@@ -115,13 +176,12 @@ def _owned(budget):
 def provider_lease(key, budget=None):
     """Standalone and orchestrated calls contend on the same credential lock."""
     _require(isinstance(key, str) and bool(key), 'Private provider credential is required')
-    identity = hashlib.sha256(key.encode()).hexdigest()
     if budget is not None:
         _owned(budget)
-        _require(budget.path.name == identity + '.lock', 'Provider credential differs from exclusive ownership')
+        _require(budget.matches_credential(key), 'Provider credential differs from exclusive ownership')
         yield budget
     else:
-        with CredentialLease(identity) as lease:
+        with CredentialLease(key) as lease:
             yield lease
 
 
@@ -464,7 +524,7 @@ def nvidia_calibration(package, *, key, budget, execute_factory, frozen, provide
     """One forwarding provider for an actual-platform adapter, with no extra quota."""
     _owned(budget)
     _require(isinstance(key, str) and bool(key), 'Missing privately supplied provider credential')
-    _require(hashlib.sha256(key.encode()).hexdigest() + '.lock' == budget.path.name,
+    _require(budget.matches_credential(key),
         'Provider credential does not match exclusive lease')
     scoped = AttemptBudget(budget)
     _require(type(provider_timeout) in (int, float) and math.isfinite(provider_timeout)

@@ -29,6 +29,11 @@ func unpackNativeConnect(body []byte) (string, func(), error) {
 		cleanup()
 		return "", nil, fmt.Errorf("connect: invalid native installer bundle: %w", err)
 	}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		return fail(err)
+	}
+	defer root.Close()
 	zr, err := gzip.NewReader(bytes.NewReader(body))
 	if err != nil {
 		return fail(err)
@@ -56,7 +61,11 @@ func unpackNativeConnect(body []byte) (string, func(), error) {
 			return fail(fmt.Errorf("unsafe or duplicate path %q", h.Name))
 		}
 		seen[name] = true
-		target := filepath.Join(dir, filepath.FromSlash(name))
+		local, err := filepath.Localize(name)
+		if err != nil || !filepath.IsLocal(local) {
+			return fail(fmt.Errorf("unsafe path %q", h.Name))
+		}
+		target := filepath.Join(dir, local)
 		switch h.Typeflag {
 		case tar.TypeDir:
 			if err := os.MkdirAll(target, 0700); err != nil {
@@ -74,7 +83,7 @@ func unpackNativeConnect(body []byte) (string, func(), error) {
 			if h.Mode&0111 != 0 {
 				mode = 0700
 			}
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
+			f, err := root.OpenFile(local, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
 			if err != nil {
 				return fail(err)
 			}

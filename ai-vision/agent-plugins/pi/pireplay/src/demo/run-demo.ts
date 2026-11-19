@@ -29,7 +29,7 @@ function run(command: string, args: string[], env: NodeJS.ProcessEnv, cwd: strin
     const cleanup = () => { process.off('SIGINT', onSignal); process.off('SIGTERM', onSignal); };
     process.once('SIGINT', onSignal); process.once('SIGTERM', onSignal);
     const timer = setTimeout(() => { child.kill('SIGTERM'); reject(new Error(`demo timed out after ${timeoutMs}ms`)); }, timeoutMs);
-    child.once('error', (error) => { cleanup(); reject(error); });
+    child.once('error', () => { clearTimeout(timer); cleanup(); reject(new Error('could not start Pi')); });
     child.once('exit', (code) => { clearTimeout(timer); cleanup(); resolveExit(code ?? 1); });
   });
 }
@@ -44,14 +44,14 @@ export async function runDemo(): Promise<void> {
     const { writeFileSync } = await import('node:fs');
     writeFileSync(join(cwd, 'README.md'), '# Piagent Golden Fixture\n\nThis file has three lines.\n', { mode: 0o600 });
   }
-  const configPath = resolve(process.env.OPENCLAW_CONFIG ?? join(process.env.HOME ?? '', '.openclaw', 'openclaw.json'));
-  const bridge = createPiModelConfig(configPath, agentDir);
   const here = fileURLToPath(new URL('../../..', import.meta.url)); // pireplay root (dist/src/demo/ -> pireplay/)
   // observ-pi is a file dependency of pireplay; load its self-contained package entry.
   const piagentPath = join(here, 'node_modules', '@observ', 'pi', 'index.js');
   const pireplayPath = join(here, 'dist', 'src', 'index.js');
   const cli = join(here, 'node_modules', '@earendil-works', 'pi-coding-agent', 'dist', 'cli.js');
   try {
+    const configPath = resolve(process.env.OPENCLAW_CONFIG ?? join(process.env.HOME ?? '', '.openclaw', 'openclaw.json'));
+    const bridge = createPiModelConfig(configPath, agentDir);
     const noProxy = [process.env.NO_PROXY, bridge.baseUrl ? new URL(bridge.baseUrl).hostname : undefined].filter(Boolean).join(',');
     const code = await run(process.execPath, [
       cli, '-p', '--model', bridge.modelRef,
@@ -84,4 +84,9 @@ export async function runDemo(): Promise<void> {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) runDemo().catch((error) => { console.error(`[pireplay] demo failed: ${error instanceof Error ? error.message : String(error)}`); process.exit(1); });
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runDemo().catch(() => {
+    console.error('[pireplay] demo failed: check the demo model configuration and Pi setup');
+    process.exit(1);
+  });
+}

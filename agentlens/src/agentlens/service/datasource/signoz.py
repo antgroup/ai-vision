@@ -112,7 +112,7 @@ class TraceStore:
             raise ValueError("invalid explicit trace table")
         params = {f"trace_{i}": value for i, value in enumerate(trace_ids)}
         conditions = [
-            *self.dialect.base_predicates(),
+            *self.dialect.base_predicates(parameters=params),
             self.dialect.col("trace_id")
             + " IN ("
             + ", ".join(f":trace_{i}" for i in range(len(trace_ids)))

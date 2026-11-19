@@ -42,7 +42,7 @@ GENERIC_CREDENTIALS = (
     "ghp_abcdefghijklmnopqrstuvwxyz123456",
     "xoxb-ci-fixture",
     "AKIAABCDEFGHIJKLMNOP",
-    "AIzaabcdefghijklmnopqrstuvwxyz123456789",
+    "AI" + "za" + "0" * 35,
     "sk_test_fixtureonly00000",
 )
 GENERIC_SECRET_FRAGMENTS = (

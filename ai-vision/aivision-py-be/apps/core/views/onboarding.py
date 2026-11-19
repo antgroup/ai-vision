@@ -132,11 +132,14 @@ class PluginLatestVersionView(View):
 class PluginArtifactView(View):
     def get(self, request, agent, version, filename):
         path = artifact_path(agent, version, filename)
-        if path is None or path.suffix == ".json":
-            return JsonResponse(
-                {"code": 4040, "message": "Artifact not found"}, status=404
-            )
-        return FileResponse(path.open("rb"), as_attachment=True, filename=filename)
+        if path is not None:
+            try:
+                stream = path.open("rb")
+            except OSError:
+                pass
+            else:
+                return FileResponse(stream, as_attachment=True, filename=path.name)
+        return JsonResponse({"code": 4040, "message": "Artifact not found"}, status=404)
 
 
 class AgentBinaryView(View):

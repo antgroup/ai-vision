@@ -7,7 +7,12 @@ import type { PiRawCallbackEnvelopeV2 } from './raw-envelope.js';
 type TranscriptRecord = CanonicalEvent | PiRawCallbackEnvelopeV2;
 
 function safeArtifactPart(value: string): string {
-  return value.replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^[_\.]+|[_\.]+$/g, '').slice(0, 80) || 'session';
+  const part = value.replace(/[^A-Za-z0-9._-]+/g, '_');
+  let start = 0;
+  let end = part.length;
+  while (part[start] === '_' || part[start] === '.') start++;
+  while (end > start && (part[end - 1] === '_' || part[end - 1] === '.')) end--;
+  return part.slice(start, Math.min(end, start + 80)) || 'session';
 }
 
 function sequenceOf(record: TranscriptRecord): number { return record.sequence; }

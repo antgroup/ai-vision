@@ -5,6 +5,7 @@ import json
 import io
 import tarfile
 from unittest.mock import Mock, patch
+from urllib.parse import urlsplit
 
 import requests
 from django.core.cache import cache
@@ -96,13 +97,25 @@ class DirectoryDiscoveryTests(SimpleTestCase):
         self.assertEqual(entries, _mcpservers_parse(README))
         for entry in entries.values():
             self.assertEqual(entry["source"], "mcpservers")
-            self.assertEqual("repositoryUrl" in entry, "github.com" in entry["url"])
+            self.assertEqual("repositoryUrl" in entry, urlsplit(entry["url"]).hostname == "github.com")
         for url in ["http://localhost/a", "http://127.0.0.1/a", "https://user:pass@example.com/a", "javascript:evil"]:
             with self.assertRaises(RegistryError):
                 _mcpservers_parse("## Official Servers\n- **[Unsafe](" + url + ")** - Unsafe")
         for text in ["", "<html>bad</html>", "## Sponsors\n- **[Other](https://example.com)** - Not a server", "## Official Servers\n- [Navigation](#top)"]:
             with self.assertRaises(RegistryError):
                 _mcpservers_parse(text)
+
+    def test_directory_link_keeps_parentheses_and_multiple_badges(self):
+        entries = _mcpservers_parse(
+            "## Official Servers\n"
+            "- **[Tool Suite](https://example.com/Tools_(Suite))** "
+            "![build](https://img.example.com/a) "
+            "[![docs](https://img.example.com/b)](https://docs.example.com) "
+            "– Practical tools"
+        )
+        entry, = entries.values()
+        self.assertEqual(entry["url"], "https://example.com/Tools_(Suite)")
+        self.assertEqual(entry["description"], "Practical tools")
 
     def test_archive_validation_and_full_notice(self):
         catalog = _mcpservers_archive(archive_bytes())

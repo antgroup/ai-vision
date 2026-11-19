@@ -148,6 +148,19 @@ class AgentDownloadLatestTests(SimpleTestCase):
         ]:
             self.assertEqual(self.client.get(url).status_code, 404)
 
+    def test_historical_build_names_are_downloadable_without_latest_manifest(self):
+        self.build()
+        historical = self.root / "codex" / "0.9.0"
+        historical.mkdir()
+        artifact = historical / "cdxhooks-0.9.0-windows-x64.exe"
+        artifact.write_bytes(b"historical build")
+        (historical / "build-notes.txt").write_text("notes for packaging")
+        prefix = "/api/public/onboarding/plugins/codex/0.9.0/"
+        response = self.client.get(prefix + artifact.name)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(b"".join(response.streaming_content), b"historical build")
+        self.assertEqual(self.client.get(prefix + "build-notes.txt").status_code, 404)
+
     def test_per_agent_scripts_embed_only_base_and_agent(self):
         for agent in [
             "claude-code",
