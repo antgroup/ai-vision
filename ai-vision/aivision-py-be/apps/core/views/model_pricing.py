@@ -47,8 +47,12 @@ class ModelPricingSyncView(APIView):
             return error_response(str(exc))
         try:
             pricing.sync_catalog(source=source, revision=revision)
-        except pricing.PricingError as exc:
-            return error_response(str(exc), status=502, data={'catalog': pricing.catalog_status()})
+        except pricing.PricingError:
+            return error_response(
+                'The models.dev pricing catalog could not be refreshed. Try again later.',
+                status=502,
+                data={'catalog': pricing.catalog_status()},
+            )
         return success_response({'catalog': pricing.catalog_status()})
 
 

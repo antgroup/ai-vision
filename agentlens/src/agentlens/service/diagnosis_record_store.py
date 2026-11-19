@@ -486,9 +486,12 @@ class DiagnosisRecordStore:
     def _c(self, name: str) -> str:
         return self.dialect.col(name)
 
-    def _base_where(self) -> list[str]:
+    def _base_where(self, *, parameters: dict[str, str] | None = None) -> list[str]:
         name_col = self._c("name")
-        return [*self.dialect.base_predicates(), f"{name_col} = 'diagnosis_record'"]
+        return [
+            *self.dialect.base_predicates(parameters=parameters),
+            f"{name_col} = 'diagnosis_record'",
+        ]
 
     def _time_where(
         self, start_time: str | None, end_time: str | None, default_days: int = 7
@@ -778,10 +781,11 @@ class DiagnosisRecordStore:
     def get_record(self, uuid: str) -> DiagnosisRecord | None:
         end = datetime.now().isoformat(timespec="microseconds")
         start = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d %H:%M:%S")
+        parameters = {"record_uuid": _esc(uuid)}
         uuid_col = self._c("attributes.uuid")
         where = [
-            *self._base_where(),
-            f"{uuid_col} = '{_esc(uuid)}'",
+            *self._base_where(parameters=parameters),
+            f"{uuid_col} = :record_uuid",
             self.dialect.time_ge("period", _esc(start, _SAFE_TS)),
             self.dialect.time_lt("period", _esc(end, _SAFE_VERSION_TS)),
         ]
@@ -790,7 +794,7 @@ class DiagnosisRecordStore:
             self._select_all(where)
             + f" ORDER BY {attempt_col} DESC, {self._c('period')} DESC LIMIT 1"
         )
-        rows = self.reader.query(sql)
+        rows = self.reader.query(sql, parameters=parameters)
         if not rows:
             return None
         records = _dedup_latest([_record_from_row(row) for row in rows])

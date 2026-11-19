@@ -12,14 +12,16 @@ const { values } = parseArgs({ options: { targets: { type: "string" }, environme
 if (values.help) {
   console.log(`Usage: node run_platform.mjs --targets FILE --environment DIRECTORY --out DIRECTORY
 
+Set AIVISION_E2E_TARGETS_JSON instead of --targets to read an in-memory target.
 Runs the SDK regressions with a local simulated provider, forwards OTLP to the
 dedicated platform target, then checks native and Langfuse v1 readback.
 Use tests/js or tests/js6 as the environment and a fresh output directory.
 --help, -h  Show this help without reading credentials or contacting any service.`);
   process.exit(0);
 }
-assert.ok(values.targets && values.environment && values.out, "Usage: --targets FILE --environment ../js6 --out DIRECTORY");
+assert.ok(values.environment && values.out, "Usage: --environment ../js6 --out DIRECTORY");
 const target = await loadTarget(values.targets);
+delete process.env.AIVISION_E2E_TARGETS_JSON;
 const environment = resolve(values.environment), out = resolve(values.out);
 await mkdir(out, { recursive: true, mode: 0o700 });
 const ledger = join(out, "ledger.json");

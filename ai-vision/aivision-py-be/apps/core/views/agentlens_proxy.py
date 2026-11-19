@@ -34,6 +34,7 @@ from ..permissions.constants import (
 from ..permissions.space import require_space_permission
 from ..services.diagnosis_trial_timeout import (
     LLM_TRIAL_TIMEOUT_MESSAGE,
+    LlmTrialTimeoutInputError,
     llm_trial_forward_timeout,
 )
 from ..services.model_validation_contract import (
@@ -78,6 +79,10 @@ def _resolve_gt_dataset_spec(space, agent_uuid: str, user=None):
 
 
 logger = logging.getLogger(__name__)
+
+_UNSUPPORTED_DIAGNOSIS_SOURCE = (
+    "诊断需要配置已启用的 SigNoz traces 数据源；Langfuse 仅支持观测查询"
+)
 
 _FORWARD_TIMEOUT = 15
 _FEEDBACK_FORWARD_TIMEOUT = 15
@@ -1323,8 +1328,9 @@ class DiagnoseDatasetDefaultSpecView(APIView):
             return err
         try:
             payload = _resolve_gt_dataset_spec(space, agent_uuid, user=request.user)
-        except UnsupportedDataSourceError as e:
-            return error_response(str(e), 4220)
+        except UnsupportedDataSourceError:
+            logger.info("Diagnosis dataset uses an unsupported data source")
+            return error_response(_UNSUPPORTED_DIAGNOSIS_SOURCE, 4220)
         if not payload:
             return error_response(
                 "无法解析该 Agent 的 trace 数据源,"
@@ -1352,7 +1358,8 @@ class DiagnoseJobListView(QuickGuardedAPIView):
             try:
                 ensure_personal_diagnosis(agent_uuid)
             except PersonalDiagnosisError as exc:
-                return error_response(str(exc), 5030, status=503)
+                logger.warning("Personal diagnosis initialization failed (%s)", type(exc).__name__)
+                return error_response("内置诊断初始化失败，请稍后重试", 5030, status=503)
         return _forward_get("/api/v1/jobs", params)
 
     def post(self, request, space_id):
@@ -1626,8 +1633,9 @@ class DiagnoseDatasetListView(QuickGuardedAPIView):
             default_payload = _resolve_gt_dataset_spec(
                 space, agent_uuid, user=request.user
             )
-        except UnsupportedDataSourceError as e:
-            return error_response(str(e), 4220)
+        except UnsupportedDataSourceError:
+            logger.info("Diagnosis dataset uses an unsupported data source")
+            return error_response(_UNSUPPORTED_DIAGNOSIS_SOURCE, 4220)
         if not default_payload:
             return error_response(
                 "无法解析该 Agent 的 trace 数据源,请先在 Agent 接入中配置 traces 类型数据源",
@@ -1718,8 +1726,12 @@ class DiagnoserTraceSampleView(QuickGuardedAPIView):
                 agent_uuid,
                 user=request.user,
             )
+        except UnsupportedDataSourceError:
+            logger.info("Diagnosis trace sample uses an unsupported data source")
+            return error_response(_UNSUPPORTED_DIAGNOSIS_SOURCE, 4220)
         except Exception as exc:
-            return error_response(str(exc), 4220)
+            logger.warning("Diagnosis trace sample setup failed (%s)", type(exc).__name__)
+            return error_response("无法解析诊断采样数据源，请检查 Agent 接入配置", 4220)
         if not dataset:
             return error_response(
                 "无法解析该 Agent 的 trace 数据源,请先在 Agent 接入中配置 traces 类型数据源",
@@ -1792,6 +1804,14 @@ class RuleInputPreviewView(APIView):
         )
 
 
+_LLM_TRIAL_TIMEOUT_INPUT_MESSAGES = {
+    LlmTrialTimeoutInputError.INVALID_SPEC: "spec 必须为对象",
+    LlmTrialTimeoutInputError.INVALID_REQUEST_TIMEOUT: (
+        "request_timeout_sec 必须是大于 0 且不超过 300 的有限非布尔数值"
+    ),
+}
+
+
 class LlmDiagnoserTrialView(APIView):
     """Run one custom LLM diagnoser against a scoped reference Trace."""
 
@@ -1800,10 +1820,11 @@ class LlmDiagnoserTrialView(APIView):
         if err:
             return err
         body = dict(request.data or {})
-        try:
-            timeout = llm_trial_forward_timeout(body.get("spec", {}))
-        except ValueError as exc:
-            return error_response(str(exc), 4220, status=422)
+        timeout = llm_trial_forward_timeout(body.get("spec", {}))
+        if isinstance(timeout, LlmTrialTimeoutInputError):
+            return error_response(
+                _LLM_TRIAL_TIMEOUT_INPUT_MESSAGES[timeout], 4220, status=422
+            )
         body["space_uuid"] = space_id
         _audit_log(request, space_id=space_id, action="llm_diagnoser_trial")
         return _forward_post(

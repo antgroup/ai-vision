@@ -15,7 +15,8 @@ import { assertBoundedProviderUsage, createProviderBudget, forwardProviderReques
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { values } = parseArgs({ options: { targets: { type: "string" }, environment: { type: "string" }, out: { type: "string" },
-  "provider-env": { type: "string" }, "key-name": { type: "string" }, "base-url": { type: "string" }, model: { type: "string" },
+  "provider-env": { type: "string" }, "key-name": { type: "string" }, "provider-key-env": { type: "string" },
+  "base-url": { type: "string" }, model: { type: "string" },
   "disable-thinking": { type: "boolean" },
   help: { type: "boolean", short: "h" } } });
 if (values.help) {
@@ -24,20 +25,29 @@ if (values.help) {
 
 Runs one real provider stream (at most 32 output tokens) and one invalid-model request.
 Uses the named credential from --provider-env only for the selected provider.
+Alternatively, --provider-key-env ENV_NAME reads it from the child environment.
+Set AIVISION_E2E_TARGETS_JSON instead of --targets to read an in-memory target.
 Use a dedicated platform target and either tests/js or tests/js6 as the environment.
 --disable-thinking  Send chat_template_kwargs.enable_thinking=false (default: omitted).
 --help, -h  Show this help without reading credentials or contacting any service.`);
   process.exit(0);
 }
-for (const key of ["targets", "environment", "out", "provider-env", "key-name", "base-url", "model"]) assert.ok(values[key], `Missing --${key}`);
+for (const key of ["environment", "out", "base-url", "model"]) assert.ok(values[key], `Missing --${key}`);
+const providerKeyEnv = values["provider-key-env"];
+const providerFile = values["provider-env"];
+const providerFileKey = values["key-name"];
+assert.ok(providerKeyEnv ? !providerFile && !providerFileKey : providerFile && providerFileKey,
+  "Pass either --provider-key-env or --provider-env with --key-name");
 process.env.LANGFUSE_JS_ENV = resolve(values.environment);
 const { attributes, decodeTraceRequest, nodeModules, receivedSpans, sdkVersion, sourceInventory } = await import("./support.mjs");
-const credentials = parseEnv(await readFile(values["provider-env"], "utf8"));
-const providerKey = credentials[values["key-name"]];
+const providerKey = providerKeyEnv ? process.env[providerKeyEnv]
+  : parseEnv(await readFile(providerFile, "utf8"))[providerFileKey];
+if (providerKeyEnv) delete process.env[providerKeyEnv];
 assert.ok(providerKey, "Selected provider key is absent");
 const providerOrigin = new URL(values["base-url"]);
 assert.equal(providerOrigin.protocol, "https:", "Real provider requires HTTPS");
 const target = await loadTarget(values.targets);
+delete process.env.AIVISION_E2E_TARGETS_JSON;
 const output = resolve(values.out);
 await mkdir(output, { recursive: true, mode: 0o700 });
 const directory = await mkdtemp(join(resolve(values.environment), ".live-provider-"));

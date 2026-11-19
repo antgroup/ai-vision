@@ -107,6 +107,20 @@ class ExchangeRateApiTests(TestCase):
         self.client = APIClient()
         self.base = f'/api/v1/spaces/{self.space.uuid}/model-pricing/exchange-rates'
 
+    def test_refresh_failure_keeps_the_snapshot_without_returning_internal_detail(self):
+        snapshot = fx.store_exchange_rates(xml())
+        self.client.force_authenticate(self.users[0])
+        failure = fx.ExchangeRateError('Internal exchange-rate fixture detail')
+        with patch.object(fx, 'sync_exchange_rates', side_effect=failure):
+            response = self.client.post(self.base + '/sync', {}, format='json')
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.data['code'], 1001)
+        self.assertEqual(
+            response.data['message'], 'ECB reference rates could not be refreshed. Try again later.',
+        )
+        self.assertEqual(response.data['data']['snapshotId'], snapshot.snapshot_id)
+        self.assertTrue(response.data['data']['canManage'])
+
     def test_member_reads_admin_refreshes_and_cross_space_hidden(self):
         self.client.force_authenticate(self.users[1])
         with patch.object(fx.http_requests, 'get') as get:

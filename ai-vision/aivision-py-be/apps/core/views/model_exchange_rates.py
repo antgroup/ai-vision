@@ -24,6 +24,10 @@ class ModelExchangeRateSyncView(APIView):
             return error_response('Exchange-rate refresh accepts no options')
         try:
             fx.sync_exchange_rates()
-        except fx.ExchangeRateError as exc:
-            return error_response(str(exc), status=502, data=_status(ctx))
+        except fx.ExchangeRateError:
+            return error_response(
+                'ECB reference rates could not be refreshed. Try again later.',
+                status=502,
+                data=_status(ctx),
+            )
         return success_response(_status(ctx))

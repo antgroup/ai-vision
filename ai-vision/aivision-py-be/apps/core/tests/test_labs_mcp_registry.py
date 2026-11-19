@@ -342,7 +342,13 @@ class RegistryApiTests(SpaceKeyTestCase):
         self.assertEqual(get.call_args.args[0], MCPSERVERS_ARCHIVE_URL)
         cache.clear()
         get.return_value = directory_response(README)
-        self.assertEqual(self.client.get(url, {"source": "mcpservers", "cursor": first["nextCursor"]}).status_code, 400)
+        stale_page = self.client.get(url, {"source": "mcpservers", "cursor": first["nextCursor"]})
+        self.assertEqual(stale_page.status_code, 400)
+        self.assertEqual(stale_page.data["code"], 3003)
+        self.assertEqual(
+            stale_page.data["message"],
+            "Invalid or stale MCP servers directory cursor. Start a new search.",
+        )
 
     @patch("apps.core.views.labs_mcp_registry.requests.get")
     def test_directory_detail_has_no_configuration(self, get):
@@ -371,7 +377,15 @@ class RegistryApiTests(SpaceKeyTestCase):
     def test_directory_malformed_is_502(self, get):
         get.return_value = response({"broken": True})
         for endpoint, params in [("search", {}), ("detail", {"id": "a" * 64})]:
-            self.assertEqual(self.client.get(self.base + "/" + endpoint, {"source": "mcpservers", **params}).status_code, 502)
+            result = self.client.get(
+                self.base + "/" + endpoint, {"source": "mcpservers", **params}
+            )
+            self.assertEqual(result.status_code, 502)
+            self.assertEqual(result.data["code"], 3030)
+            self.assertEqual(
+                result.data["message"],
+                "The MCP servers directory could not be loaded. Try again later.",
+            )
 
     @patch("apps.core.views.labs_mcp_registry.requests.get")
     def test_corrupt_deflate_is_502_without_cache(self, get):
@@ -418,9 +432,21 @@ class RegistryApiTests(SpaceKeyTestCase):
     def test_malformed_upstream_is_502_not_empty(self, get):
         for payload in [{}, {"servers": [], "metadata": []}, {"servers": [{}], "metadata": {}}, {"servers": [], "metadata": {"nextCursor": 1}}]:
             get.return_value = response(payload)
-            self.assertEqual(self.client.get(self.base + "/search").status_code, 502)
+            result = self.client.get(self.base + "/search")
+            self.assertEqual(result.status_code, 502)
+            self.assertEqual(result.data["code"], 3030)
+            self.assertEqual(
+                result.data["message"],
+                "The official MCP registry could not be loaded. Try again later.",
+            )
         get.return_value = response({"server": {**SERVER, "name": "other/name"}})
-        self.assertEqual(self.client.get(self.base + "/detail", {"id": SERVER["name"]}).status_code, 502)
+        result = self.client.get(self.base + "/detail", {"id": SERVER["name"]})
+        self.assertEqual(result.status_code, 502)
+        self.assertEqual(result.data["code"], 3030)
+        self.assertEqual(
+            result.data["message"],
+            "The official MCP registry could not be loaded. Try again later.",
+        )
         get.return_value = response({"servers": [], "metadata": {}})
         self.assertEqual(self.client.get(self.base + "/search").data["data"], {"servers": [], "nextCursor": None})
 
