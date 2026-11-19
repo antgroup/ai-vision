@@ -37,9 +37,61 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
+
+func TestZstdReaderClosesAfterPartialRead(t *testing.T) {
+	codec := encoding.GetCompressor("zstd")
+	if codec == nil {
+		t.Fatal("gateway Zstd codec is unavailable")
+	}
+	message := []byte("collector trace fixture")
+	var frame bytes.Buffer
+	writer, err := codec.Compress(&frame)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = writer.Write(message); err != nil {
+		t.Fatal(err)
+	}
+	if err = writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	first, err := codec.Decompress(bytes.NewReader(frame.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	closer, ok := first.(io.Closer)
+	if !ok {
+		t.Fatal("gRPC must be able to release the decoder before EOF")
+	}
+	t.Cleanup(func() { _ = closer.Close() })
+	var prefix [1]byte
+	if _, err = io.ReadFull(first, prefix[:]); err != nil || prefix[0] != message[0] {
+		t.Fatalf("could not read the message prefix: %v", err)
+	}
+	if err = closer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	second, err := codec.Decompress(bytes.NewReader(frame.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondCloser, ok := second.(io.Closer)
+	if !ok {
+		t.Fatal("second decoder is missing its close method")
+	}
+	t.Cleanup(func() { _ = secondCloser.Close() })
+	if err = closer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := io.ReadAll(second)
+	if err != nil || !bytes.Equal(decoded, message) {
+		t.Fatalf("subsequent request did not decode correctly: %v", err)
+	}
+}
 
 // Requires Linux and a local Docker engine (the stub binds the bridge gateway).
 // Run against a built image without contacting a deployed backend or SigNoz:

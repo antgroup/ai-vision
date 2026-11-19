@@ -5,7 +5,6 @@
 package internal // import "go.opentelemetry.io/collector/config/configgrpc/internal"
 
 import (
-	"errors"
 	"io"
 	"sync"
 
@@ -45,32 +44,48 @@ func (z *writer) Close() error {
 }
 
 type reader struct {
-	*zstd.Decoder
-	pool *sync.Pool
+	decoder *zstd.Decoder
+	pool    *sync.Pool
 }
 
-func (c *compressor) Decompress(r io.Reader) (io.Reader, error) {
-	z, inPool := c.poolDecompressor.Get().(*reader)
-	if !inPool {
-		newZ, err := zstd.NewReader(r)
-		if err != nil {
-			return nil, err
-		}
-		return &reader{Decoder: newZ, pool: &c.poolDecompressor}, nil
+func (c *compressor) Decompress(input io.Reader) (io.Reader, error) {
+	decoder, _ := c.poolDecompressor.Get().(*zstd.Decoder)
+	var err error
+	if decoder == nil {
+		// Keep decoding synchronous, as in the previous gateway codec.
+		decoder, err = zstd.NewReader(input, zstd.WithDecoderConcurrency(1))
+	} else {
+		err = decoder.Reset(input)
 	}
-	if err := z.Reset(r); err != nil {
-		c.poolDecompressor.Put(z)
+	if err != nil {
+		if decoder != nil {
+			decoder.Close()
+		}
 		return nil, err
 	}
-	return z, nil
+	return &reader{decoder: decoder, pool: &c.poolDecompressor}, nil
 }
 
-func (z *reader) Read(p []byte) (n int, err error) {
-	n, err = z.Decoder.Read(p)
-	if errors.Is(err, io.EOF) {
-		z.pool.Put(z)
+func (r *reader) Read(p []byte) (int, error) {
+	if r.decoder == nil {
+		return 0, io.EOF
 	}
-	return n, err
+	return r.decoder.Read(p)
+}
+
+// gRPC closes the decoder even when it stops reading before EOF.
+func (r *reader) Close() error {
+	decoder := r.decoder
+	if decoder == nil {
+		return nil
+	}
+	r.decoder = nil
+	if err := decoder.Reset(nil); err != nil {
+		decoder.Close()
+		return err
+	}
+	r.pool.Put(decoder)
+	return nil
 }
 
 func (c *compressor) Name() string {

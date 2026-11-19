@@ -99,7 +99,8 @@ custom routes, JSON and protobuf, recovery, malformed input, and authentication.
 
 The vendored HTTP configuration applies the configured body size to both
 wire bytes and decoded bytes. The gateway retains streaming Snappy decoding so
-the configured limit also applies during that path.
+the configured limit also applies during that path. The gRPC Zstd codec keeps
+its decoder synchronous and releases it when gRPC finishes reading.
 [OpenTelemetry Collector change #10289](https://github.com/open-telemetry/opentelemetry-collector/pull/10289)
 
 The gateway uses OpenTelemetry Collector's built-in receiver and exporter
