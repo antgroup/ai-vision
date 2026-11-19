@@ -98,14 +98,16 @@ regression test at `scripts/test/receiver/otlphttp_test.go` runs in the normal
 custom routes, JSON and protobuf, recovery, malformed input, and authentication.
 
 The vendored HTTP configuration applies the configured body size to both
-wire bytes and decoded bytes, and streams Snappy requests. The gateway carries the upstream body-limit behavior.
+wire bytes and decoded bytes. The gateway retains streaming Snappy decoding so
+the configured limit also applies during that path.
 [OpenTelemetry Collector change #10289](https://github.com/open-telemetry/opentelemetry-collector/pull/10289)
 
 The gateway uses OpenTelemetry Collector's built-in receiver and exporter
-self-telemetry. Its vendored exporter modules come from upstream `v0.96.0`,
+self-telemetry. Its vendored exporter modules come from upstream `v0.102.1`,
 with the trace request limit applied in the `exporter/boundedotlphttpexporter`
-wrapper. The receiver starts from public upstream `v0.96.0`, and pdata starts
-from public upstream `v1.3.0`. The local pdata compatibility code preserves
-Table rows when decoding, copying, counting and forwarding OTLP. Use
+wrapper. The receiver starts from public upstream `v0.102.1`, and pdata starts
+from public upstream `v1.9.0`. The local pdata compatibility code preserves
+Table rows when decoding, copying, counting and forwarding OTLP. Table and
+the upstream metric Metadata field can coexist. Use
 `-mod=vendor` for product builds. Refreshing vendor requires retaining the
 compatibility code and rerunning the receiver and pdata regression tests.

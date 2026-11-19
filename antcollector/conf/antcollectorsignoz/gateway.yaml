@@ -67,7 +67,7 @@ exporters:
   # The gateway remains the sole external writer: it verifies the ingest
   # token and stamps space/user identity; signoz-ob owns the storage write.
   otlphttp/signoz:
-    # confmap v0.96 envprovider has no `${env:VAR:-default}` fallback syntax —
+    # confmap v0.102 envprovider has no `${env:VAR:-default}` fallback syntax —
     # the `:-...` suffix is parsed as part of the variable name and resolves to
     # nil, aborting config load. SIGNOZ_INGEST_ENDPOINT is always injected by the
     # deployment blueprint, so reference it directly.

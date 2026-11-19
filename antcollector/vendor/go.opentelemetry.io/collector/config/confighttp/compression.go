@@ -67,10 +67,10 @@ func (r *compressRoundTripper) RoundTrip(req *http.Request) (*http.Response, err
 }
 
 type decompressor struct {
-	maxRequestBodySize int64
 	errHandler         func(w http.ResponseWriter, r *http.Request, errorMsg string, statusCode int)
 	base               http.Handler
 	decoders           map[string]func(body io.ReadCloser) (io.ReadCloser, error)
+	maxRequestBodySize int64
 }
 
 // httpContentDecompressor offloads the task of handling compressed HTTP requests
