@@ -2,7 +2,7 @@
   "assets": [
     {
       "destination": "aivision-cli/blueprints/aivision-source.yaml",
-      "sha256": "4b9bfcb304aafd647e1dc6baf705828e3cd0b96dbdfafd32c8176b361c4d23d2",
+      "sha256": "0559cdfec4a24f86a52ddb9c651a8678ad6d2ab49d93389d222ce3cea40fd780",
       "source": "deploy/blueprints/aivision-source.yaml"
     },
     {

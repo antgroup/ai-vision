@@ -41,7 +41,7 @@ does not use or require a provider credential.
 
 ## 构建与验证
 
-源码构建需要 Go 1.25 或更高版本。
+源码构建需要 Go 1.26.11 或更高版本。
 
 ```bash
 go build -mod=vendor -o app ./cmd/app
