@@ -58,7 +58,7 @@ class BuildArchiveIdentityTest(unittest.TestCase):
             receipt = output.with_name(output.name + ".json")
             args = argparse.Namespace(context=context, archive=output, tag=f"docker.io/library/{TAG}", base=None)
             with (
-                patch.object(build, "verify_context", return_value="arm64"),
+                patch.object(build, "verify_context", return_value=("arm64", {})),
                 patch.object(build, "inspect_image", return_value=image),
                 patch.object(build.subprocess, "run"),
                 patch.object(build.subprocess, "Popen") as save,

@@ -1,8 +1,34 @@
-# Linux All-in-One prototype
+# Linux All-in-One
 
-This experimental image runs the 1108 frontend, backend, Collector, AgentLens, and SigNoz together with a local seekdb instance. It uses the audited native application payload with the lib64 deduplication fix and one Python 3.11 Bookworm base. One process owns the `pylibseekdb` instance. The backend, AgentLens, and SigNoz share its local MySQL Unix socket.
+The All-in-One image runs the frontend, backend, ingest gateway, diagnosis engine, and data backend alongside an embedded seekdb instance. One process owns `pylibseekdb`. The backend, diagnosis engine, and data backend share its local MySQL Unix socket. The image and CLI are specific to a Linux architecture.
 
-## Build from the verified inputs
+## Prepare an offline candidate from a qualified Daily
+
+Use the exact source checkout, `release-assets-<attempt>` directory, and `candidate-acceptance.json` from a successful public Daily. Keep the assets as downloaded. The preparation command checks the frozen acceptance, resolves each of the five image indexes to its target Linux manifest and config digest, and stages files from the exact locally loaded images. The backend and diagnosis images must share the pinned Python 3.11 Bookworm base. Preload that base and the accepted images for the selected architecture.
+
+Build the supervisor and seekdb owner as shown below. Pass the two pinned PyPI wheels for the selected architecture. This example targets Linux ARM64 and stages a gzip bundle for the deployment Skill's offline installer.
+
+```sh
+python3 deploy/all-in-one/build.py prepare-daily \
+  --architecture arm64 --daily-assets "$release_assets" --acceptance "$acceptance" \
+  --base "$python_base" --wheel "$seekdb_wheel" --pymysql-wheel "$pymysql_wheel" \
+  --supervisor "$platform_supervisor" --db-owner "$platform_db_owner" --context "$context"
+
+python3 deploy/all-in-one/build.py build \
+  --context "$context" --tag "aiv-all-in-one:${daily_version}-arm64" --archive "$image_archive"
+
+python3 deploy/all-in-one/build.py package-daily \
+  --daily-assets "$release_assets" --acceptance "$acceptance" --archive "$image_archive" \
+  --output "$candidate_dir"
+
+python3 /path/to/install-all-in-one.py --from-dir "$candidate_dir"
+```
+
+Use a fresh candidate directory and local image tag. Retain the context and image build receipts alongside the architecture-specific archive, manifest, CLI, and checksums. The candidate retains the Daily identity and uses the same CLI bytes. Qualify the embedded database separately from the Daily's multi-container smoke. Check startup, Agent onboarding, trace and diagnosis readback, shutdown, and same-volume recreation on each intended Linux architecture.
+
+## Reproduce the audited 1108 native prototype
+
+The historical prototype uses the audited 1108 native application payload with the lib64 deduplication fix and its pinned Python base. The commands below describe that frozen input and how to build the two local launchers.
 
 Build the supervisor with Go 1.25 on any supported build host. Build the database owner on the target Linux architecture with the Python 3.11 headers and shared library from the pinned Bookworm runtime. For ARM64, set `GOARCH=arm64` and use the ARM64 runtime for the owner build.
 

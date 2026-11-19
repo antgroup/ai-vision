@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Build an isolated Linux prototype from an audited 1108 service archive."""
+"""Build an isolated Linux All-in-One from a frozen Daily or audited 1108 archive."""
 
 import argparse
+import base64
 import gzip
 import hashlib
 import json
@@ -300,6 +301,86 @@ def prepare(args):
     print(context)
 
 
+
+def preparation_source():
+    root = Path(__file__).resolve().parents[2]
+    return subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
+
+
+def prepare_daily(args):
+    from daily import BASE, PROFILE, candidate, file_digest, image_configs, stage_images, stage_metadata
+
+    manifest, acceptance = candidate(args.daily_assets, args.acceptance, expected_source=preparation_source())
+    architecture = args.architecture
+    platform = PLATFORMS[architecture]
+    context = args.context.resolve()
+    if context.exists():
+        raise ValueError(f"build context already exists: {context}")
+    wheels = {wheel.name: wheel for wheel in (args.wheel, args.pymysql_wheel)}
+    if wheels.keys() != platform["wheels"].keys():
+        raise ValueError("the two wheels must retain their pinned PyPI filenames")
+    for name, digest in platform["wheels"].items():
+        require_hash(wheels[name], digest)
+    images = image_configs(manifest["images"], architecture)
+    base = inspect_image(args.base)
+    base_layers = base["RootFS"]["Layers"]
+    base_digest = BASE.partition("@")[2]
+    known_python = {f"python@{base_digest}", f"library/python@{base_digest}", BASE}
+    if ((base["Os"], base["Architecture"]) != ("linux", architecture)
+            or not known_python.intersection(base["RepoDigests"] or [])):
+        raise ValueError("use the local copy of the pinned source-compatible Python runtime")
+    for name, identity in images.items():
+        local = inspect_image(identity["config_id"])
+        if (local["Id"], local["Os"], local["Architecture"]) != (identity["config_id"], "linux", architecture):
+            raise ValueError(f"local image differs from the selected Daily platform: {name}")
+        if name in {"aivision-be", "agentlens"} and local["RootFS"]["Layers"][:len(base_layers)] != base_layers:
+            raise ValueError(f"source service does not share the pinned Python runtime: {name}")
+    context.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="aiv-all-in-one-daily-", dir=context.parent) as temp:
+        staged = Path(temp) / "context"
+        staged.mkdir()
+        rootfs = staged / "rootfs"
+        stage_images(rootfs, images)
+        stage_metadata(rootfs, args.daily_assets, manifest)
+        for path, name in ((args.supervisor, "aivision-all-in-one"), (args.db_owner, "aivision-seekdb")):
+            destination = rootfs / "usr/local/bin" / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            stage_executable(path, destination, architecture)
+        wheel_dir = staged / "wheel"
+        wheel_dir.mkdir()
+        for name, wheel in wheels.items():
+            shutil.copyfile(wheel, wheel_dir / name)
+        shutil.copyfile(RECIPE, staged / "Dockerfile")
+        write_json(staged / RECEIPT, {
+            "source_profile": PROFILE,
+            "source_candidate": {key: manifest[key] for key in ("source_repository", "source_sha", "release_tag",
+                                                                 "product_version", "build_id")},
+            "release_manifest_sha256": acceptance["assets"]["release-manifest.json"]["sha256"],
+            "candidate_acceptance_sha256": file_digest(args.acceptance),
+            "platform": f"linux/{architecture}",
+            "source_images": images,
+            "base": {"reference": args.base, "config_id": base["Id"], "layers": base_layers},
+            "wheel_sha256": platform["wheels"],
+            "files": inventory(staged),
+        })
+        staged.rename(context)
+    print(context)
+
+
+def package_daily(args):
+    from daily import candidate, package
+
+    manifest, acceptance = candidate(args.daily_assets, args.acceptance, expected_source=preparation_source())
+    receipt_path = args.archive.with_name(args.archive.name + ".json")
+    receipt = json.loads(receipt_path.read_text())
+    for key in ("source_repository", "source_sha", "release_tag", "product_version", "build_id"):
+        if receipt.get("source_candidate", {}).get(key) != manifest[key]:
+            raise ValueError("All-in-One build receipt belongs to a different Daily")
+    if receipt.get("release_manifest_sha256") != acceptance["assets"]["release-manifest.json"]["sha256"]:
+        raise ValueError("All-in-One build receipt belongs to different Daily assets")
+    package(args.daily_assets, manifest, acceptance, args.archive, receipt, args.output)
+
+
 def canonical_tag(reference):
     # Docker drops the default registry and library namespace in RepoTags.
     if reference.startswith(("docker.io/", "index.docker.io/")):
@@ -349,20 +430,23 @@ def verify_context(context):
     if architecture not in PLATFORMS or receipt.get("platform") != f"linux/{architecture}":
         raise ValueError(f"unexpected platform in the prepared context: {context}")
     platform = PLATFORMS[architecture]
-    if (
-        receipt.get("archive_sha256") != platform["bundle"]
-        or receipt.get("source_image_configs") != platform["configs"]
-        or receipt.get("wheel_sha256") != platform["wheels"]
-    ):
-        raise ValueError(f"unexpected sources in the prepared context: {context}")
-    if receipt.get("debug_strip", {}).get("policy") != DEBUG_STRIP_POLICY:
-        raise ValueError("prepare the context with the current debug-strip policy")
+    if receipt.get("wheel_sha256") != platform["wheels"]:
+        raise ValueError(f"unexpected database wheels in the prepared context: {context}")
+    if receipt.get("source_profile") == "daily-source":
+        if receipt.get("source_candidate", {}).get("source_sha") != preparation_source():
+            raise ValueError("prepared context belongs to a different Daily source checkout")
+    else:
+        if (receipt.get("archive_sha256") != platform["bundle"]
+                or receipt.get("source_image_configs") != platform["configs"]):
+            raise ValueError(f"unexpected sources in the prepared context: {context}")
+        if receipt.get("debug_strip", {}).get("policy") != DEBUG_STRIP_POLICY:
+            raise ValueError("prepare the context with the current debug-strip policy")
     if receipt.get("files") != inventory(context):
         raise ValueError(f"files differ from the prepared context inventory: {context}")
     require_hash(context / "Dockerfile", sha256(RECIPE))
     for name, digest in platform["wheels"].items():
         require_hash(context / "wheel" / name, digest)
-    return architecture
+    return architecture, receipt
 
 
 def inspect_image(reference):
@@ -382,8 +466,11 @@ def require_local_base(reference, architecture):
 
 def build(args):
     context = args.context.resolve()
-    architecture = verify_context(context)
+    architecture, prepared = verify_context(context)
     platform = PLATFORMS[architecture]
+    daily_base = prepared.get("base") if prepared.get("source_profile") == "daily-source" else None
+    base_layers = tuple(daily_base["layers"]) if daily_base else platform["base_layers"]
+    base_config = daily_base["config_id"] if daily_base else platform["base_config"]
     output = args.archive.resolve()
     receipt_path = output.with_name(output.name + ".json")
     if output.exists() or receipt_path.exists() or output.is_relative_to(context):
@@ -391,7 +478,18 @@ def build(args):
     output.parent.mkdir(parents=True, exist_ok=True)
     tag = canonical_tag(args.tag)
     command = ["docker", "build", "--platform", f"linux/{architecture}", "--tag", args.tag]
-    if args.base:
+    if daily_base:
+        reference = args.base or daily_base["reference"]
+        actual = inspect_image(reference)
+        if (actual["Id"], actual["Os"], actual["Architecture"], tuple(actual["RootFS"]["Layers"])) != (
+                base_config, "linux", architecture, base_layers):
+            raise ValueError("local runtime base differs from the prepared Daily context")
+        manifest = context / "rootfs/etc/aivision/release-manifest.json"
+        require_hash(manifest, prepared["release_manifest_sha256"])
+        release = base64.b64encode(manifest.read_bytes()).decode("ascii")
+        command.extend(["--build-arg", f"RUNTIME_BASE={reference}",
+                        "--build-arg", f"AIVISION_RELEASE_MANIFEST_BASE64={release}"])
+    elif args.base:
         require_local_base(args.base, architecture)
         command.extend(["--build-arg", f"RUNTIME_BASE={args.base}"])
     elif architecture == "arm64":
@@ -399,16 +497,17 @@ def build(args):
     subprocess.run([*command, str(context)], check=True)
     image = inspect_image(args.tag)
     layers = image["RootFS"]["Layers"]
-    base_layers = platform["base_layers"]
     if (image["Os"], image["Architecture"]) != ("linux", architecture) or tuple(layers[:len(base_layers)]) != base_layers:
-        raise ValueError(f"built image does not use the pinned 1108 linux/{architecture} Python base")
+        raise ValueError(f"built image does not use the pinned linux/{architecture} Python base")
     print(f"Built {tag} {image['Id']}", flush=True)
     save_image(args.tag, output, image)
     write_json(receipt_path, {
         "archive": str(output),
         "archive_bytes": output.stat().st_size,
         "archive_sha256": sha256(output),
-        "base_config": platform["base_config"],
+        "base_config": base_config,
+        **({key: prepared[key] for key in ("source_candidate", "source_images", "release_manifest_sha256",
+                                          "candidate_acceptance_sha256")} if daily_base else {}),
         "context_receipt_sha256": sha256(context / RECEIPT),
         "image_id": image["Id"],
         "image_bytes": image["Size"],
@@ -428,6 +527,16 @@ def main():
     preparation.add_argument("--strip-amd64", required=True, help="GNU strip supporting Linux x86-64 ELF")
     preparation.add_argument("--strip-arm64", help="GNU strip supporting Linux ARM64 ELF, required for ARM64 preparation")
     preparation.set_defaults(run=prepare)
+    daily = commands.add_parser("prepare-daily", help="stage the frozen source-compatible Daily assets")
+    for argument in ("daily-assets", "acceptance", "wheel", "pymysql-wheel", "supervisor", "db-owner", "context"):
+        daily.add_argument(f"--{argument}", type=Path, required=True)
+    daily.add_argument("--architecture", choices=PLATFORMS, default=DEFAULT_ARCHITECTURE)
+    daily.add_argument("--base", required=True, help="local alias of the pinned source-compatible Python base")
+    daily.set_defaults(run=prepare_daily)
+    delivery = commands.add_parser("package-daily", help="stage the verified archive and CLI for offline Skills install")
+    for argument in ("daily-assets", "acceptance", "archive", "output"):
+        delivery.add_argument(f"--{argument}", type=Path, required=True)
+    delivery.set_defaults(run=package_daily)
     assembly = commands.add_parser("build", help="build and save the local image")
     assembly.add_argument("--context", type=Path, required=True)
     assembly.add_argument("--tag", required=True)
