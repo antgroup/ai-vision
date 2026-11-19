@@ -2,22 +2,22 @@
 
 import logging
 
-import requests as http_requests
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from ..models import Space
 from ..services.trace_query_service import (
-    TraceQueryServiceError,
     get_default_trace_query_service,
 )
 from .common import (
-    SpaceObservationCredentialDecryptionError,
     success_response,
     error_response,
     check_space_access_or_error,
 )
-from .trace_handlers import merge_session_list_params, merge_trace_list_params
+from .trace_handlers import (
+    handle_query_error as _handle_error,
+    merge_session_list_params,
+    merge_trace_list_params,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -31,23 +31,6 @@ def _get_space_or_error(space_id: str):
 
 def _check_access(request, space):
     return check_space_access_or_error(request.user, space)
-
-
-def _handle_error(exc, method_label: str):
-    if isinstance(exc, SpaceObservationCredentialDecryptionError):
-        return error_response(str(exc), 3017)
-    if isinstance(exc, TraceQueryServiceError):
-        if exc.code in (3036, 3037):
-            return Response({'code': exc.code, 'message': exc.message, 'data': None},
-                            status=413 if exc.code == 3036 else 429,
-                            headers={'Retry-After': '1'} if exc.code == 3037 else None)
-        if exc.code == 3019:
-            return Response({"code": exc.code, "message": exc.message, "data": None}, status=404)
-        return error_response(exc.message, exc.code)
-    if isinstance(exc, http_requests.RequestException):
-        logger.error("%s error: %s", method_label, exc)
-        return error_response(f"Failed to {method_label}: {exc}", 3012)
-    raise exc
 
 
 # ---------------------------------------------------------------------------

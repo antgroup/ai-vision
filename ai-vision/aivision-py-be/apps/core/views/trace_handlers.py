@@ -10,7 +10,11 @@ from ..services.trace_query_service import (
     TraceQueryServiceError,
     get_default_trace_query_service,
 )
-from .common import SpaceObservationCredentialDecryptionError, error_response
+from .common import (
+    SpaceObservationCredentialDecryptionError,
+    error_response,
+    read_credential_error_response,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +90,7 @@ def _append_native_dimension_filters(params, *, include_environment=True, includ
 
 def handle_query_error(exc, method_label: str):
     if isinstance(exc, SpaceObservationCredentialDecryptionError):
-        return error_response(str(exc), 3017)
+        return read_credential_error_response()
     if isinstance(exc, TraceQueryServiceError):
         if exc.code in (3036, 3037):
             return Response({"code": exc.code, "message": exc.message, "data": None}, status=413 if exc.code == 3036 else 429,
@@ -98,8 +102,8 @@ def handle_query_error(exc, method_label: str):
             )
         return error_response(exc.message, exc.code)
     if isinstance(exc, http_requests.RequestException):
-        logger.error("%s error: %s", method_label, exc)
-        return error_response(f"Failed to {method_label}: {exc}", 3012)
+        logger.error("%s error (%s)", method_label, type(exc).__name__)
+        return error_response(f"Failed to {method_label}", 3012)
     raise exc
 
 

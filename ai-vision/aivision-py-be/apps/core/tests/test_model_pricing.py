@@ -307,6 +307,21 @@ class PricingApiTests(TestCase):
         self.assertEqual(replacement.status_code, 200)
         self.assertNotEqual(first.data['data']['version'], replacement.data['data']['version'])
 
+    def test_rule_creation_hides_unexpected_pricing_error_details(self):
+        failure = pricing.PricingError("fixture-only pricing diagnostic")
+        with patch.object(pricing, "create_rule", side_effect=failure):
+            response = self.client.post(self.base + "/rules", self.body, format="json")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data,
+            {
+                "code": 1001,
+                "message": "Could not save the pricing rule. Try again later.",
+                "data": None,
+            },
+        )
+
     def test_sync_failure_keeps_the_catalog_without_returning_internal_detail(self):
         snapshot = pricing.store_catalog(catalog())
         failure = pricing.PricingError('Internal catalog fixture detail')

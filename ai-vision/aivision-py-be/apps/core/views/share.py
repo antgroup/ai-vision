@@ -26,6 +26,7 @@ from ..services.observation_subject_service import (
     require_default_subject,
 )
 from ..utils.share_signing import (
+    ShareLinkValidationError,
     build_share_payload,
     sign_share_payload,
     get_share_link_ttl,
@@ -34,6 +35,7 @@ from ..utils.share_signing import (
 )
 from .common import (
     SpaceObservationCredentialDecryptionError,
+    read_credential_error_response,
     success_response,
     error_response,
     check_space_access_or_error,
@@ -207,7 +209,7 @@ class GenerateShareLinkView(APIView):
             try:
                 source_system = resolve_trace_source_system(space, agent_product)
             except TraceProviderNotConfiguredError as exc:
-                return error_response(str(exc), exc.code)
+                return error_response(exc.message, exc.code)
             if source_system == "signoz":
                 # The legacy/default protocol can route to native storage.
                 # Freeze its real backend and Agent scope just like explicit
@@ -304,7 +306,7 @@ class ShareDataView(APIView):
 
         try:
             claims = parse_and_verify_share(payload_raw, sig)
-        except ValueError as exc:
+        except ShareLinkValidationError:
             return error_response(
                 "SHARE_SIGNATURE_INVALID",
                 3023,
@@ -375,13 +377,13 @@ class ShareDataView(APIView):
                 }
             else:
                 return error_response("Invalid resource type", 4001)
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as exc:
-            logger.error("Share data upstream error: %s", exc)
-            return error_response(f"Failed to get data: {exc}", 3013)
+            logger.error("Share data upstream error (%s)", type(exc).__name__)
+            return error_response("Failed to get data", 3013)
 
         # Only the signed scope and the server's reserved Agent record can
         # label a public share as simulated.
@@ -410,8 +412,8 @@ class ShareObservationView(APIView):
 
         try:
             claims = parse_and_verify_share(payload_raw, sig)
-        except ValueError as exc:
-            return error_response(str(exc), 3023)
+        except ShareLinkValidationError as exc:
+            return error_response(exc.public_message, 3023)
 
         if claims["t"] != "trace":
             return error_response(
@@ -441,9 +443,11 @@ class ShareObservationView(APIView):
                 query_params=query_params,
                 source_system_override=source_system_override,
             )
-        except (TraceQueryServiceError, http_requests.RequestException) as exc:
-            logger.error("Share observation trace check error: %s", exc)
-            return error_response(f"Failed to get trace detail: {exc}", 3013)
+        except TraceQueryServiceError as exc:
+            return error_response(f"Failed to get trace detail: {exc.message}", 3013)
+        except http_requests.RequestException as exc:
+            logger.error("Share observation trace check error (%s)", type(exc).__name__)
+            return error_response("Failed to get trace detail", 3013)
 
         # Langfuse providers return {"observations": [{"id": ...}]}; native
         # SigNoz providers return {"spans": [{"span_id": ...}]}. Accept both
@@ -477,9 +481,11 @@ class ShareObservationView(APIView):
                 trace_id=trace_id,
                 source_system_override=source_system_override,
             )
-        except (TraceQueryServiceError, http_requests.RequestException) as exc:
-            logger.error("Share observation detail error: %s", exc)
-            return error_response(f"Failed to get observation: {exc}", 3013)
+        except TraceQueryServiceError as exc:
+            return error_response(f"Failed to get observation: {exc.message}", 3013)
+        except http_requests.RequestException as exc:
+            logger.error("Share observation detail error (%s)", type(exc).__name__)
+            return error_response("Failed to get observation", 3013)
 
         return success_response(data)
 
@@ -500,8 +506,8 @@ class ShareTraceDetailView(APIView):
 
         try:
             claims = parse_and_verify_share(payload_raw, sig)
-        except ValueError as exc:
-            return error_response(str(exc), 3023)
+        except ShareLinkValidationError as exc:
+            return error_response(exc.public_message, 3023)
 
         try:
             space = Space.objects.get(id=claims["s"], status=1)
@@ -557,12 +563,12 @@ class ShareTraceDetailView(APIView):
                 query_params=query_params,
                 source_system_override=source_system_override,
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as exc:
-            logger.error("Share trace detail upstream error: %s", exc)
-            return error_response(f"Failed to get trace detail: {exc}", 3013)
+            logger.error("Share trace detail upstream error (%s)", type(exc).__name__)
+            return error_response("Failed to get trace detail", 3013)
 
         return success_response(data)

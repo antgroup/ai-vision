@@ -13,6 +13,7 @@ from ..services.trace_query_service import (
 )
 from .common import (
     SpaceObservationCredentialDecryptionError,
+    read_credential_error_response,
     success_response,
     error_response,
     check_space_access_or_error,
@@ -68,13 +69,13 @@ class LfTraceListView(APIView):
                 query_params=query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error("LF trace list error: %s", e)
-            return error_response(f"Failed to query traces: {e}", 3012)
+            logger.error("LF trace list error (%s)", type(e).__name__)
+            return error_response("Failed to query traces", 3012)
 
         # 合并 facets 候选聚合到 trace list 响应，前端不再单独请求
         try:
@@ -140,13 +141,13 @@ class LfTraceIOBatchView(APIView):
                 query_params=query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error("LF trace IO batch error: %s", e)
-            return error_response(f"Failed to get trace input/output: {e}", 3012)
+            logger.error("LF trace IO batch error (%s)", type(e).__name__)
+            return error_response("Failed to get trace input/output", 3012)
         return success_response(data)
 
 
@@ -198,13 +199,13 @@ class LfTraceUsageBatchView(APIView):
                 query_params=query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error("LF trace usage batch error: %s", e)
-            return error_response(f"Failed to get trace token usage: {e}", 3012)
+            logger.error("LF trace usage batch error (%s)", type(e).__name__)
+            return error_response("Failed to get trace token usage", 3012)
         return success_response(data)
 
 
@@ -229,15 +230,15 @@ class LfTraceDetailView(APIView):
                 query_params=request.query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             if exc.code == 3019:
                 return Response({"code": exc.code, "message": exc.message, "data": None})
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error("LF trace detail error: %s", e)
-            return error_response(f"Failed to get trace detail: {e}", 3013)
+            logger.error("LF trace detail error (%s)", type(e).__name__)
+            return error_response("Failed to get trace detail", 3013)
         return success_response(data)
 
 
@@ -261,13 +262,13 @@ class LfSessionListView(APIView):
                 query_params=request.query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error("LF session list error: %s", e)
-            return error_response(f"Failed to query sessions: {e}", 3014)
+            logger.error("LF session list error (%s)", type(e).__name__)
+            return error_response("Failed to query sessions", 3014)
         return success_response(data)
 
 
@@ -292,11 +293,11 @@ class LfSessionDetailView(APIView):
                 query_params=request.query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error("LF session detail error: %s", e)
-            return error_response(f"Failed to get session detail: {e}", 3015)
+            logger.error("LF session detail error (%s)", type(e).__name__)
+            return error_response("Failed to get session detail", 3015)
         return success_response(data)

@@ -1,4 +1,6 @@
 """Space-authorized pricing; catalog refresh affects shared public metadata only."""
+import logging
+
 from django.db import transaction
 from django.utils import timezone
 from requests import ConnectionError, RequestException, Timeout
@@ -11,6 +13,8 @@ from apps.core.permissions.space import require_space_permission
 from apps.core.services import model_pricing as pricing
 from apps.core.trace_query.types import TraceQueryServiceError
 from .common import success_response, error_response
+
+logger = logging.getLogger(__name__)
 
 
 def _context(request, space_id, permission=MODEL_PRICING_READ):
@@ -43,8 +47,8 @@ class ModelPricingSyncView(APIView):
         source, revision = options.get('source', 'auto'), options.get('revision')
         try:
             pricing.validate_sync_options(source, revision)
-        except pricing.PricingError as exc:
-            return error_response(str(exc))
+        except pricing.PricingValidationError as exc:
+            return error_response(exc.public_message)
         try:
             pricing.sync_catalog(source=source, revision=revision)
         except pricing.PricingError:
@@ -61,8 +65,11 @@ class ModelPricingRuleCreateView(APIView):
         ctx = _context(request, space_id, MODEL_PRICING_MANAGE)
         try:
             rule = pricing.create_rule(space=ctx.space, user=request.user, data=request.data)
+        except pricing.PricingValidationError as exc:
+            return error_response(exc.public_message)
         except pricing.PricingError as exc:
-            return error_response(str(exc))
+            logger.warning("Could not save pricing rule (%s)", type(exc).__name__)
+            return error_response("Could not save the pricing rule. Try again later.")
         return success_response(pricing.serialize_rule(rule))
 
 
@@ -85,10 +92,13 @@ class ModelPricingInventoryView(APIView):
         ctx = _context(request, space_id)
         try:
             data = pricing.native_inventory(space=ctx.space, user=request.user, params=request.query_params)
-        except pricing.InventoryScopeNotFound as exc:
-            return error_response(str(exc), status=404)
+        except pricing.InventoryScopeNotFound:
+            return error_response("Agent not found in this Space", status=404)
+        except pricing.PricingValidationError as exc:
+            return error_response(exc.public_message)
         except pricing.PricingError as exc:
-            return error_response(str(exc))
+            logger.warning("Could not query pricing inventory (%s)", type(exc).__name__)
+            return error_response("Could not query the pricing inventory. Try again later.")
         except TraceQueryServiceError as exc:
             return error_response(exc.message, code=exc.code, status=422)
         except RequestException as exc:

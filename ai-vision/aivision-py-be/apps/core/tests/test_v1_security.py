@@ -3,13 +3,14 @@
 覆盖审计报告中的缺陷编号 V1-SEC-01 到 V1-SEC-06。
 """
 
-from django.test import RequestFactory, TestCase, override_settings
+from django.test import RequestFactory, SimpleTestCase, TestCase, override_settings
 from rest_framework.request import Request
 
 from apps.core.tests.helpers import create_test_space_member, create_local_user
 
 from apps.core.models import User, Space, SpaceMember
 from apps.core.views import DataQueryView, AgentDashboardPanelListView
+from apps.core.views.query import resolve_time_window
 
 
 def _make_drf_request(factory_request, user):
@@ -122,6 +123,30 @@ class DataQueryViewTimeRangeTests(TestCase):
         data = response.data if hasattr(response, "data") else {}
         # 不应因时间范围被拒绝
         self.assertNotEqual(data.get("code"), 1001)
+
+
+class DataQueryTimeWindowParsingTests(SimpleTestCase):
+    def test_public_time_errors_keep_field_specific_messages(self):
+        cases = (
+            (
+                "2026-02-30T00:00:00Z",
+                "2026-03-01T00:00:00Z",
+                "Invalid fromTimestamp or toTimestamp",
+            ),
+            (
+                "2026-03-02T00:00:00Z",
+                "2026-03-01T00:00:00",
+                "fromTimestamp cannot be later than toTimestamp",
+            ),
+        )
+        for start, end, message in cases:
+            with self.subTest(start=start, end=end):
+                request = Request(
+                    RequestFactory().get(
+                        "/query", {"fromTimestamp": start, "toTimestamp": end}
+                    )
+                )
+                self.assertEqual(resolve_time_window(request).public_message, message)
 
 
 class AgentDashboardPanelListAuthTests(TestCase):

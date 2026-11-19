@@ -1,4 +1,5 @@
 import logging
+from dataclasses import dataclass
 from datetime import UTC, timedelta
 
 from django.db import models
@@ -75,19 +76,23 @@ def parse_time_range(time_range):
     return time_start, time_end
 
 
-def resolve_time_window(request):
+@dataclass(frozen=True)
+class _TimeWindowIssue:
+    public_message: str
+
+
+def resolve_time_window(request) -> tuple[str, str, str] | _TimeWindowIssue:
     from_ts = request.query_params.get("fromTimestamp")
     to_ts = request.query_params.get("toTimestamp")
 
     if from_ts and to_ts:
-        time_start = parse_datetime(from_ts)
-        time_end = parse_datetime(to_ts)
-
+        try:
+            time_start = parse_datetime(from_ts)
+            time_end = parse_datetime(to_ts)
+        except ValueError:
+            return _TimeWindowIssue("Invalid fromTimestamp or toTimestamp")
         if not time_start or not time_end:
-            raise ValueError("Invalid fromTimestamp or toTimestamp")
-
-        if time_start > time_end:
-            raise ValueError("fromTimestamp cannot be later than toTimestamp")
+            return _TimeWindowIssue("Invalid fromTimestamp or toTimestamp")
 
         if timezone.is_naive(time_start):
             time_start = timezone.make_aware(time_start, UTC)
@@ -95,10 +100,13 @@ def resolve_time_window(request):
         if timezone.is_naive(time_end):
             time_end = timezone.make_aware(time_end, UTC)
 
+        if time_start > time_end:
+            return _TimeWindowIssue("fromTimestamp cannot be later than toTimestamp")
+
         # V1-SEC-03: enforce max time range span to prevent unbounded queries
         span_days = (time_end - time_start).days
         if span_days > MAX_TIME_RANGE_DAYS:
-            raise ValueError(
+            return _TimeWindowIssue(
                 f"Time range cannot exceed {MAX_TIME_RANGE_DAYS} days (requested {span_days} days)"
             )
 
@@ -161,10 +169,10 @@ class DataQueryView(APIView):
 
         adapter = QueryAdapterFactory.create(datasource)
 
-        try:
-            time_start, time_end, time_range = resolve_time_window(request)
-        except ValueError as exc:
-            return error_response(str(exc))
+        time_window = resolve_time_window(request)
+        if isinstance(time_window, _TimeWindowIssue):
+            return error_response(time_window.public_message)
+        time_start, time_end, time_range = time_window
 
         context = QueryContext(
             user_id=user.id,
