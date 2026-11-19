@@ -1,0 +1,58 @@
+name: Eino example
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/eino-example.yml'
+      - 'ai-vision/agent-plugins/langfuse/Makefile'
+      - 'ai-vision/agent-plugins/langfuse/examples/eino.yaml'
+      - 'ai-vision/agent-plugins/langfuse/examples/eino/**'
+      - 'ai-vision/agent-plugins/langfuse/tests/eino/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eino-example-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve the Eino dependency updates
+        working-directory: ai-vision/agent-plugins/langfuse/examples/eino
+        run: |
+          go get github.com/buger/jsonparser@v1.1.2 \
+            go.opentelemetry.io/otel/trace@v1.47.0 \
+            go.opentelemetry.io/otel/sdk@v1.47.0 \
+            go.opentelemetry.io/otel/exporters/otlp/otlptrace@v1.47.0 \
+            go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.47.0 \
+            google.golang.org/grpc@v1.83.2
+          go mod tidy
+          go mod verify
+      - name: Upload resolved Eino module metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: eino-module-${{ github.run_attempt }}
+          path: |
+            ai-vision/agent-plugins/langfuse/examples/eino/go.mod
+            ai-vision/agent-plugins/langfuse/examples/eino/go.sum
+          if-no-files-found: error
+          retention-days: 3
+      - name: Test the official callback and trace verifier
+        working-directory: ai-vision/agent-plugins/langfuse
+        run: make test-eino

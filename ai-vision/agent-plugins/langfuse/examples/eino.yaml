@@ -4,7 +4,7 @@ label: Eino
 logo: /assets/frameworks/eino.png
 logoLayout: wide
 language: go
-runtime: Go 1.25+
+runtime: Go 1.26+
 marketLabel: Go / Eino
 marketSort: 9
 marketPreview: true
@@ -16,7 +16,10 @@ install: |-
   go get github.com/cloudwego/eino@v0.9.22 \
     github.com/cloudwego/eino-ext/callbacks/langfuse/v2@v2.0.2 \
     github.com/cloudwego/eino-ext/components/model/openai@v0.1.13 \
-    go.opentelemetry.io/otel/trace@v1.44.0 google.golang.org/grpc@v1.83.1
+    github.com/buger/jsonparser@v1.1.2 \
+    go.opentelemetry.io/otel/trace@v1.47.0 \
+    go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp@v1.47.0 \
+    google.golang.org/grpc@v1.83.2
 exampleFilename: main.go
 runCommand: go run main.go
 envShell:
