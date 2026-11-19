@@ -17,7 +17,7 @@ IMAGES = ("aivision-be", "aivision-fe", "antcollector-gw", "agentlens")
 
 def make_plan(
     version, event, ref, default_branch, tag, run_id, run_number, attempt, source_sha, date,
-    snapshot_date=None, daily_revision="1", candidate_channel="auto",
+    snapshot_date=None, daily_revision="1", candidate_channel="auto", personal_edition=False,
 ):
     if not VERSION.fullmatch(version):
         raise ValueError("invalid root VERSION")
@@ -82,7 +82,10 @@ def make_plan(
             if attempt != "1":
                 product_version += f".{attempt}"
         tier = "daily"
+    if type(personal_edition) is not bool or (personal_edition and channel != "daily"):
+        raise ValueError("Personal Edition currently requires a Daily candidate")
     return {
+        **({"personal_edition": True} if personal_edition else {}),
         "source_sha": source_sha,
         "product_version": product_version,
         "channel": channel,
@@ -227,6 +230,7 @@ def main():
                 snapshot_date=os.environ.get("INPUT_SNAPSHOT_DATE", ""),
                 daily_revision=os.environ.get("INPUT_DAILY_REVISION") or "1",
                 candidate_channel=os.environ.get("INPUT_CANDIDATE_CHANNEL") or "auto",
+                personal_edition=os.environ.get("INPUT_PERSONAL_EDITION") == "true",
             )
             args.file.write_text(json.dumps(plan, indent=2) + "\n")
             with open(os.environ["GITHUB_OUTPUT"], "a") as output:

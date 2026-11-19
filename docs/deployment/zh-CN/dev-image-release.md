@@ -66,6 +66,14 @@ gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 
 此命令假设外部依赖变量已配置；否则另加 `-f signoz_image=IMAGE@sha256:DIGEST`，填写已确认的引用。新增工作流到达默认分支后，才可按名称手动触发。
 
+## 验收 All-in-One 个人版
+
+运行 Daily 时选择 `personal_edition=true` 和 `publish=false`，即可加入内置
+seekdb 的 Linux amd64 和 arm64 单容器个人版。原生双架构作业使用双库验收
+通过后冻结的分布式候选，实际安装并验证镜像、CLI、首次使用和数据持久化。
+最终的 `release-assets` 与 `release-acceptance` 保留分布式附件，加入个人版
+安装器、清单、压缩包和验收凭证。晋级使用最终凭证，安装下载使用固定版本 Release。
+
 ## 审阅并推进冻结候选
 
 成功候选上传 `release-assets-<attempt>`、`release-smoke-<attempt>-oceanbase`、`release-smoke-<attempt>-seekdb` 和 `release-acceptance-<attempt>`。最后一个制品包含 `candidate-acceptance.json`；smoke 制品仅包含经过脱敏的结构化回执，不包含原始日志或私密运行配置。

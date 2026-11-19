@@ -20,6 +20,10 @@ on:
         type: string
         required: true
         default: dev
+      personal_edition:
+        description: Build and qualify the Linux amd64 and arm64 Personal Edition assets for this Daily
+        type: boolean
+        default: false
       signoz_image:
         description: External SigNoz image@sha256 digest; otherwise use AIVISION_SIGNOZ_IMAGE
         type: string
@@ -82,6 +86,7 @@ jobs:
       - id: plan
         env:
           INPUT_TAG: ${{ inputs.tag }}
+          INPUT_PERSONAL_EDITION: ${{ inputs.personal_edition }}
           INPUT_SNAPSHOT_DATE: ${{ inputs.snapshot_date }}
           INPUT_DAILY_REVISION: ${{ inputs.daily_revision }}
           INPUT_CANDIDATE_CHANNEL: ${{ inputs.candidate_channel }}
@@ -447,7 +452,7 @@ jobs:
           python3 scripts/ci/release_assets.py --directory release --image-refs image-refs --require-windows
       - uses: actions/upload-artifact@v4
         with:
-          name: release-assets-${{ github.run_attempt }}
+          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release/
           if-no-files-found: error
           retention-days: 14
@@ -468,7 +473,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: release-assets-${{ github.run_attempt }}
+          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - id: qualify
         run: |
@@ -519,7 +524,7 @@ jobs:
         run: python scripts/ci/prepare_platform_disk.py
       - uses: actions/download-artifact@v4
         with:
-          name: release-assets-${{ github.run_attempt }}
+          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - name: Deploy the packaged CLI and exact image digests without source mounts
         run: |
@@ -576,7 +581,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: release-assets-${{ github.run_attempt }}
+          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - uses: actions/download-artifact@v4
         with:
@@ -587,8 +592,172 @@ jobs:
         with:
           name: cli-smoke-${{ github.run_attempt }}-windows-x64
           path: receipts
-      - run: python3 scripts/ci/release_candidate.py freeze --directory release --receipts receipts --output acceptance/candidate-acceptance.json
+      - name: Freeze exact base assets and deployment receipts
+        env:
+          PERSONAL_EDITION: ${{ inputs.personal_edition }}
+        run: |
+          set -euo pipefail
+          options=()
+          if [[ "$PERSONAL_EDITION" == true ]]; then options+=(--base-only); fi
+          python3 scripts/ci/release_candidate.py freeze --directory release --receipts receipts \
+            --output acceptance/candidate-acceptance.json "${options[@]}"
       - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.personal_edition && 'release-base-acceptance' || 'release-acceptance' }}-${{ github.run_attempt }}
+          path: acceptance/candidate-acceptance.json
+          if-no-files-found: error
+          retention-days: 14
+
+  personal:
+    name: Personal Edition (linux/${{ matrix.architecture }})
+    needs: [prepare, assets, artifact-smoke]
+    if: inputs.personal_edition && needs.prepare.outputs.channel == 'daily'
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        include:
+          - architecture: amd64
+            runner: ubuntu-24.04
+          - architecture: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 75
+    permissions:
+      contents: read
+    env:
+      PERSONAL_ARCH: ${{ matrix.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-base-assets-${{ github.run_attempt }}
+          path: base-assets
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-smoke-${{ github.run_attempt }}-*
+          path: base-receipts
+          merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli-smoke-${{ github.run_attempt }}-windows-x64
+          path: base-receipts
+      - name: Freeze the distributed input after both database smokes
+        run: |
+          python3 scripts/ci/release_candidate.py freeze --base-only --directory base-assets \
+            --receipts base-receipts --output base-acceptance/candidate-acceptance.json
+      - name: Prepare space for the actual container images and archives
+        run: |
+          set -euo pipefail
+          if (( $(df -Pk "$RUNNER_TEMP" | awk 'NR == 2 {print $4}') < 24*1024*1024 )); then
+            sudo rm -rf /usr/local/lib/android/sdk
+          fi
+          if ! command -v zstd >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends zstd
+          fi
+          df -h "$RUNNER_TEMP"
+      - name: Build and install the packaged Personal Edition
+        run: |
+          set -euo pipefail
+          python3 deploy/all-in-one/build_candidate.py --architecture "$PERSONAL_ARCH" \
+            --daily-assets base-assets --acceptance base-acceptance/candidate-acceptance.json \
+            --output "$RUNNER_TEMP/personal-assets"
+          python3 deploy/all-in-one/smoke.py --directory "$RUNNER_TEMP/personal-assets" \
+            --architecture "$PERSONAL_ARCH" --receipt "$RUNNER_TEMP/personal-$PERSONAL_ARCH.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: personal-assets-${{ github.run_attempt }}-${{ matrix.architecture }}
+          path: |
+            ${{ runner.temp }}/personal-assets/aiv-all-in-one-*.tar.*
+            ${{ runner.temp }}/personal-assets/all-in-one-manifest*.json
+            ${{ runner.temp }}/personal-assets/install-all-in-one.py
+            ${{ runner.temp }}/personal-assets/sample-trace.py
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: personal-smoke-${{ github.run_attempt }}-${{ matrix.architecture }}
+          path: ${{ runner.temp }}/personal-${{ matrix.architecture }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  personal-acceptance:
+    name: freeze qualified Personal Edition acceptance
+    needs: [acceptance, personal]
+    if: >-
+      always() && !cancelled() && needs.acceptance.result == 'success' &&
+      ((inputs.personal_edition && needs.personal.result == 'success') ||
+       (!inputs.personal_edition && needs.personal.result == 'skipped'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Keep the qualified base assets for a standard release
+        if: '!inputs.personal_edition'
+        run: echo 'This candidate selected the distributed edition.'
+      - if: inputs.personal_edition
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - if: inputs.personal_edition
+        uses: actions/download-artifact@v4
+        with:
+          name: release-base-assets-${{ github.run_attempt }}
+          path: release
+      - if: inputs.personal_edition
+        uses: actions/download-artifact@v4
+        with:
+          name: personal-assets-${{ github.run_attempt }}-amd64
+          path: personal/personal-assets-amd64
+      - if: inputs.personal_edition
+        uses: actions/download-artifact@v4
+        with:
+          name: personal-assets-${{ github.run_attempt }}-arm64
+          path: personal/personal-assets-arm64
+      - if: inputs.personal_edition
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-smoke-${{ github.run_attempt }}-*
+          path: receipts
+          merge-multiple: true
+      - if: inputs.personal_edition
+        uses: actions/download-artifact@v4
+        with:
+          pattern: personal-smoke-${{ github.run_attempt }}-*
+          path: receipts
+          merge-multiple: true
+      - if: inputs.personal_edition
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-smoke-${{ github.run_attempt }}-windows-x64
+          path: receipts
+      - name: Verify both native receipts and freeze the final release bytes
+        if: inputs.personal_edition
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/release_personal.py --directory release --personal-assets personal
+          python3 scripts/ci/release_candidate.py freeze --directory release --receipts receipts \
+            --personal-receipts receipts --output acceptance/candidate-acceptance.json
+      - if: inputs.personal_edition
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-assets-${{ github.run_attempt }}
+          path: release/
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 14
+      - if: inputs.personal_edition
+        uses: actions/upload-artifact@v4
         with:
           name: release-acceptance-${{ github.run_attempt }}
           path: acceptance/candidate-acceptance.json
@@ -668,7 +837,7 @@ jobs:
 
   publish-development:
     name: publish verified development artifacts
-    needs: [prepare, assets, artifact-smoke, acceptance]
+    needs: [prepare, assets, artifact-smoke, acceptance, personal-acceptance]
     if: inputs.publish == true && (needs.prepare.outputs.channel == 'dev' || needs.prepare.outputs.channel == 'daily')
     runs-on: ubuntu-22.04
     timeout-minutes: 15

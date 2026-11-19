@@ -20,7 +20,7 @@ from product_registry import (
     validate_data_backend_mirror,
 )
 import public_registry
-from release_assets import DATABASES, IMAGE_VARS, release_asset_names
+from release_assets import DATABASES, IMAGE_VARS, file_sha256, release_asset_names
 from release_reuse import validate_build
 from release_plan import (
     IMAGES,
@@ -55,11 +55,13 @@ def api(path, *, data=None, missing=False, method="PATCH"):
     return json.loads(result.stdout) if result.stdout.strip() else None
 
 
-def validate_bundle(directory, source_sha, build_id, *, repository=PUBLIC_REPOSITORY):
+def validate_bundle(directory, source_sha, build_id, *, repository=PUBLIC_REPOSITORY, base_only=False):
     repositories = product_image_repositories(repository)
     plan = json.loads((directory / "release-plan.json").read_text())
     manifest = json.loads((directory / "release-manifest.json").read_text())
-    allowed_assets = release_asset_names(manifest)
+    allowed_assets = release_asset_names(manifest, base_only=base_only)
+    if plan.get("personal_edition", False) is not manifest.get("personal_edition", False):
+        raise ValueError("release manifest Personal Edition scope does not match its plan")
     for key in ("source_sha", "product_version", "build_id", "channel"):
         if manifest[key] != plan[key]:
             raise ValueError("release manifest does not match its build plan")
@@ -129,7 +131,7 @@ def validate_bundle(directory, source_sha, build_id, *, repository=PUBLIC_REPOSI
     if set(entries) != actual_files:
         raise ValueError("checksums must cover every release asset exactly once")
     for filename, checksum in entries.items():
-        if hashlib.sha256((directory / filename).read_bytes()).hexdigest() != checksum:
+        if file_sha256(directory / filename) != checksum:
             raise ValueError(f"release checksum mismatch: {filename}")
     return plan, images
 
@@ -531,11 +533,16 @@ def main():
         "The five service images share the product version tag. "
         "The manifest records the upstream data backend digest and its public mirror."
     )
+    artifact_smokes = ["Distributed deployment and recreation on Linux amd64 with OceanBase CE and seekdb."]
+    if "windows_cli" in acceptance:
+        artifact_smokes.append("Windows x64 CLI installation and remote queries against a test server.")
+    if "personal_edition" in acceptance:
+        artifact_smokes.append("Personal Edition installation and data retention on Linux amd64 and arm64.")
     scope = (
         "Deploy the tested combination with `aiv cast --vars-file release-images.vars.yaml` "
         "(OceanBase CE), or `--vars-file release-seekdb.vars.yaml` (seekdb). "
         f"{image_scope}\n\n"
-        "Artifact smoke: Linux amd64 with both databases. Other artifact platforms and upgrades are not covered."
+        f"Artifact smoke: {' '.join(artifact_smokes)} Cross-version upgrades are outside these checks."
     )
     versioned = None
     if rolling:

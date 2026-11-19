@@ -66,6 +66,17 @@ gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 
 This assumes the external dependency variable is configured. Otherwise also pass `-f signoz_image=IMAGE@sha256:DIGEST` with the approved reference. A newly added workflow is dispatchable by name after reaching the default branch.
 
+## Qualify the All-in-One Personal Edition
+
+Select `personal_edition=true` and `publish=false` on a Daily run to add the
+Linux amd64 and arm64 single-container edition with embedded seekdb. The native
+jobs consume the frozen distributed candidate after both database smokes pass.
+Both run actual installs from the candidate files and record packaged image and
+CLI identities and persistent first-use results. The final `release-assets`
+and `release-acceptance` artifacts contain the original distributed assets,
+the Personal Edition installers, manifests, archives, and verified receipts.
+Use the final acceptance for promotion and the versioned Release for downloads.
+
 ## Review and promote the frozen candidate
 
 A successful candidate uploads `release-assets-<attempt>`, `release-smoke-<attempt>-oceanbase`, `release-smoke-<attempt>-seekdb` and `release-acceptance-<attempt>`. The last artifact contains `candidate-acceptance.json`; smoke artifacts contain only sanitized typed receipts, without raw logs or private runtime configuration.
