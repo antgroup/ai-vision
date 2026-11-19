@@ -477,10 +477,14 @@ Judge 超时限制 1–300 秒，平台 HTTP 等待最多三次 Judge 尝试加�
 必须分别冻结、分别校准，不合并覆盖一个 templates 槽位。usage 未知与报告的零分开保存，
 attempt ledger 对齐实际共享请求 ordinal；假协议数据不证明 Prompt 准确性。
 
-source 与 calibration 独立 CLI 均获取稳定的每用户 credential-hash 独占 lease；
+source 与 calibration 独立 CLI 均获取稳定的每用户凭据独占 lease。锁文件名通过
+同一私有锁目录的本机随机密钥计算 HMAC，锁文件为空。
 编排调用传入同一个 active lease，且必须匹配同一 key。整个 Agent/探测/Judge/重试共用
 单个 rolling60 秒20 attempts RateBudget。三次 per-case AttemptBudget 只包 Judge；
 Agent 多轮不会被误套三次限制。竞争或 crash 遗留锁失败关闭，不自动删除别人的锁。
+升级到 HMAC 版本前先停止使用旧锁格式的 runner。相同锁目录中的旧版和新版 runner
+须分时运行。首次初始化发现遗留锁时，由 owner 确认旧任务已结束后处理。使用期间保留
+锁目录中的 `.lease-key` 文件，以维持锁标识稳定。
 
 Makefile 提供 `test/source/replay/calibrate`，可用 `PYTHON` 指定已安装的固定 harness。
 平台生命周期、Quick owner/新 Trace 复测、两引擎公共 runner、CI、真实校准/截图仍由后续

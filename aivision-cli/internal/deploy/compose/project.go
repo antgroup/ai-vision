@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -342,6 +344,20 @@ func nativeCompose(ctx context.Context, docker, file, envFile, namespace, action
 		return fmt.Errorf("native Compose command failed: %w", err)
 	}
 	return nil
+}
+
+// digest verifies saved bundles written by earlier CLI versions.
+func digest(files []generate.File) string {
+	ordered := append([]generate.File(nil), files...)
+	sort.Slice(ordered, func(i, j int) bool { return ordered[i].Path < ordered[j].Path })
+	hash := sha256.New()
+	for _, file := range ordered {
+		_ = binary.Write(hash, binary.BigEndian, uint64(len(file.Path)))
+		_, _ = hash.Write([]byte(file.Path))
+		_ = binary.Write(hash, binary.BigEndian, uint64(len(file.Content)))
+		_, _ = hash.Write(file.Content)
+	}
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 func verifyBundle(bundle string) error {

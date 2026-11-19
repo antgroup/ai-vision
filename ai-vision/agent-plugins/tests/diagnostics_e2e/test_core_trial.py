@@ -1,6 +1,5 @@
 """Public protocol controls; no semantic Judge accuracy claim."""
 
-import hashlib
 import json
 import tempfile
 import unittest
@@ -128,9 +127,7 @@ class TrialTests(unittest.TestCase):
 
         with (
             tempfile.TemporaryDirectory() as directory,
-            CredentialLease(
-                hashlib.sha256(b"public").hexdigest(), Path(directory) / "locks"
-            ) as lease,
+            CredentialLease("public fixture", Path(directory) / "locks") as lease,
         ):
             scope = AttemptBudget(lease)
             context = {

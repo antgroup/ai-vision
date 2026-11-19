@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"hash"
 	"io"
 	"os"
 	"path/filepath"
@@ -25,23 +24,17 @@ const (
 	bundleKeyName        = ".bundle-identity-key"
 )
 
-// digest exists only to read the exact content identity of pre-keyed bundles.
-func digest(files []generate.File) string { return hashBundle(sha256.New(), files) }
-
 func keyedBundleIdentity(key []byte, files []generate.File) string {
-	return bundleIdentityPrefix + hashBundle(hmac.New(sha256.New, key), files)
-}
-
-func hashBundle(digest hash.Hash, files []generate.File) string {
 	ordered := append([]generate.File(nil), files...)
 	sort.Slice(ordered, func(i, j int) bool { return ordered[i].Path < ordered[j].Path })
+	mac := hmac.New(sha256.New, key)
 	for _, file := range ordered {
-		_ = binary.Write(digest, binary.BigEndian, uint64(len(file.Path)))
-		_, _ = digest.Write([]byte(file.Path))
-		_ = binary.Write(digest, binary.BigEndian, uint64(len(file.Content)))
-		_, _ = digest.Write(file.Content)
+		_ = binary.Write(mac, binary.BigEndian, uint64(len(file.Path)))
+		_, _ = mac.Write([]byte(file.Path))
+		_ = binary.Write(mac, binary.BigEndian, uint64(len(file.Content)))
+		_, _ = mac.Write(file.Content)
 	}
-	return hex.EncodeToString(digest.Sum(nil))
+	return bundleIdentityPrefix + hex.EncodeToString(mac.Sum(nil))
 }
 
 func ownedByProcess(info os.FileInfo) bool {

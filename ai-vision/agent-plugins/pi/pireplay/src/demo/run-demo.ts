@@ -22,16 +22,14 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createPiModelConfig } from './model-bridge.js';
 
-class DemoRunError extends Error {}
-
 function run(command: string, args: string[], env: NodeJS.ProcessEnv, cwd: string, timeoutMs: number): Promise<number> {
   return new Promise((resolveExit, reject) => {
     const child = spawn(command, args, { cwd, env, stdio: 'inherit' });
-    const onSignal = (signal: NodeJS.Signals) => { child.kill(signal); reject(new DemoRunError(`demo interrupted by ${signal}`)); };
+    const onSignal = (signal: NodeJS.Signals) => { child.kill(signal); reject(new Error(`demo interrupted by ${signal}`)); };
     const cleanup = () => { process.off('SIGINT', onSignal); process.off('SIGTERM', onSignal); };
     process.once('SIGINT', onSignal); process.once('SIGTERM', onSignal);
-    const timer = setTimeout(() => { child.kill('SIGTERM'); reject(new DemoRunError(`demo timed out after ${timeoutMs}ms`)); }, timeoutMs);
-    child.once('error', () => { clearTimeout(timer); cleanup(); reject(new DemoRunError('could not start Pi')); });
+    const timer = setTimeout(() => { child.kill('SIGTERM'); reject(new Error(`demo timed out after ${timeoutMs}ms`)); }, timeoutMs);
+    child.once('error', () => { clearTimeout(timer); cleanup(); reject(new Error('could not start Pi')); });
     child.once('exit', (code) => { clearTimeout(timer); cleanup(); resolveExit(code ?? 1); });
   });
 }
@@ -79,7 +77,7 @@ export async function runDemo(): Promise<void> {
       PIREPLAY_SESSION_DIR: process.env.PIREPLAY_SESSION_DIR ?? join(root, 'transcripts'),
       PIREPLAY_CAPABILITY_PROBE: process.env.PIREPLAY_CAPABILITY_PROBE ?? '',
     }, cwd, Number(process.env.OBSERV_PI_DEMO_TIMEOUT_MS ?? 120_000));
-    if (code !== 0) throw new DemoRunError(`pi exited with code ${code}`);
+    if (code !== 0) throw new Error(`pi exited with code ${code}`);
   } finally {
     if (process.env.KEEP_DEMO_ARTIFACTS !== '1') rmSync(root, { recursive: true, force: true });
     else console.error(`[pireplay] retained redacted demo root: ${root}`);
@@ -87,10 +85,8 @@ export async function runDemo(): Promise<void> {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  runDemo().catch((error) => {
-    // Configuration and provider errors can contain excerpts of credential-bearing input.
-    const detail = error instanceof DemoRunError ? error.message : 'check the demo model configuration and Pi setup';
-    console.error(`[pireplay] demo failed: ${detail}`);
+  runDemo().catch(() => {
+    console.error('[pireplay] demo failed: check the demo model configuration and Pi setup');
     process.exit(1);
   });
 }
