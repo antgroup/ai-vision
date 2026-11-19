@@ -51,8 +51,9 @@ pwsh -File .\install-windows-cli.ps1 -AssetDirectory .
 
 Open a new terminal and run `aiv --version` to verify the selected release.
 If your execution policy blocks the script, paste the following commands into
-an interactive PowerShell 7 session in the download directory. Then use the
-full executable path shown in the last command.
+an interactive PowerShell 7 session in the download directory. This portable
+installation uses a new subdirectory. Run the client using the full path the
+commands print.
 
 ```powershell
 & {
@@ -65,9 +66,20 @@ full executable path shown in the last command.
     if ($checksums.Count -ne 1 -or $hash -ine $checksums[0].Substring(0, 64)) {
         throw 'SHA-256 verification failed for aiv-windows-x64.zip.'
     }
-    $bin = Join-Path $env:LOCALAPPDATA 'AI Vision\bin'
-    [System.IO.Compression.ZipFile]::ExtractToDirectory($zip, $bin, $true)
-    & (Join-Path $bin 'aiv.exe') --version
+    $bin = Join-Path (Split-Path -Parent $zip) 'aiv-windows-x64'
+    if (Test-Path -LiteralPath $bin) {
+        throw "Choose a download directory without an existing $bin."
+    }
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($zip, $bin, $false)
+    $exe = Join-Path $bin 'aiv.exe'
+    if (!(Test-Path -LiteralPath $exe -PathType Leaf) -or (Get-Item -LiteralPath $exe).Length -le 0) {
+        throw 'The archive must contain a nonempty aiv.exe.'
+    }
+    & $exe --version
+    if ($LASTEXITCODE -ne 0) {
+        throw 'The extracted aiv.exe could not report its version.'
+    }
+    Write-Output "Run the client using $exe."
 }
 ```
 
