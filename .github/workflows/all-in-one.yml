@@ -27,6 +27,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install YAML parser for workflow fixtures
+        run: python3 -m pip install PyYAML==6.0.3
       - name: Exercise supervisor and candidate contracts
         run: |
           set -euo pipefail
