@@ -12,9 +12,11 @@ The example fixes these published module versions in `go.mod` and `go.sum`:
 | `github.com/cloudwego/eino` | `v0.9.22` |
 | `github.com/cloudwego/eino-ext/callbacks/langfuse/v2` | `v2.0.2` |
 | `github.com/cloudwego/eino-ext/components/model/openai` | `v0.1.13` |
-| `google.golang.org/grpc` | `v1.83.1` |
+| OpenTelemetry API, SDK and OTLP HTTP exporter | `v1.47.0` |
+| `google.golang.org/grpc` | `v1.83.2` |
+| `github.com/buger/jsonparser` | `v1.1.2` |
 
-Go 1.25 or later is required. The `/v2` suffix is the Eino callback's module
+Go 1.26 or later is required. The `/v2` suffix is the Eino callback's module
 version; the old callback without `/v2` uses a different ingestion protocol.
 
 ## Add the callback to an existing application

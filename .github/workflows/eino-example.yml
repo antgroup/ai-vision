@@ -1,0 +1,48 @@
+name: Eino example
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/eino-example.yml'
+      - 'ai-vision/agent-plugins/langfuse/Makefile'
+      - 'ai-vision/agent-plugins/langfuse/examples/eino.yaml'
+      - 'ai-vision/agent-plugins/langfuse/examples/eino/**'
+      - 'ai-vision/agent-plugins/langfuse/tests/eino/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eino-example-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      GOTOOLCHAIN: local
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify the committed Eino module metadata
+        working-directory: ai-vision/agent-plugins/langfuse/examples/eino
+        run: |
+          go mod tidy -diff
+          go mod verify
+      - name: Test the official callback and trace verifier
+        working-directory: ai-vision/agent-plugins/langfuse
+        run: make test-eino
+        env:
+          GOFLAGS: -mod=readonly
+      - name: Confirm the test preserved the module files
+        working-directory: ai-vision/agent-plugins/langfuse/examples/eino
+        run: git diff --exit-code -- go.mod go.sum
