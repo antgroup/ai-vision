@@ -606,7 +606,7 @@ jobs:
 
   personal:
     name: Personal Edition (linux/${{ matrix.architecture }})
-    needs: [prepare, acceptance]
+    needs: [prepare, assets, artifact-smoke]
     if: inputs.personal_edition && needs.prepare.outputs.channel == 'daily'
     strategy:
       fail-fast: false
@@ -640,8 +640,13 @@ jobs:
           path: base-assets
       - uses: actions/download-artifact@v4
         with:
-          name: release-base-acceptance-${{ github.run_attempt }}
-          path: base-acceptance
+          pattern: release-smoke-${{ github.run_attempt }}-*
+          path: base-receipts
+          merge-multiple: true
+      - name: Freeze the distributed input after both database smokes
+        run: |
+          python3 scripts/ci/release_candidate.py freeze --base-only --directory base-assets \
+            --receipts base-receipts --output base-acceptance/candidate-acceptance.json
       - name: Prepare space for the actual container images and archives
         run: |
           set -euo pipefail

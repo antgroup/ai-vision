@@ -70,3 +70,14 @@ class PersonalReleaseTests(unittest.TestCase):
         write_checksums(self.directory)
         with self.assertRaisesRegex(ValueError, "candidate bytes or identity"):
             module.freeze(self.directory, smokes, personal=receipts, **candidate)
+
+    def test_personal_build_can_start_after_dual_database_but_final_freeze_requires_sources(self):
+        import yaml
+        from pathlib import Path
+
+        workflow = Path(__file__).resolve().parents[2] / ".github/workflows/release-images.yml"
+        jobs = yaml.safe_load(workflow.read_text())["jobs"]
+        self.assertIn("artifact-smoke", jobs["personal"]["needs"])
+        self.assertIn("public-source-checks", jobs["acceptance"]["needs"])
+        self.assertEqual(set(jobs["personal-acceptance"]["needs"]), {"acceptance", "personal"})
+        self.assertIn("personal-acceptance", jobs["publish-development"]["needs"])
