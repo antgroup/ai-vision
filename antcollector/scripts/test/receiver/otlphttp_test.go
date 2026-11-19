@@ -2,6 +2,7 @@ package receiver_test
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/snappy"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/component/componenttest"
 	"go.opentelemetry.io/collector/config/configauth"
@@ -139,6 +141,45 @@ func TestOTLPHTTPExportErrors(t *testing.T) {
 				})
 			}
 		}
+	}
+}
+
+func TestOTLPHTTPCompressedTrace(t *testing.T) {
+	baseURL := startReceiver(t, func() error { return nil }, func(context.Context, pmetric.Metrics) error { return nil })
+	client := &http.Client{Timeout: 5 * time.Second}
+	t.Cleanup(client.CloseIdleConnections)
+	payload := exportPayload(t, "traces", "json")
+	for _, encoding := range []string{"gzip", "snappy"} {
+		t.Run(encoding, func(t *testing.T) {
+			var body bytes.Buffer
+			var writer io.WriteCloser
+			if encoding == "gzip" {
+				writer = gzip.NewWriter(&body)
+			} else {
+				writer = snappy.NewBufferedWriter(&body)
+			}
+			if _, err := writer.Write(payload); err != nil {
+				t.Fatal(err)
+			}
+			if err := writer.Close(); err != nil {
+				t.Fatal(err)
+			}
+			req, err := http.NewRequest(http.MethodPost, baseURL+"/custom/ns/task/traces", &body)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set("Content-Encoding", encoding)
+			req.Header.Set("Authorization", "Bearer test-token")
+			resp, err := client.Do(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				t.Fatalf("compressed trace returned %s", resp.Status)
+			}
+		})
 	}
 }
 

@@ -28,6 +28,7 @@ import (
 )
 
 const headerContentEncoding = "Content-Encoding"
+const defaultMaxRequestBodySize = 20 * 1024 * 1024
 
 // ClientConfig defines settings for creating an HTTP client.
 type ClientConfig struct {
@@ -264,7 +265,7 @@ type ServerConfig struct {
 	// Auth for this receiver
 	Auth *configauth.Authentication `mapstructure:"auth"`
 
-	// MaxRequestBodySize sets the maximum request body size in bytes
+	// MaxRequestBodySize sets the maximum request body size in bytes. Default: 20 MiB.
 	MaxRequestBodySize int64 `mapstructure:"max_request_body_size"`
 
 	// IncludeMetadata propagates the client metadata from the incoming requests to the downstream consumers
@@ -334,11 +335,12 @@ func (hss *ServerConfig) ToServer(host component.Host, settings component.Teleme
 		o(serverOpts)
 	}
 
-	handler = httpContentDecompressor(handler, serverOpts.errHandler, serverOpts.decoders)
-
-	if hss.MaxRequestBodySize > 0 {
-		handler = maxRequestBodySizeInterceptor(handler, hss.MaxRequestBodySize)
+	maxBodySize := hss.MaxRequestBodySize
+	if maxBodySize <= 0 {
+		maxBodySize = defaultMaxRequestBodySize
 	}
+	handler = httpContentDecompressor(handler, maxBodySize, serverOpts.errHandler, serverOpts.decoders)
+	handler = maxRequestBodySizeInterceptor(handler, maxBodySize)
 
 	if hss.Auth != nil {
 		server, err := hss.Auth.GetServerAuthenticator(host.GetExtensions())
