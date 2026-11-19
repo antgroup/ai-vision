@@ -55,10 +55,11 @@ def test_preserved_marker_types_match_django_and_leave_default_material_unchange
     assert default[0]["attributes." + key] is None or isinstance(
         default[0]["attributes." + key], str
     )
-    assert str(engine.execute.call_args_list[0].args[0]) == str(
-        engine.execute.call_args_list[1].args[0]
+    default_statement, preserved_statement = (
+        call.args[0].compile() for call in engine.execute.call_args_list
     )
-    assert engine.execute.call_args_list[0].args[1] == engine.execute.call_args_list[1].args[1]
+    assert str(default_statement) == str(preserved_statement)
+    assert default_statement.params == preserved_statement.params
 
 
 def test_quick_preflight_and_retry_request_preserved_types_but_runner_read_does_not():

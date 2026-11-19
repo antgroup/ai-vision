@@ -52,9 +52,17 @@ class PricingError(ValueError):
     pass
 
 
+class PricingValidationError(PricingError):
+    """An expected validation failure with an authored public message."""
+
+    def __init__(self, public_message: str):
+        super().__init__(public_message)
+        self.public_message = public_message
+
+
 def _identity(value, name, maximum):
     if not isinstance(value, str) or not value.strip() or len(value.strip()) > maximum or any(ord(c) < 32 for c in value):
-        raise PricingError(f'Invalid {name}')
+        raise PricingValidationError(f'Invalid {name}')
     return value.strip()
 
 
@@ -62,13 +70,19 @@ def _rate(value):
     if value is None:
         return None
     if isinstance(value, bool) or not isinstance(value, (str, int, float, Decimal)):
-        raise PricingError('Prices must be finite non-negative decimal numbers')
+        raise PricingValidationError(
+            'Prices must be finite non-negative decimal numbers'
+        )
     try:
         result = Decimal(str(value))
     except InvalidOperation as exc:
-        raise PricingError('Prices must be finite non-negative decimal numbers') from exc
+        raise PricingValidationError(
+            'Prices must be finite non-negative decimal numbers'
+        ) from exc
     if not result.is_finite() or result < 0 or result > Decimal('1000000000') or result.as_tuple().exponent < -MAX_RATE_DECIMAL_PLACES:
-        raise PricingError(f'Prices must be finite non-negative decimal numbers with at most {MAX_RATE_DECIMAL_PLACES} decimal places')
+        raise PricingValidationError(
+            f'Prices must be finite non-negative decimal numbers with at most {MAX_RATE_DECIMAL_PLACES} decimal places'
+        )
     return format(result, 'f')
 
 
@@ -243,9 +257,11 @@ def _download_catalog(url):
 
 def validate_sync_options(source='auto', revision=None):
     if not isinstance(source, str) or source not in {'auto', 'api', 'repository'}:
-        raise PricingError('Catalog source must be auto, api or repository')
+        raise PricingValidationError('Catalog source must be auto, api or repository')
     if revision is not None and (source == 'api' or not isinstance(revision, str) or not re.fullmatch(r'[0-9a-f]{40}', revision)):
-        raise PricingError('A repository revision must be a full lowercase commit SHA')
+        raise PricingValidationError(
+            'A repository revision must be a full lowercase commit SHA'
+        )
 
 
 @transaction.atomic
@@ -385,54 +401,72 @@ def create_rule(*, space, user, data):
     space = Space.objects.select_for_update().get(pk=space.pk)
     require_space_permission(user=user, space_id=space.uuid, permission=MODEL_PRICING_MANAGE, lock=True)
     if not isinstance(data, dict):
-        raise PricingError('Rule must be an object')
+        raise PricingValidationError('Rule must be an object')
     allowed = {'provider', 'model', 'kind', 'rates', 'effectiveFrom', 'catalogProvider', 'catalogModel', 'catalogSnapshot', 'estimateListPrice'}
     if set(data) - allowed:
-        raise PricingError('Unknown pricing rule fields')
+        raise PricingValidationError('Unknown pricing rule fields')
     provider = _identity(data.get('provider'), 'provider', 128)
     model = _identity(data.get('model'), 'model', 256)
     kind = data.get('kind')
     if kind not in ('manual', 'alias', 'reference', 'subscription'):
-        raise PricingError('Invalid pricing rule kind')
+        raise PricingValidationError('Invalid pricing rule kind')
     estimate_list_price = data.get('estimateListPrice', False)
     if type(estimate_list_price) is not bool or (estimate_list_price and kind != 'subscription'):
-        raise PricingError('estimateListPrice must be boolean and enabled only for subscription markers')
+        raise PricingValidationError(
+            'estimateListPrice must be boolean and enabled only for subscription markers'
+        )
     try:
         effective = parse_datetime(data.get('effectiveFrom') or '')
     except (TypeError, ValueError):
         effective = None
     if effective is None or timezone.is_naive(effective):
-        raise PricingError('effectiveFrom must be an explicit ISO timestamp with timezone')
+        raise PricingValidationError(
+            'effectiveFrom must be an explicit ISO timestamp with timezone'
+        )
     if ModelPricingRule.objects.filter(space=space, provider=provider, model=model, kind=kind,
             effective_from=effective, gmt_deleted__isnull=True).exists():
-        raise PricingError('Deactivate the existing rule for this model, kind and effective time before replacing it')
+        raise PricingValidationError(
+            'Deactivate the existing rule for this model, kind and effective time before replacing it'
+        )
     catalog_provider = catalog_model = catalog_snapshot = ''
     if kind == 'subscription':
         if 'rates' in data and data['rates'] != {}:
-            raise PricingError('Subscription markers cannot define token rates')
+            raise PricingValidationError(
+                'Subscription markers cannot define token rates'
+            )
         if any(data.get(key) for key in ('catalogProvider', 'catalogModel', 'catalogSnapshot')):
-            raise PricingError('Subscription markers cannot select a catalog model')
+            raise PricingValidationError(
+                'Subscription markers cannot select a catalog model'
+            )
         rates = {}
     elif kind == 'manual':
         material = data.get('rates')
         if not isinstance(material, dict) or set(material) - set(RATE_KEYS):
-            raise PricingError('Unsupported rate fields')
+            raise PricingValidationError('Unsupported rate fields')
         rates = {key: _rate(material.get(key)) for key in RATE_KEYS}
         if rates['input'] is None or rates['output'] is None:
-            raise PricingError('Manual input and output rates are required; use explicit zero for free tokens')
+            raise PricingValidationError(
+                'Manual input and output rates are required; use explicit zero for free tokens'
+            )
         if any(data.get(key) for key in ('catalogProvider', 'catalogModel', 'catalogSnapshot')):
-            raise PricingError('Manual rules cannot select a catalog model')
+            raise PricingValidationError('Manual rules cannot select a catalog model')
     else:
         catalog_provider = _identity(data.get('catalogProvider'), 'catalog provider', 128)
         catalog_model = _identity(data.get('catalogModel'), 'catalog model', 256)
         if kind == 'alias' and provider.casefold() != catalog_provider.casefold():
-            raise PricingError('Aliases require the same billing provider; explicitly use reference for another host')
+            raise PricingValidationError(
+                'Aliases require the same billing provider; explicitly use reference for another host'
+            )
         snapshot = _current_snapshot()
         if not snapshot or (data.get('catalogSnapshot') and data['catalogSnapshot'] != snapshot.snapshot_id):
-            raise PricingError('Catalog changed or is unavailable; refresh candidates before saving')
+            raise PricingValidationError(
+                'Catalog changed or is unavailable; refresh candidates before saving'
+            )
         candidate = next((row for row in snapshot.models if row['provider'] == catalog_provider and row['model'] == catalog_model), None)
         if candidate is None or not candidate['supported']:
-            raise PricingError('Catalog model is missing or uses unsupported pricing conditions')
+            raise PricingValidationError(
+                'Catalog model is missing or uses unsupported pricing conditions'
+            )
         rates = candidate['rates']
         catalog_snapshot = snapshot.snapshot_id
     return ModelPricingRule.objects.create(space=space, creator=user, provider=provider, model=model, kind=kind,
@@ -487,7 +521,9 @@ def native_inventory(*, space, user, params):
     from apps.core.trace_query.semantics.observations import timestamp_ns
     allowed = {'from', 'to', 'agent_product', 'agent_uuid'}
     if set(params) - allowed:
-        raise PricingError('Unknown inventory query parameter; only native SigNoz is supported')
+        raise PricingValidationError(
+            'Unknown inventory query parameter; only native SigNoz is supported'
+        )
     frozen = {}
     for key in ('from', 'to'):
         value = params.get(key)
@@ -500,10 +536,14 @@ def native_inventory(*, space, user, params):
                     raise ValueError
                 boundary = int(timestamp.timestamp() * 1000)
         except (ValueError, TypeError, OverflowError):
-            raise PricingError('Inventory requires explicit from/to timestamps with timezone') from None
+            raise PricingValidationError(
+                'Inventory requires explicit from/to timestamps with timezone'
+            ) from None
         frozen[key] = boundary
     if frozen['from'] >= frozen['to'] or frozen['to'] - frozen['from'] > 31 * 86400000:
-        raise PricingError('Inventory window must be positive and at most 31 days')
+        raise PricingValidationError(
+            'Inventory window must be positive and at most 31 days'
+        )
     for key in ('agent_product', 'agent_uuid'):
         if params.get(key):
             frozen[key] = _identity(params[key], key, 128)
@@ -512,13 +552,15 @@ def native_inventory(*, space, user, params):
         if agent is None:
             raise InventoryScopeNotFound('Agent not found in this Space')
         if frozen.get('agent_product') and frozen['agent_product'] != agent.agent_product:
-            raise PricingError('Agent and product scope do not match')
+            raise PricingValidationError('Agent and product scope do not match')
         frozen['agent_product'] = agent.agent_product
     query = BaseTraceQuery(space, user, frozen)
     try:
         resolve_signoz_runtime_config(query)
     except TraceQueryServiceError as exc:
-        raise PricingError('Native SigNoz inventory is not configured; external Langfuse inventory is unsupported') from exc
+        raise PricingValidationError(
+            'Native SigNoz inventory is not configured; external Langfuse inventory is unsupported'
+        ) from exc
     # Reuse the bounded metrics snapshot, including canonical per-observation
     # pricing and ancestry, without hydrating every Trace's messages. The
     # provider retains its verified raw fallback for older data planes.

@@ -18,16 +18,33 @@ from agentlens.web.deps import get_trace_store
 
 def test_build_sql_minimal():
     spec = TraceQuerySpec(table="t")
-    sql = build_sql(spec)
-    assert sql.startswith("SELECT * FROM t WHERE `period` >=")
-    assert "LIMIT 1000" in sql
+    sql, params = build_sql(spec)
+    assert sql.startswith("SELECT * FROM `t` WHERE `period` >= :window_start")
+    assert sql.endswith("LIMIT :trace_limit")
+    assert params["trace_limit"] == 1000
+
+
+def test_build_sql_accepts_legacy_null_filter_and_structured_table_parts():
+    sql, params = build_sql(TraceQuerySpec(table="  `observability` . traces  ", where=None))
+
+    assert sql.startswith("SELECT * FROM `observability`.`traces` WHERE")
+    assert set(params) == {"window_start", "window_end", "trace_limit"}
 
 
 def test_build_sql_with_where():
     spec = TraceQuerySpec(table="t", where="agent_uuid = 'A'")
-    sql = build_sql(spec)
-    assert "AND (agent_uuid = 'A')" in sql
-    assert "LIMIT 1000" in sql
+    sql, params = build_sql(spec)
+    assert "AND (`agent_uuid` = :filter_2)" in sql
+    assert params["filter_2"] == "A"
+    assert sql.endswith("LIMIT :trace_limit")
+    assert params["trace_limit"] == 1000
+
+
+@pytest.mark.parametrize("number", ["1e309", "1e-325", "9" * 129])
+def test_dataset_filter_reports_out_of_range_numbers(number):
+    spec = TraceQuerySpec(table="trace", where=f"start_time_unix_nano < {number}")
+    with pytest.raises(ValueError, match="Unsupported Dataset query filter"):
+        build_sql(spec)
 
 
 def test_dataset_scope_predicates_escape_identifiers_and_values():
@@ -46,8 +63,9 @@ def test_dataset_scope_predicates_escape_identifiers_and_values():
 
 def test_build_sql_custom_limit():
     spec = TraceQuerySpec(table="t", limit=50)
-    sql = build_sql(spec)
-    assert "LIMIT 50" in sql
+    sql, params = build_sql(spec)
+    assert sql.endswith("LIMIT :trace_limit")
+    assert params["trace_limit"] == 50
 
 
 def test_build_sql_absolute_time():
@@ -56,17 +74,20 @@ def test_build_sql_absolute_time():
         start_time="2026-06-01 00:00:00",
         end_time="2026-06-02 00:00:00",
     )
-    sql = build_sql(spec)
-    assert "`period` >= '2026-06-01 00:00:00'" in sql
-    assert "`period` < '2026-06-02 00:00:00'" in sql
+    sql, params = build_sql(spec)
+    assert "`period` >= :window_start" in sql
+    assert params["window_start"] == "2026-06-01 00:00:00"
+    assert "`period` < :window_end" in sql
+    assert params["window_end"] == "2026-06-02 00:00:00"
 
 
 def test_build_sql_time_range():
     spec = TraceQuerySpec(table="t", time_range="6h")
-    sql = build_sql(spec)
+    sql, params = build_sql(spec)
     assert "`period` >=" in sql
     assert "`period` <" in sql
-    assert "LIMIT 1000" in sql
+    assert sql.endswith("LIMIT :trace_limit")
+    assert params["trace_limit"] == 1000
 
 
 def test_parse_time_range():
@@ -149,8 +170,11 @@ def test_read_trace_spans_uses_ten_minute_context_by_default():
     )
 
     sql = client.query.call_args.args[0]
-    assert "`period` >= '2026-06-10 12:50:00'" in sql
-    assert "`period` < '2026-06-10 13:10:00'" in sql
+    params = client.query.call_args.kwargs["parameters"]
+    assert "`period` >= :window_start" in sql
+    assert "`period` < :window_end" in sql
+    assert params["window_start"] == "2026-06-10 12:50:00"
+    assert params["window_end"] == "2026-06-10 13:10:00"
 
 
 def test_read_trace_spans_preserves_source_scope_filter():
@@ -164,7 +188,8 @@ def test_read_trace_spans_preserves_source_scope_filter():
         "2026-06-10 13:00:00",
     )
 
-    assert "AND (`attributes.user` = 'u1')" in client.query.call_args.args[0]
+    assert "AND (`attributes.user` = :filter_3)" in client.query.call_args.args[0]
+    assert client.query.call_args.kwargs["parameters"]["filter_3"] == "u1"
 
 
 def test_read_trace_spans_batch():
@@ -183,7 +208,7 @@ def test_read_trace_spans_batch():
     assert len(rows) == 2
 
 
-def test_read_trace_spans_range_escapes_trace_id():
+def test_read_trace_spans_range_binds_trace_id():
     client = MagicMock()
     client.query.return_value = []
     store = TraceStore(client)
@@ -195,7 +220,8 @@ def test_read_trace_spans_range_escapes_trace_id():
         "2026-06-10 13:00:00",
     )
 
-    assert "`trace_id` = 'trace''o'" in client.query.call_args.args[0]
+    assert "`trace_id` IN (:selected_trace_0)" in client.query.call_args.args[0]
+    assert client.query.call_args.kwargs["parameters"]["selected_trace_0"] == "trace'o"
 
 
 def test_read_trace_spans_batch_range_preserves_source_scope_filter():
@@ -210,7 +236,8 @@ def test_read_trace_spans_batch_range_preserves_source_scope_filter():
         "2026-06-10 13:00:00",
     )
 
-    assert "AND (`resource.product` = 'Coding')" in client.query.call_args.args[0]
+    assert "AND (`resource.product` = :filter_4)" in client.query.call_args.args[0]
+    assert client.query.call_args.kwargs["parameters"]["filter_4"] == "Coding"
 
 
 def test_read_trace_rows_by_id_uses_trace_predicate_and_preserves_order():
@@ -225,10 +252,12 @@ def test_read_trace_rows_by_id_uses_trace_predicate_and_preserves_order():
 
     assert rows == [{"trace_id": "t1", "name": "first"}]
     sql = client.query.call_args.args[0]
-    assert "`attributes.user` = 'u1'" in sql
-    assert "`trace_id` = 't1'" in sql
+    assert "`attributes.user` = :filter_3" in sql
+    assert "`trace_id` = :trace_id" in sql
     assert sql.endswith("ORDER BY `period` ASC")
-    assert client.query.call_args.kwargs == {}
+    params = client.query.call_args.kwargs["parameters"]
+    assert params["filter_3"] == "u1"
+    assert params["trace_id"] == "t1"
 
 
 def test_read_recent_trace_rows_batch_hydrates_candidates_with_scope_and_task_window():
@@ -267,13 +296,19 @@ def test_read_recent_trace_rows_batch_hydrates_candidates_with_scope_and_task_wi
     assert client.query.call_count == 2
     candidate_sql = client.query.call_args_list[0].args[0]
     hydration_sql = client.query.call_args_list[1].args[0]
-    assert "name = 'terminal'" in candidate_sql
+    candidate_params, hydration_params = (
+        call.kwargs["parameters"] for call in client.query.call_args_list
+    )
+    assert "`name` = :filter_3" in candidate_sql
+    assert candidate_params["filter_3"] == "terminal"
     assert "`trace_id` NOT IN" not in candidate_sql
-    assert "name = 'terminal'" not in hydration_sql
-    assert "`attributes.user` = 'u1'" in hydration_sql
-    assert "`trace_id` IN ('t2', 't1')" in hydration_sql
-    assert "`period` >= '2026-07-27 09:35:00'" in hydration_sql
-    assert "`period` < '2026-07-27 11:25:00'" in hydration_sql
+    assert "`name` =" not in hydration_sql
+    assert "`attributes.user` = :filter_4" in hydration_sql
+    assert "`trace_id` IN (:selected_trace_0, :selected_trace_1)" in hydration_sql
+    assert hydration_params["filter_4"] == "u1"
+    assert [hydration_params[f"selected_trace_{i}"] for i in range(2)] == ["t2", "t1"]
+    assert hydration_params["window_start"] == "2026-07-27 09:35:00"
+    assert hydration_params["window_end"] == "2026-07-27 11:25:00"
 
 
 def test_read_trace_targets_limits_distinct_ids_before_reading_pre_evaluate_fields():
@@ -307,15 +342,21 @@ def test_read_trace_targets_limits_distinct_ids_before_reading_pre_evaluate_fiel
     assert select_clause.startswith("SELECT `trace_id`, `start_time_unix_nano`, `name`")
     assert "`signal`" in select_clause
     assert "`attributes.gen_ai.input.messages`" in select_clause
-    assert candidate_sql.startswith("SELECT DISTINCT `trace_id` FROM trace WHERE ")
-    assert candidate_sql.endswith("ORDER BY `trace_id` ASC LIMIT 50")
-    assert "`trace_id` IN ('t1', 't2')" in sql
+    assert candidate_sql.startswith("SELECT DISTINCT `trace_id` FROM `trace` WHERE ")
+    assert candidate_sql.endswith("ORDER BY `trace_id` ASC LIMIT :trace_limit")
+    assert "`trace_id` IN (:selected_trace_0, :selected_trace_1)" in sql
+    candidate_params, hydration_params = (
+        call.kwargs["parameters"] for call in client.query.call_args_list
+    )
+    assert candidate_params["trace_limit"] == 50
+    assert [hydration_params[f"selected_trace_{i}"] for i in range(2)] == ["t1", "t2"]
     assert "`name` IN" not in sql
     assert "LIMIT" not in sql
     # Both reads must reuse the exact bounds and source conditions, even for a relative window.
     predicates = candidate_sql.split(" WHERE ", 1)[1].split(" ORDER BY ", 1)[0]
     assert sql.split(" WHERE ", 1)[1].startswith(predicates + " AND ")
-    assert client.query.call_args.kwargs == {}
+    assert hydration_params["window_start"] == candidate_params["window_start"]
+    assert hydration_params["window_end"] == candidate_params["window_end"]
 
 
 def test_read_trace_targets_without_span_fields_still_selects_identity_columns():
@@ -349,8 +390,9 @@ def test_read_trace_targets_relative_window_does_not_advance_between_reads(monke
     )
 
     for call in client.query.call_args_list:
-        assert "`period` >= '2026-10-28 11:00:00'" in call.args[0]
-        assert "`period` < '2026-10-28 12:00:00'" in call.args[0]
+        params = call.kwargs["parameters"]
+        assert params["window_start"] == "2026-10-28 11:00:00"
+        assert params["window_end"] == "2026-10-28 12:00:00"
 
 
 def test_read_trace_targets_adds_exact_name_filter_only_when_where_is_empty():
@@ -365,7 +407,13 @@ def test_read_trace_targets_adds_exact_name_filter_only_when_where_is_empty():
     )
 
     sql = client.query.call_args.args[0]
-    assert "`name` IN ('openAPI请求入口', 'quote''name', '流式回答')" in sql
+    assert "`name` IN (:required_name_0, :required_name_1, :required_name_2)" in sql
+    params = client.query.call_args.kwargs["parameters"]
+    assert [params[f"required_name_{i}"] for i in range(3)] == [
+        "openAPI请求入口",
+        "quote'name",
+        "流式回答",
+    ]
 
 
 def test_read_trace_targets_empty_candidates_skip_field_query():
@@ -391,16 +439,21 @@ def test_read_trace_targets_propagates_query_errors_without_fallback(failed_quer
     assert client.query.call_count == failed_query
 
 
-def test_read_trace_targets_escapes_selected_ids_and_preserves_name_filter():
+def test_read_trace_targets_binds_selected_ids_and_preserves_name_filter():
     client = MagicMock()
     client.query.side_effect = [[{"trace_id": "quote'id\\tail"}], []]
 
     TraceStore(client).read_trace_targets(TraceQuerySpec(table="trace"), {"signal"}, {"terminal"})
 
     candidate_sql, fields_sql = (call.args[0] for call in client.query.call_args_list)
-    assert "`name` IN ('terminal')" in candidate_sql
-    assert "`name` IN ('terminal')" in fields_sql
-    assert "`trace_id` IN ('quote''id\\\\tail')" in fields_sql
+    assert "`name` IN (:required_name_0)" in candidate_sql
+    assert "`name` IN (:required_name_0)" in fields_sql
+    assert "`trace_id` IN (:selected_trace_0)" in fields_sql
+    candidate_params, fields_params = (
+        call.kwargs["parameters"] for call in client.query.call_args_list
+    )
+    assert candidate_params["required_name_0"] == fields_params["required_name_0"] == "terminal"
+    assert fields_params["selected_trace_0"] == "quote'id\\tail"
 
 
 def test_web_trace_store_dependency_reuses_store_for_same_client():

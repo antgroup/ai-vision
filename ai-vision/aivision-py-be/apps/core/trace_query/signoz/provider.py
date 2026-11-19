@@ -461,7 +461,7 @@ class SignozTraceProvider:
                                        prices=prices,
                                        include_previews=True)
         except ValueError as exc:
-            raise TraceQueryServiceError(f"Invalid native trace: {exc}", 3035) from exc
+            raise TraceQueryServiceError("Invalid native trace", 3035) from exc
         return window, result["meta"]
 
     def _query_trace_page(self, query: TraceListQuery) -> dict[str, Any] | None:
@@ -719,7 +719,7 @@ class SignozTraceProvider:
                 prices=get_space_model_prices(query.space),
             ).list(params)
         except ValueError as exc:
-            raise TraceQueryServiceError(f"Invalid native session: {exc}", 3035) from exc
+            raise TraceQueryServiceError("Invalid native session", 3035) from exc
         result["meta"].update({key: value for key, value in scan["meta"].items() if key != "totalItems"})
         result["meta"].update(agent_uuid=query.agent_uuid, agent_product=query.agent_product)
         return result
@@ -765,7 +765,7 @@ class SignozTraceProvider:
             result = CanonicalSessionWindow.from_details(scan["data"], project_id=str(query.space.uuid),
                         prices=get_space_model_prices(query.space)).list(params)
         except ValueError as exc:
-            raise TraceQueryServiceError(f"Invalid canonical session: {exc}", 3035) from exc
+            raise TraceQueryServiceError("Invalid canonical session", 3035) from exc
         for key in ("from", "to"):
             if scan["meta"].get(key) is not None:
                 result["meta"][key] = scan["meta"][key]

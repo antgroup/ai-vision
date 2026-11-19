@@ -8,7 +8,7 @@ from agentlens.domain.enums import DatasetType
 @dataclass
 class TraceQuerySpec:
     table: str
-    where: str = ""
+    where: str | None = ""
     time_range: str = "1d"
     start_time: str | None = None
     end_time: str | None = None

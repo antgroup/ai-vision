@@ -69,9 +69,12 @@ def test_sample_backfills_three_recent_traces(client, monkeypatch):
         ],
     ]
 
-    def read_recent(_self, _spec, *, trace_spec=None, count=3, window_min=10):
+    where = "`name` = 'first' OR `name` = 'second'"
+
+    def read_recent(_self, spec, *, trace_spec=None, count=3, window_min=10):
         assert count == 12
         assert window_min == 10
+        assert spec.where.startswith(f"({where}) AND ")
 
         return batches.pop(0)
 
@@ -82,6 +85,7 @@ def test_sample_backfills_three_recent_traces(client, monkeypatch):
         "agentlens.service.datasource.signoz.TraceStore.read_recent_trace_rows", read_recent
     )
     payload = _request()
+    payload["spec"]["query"]["where"] = where
     payload["recent_limit"] = 3
 
     response = client.post("/api/v1/diagnoser/trace-sample", json=payload)

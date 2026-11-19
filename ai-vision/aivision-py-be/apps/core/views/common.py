@@ -24,6 +24,10 @@ def error_response(message, code=1001, status=400, data=None):
     return Response({"code": code, "message": message, "data": data}, status=status)
 
 
+def read_credential_error_response():
+    return error_response("Failed to decrypt Langfuse READ credential for this space", 3017)
+
+
 def get_active_observation_endpoint(endpoint_id) -> ObservationEndpointConfig | None:
     if endpoint_id in (None, ""):
         return None

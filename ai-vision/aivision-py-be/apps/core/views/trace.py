@@ -16,6 +16,7 @@ from ..services.trace_query_service import (
 )
 from .common import (
     SpaceObservationCredentialDecryptionError,
+    read_credential_error_response,
     check_space_access_or_error,
     error_response,
     success_response,
@@ -81,13 +82,13 @@ class SessionListView(APIView):
                 query_params=request.query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error(f"Trace provider session list error: {e}")
-            return error_response(f"Failed to query trace sessions: {str(e)}", 3014)
+            logger.error("Trace provider session list error (%s)", type(e).__name__)
+            return error_response("Failed to query trace sessions", 3014)
         return success_response(data)
 
 
@@ -112,13 +113,13 @@ class SessionDetailView(APIView):
                 query_params=request.query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error(f"Trace provider session detail error: {e}")
-            return error_response(f"Failed to get trace session detail: {str(e)}", 3015)
+            logger.error("Trace provider session detail error (%s)", type(e).__name__)
+            return error_response("Failed to get trace session detail", 3015)
         return success_response(filtered_data)
 
 
@@ -142,13 +143,13 @@ class TraceListView(APIView):
                 query_params=request.query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error(f"Trace provider API error: {e}")
-            return error_response(f"Failed to query trace provider: {str(e)}", 3012)
+            logger.error("Trace provider API error (%s)", type(e).__name__)
+            return error_response("Failed to query trace provider", 3012)
         return success_response(data)
 
 
@@ -200,13 +201,13 @@ class TraceIOBatchView(APIView):
                 query_params=query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error(f"Trace provider IO batch error: {e}")
-            return error_response(f"Failed to get trace input/output: {str(e)}", 3012)
+            logger.error("Trace provider IO batch error (%s)", type(e).__name__)
+            return error_response("Failed to get trace input/output", 3012)
         return success_response(data)
 
 
@@ -258,13 +259,13 @@ class TraceUsageBatchView(APIView):
                 query_params=query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error(f"Trace provider usage batch error: {e}")
-            return error_response(f"Failed to get trace token usage: {str(e)}", 3012)
+            logger.error("Trace provider usage batch error (%s)", type(e).__name__)
+            return error_response("Failed to get trace token usage", 3012)
         return success_response(data)
 
 
@@ -289,8 +290,8 @@ class TraceDetailView(APIView):
                 query_params=request.query_params,
                 source_system_override="langfuse",
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             if exc.code == 3019:
                 return Response(
@@ -298,8 +299,8 @@ class TraceDetailView(APIView):
                 )
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error(f"Trace provider detail error: {e}")
-            return error_response(f"Failed to get trace detail: {str(e)}", 3013)
+            logger.error("Trace provider detail error (%s)", type(e).__name__)
+            return error_response("Failed to get trace detail", 3013)
         return success_response(data)
 
 
@@ -313,8 +314,8 @@ class TraceLinkDetailView(APIView):
 
         try:
             space, claims, lf_config = resolve_trace_link_request(payload_raw, sig)
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError:
             return error_response("Agent query route not found", 3011)
         except ValueError:
@@ -331,8 +332,8 @@ class TraceLinkDetailView(APIView):
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as exc:
-            logger.error(f"Trace link detail upstream error: {exc}")
-            return error_response(f"Failed to get trace detail: {str(exc)}", 3013)
+            logger.error("Trace link detail upstream error (%s)", type(exc).__name__)
+            return error_response("Failed to get trace detail", 3013)
 
         if not _trace_detail_matches_requested_trace(trace_detail, trace_id):
             return error_response(
@@ -363,8 +364,8 @@ class TraceLinkObservationDetailView(APIView):
 
         try:
             space, claims, _lf_config = resolve_trace_link_request(payload_raw, sig)
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError:
             return error_response("Agent query route not found", 3011)
         except ValueError:
@@ -385,8 +386,8 @@ class TraceLinkObservationDetailView(APIView):
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as exc:
-            logger.error(f"Trace link observation upstream trace check error: {exc}")
-            return error_response(f"Failed to get trace detail: {str(exc)}", 3013)
+            logger.error("Trace link observation upstream trace check error (%s)", type(exc).__name__)
+            return error_response("Failed to get trace detail", 3013)
 
         observations = trace_detail.get("observations")
         if not isinstance(observations, list) or not any(
@@ -408,8 +409,8 @@ class TraceLinkObservationDetailView(APIView):
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as exc:
-            logger.error(f"Trace link observation detail upstream error: {exc}")
-            return error_response(f"Failed to get observation detail: {str(exc)}", 3014)
+            logger.error("Trace link observation detail upstream error (%s)", type(exc).__name__)
+            return error_response("Failed to get observation detail", 3014)
 
 
 class ObservationLinkDetailView(APIView):
@@ -422,8 +423,8 @@ class ObservationLinkDetailView(APIView):
 
         try:
             space, claims, lf_config = resolve_trace_link_request(payload_raw, sig)
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError:
             return error_response("Agent query route not found", 3011)
         except ValueError:
@@ -450,8 +451,8 @@ class ObservationLinkDetailView(APIView):
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as exc:
-            logger.error(f"Observation link trace detail upstream error: {exc}")
-            return error_response(f"Failed to get trace detail: {str(exc)}", 3013)
+            logger.error("Observation link trace detail upstream error (%s)", type(exc).__name__)
+            return error_response("Failed to get trace detail", 3013)
 
         observations = trace_detail.get("observations")
         if not isinstance(observations, list) or not any(
@@ -475,8 +476,8 @@ class ObservationLinkDetailView(APIView):
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as exc:
-            logger.error(f"Observation link detail upstream error: {exc}")
-            return error_response(f"Failed to get observation detail: {str(exc)}", 3014)
+            logger.error("Observation link detail upstream error (%s)", type(exc).__name__)
+            return error_response("Failed to get observation detail", 3014)
 
         return success_response(
             {
@@ -514,11 +515,11 @@ class ObservationDetailView(APIView):
                 observation_id=observation_id,
                 query_params=request.query_params,
             )
-        except SpaceObservationCredentialDecryptionError as exc:
-            return error_response(str(exc), 3017)
+        except SpaceObservationCredentialDecryptionError:
+            return read_credential_error_response()
         except TraceQueryServiceError as exc:
             return error_response(exc.message, exc.code)
         except http_requests.RequestException as e:
-            logger.error(f"Trace provider observation detail error: {e}")
-            return error_response(f"Failed to get observation detail: {str(e)}", 3014)
+            logger.error("Trace provider observation detail error (%s)", type(e).__name__)
+            return error_response("Failed to get observation detail", 3014)
         return success_response(data)

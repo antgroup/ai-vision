@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import ANY, Mock, patch
 
 from django.test import SimpleTestCase
+from requests import ConnectionError
 from rest_framework.test import APIClient, APIRequestFactory
 
 from apps.core.models import (
@@ -290,6 +291,34 @@ class OpenAPITraceViewTests(SpaceKeySimpleTestCase):
             "filters[0].value must be an array for IN",
         )
         self.assertIsNone(response.data["data"])
+
+    @patch("apps.core.views.openapi_trace.query_trace_list")
+    @patch("apps.core.views.openapi_trace.check_space_key_access")
+    def test_trace_list_hides_unexpected_provider_details(
+        self, mock_check_access, mock_query_trace_list
+    ):
+        detail = "fixture-only provider diagnostic"
+        mock_check_access.return_value = (self.space, None)
+        mock_query_trace_list.side_effect = ConnectionError(detail)
+        request = SimpleNamespace(
+            data={},
+            query_params={},
+            auth_type="space_key",
+            auth=SimpleNamespace(creator=self.user),
+        )
+
+        with self.assertLogs("apps.core.views.trace_handlers", level="ERROR") as logs:
+            response = OpenAPITraceListView().post(
+                request, space_id="space-1", agent_product="ClaudeCode"
+            )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data,
+            {"code": 3012, "message": "Failed to query traces", "data": None},
+        )
+        self.assertIn("ConnectionError", "\n".join(logs.output))
+        self.assertNotIn(detail, "\n".join(logs.output))
 
     @patch("apps.core.views.openapi_trace._log_access")
     @patch("apps.core.views.openapi_trace.query_trace_list")

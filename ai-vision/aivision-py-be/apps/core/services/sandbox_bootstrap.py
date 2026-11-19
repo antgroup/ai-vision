@@ -262,17 +262,13 @@ def enroll(*, session_id, token_hash, body):
     api_key = body["api_key"]
     key_hash = salted_hmac("aivision.sandbox.enrollment", api_key, algorithm="sha256").hexdigest()
     stored_hash = session.enrollment_key_hash
-    if stored_hash:
-        if session.enrollment_platform != body["platform"]:
-            raise InstallationError("SANDBOX_REPORT_CONFLICT", 409)
-        if not constant_time_compare(stored_hash, key_hash):
-            # Replay of an in-flight grant from before keyed fingerprints.
-            # Grants expire after an hour. A matching retry upgrades under the row lock.
-            if not constant_time_compare(stored_hash, digest(api_key)):
-                raise InstallationError("SANDBOX_REPORT_CONFLICT", 409)
-            session.enrollment_key_hash = key_hash
-            session.save(update_fields=["enrollment_key_hash", "gmt_modified"])
-    if session.registration_state == "saved":
+    saved = session.registration_state == "saved"
+    if (stored_hash or saved) and (
+        session.enrollment_platform != body["platform"]
+        or not constant_time_compare(stored_hash, key_hash)
+    ):
+        raise InstallationError("SANDBOX_REPORT_CONFLICT", 409)
+    if saved:
         return {
             "connection_uuid": session.connection_uuid,
             "registration_state": "saved",

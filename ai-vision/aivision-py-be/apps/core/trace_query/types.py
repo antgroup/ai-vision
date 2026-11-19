@@ -9,7 +9,10 @@ TRACE_TEXT_SEARCH_QUERY_FAILED_CODE = 3035
 
 
 class TraceQueryServiceError(Exception):
-    """Base exception for trace query service failures."""
+    """Trace query failure with an authored client-facing message.
+
+    Chain unexpected internal exceptions as causes for server diagnostics.
+    """
 
     def __init__(self, message: str, code: int) -> None:
         super().__init__(message)

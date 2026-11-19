@@ -15,6 +15,15 @@ SHARE_LINK_VERSION = 1
 REQUIRED_CLAIMS = ("t", "id", "s", "a", "uid", "sub", "iat", "exp", "v")
 
 
+
+class ShareLinkValidationError(ValueError):
+    """A share-link validation error safe to present to its reader."""
+
+    def __init__(self, public_message: str):
+        super().__init__(public_message)
+        self.public_message = public_message
+
+
 def get_share_link_ttl() -> int:
     try:
         config = PlatformConfig.objects.filter(
@@ -52,7 +61,7 @@ def sign_share_payload(payload_raw: str) -> str:
 
 def _decode_base64url(value: str) -> bytes:
     if not value:
-        raise ValueError("Empty payload")
+        raise ShareLinkValidationError("Empty payload")
     padding = 4 - len(value) % 4
     if padding != 4:
         value += "=" * padding
@@ -63,9 +72,9 @@ def parse_share_payload(payload_raw: str) -> dict:
     try:
         data = json.loads(_decode_base64url(payload_raw).decode("utf-8"))
     except (ValueError, json.JSONDecodeError) as e:
-        raise ValueError("Invalid share link payload") from e
+        raise ShareLinkValidationError("Invalid share link payload") from e
     if not isinstance(data, dict):
-        raise ValueError("Invalid share link payload")
+        raise ShareLinkValidationError("Invalid share link payload")
     return data
 
 
@@ -73,21 +82,21 @@ def validate_share_claims(claims: dict) -> None:
     for field in REQUIRED_CLAIMS:
         val = claims.get(field)
         if val is None or val == "":
-            raise ValueError(f"Missing required field: {field}")
+            raise ShareLinkValidationError(f"Missing required field: {field}")
 
     if claims["v"] != SHARE_LINK_VERSION:
-        raise ValueError("Unsupported share link version")
+        raise ShareLinkValidationError("Unsupported share link version")
 
     iat = claims["iat"]
     exp = claims["exp"]
     if not isinstance(iat, int) or not isinstance(exp, int):
-        raise ValueError("iat and exp must be integers")
+        raise ShareLinkValidationError("iat and exp must be integers")
     if exp <= iat:
-        raise ValueError("Invalid expiry window")
+        raise ShareLinkValidationError("Invalid expiry window")
 
     now_ts = int(timezone.now().timestamp())
     if iat > now_ts or exp <= now_ts:
-        raise ValueError("Share link expired")
+        raise ShareLinkValidationError("Share link expired")
 
 
 def verify_share_signature(payload_raw: str, sig: str) -> bool:
@@ -97,13 +106,13 @@ def verify_share_signature(payload_raw: str, sig: str) -> bool:
 
 def parse_and_verify_share(payload_raw: str, sig: str) -> dict:
     if not payload_raw or not sig:
-        raise ValueError("Missing payload or signature")
+        raise ShareLinkValidationError("Missing payload or signature")
 
     claims = parse_share_payload(payload_raw)
     validate_share_claims(claims)
 
     if not verify_share_signature(payload_raw, sig):
-        raise ValueError("Invalid share link signature")
+        raise ShareLinkValidationError("Invalid share link signature")
 
     return claims
 

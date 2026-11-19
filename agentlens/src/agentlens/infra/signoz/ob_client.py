@@ -12,11 +12,11 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import date
 from typing import Any
 
-from sqlalchemy import Engine, text
+from sqlalchemy import Connection, CursorResult, Engine, Select, text
 from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
 from agentlens.infra.ob.engine import make_engine
@@ -133,21 +133,48 @@ class SignozObClient:
         parameters: dict[str, Any] | None = None,
         preserve_attribute_types: tuple[str, ...] = (),
     ) -> list[dict[str, Any]]:
-        self._log.info("signoz.query", sql=sql if log_sql else "<redacted>")
+        def execute(conn: Connection) -> CursorResult[Any]:
+            if parameters is None:
+                return conn.exec_driver_sql(sql)
+            return conn.execute(text(sql), parameters)
+
+        return self._fetch_rows(
+            execute,
+            visible_sql=sql if log_sql else None,
+            preserve_attribute_types=preserve_attribute_types,
+        )
+
+    def query_select(
+        self,
+        statement: Select[Any],
+        *,
+        log_sql: bool = True,
+        preserve_attribute_types: tuple[str, ...] = (),
+    ) -> list[dict[str, Any]]:
+        return self._fetch_rows(
+            lambda conn: conn.execute(statement),
+            visible_sql=str(statement) if log_sql else None,
+            preserve_attribute_types=preserve_attribute_types,
+        )
+
+    def _fetch_rows(
+        self,
+        execute: Callable[[Connection], CursorResult[Any]],
+        *,
+        visible_sql: str | None,
+        preserve_attribute_types: tuple[str, ...],
+    ) -> list[dict[str, Any]]:
+        logged_sql = visible_sql if visible_sql is not None else "<redacted>"
+        self._log.info("signoz.query", sql=logged_sql)
         try:
             with self._engine.connect() as conn:
-                result = (
-                    conn.execute(text(sql), parameters)
-                    if parameters is not None
-                    else conn.exec_driver_sql(sql)
-                )
-                rows = result.mappings().all()
+                rows = execute(conn).mappings().all()
         except DBAPIError as exc:
             message = str(exc.orig) if exc.orig is not None else str(exc)
             self._log.warning(
                 "signoz.query_fail",
-                sql=sql if log_sql else "<redacted>",
-                msg=message if log_sql else "<redacted>",
+                sql=logged_sql,
+                msg=message if visible_sql is not None else "<redacted>",
             )
             raise SignozQueryError(message) from exc
         except SQLAlchemyError as exc:

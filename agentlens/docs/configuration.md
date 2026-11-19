@@ -104,8 +104,8 @@ Dataset 统一使用 `type="signoz"`，`spec.query` 由 `TraceQuerySpec` 解析�
 
 | 字段 | 默认值 | 说明 |
 |---|---|---|
-| `query.table` | 必填 | SigNoz 表名 |
-| `query.where` | `""` | 批量选样过滤，不用于详情补拉 |
+| `query.table` | 必填 | SigNoz table name, optionally qualified by schema |
+| `query.where` | `""` | Trace candidate predicate described below |
 | `query.time_range` | `1d` | 窗口长度 |
 | `query.time_offset` | `1h` | 窗口向前偏移 |
 | `query.limit` | `1000` | Maximum distinct Trace candidates, ordered by Trace ID ascending |
@@ -124,10 +124,16 @@ smaller. Phase1 reads every matching lightweight Span row for the selected Trace
 the original query window and filters; Span count does not consume the Trace budget. This
 ordering is deterministic for unchanged source data and does not select newest Traces first.
 
-User `query.where` is grouped before combining it with platform-owned space, user, and Agent
-predicates. The resulting expression is grouped again when combined with tenant, time, and
-selected Trace constraints, so every `OR` branch remains subject to those constraints.
-This grouping preserves boolean precedence; it does not validate or sandbox raw SQL filters.
+A missing, empty, or null `query.where` applies only the platform and time scope. A non-empty value accepts column
+comparisons with scalar literals, `[NOT] IN` lists, and `IS [NOT] NULL`. Combine these predicates with
+`AND`, `OR`, `NOT`, and parentheses. Backtick-quoted logical columns such as `attributes.user.id`
+use the configured column dialect. Bare column names retain their physical meaning.
+For example, ``(`name` = 'Turn' OR `name` = 'Plan')`` selects candidate spans by name.
+
+The query builder binds literal values and groups the entire candidate predicate under the tenant,
+space, user, Agent, and time constraints. Trace hydration and detail replay keep the platform scope
+and load the full selected trace. Correct any saved filter outside this grammar before running
+candidate sampling. Creating or updating a Dataset with an unsupported filter returns HTTP 422.
 
 ## LLM Judge 参数（自定义 LLM 诊断器评判模型）
 

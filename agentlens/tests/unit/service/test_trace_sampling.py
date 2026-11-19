@@ -1,6 +1,7 @@
 """Execute sampling SQL against SQLite instead of mocking its row-limit behavior."""
 
 import sqlite3
+from decimal import Decimal
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -25,9 +26,14 @@ def sampling_store(request):
     queries = []
 
     class Client:
-        def query(self, sql):
+        def query(self, sql, *, parameters=None):
             queries.append(sql)
-            return [dict(row) for row in connection.execute(sql)]
+            # SQLite applies the declared affinity when a decimal is bound as text.
+            values = {
+                key: str(value) if isinstance(value, Decimal) else value
+                for key, value in (parameters or {}).items()
+            }
+            return [dict(row) for row in connection.execute(sql, values)]
 
     def seed(trace_id, span=1, *, period="2026-10-28 12:30:00", **overrides):
         row = {
@@ -95,6 +101,35 @@ def test_trace_budget_preserves_all_matching_evidence_and_scope(sampling_store):
     assert all(set(row) == {"trace_id", "start_time_unix_nano", "name", "signal"} for row in rows)
     assert len(queries) == 2
     assert store.read_trace_targets(spec, {"signal"}, {"unused-name"}) == (keys, rows)
+
+
+def test_bound_dataset_filter_preserves_nested_conditions_and_quoted_labels(sampling_store):
+    store, seed, queries = sampling_store
+    label = "O'Brien: 当前渠道"
+    seed("trace-a", 1, name=label, span_name=label)
+    seed("trace-a", 2, name=label, span_name=label, signal=None)
+    seed("trace-b", 3)
+    seed("trace-c", 1)
+    spec = TraceQuerySpec(
+        table="trace",
+        where=(
+            "(`name` = 'O''Brien: 当前渠道' OR "
+            "(start_time_unix_nano IN (3, 4) AND start_time_unix_nano > 2.5e0)) "
+            "AND NOT (`signal` IS NULL)"
+        ),
+        start_time="2026-10-28 12:00:00",
+        end_time="2026-10-28 13:00:00",
+    )
+
+    keys, rows = store.read_trace_targets(spec, {"signal"}, set())
+
+    assert keys == ["trace-a", "trace-b"]
+    assert [(row["trace_id"], row["name"], row["signal"]) for row in rows] == [
+        ("trace-a", label, "evidence-1"),
+        ("trace-b", "terminal", "evidence-3"),
+    ]
+    assert len(queries) == 2
+    assert all("当前渠道" not in query for query in queries)
 
 
 @pytest.mark.parametrize("grouped", [False, True])

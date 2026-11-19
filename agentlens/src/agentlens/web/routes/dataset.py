@@ -12,6 +12,10 @@ from agentlens.domain.scope import visible_space_uuids
 from agentlens.domain.secrets import merge_secret_fields, redact_spec
 from agentlens.infra.ob.tables.dataset_table import DatasetTable
 from agentlens.infra.ob.tables.job_table import JobTable
+from agentlens.service.datasource.dataset_filter import (
+    normalize_dataset_table,
+    validate_dataset_filter,
+)
 from agentlens.service.datasource.runtime import validate_runtime_type
 from agentlens.service.datasource.selector import TargetSelectorRegistry
 from agentlens.service.datasource.signoz import DATASET_SCOPE_FIELDS
@@ -36,9 +40,17 @@ def _validate_dataset_spec(
     limit = normalized["query"].get("limit")
     if limit is not None and (isinstance(limit, bool) or not isinstance(limit, int) or limit < 1):
         raise Validation("dataset spec field 'query.limit' must be a positive integer")
-    if not normalized["query"].get("table"):
-        raise Validation("dataset spec field 'query.table' is required")
+    try:
+        normalize_dataset_table(normalized["query"].get("table"))
+    except ValueError:
+        raise Validation("dataset spec field 'query.table' must be a valid table name") from None
     if dataset_type == DatasetType.SIGNOZ:
+        try:
+            validate_dataset_filter(normalized["query"].get("where", ""))
+        except ValueError:
+            raise Validation(
+                "dataset spec field 'query.where' is not a supported trace predicate"
+            ) from None
         for column_key, value_key in DATASET_SCOPE_FIELDS:
             column = normalized.get(column_key)
             value = normalized.get(value_key)

@@ -36,7 +36,7 @@ def _complete_window(provider, query, *, physical_user, raw, prices):
         return NativeTraceWindow(result["data"], project_id=str(query.space.uuid),
                                  prices=prices)
     except ValueError as exc:
-        raise TraceQueryServiceError(f"Invalid native trace: {exc}", 3035) from exc
+        raise TraceQueryServiceError("Invalid native trace", 3035) from exc
 
 
 def _operations(window, start, end):
