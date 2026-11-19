@@ -307,6 +307,19 @@ class PricingApiTests(TestCase):
         self.assertEqual(replacement.status_code, 200)
         self.assertNotEqual(first.data['data']['version'], replacement.data['data']['version'])
 
+    def test_sync_failure_keeps_the_catalog_without_returning_internal_detail(self):
+        snapshot = pricing.store_catalog(catalog())
+        failure = pricing.PricingError('Internal catalog fixture detail')
+        with patch.object(pricing, 'sync_catalog', side_effect=failure):
+            response = self.client.post(self.base + '/sync', {'source': 'api'}, format='json')
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.data['code'], 1001)
+        self.assertEqual(
+            response.data['message'],
+            'The models.dev pricing catalog could not be refreshed. Try again later.',
+        )
+        self.assertEqual(response.data['data']['catalog']['snapshotId'], snapshot.snapshot_id)
+
     def test_inventory_without_signoz_is_explicitly_unsupported(self):
         from apps.core.trace_query.types import TraceProviderNotConfiguredError
         with patch('apps.core.services.model_pricing.resolve_signoz_runtime_config', side_effect=TraceProviderNotConfiguredError('not configured', 3011)):
