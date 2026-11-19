@@ -11,6 +11,8 @@ import re
 import subprocess
 import tempfile
 
+import windows_release_cli
+
 from product_registry import (
     PUBLIC_REPOSITORY,
     product_image_repositories,
@@ -70,6 +72,8 @@ def validate_bundle(directory, source_sha, build_id, *, repository=PUBLIC_REPOSI
         for path in directory.iterdir()
     ):
         raise ValueError("release directory must contain exactly the allowed product assets")
+    if windows_release_cli.included(manifest):
+        windows_release_cli.verify_zip(directory / windows_release_cli.ASSET)
     images = manifest["images"]
     if not isinstance(images, dict) or set(images) != set(repositories) or manifest["databases"] != DATABASES:
         raise ValueError(

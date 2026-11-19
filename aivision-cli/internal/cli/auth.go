@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/antgroup/ai-vision/aivision-cli/internal/account"
@@ -111,7 +112,11 @@ func authAccountLogin(args []string, register bool) error {
 		return err
 	}
 	fmt.Printf("Logged in as %s (profile %s)\nCurrent space: %s\n", p.Account.Email, c.Profile, p.SpaceID)
-	fmt.Println("Connect an Agent: aiv connect <agent>; configure a query key: aiv key create --name cli or aiv key import --key-stdin")
+	if runtime.GOOS == "windows" {
+		fmt.Println("Configure a query key: aiv key create --name cli or aiv key import --key-stdin")
+	} else {
+		fmt.Println("Connect an Agent: aiv connect <agent>; configure a query key: aiv key create --name cli or aiv key import --key-stdin")
+	}
 	return nil
 }
 
@@ -168,8 +173,8 @@ func authSpaceKeyLogin(args []string) error {
 		AgentProduct: ap,
 		Profile:      *profile,
 		Verify:       !*noVerify,
-		WriteEnvFile: !*noEnvFile,
-		InstallShell: !*noShell,
+		WriteEnvFile: runtime.GOOS != "windows" && !*noEnvFile,
+		InstallShell: runtime.GOOS != "windows" && !*noShell,
 		Log:          logf,
 	})
 	if err != nil {
@@ -306,7 +311,11 @@ func authLogout(args []string) error {
 	if err != nil {
 		return err
 	}
-	log.OK("Removed profile %q and %s", name, config.EnvFilePath())
+	if runtime.GOOS == "windows" {
+		log.OK("Removed profile %q", name)
+	} else {
+		log.OK("Removed profile %q and %s", name, config.EnvFilePath())
+	}
 	if rc != "" {
 		log.Info("Removed the managed source block from %s", rc)
 	}
@@ -316,6 +325,9 @@ func authLogout(args []string) error {
 // Refresh an existing shell export file. CLI commands resolve the profile on
 // every invocation, so a parent shell's stale exports cannot select another key.
 func syncEnv() error {
+	if runtime.GOOS == "windows" {
+		return nil
+	}
 	return config.Locked(context.Background(), func(f *config.File) error {
 		if _, err := os.Stat(config.EnvFilePath()); os.IsNotExist(err) {
 			return nil

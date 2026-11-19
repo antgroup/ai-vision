@@ -71,6 +71,53 @@ class CandidateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             module.verify_frozen(self.directory, acceptance, repository=REPOSITORY, source_sha=SHA, build_id="123.2")
 
+    def test_windows_candidate_requires_exact_qualification_and_official_job(self):
+        from release_assets import assemble
+        from test_windows_release_cli import pe_header
+        from windows_release_cli import ASSET, PLATFORMS, pack, receipt_identity
+
+        binary = self.directory.parent / "aiv.exe"
+        license_path = self.directory.parent / "LICENSE"
+        binary.write_bytes(pe_header(0x8664))
+        license_path.write_text("attribution\n")
+        archive = self.directory / ASSET
+        pack(binary, license_path, archive)
+        assemble(self.directory, self.refs, repository=REPOSITORY, source_sha=SHA,
+                 build_id="123.2", require_windows=True)
+        manifest = json.loads((self.directory / "release-manifest.json").read_text())
+        self.assertEqual(manifest["cli_platforms"], PLATFORMS)
+        module = self.module()
+        receipts = {backend: module.sanitize_smoke(self.smoke_summary(backend), self.directory, backend)
+                    for backend in module.BACKENDS}
+        build = dict(source_sha=SHA, build_id="123.2", product_version=self.plan["product_version"])
+        proof = receipt_identity(archive, **build)
+        options = dict(repository=REPOSITORY, source_sha=SHA, build_id="123.2")
+        for wrong in (None, dict(proof, build_id="123.1"),
+                      dict(proof, checks=dict(proof["checks"], install=1))):
+            with self.subTest(receipt=wrong), self.assertRaisesRegex(ValueError, "Windows x64 installation"):
+                module.freeze(self.directory, receipts, windows_cli=wrong, **options)
+        acceptance = module.freeze(self.directory, receipts, windows_cli=proof, **options)
+        self.assertEqual(acceptance["windows_cli"], proof)
+        module.verify_frozen(self.directory, acceptance, **options)
+
+        def api(path, include_windows):
+            value = self.api(path)
+            if include_windows and "/jobs?" in path:
+                value["jobs"].append(dict(value["jobs"][0], id=5, name="cli / qualify Windows x64"))
+                value["total_count"] += 1
+            return value
+
+        for included in [False, True]:
+            def verify():
+                return module.verify_remote_candidate(self.directory, acceptance,
+                    repository=REPOSITORY, source_sha=SHA, candidate_run_id="123",
+                    candidate_run_attempt="2", api_fn=lambda path: api(path, included))
+            if included:
+                self.assertEqual(verify()["candidate_build_id"], "123.2")
+            else:
+                with self.assertRaisesRegex(ValueError, "qualify Windows x64"):
+                    verify()
+
     def test_partial_or_mismatched_smokes_never_freeze_acceptance(self):
         module, receipts, acceptance = self.candidate()
         for mutation in ({"seekdb": None}, {"seekdb": dict(receipts["seekdb"], build_id="123.1")},

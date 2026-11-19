@@ -4,12 +4,16 @@
 package main
 
 import (
+	"runtime"
+
 	"github.com/antgroup/ai-vision/aivision-cli/internal/cli"
 	"github.com/antgroup/ai-vision/aivision-cli/internal/pathenv"
 )
 
 func main() {
 	// Make tool resolution robust when launched from a minimal context.
-	pathenv.Augment()
+	if runtime.GOOS != "windows" {
+		pathenv.Augment()
+	}
 	cli.Run(defaultBlueprintYAML)
 }

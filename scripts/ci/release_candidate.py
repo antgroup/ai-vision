@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import re
 
+import windows_release_cli
+
 from product_registry import IMAGE_ROLES, require_product_repository
 from release_assets import release_asset_names
 from release_publish import api, validate_bundle
@@ -67,20 +69,32 @@ def sanitize_smoke(summary, directory, backend):
     return smoke_identity(directory, backend)
 
 
-def freeze(directory, receipts, *, repository, source_sha, build_id):
+def freeze(directory, receipts, *, repository, source_sha, build_id, windows_cli=None):
     plan, _ = validate_bundle(directory, source_sha, build_id, repository=repository)
     expected_smokes = {backend: smoke_identity(directory, backend) for backend in BACKENDS}
     if receipts != expected_smokes:
         raise ValueError("acceptance requires both exact passed candidate smoke receipts")
+    windows_proof = {}
+    manifest = json.loads((directory / "release-manifest.json").read_text())
+    if windows_release_cli.included(manifest):
+        expected_windows = windows_release_cli.receipt_identity(
+            directory / windows_release_cli.ASSET, source_sha=source_sha,
+            build_id=build_id, product_version=plan["product_version"],
+        )
+        if json.dumps(windows_cli, sort_keys=True) != json.dumps(expected_windows, sort_keys=True):
+            raise ValueError("acceptance requires exact Windows x64 installation evidence")
+        windows_proof["windows_cli"] = expected_windows
+    elif windows_cli is not None:
+        raise ValueError("Windows CLI evidence requires a candidate with the Windows archive")
     return {"schema_version": 1, "status": "qualified", "source_repository": repository,
             "source_sha": source_sha, "build_id": build_id,
             "product_version": plan["product_version"], "release_tag": plan["release_tag"],
-            "assets": asset_inventory(directory), "smokes": expected_smokes}
+            "assets": asset_inventory(directory), "smokes": expected_smokes, **windows_proof}
 
 
 def verify_frozen(directory, acceptance, *, repository, source_sha, build_id):
     if not isinstance(acceptance, dict) or acceptance != freeze(directory, acceptance.get("smokes"), repository=repository,
-                            source_sha=source_sha, build_id=build_id):
+                            source_sha=source_sha, build_id=build_id, windows_cli=acceptance.get("windows_cli")):
         raise ValueError("acceptance differs from frozen source, attempt or asset bytes")
 
 
@@ -135,6 +149,10 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
         page += 1
     required_jobs = [*(f"Linux amd64 candidate deployment ({backend})" for backend in BACKENDS),
                      "freeze qualified candidate acceptance", "verify public candidate indexes anonymously"]
+    qualified_smokes = [f"linux/amd64/{backend}" for backend in BACKENDS]
+    if "windows_cli" in acceptance:
+        qualified_smokes.append("windows/amd64/cli")
+        required_jobs.append("cli / qualify Windows x64")
     for name in required_jobs:
         matched = [job for job in jobs if job.get("name") == name]
         if len(matched) != 1 or any(
@@ -155,7 +173,7 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
     return {"schema_version": 1, "candidate_build_id": build_id,
             "candidate_source_sha": source_sha, "source_repository": repository,
             "publication_recovery": publication_recovery,
-            "qualified_smokes": [f"linux/amd64/{backend}" for backend in BACKENDS]}
+            "qualified_smokes": qualified_smokes}
 
 
 def main():
@@ -175,7 +193,9 @@ def main():
         value = sanitize_smoke(json.loads(args.summary.read_text()), args.directory, args.backend)
     elif args.command == "freeze":
         receipts = {backend: json.loads((args.receipts / f"smoke-{backend}.json").read_text()) for backend in BACKENDS}
-        value = freeze(args.directory, receipts, repository=os.environ["GITHUB_REPOSITORY"],
+        windows_path = args.receipts / windows_release_cli.RECEIPT
+        windows_cli = json.loads(windows_path.read_text()) if windows_path.is_file() else None
+        value = freeze(args.directory, receipts, windows_cli=windows_cli, repository=os.environ["GITHUB_REPOSITORY"],
                        source_sha=os.environ["GITHUB_SHA"],
                        build_id=f"{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}")
     else:

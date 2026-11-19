@@ -444,7 +444,7 @@ jobs:
         run: |
           set -euo pipefail
           (cd release && sha256sum -c SHA256SUMS)
-          python3 scripts/ci/release_assets.py --directory release --image-refs image-refs
+          python3 scripts/ci/release_assets.py --directory release --image-refs image-refs --require-windows
       - uses: actions/upload-artifact@v4
         with:
           name: release-assets-${{ github.run_attempt }}
@@ -583,6 +583,10 @@ jobs:
           pattern: release-smoke-${{ github.run_attempt }}-*
           path: receipts
           merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli-smoke-${{ github.run_attempt }}-windows-x64
+          path: receipts
       - run: python3 scripts/ci/release_candidate.py freeze --directory release --receipts receipts --output acceptance/candidate-acceptance.json
       - uses: actions/upload-artifact@v4
         with:

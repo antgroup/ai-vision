@@ -36,6 +36,19 @@ numeric parts without leading zeros, optionally followed by prerelease segments
 separated by dots or hyphens (for example, `0.1.0-rc.1`); `+build` is not accepted.
 Unstamped developer builds report `dev`.
 
+## Windows x64 remote client
+
+When a version includes `aiv-windows-x64.zip`, download it together with
+`SHA256SUMS` from the same [AI Vision Release](https://github.com/antgroup/ai-vision/releases).
+The PowerShell 7 [offline installer](scripts/install-windows-cli.ps1) verifies
+that archive and installs `aiv.exe` under `%LOCALAPPDATA%\AI Vision\bin`.
+Open a new terminal and run `aiv --version` to verify the selected release.
+
+The Windows client supports `auth`, `space`, `key`, and `query` against an
+existing AI Vision server. It saves profiles in the current user's config
+folder without modifying Unix shell configuration. Use a Linux or macOS CLI
+for local deployment and Agent installation.
+
 ## Deployment sources, roles and compatibility
 
 Agent onboarding downloads its installer from the selected deployment. Native

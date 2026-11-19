@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -271,6 +272,11 @@ func (f *File) Delete(name string) bool {
 // CheckPerms returns a human-readable warning when config.json or env.sh is
 // readable by group/others, or "" when permissions are safe (or files absent).
 func CheckPerms() string {
+	// Windows profiles inherit the directory ACL. Unix mode bits do not
+	// reflect who has access to a Windows file.
+	if runtime.GOOS == "windows" {
+		return ""
+	}
 	var warns []string
 	for _, path := range []string{Path(), EnvFilePath()} {
 		fi, err := os.Stat(path)

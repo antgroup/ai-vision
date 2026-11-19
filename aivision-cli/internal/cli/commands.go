@@ -1,3 +1,5 @@
+//go:build !windows
+
 // Package cli implements the aiv command tree: deployment (gauge, forge,
 // cast, generate, status, logs, redeploy, destroy), data query and auth
 // sub-commands. It wires user flags to the internal packages and owns process
@@ -6,7 +8,6 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/antgroup/ai-vision/aivision-cli/internal/distribution"
@@ -25,24 +26,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Version is stamped from the repository root VERSION file by make build.
-var Version = "dev"
-
-// defaultBlueprintYAML is the shipped AI Vision stack recipe, embedded by the
-// root main package and handed to Run.
+// defaultBlueprintYAML is the shipped AI Vision stack recipe.
 var defaultBlueprintYAML string
 
-// Run dispatches os.Args[1:] and exits the process with the conventional code
-// (0 success, 1 runtime error, 2 usage error). embeddedBlueprint is the
-// built-in blueprint used when no -f file and no local blueprint.yaml is found.
-func Run(embeddedBlueprint string) {
+func configurePlatform(embeddedBlueprint string) {
 	defaultBlueprintYAML = embeddedBlueprint
-	if len(os.Args) < 2 {
-		usage()
-		os.Exit(2)
-	}
-	cmd := os.Args[1]
-	args := os.Args[2:]
+}
+
+func platformCommand(cmd string, args []string) (bool, error) {
 	var err error
 	switch cmd {
 	case "gauge":
@@ -63,38 +54,18 @@ func Run(embeddedBlueprint string) {
 		err = cmdLogs(args)
 	case "gen":
 		err = cmdGen(args)
-	case "auth":
-		err = cmdAuth(args)
-	case "space":
-		err = cmdSpace(args)
-	case "key":
-		err = cmdKey(args)
 	case "agent":
 		err = cmdAgent(args)
 	case "plugin":
 		err = cmdPlugin(args)
-	case "query":
-		err = cmdQuery(args)
 	case "connect":
 		err = cmdConnect(args)
 	case "seed":
 		err = cmdSeed(args)
-	case "version", "--version":
-		fmt.Printf("aiv %s\n", Version)
-	case "help", "--help", "-h":
-		usage()
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command %q\n\n", cmd)
-		usage()
-		os.Exit(2)
+		return false, nil
 	}
-	if errors.Is(err, flag.ErrHelp) {
-		return
-	}
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "\naiv: %v\n", err)
-		os.Exit(1)
-	}
+	return true, err
 }
 
 // globalOpts are the flags shared by every blueprint-driven command.
@@ -127,12 +98,6 @@ type globalOpts struct {
 // vars: AIV_VAR_OB_HOST=10.0.0.5 sets OB_HOST. The prefix keeps unrelated host
 // variables (e.g. a stray OB_PORT) from silently steering a deployment.
 const envVarPrefix = "AIV_VAR_"
-
-// varFlags accumulates repeatable --var KEY=VALUE overrides.
-type varFlags []string
-
-func (v *varFlags) String() string     { return strings.Join(*v, ",") }
-func (v *varFlags) Set(s string) error { *v = append(*v, s); return nil }
 
 func registerGlobal(fs *flag.FlagSet) *globalOpts {
 	g := &globalOpts{}
@@ -626,40 +591,6 @@ func parseLogsArgs(args []string) (g *globalOpts, component string, lines int, f
 		return nil, "", 0, false, err
 	}
 	return g, positionals[0], *n, follow, nil
-}
-
-// splitInterspersedFlags moves recognized flags and their values ahead of
-// positional arguments so Go's flag parser accepts options on either side.
-func splitInterspersedFlags(fs *flag.FlagSet, args []string) (flags, positionals []string) {
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		if arg == "--" {
-			positionals = append(positionals, args[i+1:]...)
-			break
-		}
-		if len(arg) < 2 || arg[0] != '-' || arg == "-" {
-			positionals = append(positionals, arg)
-			continue
-		}
-
-		name := strings.TrimLeft(arg, "-")
-		if equal := strings.IndexByte(name, '='); equal >= 0 {
-			name = name[:equal]
-		}
-		flags = append(flags, arg)
-		f := fs.Lookup(name)
-		if f == nil || strings.Contains(arg, "=") {
-			continue
-		}
-		if boolFlag, ok := f.Value.(interface{ IsBoolFlag() bool }); ok && boolFlag.IsBoolFlag() {
-			continue
-		}
-		if i+1 < len(args) {
-			i++
-			flags = append(flags, args[i])
-		}
-	}
-	return flags, positionals
 }
 
 func cmdGen(args []string) error {
