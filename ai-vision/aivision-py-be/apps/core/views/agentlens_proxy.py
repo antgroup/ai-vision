@@ -34,6 +34,7 @@ from ..permissions.constants import (
 from ..permissions.space import require_space_permission
 from ..services.diagnosis_trial_timeout import (
     LLM_TRIAL_TIMEOUT_MESSAGE,
+    LlmTrialTimeoutInputError,
     llm_trial_forward_timeout,
 )
 from ..services.model_validation_contract import (
@@ -1803,6 +1804,14 @@ class RuleInputPreviewView(APIView):
         )
 
 
+_LLM_TRIAL_TIMEOUT_INPUT_MESSAGES = {
+    LlmTrialTimeoutInputError.INVALID_SPEC: "spec 必须为对象",
+    LlmTrialTimeoutInputError.INVALID_REQUEST_TIMEOUT: (
+        "request_timeout_sec 必须是大于 0 且不超过 300 的有限非布尔数值"
+    ),
+}
+
+
 class LlmDiagnoserTrialView(APIView):
     """Run one custom LLM diagnoser against a scoped reference Trace."""
 
@@ -1811,10 +1820,11 @@ class LlmDiagnoserTrialView(APIView):
         if err:
             return err
         body = dict(request.data or {})
-        try:
-            timeout = llm_trial_forward_timeout(body.get("spec", {}))
-        except ValueError as exc:
-            return error_response(str(exc), 4220, status=422)
+        timeout = llm_trial_forward_timeout(body.get("spec", {}))
+        if isinstance(timeout, LlmTrialTimeoutInputError):
+            return error_response(
+                _LLM_TRIAL_TIMEOUT_INPUT_MESSAGES[timeout], 4220, status=422
+            )
         body["space_uuid"] = space_id
         _audit_log(request, space_id=space_id, action="llm_diagnoser_trial")
         return _forward_post(

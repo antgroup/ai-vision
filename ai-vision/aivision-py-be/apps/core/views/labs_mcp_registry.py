@@ -33,7 +33,15 @@ PLACEHOLDER = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_.-]*)\}")
 SECRET = re.compile(r"secret|token|password|authorization|api[-_]?key", re.I)
 
 
+OFFICIAL_UNAVAILABLE = "The official MCP registry could not be loaded. Try again later."
+DIRECTORY_UNAVAILABLE = "The MCP servers directory could not be loaded. Try again later."
+
+
 class RegistryError(Exception):
+    pass
+
+
+class DirectoryCursorError(ValueError):
     pass
 
 
@@ -564,16 +572,16 @@ def _mcpservers_search(query, cursor):
     if cursor:
         match = re.fullmatch(r"[a-f0-9]{24}:([0-9]{1,5})", cursor)
         if not match:
-            raise ValueError("Invalid MCP servers directory cursor")
+            raise DirectoryCursorError("Invalid MCP servers directory cursor")
         offset = int(match.group(1))
         if offset == 0 or offset % 30 or cursor != _mcpservers_cursor(query, catalog, offset):
-            raise ValueError("Invalid or stale MCP servers directory cursor")
+            raise DirectoryCursorError("Invalid or stale MCP servers directory cursor")
     matches = [
         entry for _, entry in sorted(catalog["entries"].items())
         if query.casefold() in (entry["name"] + " " + entry["description"]).casefold()
     ]
     if cursor and offset >= len(matches):
-        raise ValueError("MCP servers directory cursor is out of range")
+        raise DirectoryCursorError("MCP servers directory cursor is out of range")
     return {
         "servers": matches[offset:offset + 30],
         "nextCursor": _mcpservers_cursor(query, catalog, offset + 30) if offset + 30 < len(matches) else None,
@@ -596,10 +604,13 @@ class McpRegistrySearchView(APIView):
         if source == "mcpservers":
             try:
                 return success_response(_mcpservers_search(query, cursor))
-            except ValueError as exc:
-                return error_response(str(exc), 3003)
-            except RegistryError as exc:
-                return error_response(str(exc), 3030, 502)
+            except DirectoryCursorError:
+                return error_response(
+                    "Invalid or stale MCP servers directory cursor. Start a new search.",
+                    3003,
+                )
+            except RegistryError:
+                return error_response(DIRECTORY_UNAVAILABLE, 3030, 502)
         params = {"search": query, "limit": 30, "version": "latest"}
         if cursor:
             params["cursor"] = cursor
@@ -615,8 +626,8 @@ class McpRegistrySearchView(APIView):
             result = {"servers": [_summary(_server(item)) for item in servers], "nextCursor": next_cursor or None}
             cache.add(key, (key, payload), CACHE_SECONDS)
             return success_response(result)
-        except RegistryError as exc:
-            return error_response(str(exc), 3030, 502)
+        except RegistryError:
+            return error_response(OFFICIAL_UNAVAILABLE, 3030, 502)
 
 
 class McpRegistryDetailView(APIView):
@@ -652,5 +663,6 @@ class McpRegistryDetailView(APIView):
             result = _detail(server)
             cache.add(key, (key, payload), CACHE_SECONDS)
             return success_response(result)
-        except RegistryError as exc:
-            return error_response(str(exc), 3030, 502)
+        except RegistryError:
+            message = DIRECTORY_UNAVAILABLE if source == "mcpservers" else OFFICIAL_UNAVAILABLE
+            return error_response(message, 3030, 502)

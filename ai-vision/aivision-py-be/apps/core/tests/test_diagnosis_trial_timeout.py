@@ -12,7 +12,7 @@ from apps.core.tests import test_diagnosis_quick_offline  # noqa: F401
 
 # isort: split
 from django.test import SimpleTestCase, override_settings
-from rest_framework.test import APIRequestFactory, force_authenticate
+from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
 
 from apps.core.permissions.constants import DIAGNOSIS_EXECUTE
 from apps.core.services import diagnosis_specialist as specialist
@@ -168,13 +168,42 @@ class LlmTrialForwardingTests(SimpleTestCase):
                     "owned-space",
                 )
                 self.assertEqual(response.status_code, 422)
+                self.assertEqual(response.data["code"], 4220)
+                self.assertEqual(
+                    response.data["message"],
+                    "request_timeout_sec 必须是大于 0 且不超过 300 的有限非布尔数值",
+                )
                 self.post.assert_not_called()
         for value in (None, [], "invalid"):
             with self.subTest(spec=value):
                 self.post.reset_mock()
                 response = self.invoke({"spec": value, "test_input": {}})
                 self.assertEqual(response.status_code, 422)
+                self.assertEqual(response.data["code"], 4220)
+                self.assertEqual(response.data["message"], "spec 必须为对象")
                 self.post.assert_not_called()
+
+    @override_settings(DEBUG=False)
+    def test_unexpected_timeout_error_uses_standard_server_response(self):
+        detail = "fixture-only unexpected timeout calculation detail"
+        client = APIClient(raise_request_exception=False)
+        client.force_authenticate(user=self.user)
+
+        with (
+            patch.object(
+                proxy, "llm_trial_forward_timeout", side_effect=ValueError(detail)
+            ),
+            self.assertLogs("django.request", level="ERROR"),
+        ):
+            response = client.post(
+                "/api/v1/spaces/owned-space/diagnose/diagnosers/llm/trial",
+                {"spec": {}},
+                format="json",
+            )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertNotContains(response, detail, status_code=500)
+        self.post.assert_not_called()
 
     def test_permission_denial_precedes_timeout_validation_and_forwarding(self):
         self.scope.return_value = (None, error_response("denied", 4030, status=403))
