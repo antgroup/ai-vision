@@ -12,6 +12,7 @@ from apps.core.tests import test_diagnosis_quick_offline  # noqa: F401
 
 # isort: split
 from django.test import SimpleTestCase, override_settings
+from django.urls import path
 from rest_framework.test import APIClient, APIRequestFactory, force_authenticate
 
 from apps.core.permissions.constants import DIAGNOSIS_EXECUTE
@@ -20,6 +21,13 @@ from apps.core.services.diagnosis_specialist_input import SpecialistError
 from apps.core.views import agentlens_proxy as proxy
 from apps.core.views.common import error_response
 from apps.core.views.diagnosis_specialist import SpecialistTrialView
+
+
+# The database-free fixture intentionally omits the application's URL and
+# middleware settings. Exercise the production view through a single test route.
+urlpatterns = [
+    path("llm-trial/<str:space_id>", proxy.LlmDiagnoserTrialView.as_view()),
+]
 
 
 class LlmTrialForwardingTests(SimpleTestCase):
@@ -183,7 +191,7 @@ class LlmTrialForwardingTests(SimpleTestCase):
                 self.assertEqual(response.data["message"], "spec 必须为对象")
                 self.post.assert_not_called()
 
-    @override_settings(DEBUG=False)
+    @override_settings(DEBUG=False, ROOT_URLCONF=__name__, MIDDLEWARE=[])
     def test_unexpected_timeout_error_uses_standard_server_response(self):
         detail = "fixture-only unexpected timeout calculation detail"
         client = APIClient(raise_request_exception=False)
@@ -196,7 +204,7 @@ class LlmTrialForwardingTests(SimpleTestCase):
             self.assertLogs("django.request", level="ERROR"),
         ):
             response = client.post(
-                "/api/v1/spaces/owned-space/diagnose/diagnosers/llm/trial",
+                "/llm-trial/owned-space",
                 {"spec": {}},
                 format="json",
             )
