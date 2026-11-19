@@ -121,23 +121,26 @@ def read_candidate(directory, architecture, source_sha, build_id):
     return manifest, entries
 
 
-def command(args, *, name, timeout=60, cwd=None, missing_ok=False):
+def command(args, *, name, timeout=60, cwd=None):
     result = subprocess.run(args, cwd=cwd, timeout=timeout, text=True, capture_output=True)
     if result.returncode:
-        if missing_ok and "no such" in result.stderr.casefold():
-            return None
         raise QualificationError(f"{name} exited with status {result.returncode}.")
     return result.stdout.strip()
 
 
-def docker(*args, name, timeout=60, missing_ok=False):
-    return command(["docker", *args], name=name, timeout=timeout, missing_ok=missing_ok)
+def docker(*args, name, timeout=60):
+    return command(["docker", *args], name=name, timeout=timeout)
 
 
 def inspect(kind, resource, expression, *, missing_ok=False):
+    if missing_ok:
+        listing = ("--all", "--format", "{{.Names}}") if kind == "container" else ("--format", "{{.Name}}")
+        names = docker(kind, "ls", *listing, name=f"List Docker {kind}s").splitlines()
+        if resource not in names:
+            return None
     value = docker(kind, "inspect", "--format", "{{json " + expression + "}}", resource,
-                   name=f"Docker {kind} inspection", missing_ok=missing_ok)
-    return None if value is None else json.loads(value)
+                   name=f"Docker {kind} inspection")
+    return json.loads(value)
 
 
 def ensure_native(architecture):

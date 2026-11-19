@@ -8,10 +8,10 @@ import shutil
 import subprocess
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from sample_trace import trace_complete
-from smoke import QualificationError, read_candidate, read_diagnosis, require_archive_parity
+from smoke import QualificationError, inspect, read_candidate, read_diagnosis, require_archive_parity
 
 
 SOURCE = "a" * 40
@@ -95,6 +95,27 @@ class CandidateTests(unittest.TestCase):
         ).stdout)
         with self.assertRaisesRegex(QualificationError, "zstd archive contains different"):
             require_archive_parity(self.root, self.manifest)
+
+
+class DockerResourceTests(unittest.TestCase):
+    @patch("smoke.docker", return_value="some-other-network\naiv-test-network-old")
+    def test_missing_network_is_confirmed_without_inspecting_an_absent_name(self, docker):
+        self.assertIsNone(inspect("network", "aiv-test-network", ".Labels", missing_ok=True))
+        docker.assert_called_once_with(
+            "network", "ls", "--format", "{{.Name}}", name="List Docker networks"
+        )
+
+    @patch("smoke.docker", side_effect=("aiv-test-container", '{"owner": "fixture"}'))
+    def test_resource_found_in_inventory_is_inspected(self, docker):
+        self.assertEqual(inspect("container", "aiv-test-container", ".Config.Labels", missing_ok=True),
+                         {"owner": "fixture"})
+        self.assertEqual(docker.call_args_list[0].args, ("container", "ls", "--all", "--format", "{{.Names}}"))
+        self.assertEqual(docker.call_args_list[1].args[1], "inspect")
+
+    @patch("smoke.docker", side_effect=QualificationError("Docker daemon is unavailable"))
+    def test_network_inventory_failure_is_not_resource_absence(self, _docker):
+        with self.assertRaisesRegex(QualificationError, "daemon is unavailable"):
+            inspect("network", "aiv-test-network", ".Labels", missing_ok=True)
 
 
 class ReadbackTests(unittest.TestCase):
