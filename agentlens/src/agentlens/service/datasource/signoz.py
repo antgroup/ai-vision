@@ -3,6 +3,9 @@ from dataclasses import replace
 from datetime import datetime, timedelta
 from typing import Any
 
+from sqlalchemy import literal_column, select, table
+from sqlalchemy.sql import quoted_name
+
 from agentlens.domain.dataset import TraceQuerySpec
 from agentlens.domain.diagnosis_input import validate_explicit_trace_ids
 from agentlens.infra.signoz.client import SignozClient
@@ -122,18 +125,17 @@ class TraceStore:
     ) -> list[dict]:
         """Complete exact IDs in a server-owned scope, without a relative time cutoff."""
         validate_explicit_trace_ids(trace_ids)
-        table = dataset_spec.get("query", {}).get("table", "")
-        if not isinstance(table, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", table):
+        table_name = dataset_spec.get("query", {}).get("table", "")
+        if not isinstance(table_name, str) or not re.fullmatch(
+            r"[A-Za-z_][A-Za-z0-9_]*", table_name
+        ):
             raise ValueError("invalid explicit trace table")
-        params = {f"trace_{i}": value for i, value in enumerate(trace_ids)}
+        source = table(quoted_name(table_name, True))
         conditions = [
-            *self.dialect.base_predicates(parameters=params),
-            self.dialect.col("trace_id")
-            + " IN ("
-            + ", ".join(f":trace_{i}" for i in range(len(trace_ids)))
-            + ")",
+            *self.dialect.tenant_conditions(),
+            self.dialect.column("trace_id").in_(trace_ids),
         ]
-        for i, (column_key, value_key) in enumerate(DATASET_SCOPE_FIELDS):
+        for column_key, value_key in DATASET_SCOPE_FIELDS:
             column, value = dataset_spec.get(column_key), dataset_spec.get(value_key)
             if not column or not value:
                 if (
@@ -144,23 +146,19 @@ class TraceStore:
                 continue
             if not isinstance(column, str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_.]*", column):
                 raise ValueError("invalid scope column")
-            params[f"scope_{i}"] = str(value)
-            scoped_column = self.dialect.col(column, parameters=params)
-            conditions.append(f"{scoped_column} = :scope_{i}")
-        sql = (
-            f"SELECT * FROM {quote_identifier(table)} WHERE {' AND '.join(conditions)}"
-            f" ORDER BY {self.dialect.col('period')} ASC"
+            conditions.append(self.dialect.column(column) == str(value))
+        statement = (
+            select(literal_column("*"))
+            .select_from(source)
+            .where(*conditions)
+            .order_by(self.dialect.column("period").asc())
         )
-        if for_diagnosis_input:
-            # Only ephemeral preflight material retains these original marker types.
-            # Runner/CUSTOM/Core continue to receive the default logical strings.
-            return self.client.query(
-                sql,
-                parameters=params,
-                log_sql=False,
-                preserve_attribute_types=("record.body", "job_uuid", "task_uuid"),
-            )
-        return self.client.query(sql, parameters=params, log_sql=False)
+        # Only ephemeral preflight material retains these original marker types.
+        # Runner/CUSTOM/Core continue to receive the default logical strings.
+        preserve_types = ("record.body", "job_uuid", "task_uuid") if for_diagnosis_input else ()
+        return self.client.query_select(
+            statement, log_sql=False, preserve_attribute_types=preserve_types
+        )
 
     def read_trace_rows_by_id(
         self,

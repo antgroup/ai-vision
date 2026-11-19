@@ -20,6 +20,9 @@ import re
 from datetime import datetime
 from typing import Any, Protocol
 
+from sqlalchemy import ColumnElement, column, func
+from sqlalchemy.sql import quoted_name
+
 _BACKTICK_IDENT = re.compile(r"`((?:[^`]|``)+)`")
 
 ATTRIBUTES_PREFIX = "attributes."
@@ -83,6 +86,12 @@ def unix_nano_to_period(value: int | float) -> str:
 
 
 class ColumnDialect(Protocol):
+    def column(self, name: str) -> ColumnElement[Any]:
+        """Build a SQLAlchemy expression for a logical column."""
+
+    def tenant_conditions(self) -> tuple[ColumnElement[bool], ...]:
+        """Build the tenant predicates for a SQLAlchemy query."""
+
     def col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
         """Render one logical column as a SQL expression usable in WHERE / ORDER BY."""
 
@@ -110,6 +119,12 @@ class ColumnDialect(Protocol):
 
 class FlatColumnDialect:
     """Logical columns are physical columns (SigNoz-shaped flat tables)."""
+
+    def column(self, name: str) -> ColumnElement[Any]:
+        return column(quoted_name(name, True))
+
+    def tenant_conditions(self) -> tuple[ColumnElement[bool], ...]:
+        return ()
 
     def col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
         return quote_identifier(name)
@@ -155,25 +170,40 @@ class SignozObDialect:
 
     # ── 列渲染 ──────────────────────────────────────────────────────────────
     @staticmethod
-    def _attribute_col(column: str, key: str, parameters: dict[str, Any] | None) -> str:
+    def _resolve_column(name: str) -> tuple[str, str | None]:
+        if name.startswith(RESOURCE_ATTRIBUTES_PREFIX):
+            physical_name = "resource_attributes"
+            key = name[len(RESOURCE_ATTRIBUTES_PREFIX) :]
+        elif name.startswith(ATTRIBUTES_PREFIX):
+            physical_name = "attributes"
+            key = name[len(ATTRIBUTES_PREFIX) :]
+        else:
+            return LOGICAL_TO_PHYSICAL.get(name, name), None
         escaped = key.replace("\\", "\\\\").replace('"', '\\"')
-        path = f'$."{escaped}"'
+        return physical_name, f'$."{escaped}"'
+
+    def column(self, name: str) -> ColumnElement[Any]:
+        physical_name, path = self._resolve_column(name)
+        physical_column = column(quoted_name(physical_name, True))
+        if path is None:
+            return physical_column
+        return func.JSON_UNQUOTE(func.JSON_EXTRACT(physical_column, path))
+
+    def tenant_conditions(self) -> tuple[ColumnElement[bool], ...]:
+        return (self.column("org_id") == self.org_id,)
+
+    def col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
+        physical_name, path = self._resolve_column(name)
+        physical_column = quote_identifier(physical_name)
+        if path is None:
+            return physical_column
         if parameters is None:
             expression = quote_literal(path)
         else:
             name = f"attribute_path_{len(parameters)}"
             parameters[name] = path
             expression = f":{name}"
-        return f"JSON_UNQUOTE(JSON_EXTRACT(`{column}`, {expression}))"
-
-    def col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
-        if name.startswith(RESOURCE_ATTRIBUTES_PREFIX):
-            key = name[len(RESOURCE_ATTRIBUTES_PREFIX) :]
-            return self._attribute_col("resource_attributes", key, parameters)
-        if name.startswith(ATTRIBUTES_PREFIX):
-            key = name[len(ATTRIBUTES_PREFIX) :]
-            return self._attribute_col("attributes", key, parameters)
-        return quote_identifier(LOGICAL_TO_PHYSICAL.get(name, name))
+        return f"JSON_UNQUOTE(JSON_EXTRACT({physical_column}, {expression}))"
 
     def select_col(self, name: str, *, parameters: dict[str, Any] | None = None) -> str:
         rendered = self.col(name, parameters=parameters)

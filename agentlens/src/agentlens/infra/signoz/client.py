@@ -3,6 +3,9 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Any, Protocol
 
+from sqlalchemy import Select
+from sqlalchemy.dialects import mysql
+
 _SQL_QUOTED = r"'(?:''|[^'])*'|\"(?:\"\"|[^\"])*\"|`(?:``|[^`])*`"
 _CONJUNCTION_GROUPING = re.compile(
     rf"({_SQL_QUOTED}|\bIN\s*\((?:{_SQL_QUOTED}|[^()'\"`])*\))|[()]",
@@ -21,6 +24,14 @@ class SignozClient(Protocol):
         *,
         log_sql: bool = True,
         parameters: dict[str, Any] | None = None,
+        preserve_attribute_types: tuple[str, ...] = (),
+    ) -> list[dict[str, Any]]: ...
+
+    def query_select(
+        self,
+        statement: Select[Any],
+        *,
+        log_sql: bool = True,
         preserve_attribute_types: tuple[str, ...] = (),
     ) -> list[dict[str, Any]]: ...
 
@@ -116,6 +127,24 @@ class InMemorySignozClient:
 
     def seed(self, table: str, records: list[dict]) -> None:
         self._tables[table].extend(records)
+
+    def query_select(
+        self,
+        statement: Select[Any],
+        *,
+        log_sql: bool = True,
+        preserve_attribute_types: tuple[str, ...] = (),
+    ) -> list[dict[str, Any]]:
+        compiled = statement.compile(
+            dialect=mysql.dialect(paramstyle="named"),
+            compile_kwargs={"render_postcompile": True},
+        )
+        return self.query(
+            str(compiled),
+            log_sql=log_sql,
+            parameters=compiled.params,
+            preserve_attribute_types=preserve_attribute_types,
+        )
 
 
 def _parse_simple_sql(

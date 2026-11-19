@@ -43,8 +43,9 @@ _STRING_ESCAPES = {
 
 def _string_value(token: str) -> str:
     quote = token[0]
+    pattern = r"\\(.)|''" if quote == "'" else r'\\(.)|""'
     return re.sub(
-        rf"\\(.)|{quote}{quote}",
+        pattern,
         lambda match: _STRING_ESCAPES.get(match[1], match[1]) if match[1] else quote,
         token[1:-1],
         flags=re.DOTALL,

@@ -2,6 +2,8 @@ from copy import deepcopy
 from unittest.mock import Mock
 
 import pytest
+from sqlalchemy import Select
+from sqlalchemy.dialects import mysql
 
 from agentlens.infra.signoz.dialect import SignozObDialect
 from agentlens.service.datasource.signoz import TraceStore
@@ -32,7 +34,7 @@ def test_comparison_distinguishes_overlap_without_claiming_repair():
 
 def test_explicit_query_binds_ids_and_all_scope_values():
     client = Mock()
-    client.query.return_value = [{"trace_id": "a", "span_id": "s"}]
+    client.query_select.return_value = [{"trace_id": "a", "span_id": "s"}]
     store = TraceStore(client)
     spec = {
         "query": {"table": "signoz_traces"},
@@ -45,38 +47,47 @@ def test_explicit_query_binds_ids_and_all_scope_values():
     }
     original = deepcopy(spec)
     assert store.read_explicit_trace_rows(spec, ["a"])[0]["trace_id"] == "a"
-    args, kwargs = client.query.call_args
-    assert "tenant'quoted" not in args[0] and " IN (:trace_0)" in args[0]
-    assert kwargs["parameters"] == {
-        "trace_0": "a",
-        "scope_0": "tenant'quoted",
-        "scope_1": "u",
-        "scope_2": "p",
-    }
+    args, kwargs = client.query_select.call_args
+    assert isinstance(args[0], Select)
+    compiled = args[0].compile(
+        dialect=mysql.dialect(paramstyle="named"), compile_kwargs={"render_postcompile": True}
+    )
+    assert "tenant'quoted" not in str(compiled)
+    assert "`trace_id` IN (" in str(compiled)
+    assert sorted(compiled.params.values()) == ["a", "p", "tenant'quoted", "u"]
     assert kwargs["log_sql"] is False and spec == original
 
 
 def test_explicit_query_binds_signoz_org_alongside_other_scope_values():
     client = Mock()
-    client.query.return_value = []
+    client.query_select.return_value = []
     store = TraceStore(client, dialect=SignozObDialect(org_id="org-1"))
     spec = {
         "query": {"table": "signoz_traces"},
-        "space_column": "space_id",
+        "space_column": "attributes.space.id",
         "space_filter": "space-1",
-        "agent_product_column": "agent_product",
+        "agent_product_column": "resource.attributes.service.name",
         "agent_product_filter": "codex",
     }
     assert store.read_explicit_trace_rows(spec, ["trace-1"]) == []
-    args, kwargs = client.query.call_args
-    assert "`org_id` = :org_id" in args[0]
-    assert "org-1" not in args[0]
-    assert kwargs["parameters"] == {
-        "org_id": "org-1",
-        "trace_0": "trace-1",
-        "scope_0": "space-1",
-        "scope_2": "codex",
-    }
+    args, _ = client.query_select.call_args
+    compiled = args[0].compile(
+        dialect=mysql.dialect(paramstyle="named"), compile_kwargs={"render_postcompile": True}
+    )
+    sql = str(compiled)
+    assert "`org_id` = :" in sql
+    assert "JSON_UNQUOTE(JSON_EXTRACT(`attributes`, :" in sql
+    assert "JSON_UNQUOTE(JSON_EXTRACT(`resource_attributes`, :" in sql
+    assert "`timestamp` ASC" in sql
+    assert sorted(compiled.params.values()) == [
+        '$."service.name"',
+        '$."space.id"',
+        "codex",
+        "org-1",
+        "space-1",
+        "trace-1",
+    ]
+    assert all(value not in sql for value in compiled.params.values())
 
 
 def test_explicit_query_rejects_unbound_scope_or_injected_table():
@@ -84,7 +95,7 @@ def test_explicit_query_rejects_unbound_scope_or_injected_table():
     for spec in ({"query": {"table": "x;DROP TABLE x"}}, {"query": {"table": "safe"}}):
         with pytest.raises(ValueError):
             store.read_explicit_trace_rows(spec, ["a"])
-    store.client.query.assert_not_called()
+    store.client.query_select.assert_not_called()
 
 
 @pytest.mark.parametrize("time_range", ["1h", "7d"])
@@ -123,7 +134,7 @@ def test_explicit_selection_keeps_full_old_trace_and_excludes_unselected_or_fore
             for index in range(200)
         ],
     )
-    client.query = Mock(wraps=client.query)
+    client.query_select = Mock(wraps=client.query_select)
 
     rows = TraceStore(client).read_explicit_trace_rows(
         source, ["trace-a"], for_diagnosis_input=True
@@ -134,16 +145,16 @@ def test_explicit_selection_keeps_full_old_trace_and_excludes_unselected_or_fore
     assert all(row["attributes.output.value"] == content + "complete" for row in rows)
     # The in-memory adapter does not enforce general time predicates. Check the
     # emitted query boundary too, so an accidental relative cutoff cannot pass.
-    assert client.query.call_count == 1
-    sql = client.query.call_args.args[0]
-    predicates = sql.split(" WHERE ", 1)[1].split(" ORDER BY ", 1)[0]
+    client.query_select.assert_called_once()
+    args, kwargs = client.query_select.call_args
+    compiled = args[0].compile(
+        dialect=mysql.dialect(paramstyle="named"), compile_kwargs={"render_postcompile": True}
+    )
+    sql = str(compiled)
+    predicates = sql.split("WHERE ", 1)[1].split("ORDER BY ", 1)[0]
     assert "period" not in predicates and "LIMIT" not in sql.upper()
-    assert client.query.call_args.kwargs["parameters"] == {
-        "trace_0": "trace-a",
-        "scope_0": "s",
-        "scope_1": "u",
-        "scope_2": "p",
-    }
+    assert sorted(compiled.params.values()) == ["p", "s", "trace-a", "u"]
+    assert kwargs["preserve_attribute_types"] == ("record.body", "job_uuid", "task_uuid")
 
 
 def test_model_endpoint_query_or_fragment_is_incomplete():
