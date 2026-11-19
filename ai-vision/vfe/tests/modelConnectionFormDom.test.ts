@@ -1194,6 +1194,13 @@ for (const expected of [
     try {
       await click(page.dom, "spaceSettings.models.test")
       await click(page.dom, "spaceSettings.models.validation.run")
+      await waitFor(
+        () =>
+          page.dom.window.document.querySelector(
+            "[role=dialog] [data-testid=model-validation-summary] p"
+          )?.textContent === expected.summary,
+        "the diagnostic result is rendered"
+      )
       const dialog = page.dom.window.document.querySelector("[role=dialog]")!
       const summary = dialog.querySelector(
         "[data-testid=model-validation-summary]"

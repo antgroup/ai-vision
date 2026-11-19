@@ -10,19 +10,19 @@ authors = [
 license = { text = "MIT" }
 
 dependencies = [
-    "django>=5.2",
-    "djangorestframework>=3.15,<3.16",
-    "djangorestframework-simplejwt>=5.3,<5.4",
+    "django>=5.2.17,<6.1",
+    "djangorestframework>=3.18.2,<3.19",
+    "djangorestframework-simplejwt>=5.5.1,<6",
     "django-cors-headers>=4.3,<4.4",
     "django-environ>=0.11,<0.12",
     "python-dotenv>=1.0,<2.0",
     "mysql-connector-python>=9.0,<10.0",
-    "gunicorn>=21.2,<22.0",
+    "gunicorn>=22.0,<23",
     "jinja2>=3.1.6",
     "pyyaml>=6.0",
-    "requests>=2.32.5",
+    "requests>=2.33.0",
     "whitenoise>=6.12.0",
-    "cryptography>=46.0.7",
+    "cryptography>=50.0.0",
     "pypinyin>=0.55,<0.56",
     "django-json-widget>=2.1.1",
     "opentelemetry-api>=1.27",
@@ -35,11 +35,11 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "black>=24.8,<25.0",
+    "black>=26.10.1,<27",
     "flake8>=7.0,<7.1",
     "isort>=5.13,<5.14",
     "mypy>=1.8,<1.9",
-    "pytest>=7.4,<7.5",
+    "pytest>=9.0.3,<10",
     "pytest-django>=4.8,<4.9",
     "pytest-cov>=4.1,<4.2",
     "factory-boy>=3.3,<3.4",
