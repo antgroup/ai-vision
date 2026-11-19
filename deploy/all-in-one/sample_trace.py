@@ -183,7 +183,7 @@ def main(argv=None):
         client = Platform(args.web_port)
         client.login(email, password)
         spaces = client.api("/spaces")["items"]
-        personal = [row for row in spaces if row.get("type") == 1 and row.get("is_owner") is True]
+        personal = [row for row in spaces if row.get("type") == 1]
         if len(personal) != 1:
             raise DemoError("The authenticated user does not have one personal space.")
         space_id = resource_id(personal[0]["space_id"])

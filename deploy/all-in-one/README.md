@@ -7,9 +7,10 @@ The All-in-One image runs the frontend, backend, ingest gateway, diagnosis engin
 Select `personal_edition=true` and `publish=false` in the product release
 workflow. The two native Linux jobs consume the same frozen distributed base
 and produce an amd64 and an arm64 bundle. Each job verifies archive format and
-identity, installs the bundled CLI and the actual Docker payload, and checks
-registration, synthetic Quickstart traces, a persisted rule diagnosis, clean
-shutdown, and same-volume recreation. The final acceptance includes both passed
+identity and installs the bundled CLI and Docker payload. After registration, it
+runs the packaged `--sample-trace` command in a terminal and checks the Trace
+link against the new personal Space. It also checks a persisted rule diagnosis,
+clean shutdown, and same-volume recreation. The final acceptance includes both passed
 receipts and a single checksum inventory for the release. Use the hosted job
 receipts for each architecture when recording qualification.
 
