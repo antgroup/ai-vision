@@ -10,7 +10,7 @@ Authors record the actual tested commit and environment. For a dirty worktree, r
 
 The workflow uses `pull_request` with only `contents: read`. It does not request project secrets or write commit statuses. It checks out the event's `base.sha` and runs only the checker already present in the target branch. The PR body is read as data from `GITHUB_EVENT_PATH`: it is not interpolated into shell commands, its commands are not executed, and attachments are not downloaded. Fork PRs follow GitHub's approval and read-only permission rules.
 
-For the first PR introducing this workflow, the target branch has no checker. The job displays a bootstrap notice and skips automatic validation. **A completed bootstrap job does not mean the material check passed.** Maintainers must review the evidence, checker, and local tests manually. After merging, verify success with a completed PR body and failure with an empty template, then verify body edits and fork behavior. Do not make this a required check before those hosted checks have run. A PR changing the checker still uses the target branch's existing rules; code review and local tests cover the new rules.
+For the first PR introducing this workflow, the target branch has no checker. The job displays a bootstrap notice and skips automatic validation. **A completed bootstrap job does not mean the material check passed.** Maintainers must review the evidence, checker, and local tests manually. After merging, verify success with a completed PR body and failure with an empty template, then verify body edits and fork behavior. Do not make this a required check before those hosted checks have run. For a PR changing the checker, the body job uses the target branch's rules. The metadata CI suite and local tests exercise the candidate implementation.
 
 The `edited` event checks a new snapshot of the body. Body edits do not trigger the separate code CI workflow described below. This check does not provide atomic consistency between body edits, base updates, and merging. Automated edits made with the repository's `GITHUB_TOKEN` may not trigger a new workflow. Maintainers must still review the current body and applicable checks before merging. This implementation does not configure remote branch protection or required checks.
 
@@ -21,10 +21,11 @@ Use Python 3.12 and install PyYAML 6.0.3 in your validation environment; the wor
 ```bash
 python3 -m pip install PyYAML==6.0.3
 python3 -m unittest discover -s scripts/ci -p 'test_*.py' -v
+python3 scripts/ci/pr_evidence.py --body-file /tmp/pr.md
 python3 scripts/ci/pr_evidence.py --event /tmp/pr-event.json --summary /tmp/pr-summary.md
 ```
 
-The event file only needs `{"pull_request":{"body":"Complete PR Markdown body"}}`. Output contains fixed diagnostics; it does not echo the body, links, or commands.
+Use `--body-file` to check the exact Markdown before submission. Both entry points use the same checker. The event file only needs `{"pull_request":{"body":"Complete PR Markdown body"}}`. Output contains fixed diagnostics; it does not echo the body, links, or commands.
 
 ## Test tiers
 

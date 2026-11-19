@@ -7,6 +7,7 @@ import tempfile
 import unittest
 
 SCRIPT = Path(__file__).with_name('pr_evidence.py')
+TEMPLATE = SCRIPT.parents[2] / '.github' / 'PULL_REQUEST_TEMPLATE.md'
 BODY = '''## Problem and impact
 Fix the version page incorrectly reporting up to date when no stable release exists.
 
@@ -22,13 +23,19 @@ No database migration. Linux and released artifacts are unverified and need chec
 
 
 class EvidenceTests(unittest.TestCase):
-    def check(self, body):
+    def check(self, body, *, body_file=False):
         with tempfile.TemporaryDirectory() as directory:
-            event = Path(directory) / 'event.json'
             summary = Path(directory) / 'summary.md'
-            event.write_text(json.dumps({'pull_request': {'body': body}}))
+            if body_file:
+                input_file = Path(directory) / 'body.md'
+                input_file.write_text(body, encoding='utf-8')
+                mode = '--body-file'
+            else:
+                input_file = Path(directory) / 'event.json'
+                input_file.write_text(json.dumps({'pull_request': {'body': body}}))
+                mode = '--event'
             result = subprocess.run(
-                [sys.executable, str(SCRIPT), '--event', str(event), '--summary', str(summary)],
+                [sys.executable, str(SCRIPT), mode, str(input_file), '--summary', str(summary)],
                 text=True, capture_output=True, check=False,
             )
             return result, summary.read_text() if summary.exists() else ''
@@ -48,12 +55,37 @@ class EvidenceTests(unittest.TestCase):
 
     def test_empty_template_comments_labels_and_checkboxes_do_not_count(self):
         # Retain one non-English placeholder to catch leftover template filler.
-        for empty in ('', '<!-- Provide the actual command -->', '- Environment:\n- Command:\n- Result:', '- [ ]\n- [x]', 'TODO', 'N/A', 'passed', 'not applicable', 'fill in', '通过', '<fill in validation>', '- Command: <fill in>', '- Result: TODO'):
+        for empty in ('', '<!-- Provide the actual command -->', '- Environment:\n- Command:\n- Result:', '- [ ]\n- [x]', 'TODO', 'N/A', 'passed', 'not applicable', 'fill in', '通过', '<fill in validation>', '- Command: <fill in>', '- Result: TODO', 'TODO.', '- [x] Tests passed.', 'See CI.', 'Result: Tests passed.', '测试通过。'):
             with self.subTest(empty=empty):
                 body = BODY.replace('macOS arm64; ran backend tests on a dirty worktree based on abc123: 36 passed. Diff attached.', empty)
                 result, summary = self.check(body)
                 self.assertEqual(result.returncode, 1)
                 self.assertIn('Validation', summary)
+
+    def test_body_file_rejects_the_unedited_template(self):
+        result, summary = self.check(TEMPLATE.read_text(encoding='utf-8'), body_file=True)
+        self.assertEqual(result.returncode, 1, result.stderr)
+        self.assertIn('Empty section: Problem and impact.', summary)
+        self.assertIn('Empty section: Validation.', summary)
+        self.assertIn('Empty section: Screenshots and interaction.', summary)
+        self.assertIn('Empty section: Compatibility and unverified scope.', summary)
+
+    def test_body_file_accepts_specific_blocked_check(self):
+        body = BODY.replace(
+            'macOS arm64; ran backend tests on a dirty worktree based on abc123: 36 passed. Diff attached.',
+            'The Compose startup check was blocked because this runner has no Docker daemon.',
+        )
+        result, summary = self.check(body, body_file=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn('Docker daemon', summary)
+
+    def test_specific_validation_can_end_with_a_plain_result(self):
+        body = BODY.replace(
+            'macOS arm64; ran backend tests on a dirty worktree based on abc123: 36 passed. Diff attached.',
+            'On Linux amd64, ran `pnpm test` at abc123: tests passed.',
+        )
+        result, _ = self.check(body)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_explicit_no_visual_change_explanation_is_accepted(self):
         body = BODY.replace('New page with no before screenshot; after screenshot and refresh-button behavior results are attached.', 'No visual or interaction changes: only backend error-handling code changed.')

@@ -6,31 +6,37 @@ body:
   - type: markdown
     attributes:
       value: |
-        Reports may be in English or Chinese. You do not need to contribute code to report a problem.
-        Remove credentials and private data. For vulnerabilities, follow the [private-reporting guidance](https://github.com/antgroup/ai-vision/blob/main/SECURITY.md) instead of posting details here.
+        English and Chinese are welcome. Use a title that names the affected action and symptom.
+        Share sanitized evidence. Report vulnerabilities through the [security reporting guidance](https://github.com/antgroup/ai-vision/security/policy).
   - type: textarea
     id: problem
     attributes:
-      label: Problem, expected and actual behavior
-      description: Describe what you were trying to do, what you expected, and what happened instead.
+      label: Expected and actual behavior
+      description: Name the page, command, or integration and describe the expected result and what you actually observed.
+      placeholder: |
+        Expected result
+        Actual result and user impact
     validations:
       required: true
   - type: textarea
     id: reproduction
     attributes:
       label: Steps to reproduce
-      description: Include the commands, actions, inputs, or conditions needed to reproduce the problem. If you cannot reproduce it reliably, describe what you observed.
+      description: List the shortest sequence of commands or UI actions. For intermittent problems, include the conditions and frequency you observed.
+      placeholder: |
+        1. Open the affected page or run the command.
+        2. Describe the input or state that triggers the problem.
     validations:
       required: true
   - type: textarea
     id: environment
     attributes:
       label: Environment and actual version
-      description: Include the affected component or integration, deployment method, operating system, and actual version or image tag/digest. If the version is unknown, write unknown and explain why.
+      description: Include the actual version when available. Mark any value you could not verify as unknown.
       placeholder: |
         Component or integration:
-        Deployment method and OS:
-        Actual version or image tag/digest:
+        Deployment method, OS, and architecture:
+        Version, image tag or digest, or source commit:
     validations:
       required: true
   - type: textarea
@@ -40,10 +46,3 @@ body:
       description: Optionally add relevant logs, error output, screenshots, or a small example. Remove credentials, personal information, private traces, and business prompts.
     validations:
       required: false
-  - type: checkboxes
-    id: contribution
-    attributes:
-      label: Would you like to help?
-      description: Optional; this does not affect whether maintainers accept the report.
-      options:
-        - label: I would like to help investigate, test a fix, improve documentation, or contribute code.
