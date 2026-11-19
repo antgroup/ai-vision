@@ -2,6 +2,11 @@ name: Release aiv CLI
 
 # Produces the aiv-release artifact; release-images.yml owns GitHub publishing.
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/release-cli.yml'
+      - 'aivision-cli/**'
+      - 'scripts/ci/*windows*cli*.py'
   workflow_dispatch:
   workflow_call:
     inputs:
@@ -29,6 +34,7 @@ permissions:
 
 jobs:
   build:
+    if: github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       max-parallel: 4
@@ -118,8 +124,67 @@ jobs:
           path: aivision-cli/dist/*.tar.gz
           if-no-files-found: error
           retention-days: 14
+  windows:
+    name: qualify Windows x64
+    runs-on: windows-2025
+    timeout-minutes: 20
+    env:
+      CGO_ENABLED: '0'
+      PRODUCT_VERSION: ${{ inputs.product_version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build and test the native remote client
+        working-directory: aivision-cli
+        shell: pwsh
+        run: |
+          if ((go env GOHOSTOS) -ne 'windows' -or (go env GOHOSTARCH) -ne 'amd64' -or
+              [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString() -ne 'X64') {
+            throw 'Windows CLI qualification requires a native Windows x64 host.'
+          }
+          $versionFile = Resolve-Path ../VERSION
+          if ($env:PRODUCT_VERSION) {
+            $versionFile = Join-Path $env:RUNNER_TEMP 'aiv-windows-product-version'
+            Set-Content -LiteralPath $versionFile -Value $env:PRODUCT_VERSION -Encoding ASCII
+          }
+          $version = go run -mod=vendor ./internal/buildversion "$versionFile"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $version = $version.Trim()
+          if ($env:GITHUB_REF.StartsWith('refs/tags/v') -and "v$version" -cne $env:GITHUB_REF_NAME) {
+            throw 'Windows CLI version must match the product tag.'
+          }
+          go test -mod=vendor ./internal/account ./internal/auth ./internal/config ./internal/query
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $binary = Join-Path $env:RUNNER_TEMP 'aiv.exe'
+          go build -mod=vendor -ldflags "-X github.com/antgroup/ai-vision/aivision-cli/internal/cli.Version=$version" -o "$binary" .
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python ../scripts/ci/windows_release_cli.py --binary "$binary" --license LICENSE --archive dist/aiv-windows-x64.zip
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python ../scripts/ci/qualify_windows_cli.py --archive dist/aiv-windows-x64.zip `
+            --installer scripts/install-windows-cli.ps1 --version "$version" --receipt dist/windows-x64.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ github.run_attempt }}-windows-x64
+          path: aivision-cli/dist/aiv-windows-x64.zip
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-smoke-${{ github.run_attempt }}-windows-x64
+          path: aivision-cli/dist/windows-x64.json
+          if-no-files-found: error
+          retention-days: 14
+
   package:
-    needs: build
+    needs: [build, windows]
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
@@ -135,9 +200,10 @@ jobs:
           for os in linux darwin; do
             for arch in x64 arm64; do test -s "release/aiv-$os-$arch.tar.gz"; done
           done
+          test -s release/aiv-windows-x64.zip
           sed "s|__AIV_RELEASE_REPOSITORY__|$GITHUB_REPOSITORY|g" aivision-cli/scripts/install.sh > release/install-aiv.sh
           cd release
-          sha256sum aiv-*.tar.gz install-aiv.sh > SHA256SUMS
+          sha256sum aiv-*.tar.gz aiv-windows-x64.zip install-aiv.sh > SHA256SUMS
           sha256sum -c SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:

@@ -36,6 +36,58 @@ numeric parts without leading zeros, optionally followed by prerelease segments
 separated by dots or hyphens (for example, `0.1.0-rc.1`); `+build` is not accepted.
 Unstamped developer builds report `dev`.
 
+## Windows x64 remote client
+
+When a version includes `aiv-windows-x64.zip`, download it together with
+`SHA256SUMS` from the same [AI Vision Release](https://github.com/antgroup/ai-vision/releases).
+The PowerShell 7 [offline installer](scripts/install-windows-cli.ps1) verifies
+the archive, installs `aiv.exe` under `%LOCALAPPDATA%\AI Vision\bin`, and adds
+that directory to your user PATH. Save the script alongside the downloaded
+assets and run these commands from that directory.
+
+```powershell
+pwsh -File .\install-windows-cli.ps1 -AssetDirectory .
+```
+
+Open a new terminal and run `aiv --version` to verify the selected release.
+If your execution policy blocks the script, paste the following commands into
+an interactive PowerShell 7 session in the download directory. This portable
+installation uses a new subdirectory. Run the client using the full path the
+commands print.
+
+```powershell
+& {
+    $ErrorActionPreference = 'Stop'
+    $zip = (Get-Item -LiteralPath '.\aiv-windows-x64.zip').FullName
+    $checksums = @(Get-Content -LiteralPath '.\SHA256SUMS' | Where-Object {
+        $_ -cmatch '^[a-f0-9]{64}  aiv-windows-x64\.zip$'
+    })
+    $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash
+    if ($checksums.Count -ne 1 -or $hash -ine $checksums[0].Substring(0, 64)) {
+        throw 'SHA-256 verification failed for aiv-windows-x64.zip.'
+    }
+    $bin = Join-Path (Split-Path -Parent $zip) 'aiv-windows-x64'
+    if (Test-Path -LiteralPath $bin) {
+        throw "Choose a download directory without an existing $bin."
+    }
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($zip, $bin, $false)
+    $exe = Join-Path $bin 'aiv.exe'
+    if (!(Test-Path -LiteralPath $exe -PathType Leaf) -or (Get-Item -LiteralPath $exe).Length -le 0) {
+        throw 'The archive must contain a nonempty aiv.exe.'
+    }
+    & $exe --version
+    if ($LASTEXITCODE -ne 0) {
+        throw 'The extracted aiv.exe could not report its version.'
+    }
+    Write-Output "Run the client using $exe."
+}
+```
+
+The Windows client supports `auth`, `space`, `key`, and `query` against an
+existing AI Vision server. It saves profiles in the current user's config
+folder without modifying Unix shell configuration. Use a Linux or macOS CLI
+for local deployment and Agent installation.
+
 ## Deployment sources, roles and compatibility
 
 Agent onboarding downloads its installer from the selected deployment. Native
