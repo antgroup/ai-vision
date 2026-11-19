@@ -162,3 +162,23 @@ class KeyPermissionTests(SpaceKeyTestCase):
         self.assertEqual(response.json()["code"], 0)
         self.assertEqual(response.json()["data"]["secret_key"], "secret-test")
         mock_reveal.assert_called_once_with(self.credential)
+
+    @patch("apps.core.services.credential_service.regenerate_credential")
+    def test_admin_regeneration_failure_keeps_provider_details_private(self, regenerate):
+        provider_detail = "fixture-only regeneration diagnostic"
+        regenerate.side_effect = RuntimeError(provider_detail)
+        self.authenticate(self.admin)
+
+        with self.assertLogs("apps.core.views.credential", level="WARNING") as logs:
+            response = self.client.post(self.regenerate_url)
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["code"], 3022)
+        self.assertEqual(
+            response.json()["message"],
+            "无法重新生成凭证，请检查观测服务配置后重试",
+        )
+        self.assertNotContains(response, provider_detail, status_code=400)
+        self.assertIn("RuntimeError", "\n".join(logs.output))
+        self.assertNotIn(provider_detail, "\n".join(logs.output))
+        regenerate.assert_called_once_with(self.credential, None)

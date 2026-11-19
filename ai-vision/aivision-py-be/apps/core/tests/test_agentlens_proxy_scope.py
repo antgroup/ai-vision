@@ -229,7 +229,8 @@ class AgentLensProxyParameterTests(SimpleTestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data["code"], 4220)
-        self.assertEqual(response.data["message"], "暂不可创建诊断任务")
+        self.assertIn("SigNoz", response.data["message"])
+        self.assertNotIn("暂不可创建诊断任务", response.data["message"])
 
     @patch(
         "apps.core.views.agentlens_proxy._get_scoped_remote_resource",

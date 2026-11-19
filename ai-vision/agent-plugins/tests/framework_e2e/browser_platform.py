@@ -91,11 +91,6 @@ def read_private_json(path, out):
     return json.loads(path.read_text(encoding='utf-8'))
 
 
-def write_private(path, value):
-    with open(path, 'x', encoding='utf-8', opener=lambda name, flags: os.open(name, flags, 0o600)) as file:
-        file.write(value)
-
-
 def client_state(client, origin, private, expected_user=None):
     private.update(cookie.value for cookie in client.cookies.jar)
     me = client.get('/api/v1/auth/me')
@@ -226,7 +221,7 @@ def audit_artifacts(out, private):
     return {'passed': not redacted and not removed, 'redacted_files': redacted, 'removed_files': removed}
 
 
-def collection_commands(repo, out, runtime, *, source, python, node):
+def collection_commands(repo, out, *, source, python, node):
     framework = repo / 'ai-vision/agent-plugins/tests/framework_e2e'
     js = repo / 'ai-vision/agent-plugins/langfuse/tests/js'
     if source == 'fake':
@@ -239,11 +234,10 @@ def collection_commands(repo, out, runtime, *, source, python, node):
             '--langchain-token-limit-field', 'max_tokens', '--disable-thinking'], 'requests': 3}]
         entry = 'run_live_provider.mjs'
     for name, environment in (('js5', js), ('js6', js.parent / 'js6')):
-        argv = [node, str(js / entry), '--targets', str(runtime / 'targets.json'),
-                '--environment', str(environment), '--out', str(out / name)]
+        argv = [node, str(js / entry), '--environment', str(environment), '--out', str(out / name)]
         if source == 'nvidia':
             argv[1:1] = ['--use-env-proxy']
-            argv += ['--provider-env', str(runtime / 'provider.env'), '--key-name', 'NVIDIA_API_KEY',
+            argv += ['--provider-key-env', 'AIVISION_LIVE_PROVIDER_KEY',
                      '--base-url', NVIDIA_BASE_URL, '--model', NVIDIA_MODEL, '--disable-thinking']
         commands.append({'name': name, 'argv': argv, 'requests': 0 if source == 'fake' else 2})
     return commands
@@ -310,7 +304,7 @@ def verify_browser_report(report, source):
     return expected
 
 
-def run_acceptance(*, repo, out, runtime, smoke, targets, auth_file, source,
+def run_acceptance(*, repo, out, smoke, targets, auth_file, source,
                    python=sys.executable, node='node', browser_origin='http://127.0.0.1:41966', key=None,
                    login_credentials=None, **_):
     target = validate_target(targets)
@@ -332,17 +326,14 @@ def run_acceptance(*, repo, out, runtime, smoke, targets, auth_file, source,
               'provider': NVIDIA_BASE_URL if source == 'nvidia' else None,
               'model': NVIDIA_MODEL if source == 'nvidia' else None}
     try:
-        write_private(runtime / 'targets.json', json.dumps({'langfuse': target}))
-        if source == 'nvidia':
-            if not key:
-                raise ValueError('NVIDIA mode requires an explicit key')
-            write_private(runtime / 'provider.env', 'NVIDIA_API_KEY=' + key + '\n')
+        if source == 'nvidia' and not key:
+            raise ValueError('NVIDIA mode requires an explicit key')
         (out / 'target-public.json').write_text(json.dumps(public_target(target)), encoding='utf-8')
         env = {**child_environment(smoke.env), 'AIVISION_E2E_TARGETS_JSON': json.dumps({'langfuse': target}),
                'AIVISION_E2E_DATA_BACKEND': 'oceanbase'}
-        for command in collection_commands(repo, out, runtime, source=source, python=python, node=node):
+        for command in collection_commands(repo, out, source=source, python=python, node=node):
             current = dict(env)
-            if key and command['name'] == 'python5':
+            if source == 'nvidia':
                 current['AIVISION_LIVE_PROVIDER_KEY'] = key
             process = smoke.run(command['name'], command['argv'], env=current, timeout=2400 if source == 'fake' else 420, check=False)
             if process.returncode:
@@ -378,8 +369,6 @@ def run_acceptance(*, repo, out, runtime, smoke, targets, auth_file, source,
         if not audit['passed']:
             report['status'] = 'failed'
         smoke.write('browser-summary.json', json.dumps(report, indent=2) + '\n')
-        for name in ('targets.json', 'provider.env'):
-            (runtime / name).unlink(missing_ok=True)
     if report['status'] != 'passed':
         raise RuntimeError('Artifact audit rejected unsafe output')
     return {'verified': True, 'browser_acceptance': report}

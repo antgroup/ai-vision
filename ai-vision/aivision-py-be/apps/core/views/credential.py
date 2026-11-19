@@ -121,6 +121,10 @@ class CredentialRegenerateView(APIView):
                 "detail": "重新生成 Key",
             }
             return success_response(result)
-        except Exception as e:
-            logger.error(f"Failed to regenerate credential: {e}")
-            return error_response(str(e), 3022)
+        except Exception as exc:
+            logger.warning(
+                "Credential regeneration failed (credential_id=%s, error=%s)",
+                credential.id,
+                type(exc).__name__,
+            )
+            return error_response("无法重新生成凭证，请检查观测服务配置后重试", 3022)
