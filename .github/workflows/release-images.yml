@@ -449,7 +449,7 @@ jobs:
         run: |
           set -euo pipefail
           (cd release && sha256sum -c SHA256SUMS)
-          python3 scripts/ci/release_assets.py --directory release --image-refs image-refs
+          python3 scripts/ci/release_assets.py --directory release --image-refs image-refs --require-windows
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
@@ -588,6 +588,10 @@ jobs:
           pattern: release-smoke-${{ github.run_attempt }}-*
           path: receipts
           merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli-smoke-${{ github.run_attempt }}-windows-x64
+          path: receipts
       - name: Freeze exact base assets and deployment receipts
         env:
           PERSONAL_EDITION: ${{ inputs.personal_edition }}
@@ -643,6 +647,10 @@ jobs:
           pattern: release-smoke-${{ github.run_attempt }}-*
           path: base-receipts
           merge-multiple: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli-smoke-${{ github.run_attempt }}-windows-x64
+          path: base-receipts
       - name: Freeze the distributed input after both database smokes
         run: |
           python3 scripts/ci/release_candidate.py freeze --base-only --directory base-assets \
@@ -728,6 +736,11 @@ jobs:
           pattern: personal-smoke-${{ github.run_attempt }}-*
           path: receipts
           merge-multiple: true
+      - if: inputs.personal_edition
+        uses: actions/download-artifact@v4
+        with:
+          name: cli-smoke-${{ github.run_attempt }}-windows-x64
+          path: receipts
       - name: Verify both native receipts and freeze the final release bytes
         if: inputs.personal_edition
         run: |

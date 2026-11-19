@@ -52,8 +52,10 @@ def candidate(directory, acceptance_path, *, expected_source):
     if (manifest.get("channel") != "daily" or manifest.get("source_sha") != expected_source
             or not re.fullmatch(r"\d+\.\d+\.\d+-daily\.\d{8}(?:\.\d+)?", manifest.get("product_version", ""))):
         raise ValueError("All-in-One requires a frozen Daily for the selected source checkout")
+    if not isinstance(acceptance, dict):
+        raise ValueError("The Daily acceptance receipt must be a JSON object")
     verify_frozen(directory, acceptance, repository=PUBLIC_REPOSITORY, source_sha=expected_source,
-                  build_id=manifest["build_id"], base_only=manifest.get("personal_edition", False))
+                  build_id=manifest["build_id"], base_only=acceptance.get("phase") == "base")
     return manifest, acceptance
 
 

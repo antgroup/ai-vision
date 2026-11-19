@@ -22,6 +22,7 @@ from sample_trace import DemoError, Platform, prepare_demo, resource_id, wait_fo
 
 
 MANIFESTS = {"amd64": "all-in-one-manifest.json", "arm64": "all-in-one-manifest-arm64.json"}
+HELPERS = ("install-all-in-one.py", "sample-trace.py")
 HOST_ARCH = {"x86_64": "amd64", "amd64": "amd64", "aarch64": "arm64", "arm64": "arm64"}
 OWNER = "io.aivision.all-in-one.instance"
 RELEASE = "io.aivision.all-in-one.release"
@@ -101,7 +102,7 @@ def read_candidate(directory, architecture, source_sha, build_id):
         match = re.fullmatch(rf"({SHA256})  ([A-Za-z0-9._-]+)", line)
         require(match and match[2] not in entries, "Invalid or duplicate candidate checksum.")
         entries[match[2]] = match[1]
-    for name in (manifest_path.name, "release-manifest.json", "install-all-in-one.py", "sample-trace.py"):
+    for name in (manifest_path.name, "release-manifest.json", *HELPERS):
         require(entries.get(name) == digest_file(file_at(directory, name)),
                 f"Candidate checksum mismatch for {name}.")
     require(entries["sample-trace.py"] == digest_file(Path(__file__).with_name("sample_trace.py")),
@@ -350,6 +351,7 @@ def qualify(directory, name, manifest, entries):
         "archive": manifest["archive"], "archive_sha256": manifest["archive_sha256"],
         "zstd_archive_sha256": manifest["zstd_archive_sha256"], "tar_sha256": manifest["tar_sha256"],
         "image_id": manifest["image_id"],
+        "helpers_sha256": {name: entries[name] for name in HELPERS},
         "checks": dict.fromkeys(("startup", "signup", "trace", "diagnosis", "shutdown", "recreation", "cleanup"), True),
     }
 

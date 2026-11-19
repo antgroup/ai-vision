@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 import re
 
+import windows_release_cli
+
 from product_registry import IMAGE_ROLES, require_product_repository
 from release_assets import PERSONAL_ARCHITECTURES, file_sha256, release_asset_names
 from release_personal import expected_receipts
@@ -67,7 +69,7 @@ def sanitize_smoke(summary, directory, backend):
     return smoke_identity(directory, backend)
 
 
-def freeze(directory, receipts, *, repository, source_sha, build_id, base_only=False, personal=None):
+def freeze(directory, receipts, *, repository, source_sha, build_id, base_only=False, personal=None, windows_cli=None):
     plan, _ = validate_bundle(directory, source_sha, build_id, repository=repository, base_only=base_only)
     expected_smokes = {backend: smoke_identity(directory, backend) for backend in BACKENDS}
     if receipts != expected_smokes:
@@ -89,6 +91,16 @@ def freeze(directory, receipts, *, repository, source_sha, build_id, base_only=F
         acceptance["personal_edition"] = expected
     elif personal is not None:
         raise ValueError("unexpected Personal Edition receipts")
+    if windows_release_cli.included(manifest):
+        expected_windows = windows_release_cli.receipt_identity(
+            directory / windows_release_cli.ASSET, source_sha=source_sha,
+            build_id=build_id, product_version=plan["product_version"],
+        )
+        if json.dumps(windows_cli, sort_keys=True) != json.dumps(expected_windows, sort_keys=True):
+            raise ValueError("acceptance requires exact Windows x64 installation evidence")
+        acceptance["windows_cli"] = expected_windows
+    elif windows_cli is not None:
+        raise ValueError("Windows CLI evidence requires a candidate with the Windows archive")
     return acceptance
 
 
@@ -96,6 +108,7 @@ def verify_frozen(directory, acceptance, *, repository, source_sha, build_id, ba
     if not isinstance(acceptance, dict) or acceptance != freeze(
         directory, acceptance.get("smokes"), repository=repository, source_sha=source_sha,
         build_id=build_id, base_only=base_only, personal=acceptance.get("personal_edition"),
+        windows_cli=acceptance.get("windows_cli"),
     ):
         raise ValueError("acceptance differs from frozen source, attempt or asset bytes")
 
@@ -151,9 +164,14 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
         page += 1
     required_jobs = [*(f"Linux amd64 candidate deployment ({backend})" for backend in BACKENDS),
                      "freeze qualified candidate acceptance", "verify public candidate indexes anonymously"]
+    qualified_smokes = [f"linux/amd64/{backend}" for backend in BACKENDS]
+    if "windows_cli" in acceptance:
+        qualified_smokes.append("windows/amd64/cli")
+        required_jobs.append("cli / qualify Windows x64")
     if acceptance.get("personal_edition"):
         required_jobs.extend(f"Personal Edition (linux/{arch})" for arch in PERSONAL_ARCHITECTURES)
         required_jobs.append("freeze qualified Personal Edition acceptance")
+        qualified_smokes.extend(f"linux/{arch}/personal" for arch in PERSONAL_ARCHITECTURES)
     for name in required_jobs:
         matched = [job for job in jobs if job.get("name") == name]
         if len(matched) != 1 or any(
@@ -174,7 +192,7 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
     return {"schema_version": 1, "candidate_build_id": build_id,
             "candidate_source_sha": source_sha, "source_repository": repository,
             "publication_recovery": publication_recovery,
-            "qualified_smokes": [f"linux/amd64/{backend}" for backend in BACKENDS]}
+            "qualified_smokes": qualified_smokes}
 
 
 def main():
@@ -200,7 +218,10 @@ def main():
         if args.personal_receipts:
             personal = {arch: json.loads((args.personal_receipts / f"personal-{arch}.json").read_text())
                         for arch in PERSONAL_ARCHITECTURES}
+        windows_path = args.receipts / windows_release_cli.RECEIPT
+        windows_cli = json.loads(windows_path.read_text()) if windows_path.is_file() else None
         value = freeze(args.directory, receipts, base_only=args.base_only, personal=personal,
+                       windows_cli=windows_cli,
                        repository=os.environ["GITHUB_REPOSITORY"],
                        source_sha=os.environ["GITHUB_SHA"],
                        build_id=f"{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}")

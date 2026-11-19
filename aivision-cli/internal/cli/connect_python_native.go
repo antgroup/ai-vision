@@ -1,4 +1,4 @@
-//go:build native_distribution
+//go:build native_distribution && !windows
 
 package cli
 

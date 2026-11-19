@@ -64,6 +64,7 @@ def edition_identity(inventory, metadata, product, architecture):
         "zstd_archive_sha256": inventory[zstd_name]["sha256"],
         "tar_sha256": metadata["tar_sha256"],
         "image_id": metadata["image_id"],
+        "helpers_sha256": {name: inventory[name]["sha256"] for name in sorted(PERSONAL_ATTACHMENTS)},
         "checks": dict.fromkeys(REQUIRED_CHECKS, True),
     }
 

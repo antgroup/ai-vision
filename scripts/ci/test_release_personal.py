@@ -1,5 +1,7 @@
 """Keep the base candidate and Personal Edition publication boundaries distinct."""
+import importlib.util
 import json
+from pathlib import Path
 import unittest
 
 import test_release_candidate as fixtures
@@ -11,6 +13,15 @@ class PersonalReleaseTests(unittest.TestCase):
     module = fixtures.CandidateTests.module
     smoke_summary = fixtures.CandidateTests.smoke_summary
 
+    def read_daily(self, acceptance):
+        daily_path = Path(__file__).resolve().parents[2] / "deploy/all-in-one/daily.py"
+        spec = importlib.util.spec_from_file_location("personal_daily", daily_path)
+        daily = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(daily)
+        path = self.directory.parent / "candidate-acceptance.json"
+        path.write_text(json.dumps(acceptance))
+        return daily.candidate(self.directory, path, expected_source=fixtures.SHA)
+
     def test_base_receipt_cannot_qualify_personal_publication(self):
         self.plan["personal_edition"] = True
         (self.directory / "release-plan.json").write_text(json.dumps(self.plan))
@@ -21,6 +32,7 @@ class PersonalReleaseTests(unittest.TestCase):
         base = module.freeze(self.directory, receipts, base_only=True, **candidate)
         self.assertEqual(base["phase"], "base")
         module.verify_frozen(self.directory, base, base_only=True, **candidate)
+        self.assertEqual(self.read_daily(base)[1], base)
         with self.assertRaises(ValueError):
             module.verify_frozen(self.directory, base, **candidate)
 
@@ -64,16 +76,27 @@ class PersonalReleaseTests(unittest.TestCase):
         candidate = dict(repository=fixtures.REPOSITORY, source_sha=fixtures.SHA, build_id="123.2")
         qualified = module.freeze(self.directory, smokes, personal=receipts, **candidate)
         module.verify_frozen(self.directory, qualified, **candidate)
+        with self.subTest("offline preparation accepts the final qualified bundle"):
+            self.assertEqual(self.read_daily(qualified), (product, qualified))
         with self.assertRaisesRegex(ValueError, "both exact native"):
             module.freeze(self.directory, smokes, personal={"amd64": receipts["amd64"]}, **candidate)
         (self.directory / personal_files("arm64")[2]).write_text("different bytes")
         write_checksums(self.directory)
         with self.assertRaisesRegex(ValueError, "candidate bytes or identity"):
             module.freeze(self.directory, smokes, personal=receipts, **candidate)
+        (self.directory / personal_files("arm64")[2]).write_text(personal_files("arm64")[2])
+        for name in sorted(PERSONAL_ATTACHMENTS):
+            with self.subTest("helper changed after both native smokes", helper=name):
+                path = self.directory / name
+                original = path.read_bytes()
+                path.write_bytes(b"substituted after qualification\n")
+                write_checksums(self.directory)
+                with self.assertRaisesRegex(ValueError, "both exact native"):
+                    module.freeze(self.directory, smokes, personal=receipts, **candidate)
+                path.write_bytes(original)
 
     def test_personal_build_can_start_after_dual_database_but_final_freeze_requires_sources(self):
         import yaml
-        from pathlib import Path
 
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/release-images.yml"
         jobs = yaml.safe_load(workflow.read_text())["jobs"]

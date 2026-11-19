@@ -9,6 +9,8 @@ import re
 from pathlib import Path
 import tarfile
 
+import windows_release_cli
+
 from product_registry import product_image_repositories, validate_data_backend_mirror
 from release_plan import IMAGES, require_digest
 from release_reuse import validate_build
@@ -72,10 +74,11 @@ def release_asset_names(manifest, *, base_only=False):
     personal = manifest.get("personal_edition", False)
     if type(personal) is not bool or (personal and manifest.get("channel") != "daily"):
         raise ValueError("Personal Edition requires a Daily manifest")
-    return RELEASE_ASSETS | (PERSONAL_ASSETS if personal and not base_only else set())
+    windows = {windows_release_cli.ASSET} if windows_release_cli.included(manifest) else set()
+    return RELEASE_ASSETS | windows | (PERSONAL_ASSETS if personal and not base_only else set())
 
 
-def assemble(directory, image_refs, *, source_sha, build_id, repository):
+def assemble(directory, image_refs, *, source_sha, build_id, repository, require_windows=False):
     repositories = product_image_repositories(repository)
     plan = json.loads((directory / "release-plan.json").read_text())
     if plan["source_sha"] != source_sha or plan["build_id"] != build_id:
@@ -89,6 +92,8 @@ def assemble(directory, image_refs, *, source_sha, build_id, repository):
         "component-plan.json",
         "data-backend-mirror.json",
     }
+    if require_windows:
+        expected.add(windows_release_cli.ASSET)
     mirror_path = directory / "data-backend-mirror.json"
     if {path.name for path in directory.iterdir()} != expected:
         raise ValueError(
@@ -101,6 +106,8 @@ def assemble(directory, image_refs, *, source_sha, build_id, repository):
             with tarfile.open(directory / name, "r:gz") as archive:
                 if not archive.getmembers():
                     raise ValueError(f"empty archive: {name}")
+    if require_windows:
+        windows_release_cli.verify_zip(directory / windows_release_cli.ASSET)
     images = {
         name: require_digest((image_refs / f"{name}.txt").read_text().strip())
         for name in IMAGES
@@ -144,6 +151,8 @@ def assemble(directory, image_refs, *, source_sha, build_id, repository):
         "required_artifact_smoke": ["linux/amd64/oceanbase", "linux/amd64/seekdb"],
         "workflow_url": f"https://github.com/{repository}/actions/runs/{build_id.split('.')[0]}/attempts/{build_id.split('.')[1]}",
     }
+    if require_windows:
+        manifest["cli_platforms"] = windows_release_cli.PLATFORMS
     if plan.get("personal_edition", False):
         manifest["personal_edition"] = True
     release_asset_names(manifest, base_only=True)
@@ -179,6 +188,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--image-refs", type=Path, required=True)
+    parser.add_argument("--require-windows", action="store_true")
     args = parser.parse_args()
     assemble(
         args.directory,
@@ -186,6 +196,7 @@ def main():
         source_sha=os.environ["GITHUB_SHA"],
         build_id=f"{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}",
         repository=os.environ["GITHUB_REPOSITORY"],
+        require_windows=args.require_windows,
     )
 
 

@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strings"
 	"time"
 
@@ -141,7 +142,7 @@ func Logout(profile string) (name, shellRC string, err error) {
 		if err := cfg.Save(); err != nil {
 			return err
 		}
-		if active {
+		if active && runtime.GOOS != "windows" {
 			if p, ok := cfg.Get(""); ok {
 				return config.WriteEnvFile(cfg.Active(), p)
 			}

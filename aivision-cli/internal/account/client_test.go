@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -156,7 +157,7 @@ func TestRegisterRefreshLogoutAndPermissions(t *testing.T) {
 		t.Fatal("password written to disk")
 	}
 	stat, _ := os.Stat(config.Path())
-	if stat.Mode().Perm() != 0600 {
+	if runtime.GOOS != "windows" && stat.Mode().Perm() != 0600 {
 		t.Fatal("config not private")
 	}
 	if err := c.Logout(context.Background()); err != nil {
