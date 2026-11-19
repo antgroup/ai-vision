@@ -4,6 +4,7 @@
 package confighttp // import "go.opentelemetry.io/collector/config/confighttp"
 
 import (
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -22,13 +23,14 @@ import (
 	"go.opentelemetry.io/collector/config/configauth"
 	"go.opentelemetry.io/collector/config/configcompression"
 	"go.opentelemetry.io/collector/config/configopaque"
+	"go.opentelemetry.io/collector/config/configtelemetry"
 	"go.opentelemetry.io/collector/config/configtls"
 	"go.opentelemetry.io/collector/config/internal"
 	"go.opentelemetry.io/collector/extension/auth"
 )
 
 const headerContentEncoding = "Content-Encoding"
-const defaultMaxRequestBodySize = 20 * 1024 * 1024
+const defaultMaxRequestBodySize = 20 * 1024 * 1024 // 20MiB
 
 // ClientConfig defines settings for creating an HTTP client.
 type ClientConfig struct {
@@ -116,8 +118,8 @@ func NewDefaultClientConfig() ClientConfig {
 }
 
 // ToClient creates an HTTP client.
-func (hcs *ClientConfig) ToClient(host component.Host, settings component.TelemetrySettings) (*http.Client, error) {
-	tlsCfg, err := hcs.TLSSetting.LoadTLSConfig()
+func (hcs *ClientConfig) ToClient(ctx context.Context, host component.Host, settings component.TelemetrySettings) (*http.Client, error) {
+	tlsCfg, err := hcs.TLSSetting.LoadTLSConfig(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -206,14 +208,17 @@ func (hcs *ClientConfig) ToClient(host component.Host, settings component.Teleme
 		}
 	}
 
+	otelOpts := []otelhttp.Option{
+		otelhttp.WithTracerProvider(settings.TracerProvider),
+		otelhttp.WithPropagators(otel.GetTextMapPropagator()),
+	}
+	if settings.MetricsLevel >= configtelemetry.LevelDetailed {
+		otelOpts = append(otelOpts, otelhttp.WithMeterProvider(settings.MeterProvider))
+	}
+
 	// wrapping http transport with otelhttp transport to enable otel instrumentation
 	if settings.TracerProvider != nil && settings.MeterProvider != nil {
-		clientTransport = otelhttp.NewTransport(
-			clientTransport,
-			otelhttp.WithTracerProvider(settings.TracerProvider),
-			otelhttp.WithMeterProvider(settings.MeterProvider),
-			otelhttp.WithPropagators(otel.GetTextMapPropagator()),
-		)
+		clientTransport = otelhttp.NewTransport(clientTransport, otelOpts...)
 	}
 
 	if hcs.CustomRoundTripper != nil {
@@ -265,7 +270,7 @@ type ServerConfig struct {
 	// Auth for this receiver
 	Auth *configauth.Authentication `mapstructure:"auth"`
 
-	// MaxRequestBodySize sets the maximum request body size in bytes. Default: 20 MiB.
+	// MaxRequestBodySize sets the maximum request body size in bytes. Default: 20MiB.
 	MaxRequestBodySize int64 `mapstructure:"max_request_body_size"`
 
 	// IncludeMetadata propagates the client metadata from the incoming requests to the downstream consumers
@@ -278,7 +283,7 @@ type ServerConfig struct {
 }
 
 // ToListener creates a net.Listener.
-func (hss *ServerConfig) ToListener() (net.Listener, error) {
+func (hss *ServerConfig) ToListener(ctx context.Context) (net.Listener, error) {
 	listener, err := net.Listen("tcp", hss.Endpoint)
 	if err != nil {
 		return nil, err
@@ -286,13 +291,14 @@ func (hss *ServerConfig) ToListener() (net.Listener, error) {
 
 	if hss.TLSSetting != nil {
 		var tlsCfg *tls.Config
-		tlsCfg, err = hss.TLSSetting.LoadTLSConfig()
+		tlsCfg, err = hss.TLSSetting.LoadTLSConfig(ctx)
 		if err != nil {
 			return nil, err
 		}
 		tlsCfg.NextProtos = []string{http2.NextProtoTLS, "http/1.1"}
 		listener = tls.NewListener(listener, tlsCfg)
 	}
+
 	return listener, nil
 }
 
@@ -327,7 +333,7 @@ func WithDecoder(key string, dec func(body io.ReadCloser) (io.ReadCloser, error)
 }
 
 // ToServer creates an http.Server from settings object.
-func (hss *ServerConfig) ToServer(host component.Host, settings component.TelemetrySettings, handler http.Handler, opts ...ToServerOption) (*http.Server, error) {
+func (hss *ServerConfig) ToServer(_ context.Context, host component.Host, settings component.TelemetrySettings, handler http.Handler, opts ...ToServerOption) (*http.Server, error) {
 	internal.WarnOnUnspecifiedHost(settings.Logger, hss.Endpoint)
 
 	serverOpts := &toServerOptions{}
@@ -335,12 +341,15 @@ func (hss *ServerConfig) ToServer(host component.Host, settings component.Teleme
 		o(serverOpts)
 	}
 
-	maxBodySize := hss.MaxRequestBodySize
-	if maxBodySize <= 0 {
-		maxBodySize = defaultMaxRequestBodySize
+	if hss.MaxRequestBodySize <= 0 {
+		hss.MaxRequestBodySize = defaultMaxRequestBodySize
 	}
-	handler = httpContentDecompressor(handler, maxBodySize, serverOpts.errHandler, serverOpts.decoders)
-	handler = maxRequestBodySizeInterceptor(handler, maxBodySize)
+
+	handler = httpContentDecompressor(handler, hss.MaxRequestBodySize, serverOpts.errHandler, serverOpts.decoders)
+
+	if hss.MaxRequestBodySize > 0 {
+		handler = maxRequestBodySizeInterceptor(handler, hss.MaxRequestBodySize)
+	}
 
 	if hss.Auth != nil {
 		server, err := hss.Auth.GetServerAuthenticator(host.GetExtensions())
@@ -368,18 +377,20 @@ func (hss *ServerConfig) ToServer(host component.Host, settings component.Teleme
 		handler = responseHeadersHandler(handler, hss.ResponseHeaders)
 	}
 
-	// Enable OpenTelemetry observability plugin.
-	// TODO: Consider to use component ID string as prefix for all the operations.
-	handler = otelhttp.NewHandler(
-		handler,
-		"",
+	otelOpts := []otelhttp.Option{
 		otelhttp.WithTracerProvider(settings.TracerProvider),
-		otelhttp.WithMeterProvider(settings.MeterProvider),
 		otelhttp.WithPropagators(otel.GetTextMapPropagator()),
 		otelhttp.WithSpanNameFormatter(func(_ string, r *http.Request) string {
 			return r.URL.Path
 		}),
-	)
+	}
+	if settings.MetricsLevel >= configtelemetry.LevelDetailed {
+		otelOpts = append(otelOpts, otelhttp.WithMeterProvider(settings.MeterProvider))
+	}
+
+	// Enable OpenTelemetry observability plugin.
+	// TODO: Consider to use component ID string as prefix for all the operations.
+	handler = otelhttp.NewHandler(handler, "", otelOpts...)
 
 	// wrap the current handler in an interceptor that will add client.Info to the request's context
 	handler = &clientInfoHandler{

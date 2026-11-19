@@ -13,7 +13,7 @@ import (
 
 func TestTableMetricWireAndCopy(t *testing.T) {
 	const payload = `{"resourceMetrics":[{"scopeMetrics":[{"metrics":[
-		{"name":"table","table":{"dataRows":[{
+		{"name":"table","metadata":[{"key":"source","value":{"stringValue":"fixture"}}],"table":{"dataRows":[{
 			"startTimeUnixNano":"12","timeUnixNano":"34","flags":1,
 			"attributes":[{"key":"zone","value":{"stringValue":"test"}}],
 			"valueMap":[{"key":"requests","value":{"intValue":"5"}}],
@@ -31,7 +31,11 @@ func TestTableMetricWireAndCopy(t *testing.T) {
 	require.NoError(t, err)
 	var standard otlpmetrics.ExportMetricsServiceRequest
 	require.NoError(t, proto.Unmarshal(wire, &standard))
-	unknown := standard.ResourceMetrics[0].ScopeMetrics[0].Metrics[0].ProtoReflect().GetUnknown()
+	standardMetric := standard.ResourceMetrics[0].ScopeMetrics[0].Metrics[0]
+	require.Len(t, standardMetric.GetMetadata(), 1)
+	require.Equal(t, "source", standardMetric.GetMetadata()[0].GetKey())
+	require.Equal(t, "fixture", standardMetric.GetMetadata()[0].GetValue().GetStringValue())
+	unknown := standardMetric.ProtoReflect().GetUnknown()
 	field, wireType, tagLength := protowire.ConsumeTag(unknown)
 	require.Positive(t, tagLength)
 	require.Equal(t, protowire.Number(13), field)
@@ -63,6 +67,9 @@ func assertTableRow(t *testing.T, metrics pmetric.Metrics) {
 	samples := metrics.ResourceMetrics().At(0).ScopeMetrics().At(0).Metrics()
 	require.Equal(t, pmetric.MetricTypeGauge, samples.At(1).Type())
 	require.Equal(t, pmetric.MetricTypeTable, samples.At(0).Type())
+	source, present := samples.At(0).Metadata().Get("source")
+	require.True(t, present)
+	require.Equal(t, "fixture", source.Str())
 	rows := samples.At(0).Table().DataRows()
 	require.Equal(t, 1, rows.Len())
 	row := rows.At(0)

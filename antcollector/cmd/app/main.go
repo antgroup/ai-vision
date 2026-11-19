@@ -36,7 +36,7 @@ func main() {
 	settings := otelcol.CollectorSettings{
 		Factories: components,
 		BuildInfo: component.BuildInfo{
-			Command: "otelcorecol", Description: "AI Vision SigNoz OTLP gateway", Version: "0.96.0-dev",
+			Command: "otelcorecol", Description: "AI Vision SigNoz OTLP gateway", Version: "0.102.1-dev",
 		},
 	}
 	if err := otelcol.NewCommand(settings).Execute(); err != nil {

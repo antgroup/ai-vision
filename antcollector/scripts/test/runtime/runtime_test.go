@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"aivision/collector/pkg/ingestidentity"
+	_ "go.opentelemetry.io/collector/config/configgrpc" // Register the production compression codecs.
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/plog/plogotlp"
 	"go.opentelemetry.io/collector/pdata/pmetric/pmetricotlp"
@@ -36,9 +37,61 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
+
+func TestZstdReaderClosesAfterPartialRead(t *testing.T) {
+	codec := encoding.GetCompressor("zstd")
+	if codec == nil {
+		t.Fatal("gateway Zstd codec is unavailable")
+	}
+	message := []byte("collector trace fixture")
+	var frame bytes.Buffer
+	writer, err := codec.Compress(&frame)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = writer.Write(message); err != nil {
+		t.Fatal(err)
+	}
+	if err = writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	first, err := codec.Decompress(bytes.NewReader(frame.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	closer, ok := first.(io.Closer)
+	if !ok {
+		t.Fatal("gRPC must be able to release the decoder before EOF")
+	}
+	t.Cleanup(func() { _ = closer.Close() })
+	var prefix [1]byte
+	if _, err = io.ReadFull(first, prefix[:]); err != nil || prefix[0] != message[0] {
+		t.Fatalf("could not read the message prefix: %v", err)
+	}
+	if err = closer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	second, err := codec.Decompress(bytes.NewReader(frame.Bytes()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	secondCloser, ok := second.(io.Closer)
+	if !ok {
+		t.Fatal("second decoder is missing its close method")
+	}
+	t.Cleanup(func() { _ = secondCloser.Close() })
+	if err = closer.Close(); err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := io.ReadAll(second)
+	if err != nil || !bytes.Equal(decoded, message) {
+		t.Fatalf("subsequent request did not decode correctly: %v", err)
+	}
+}
 
 // Requires Linux and a local Docker engine (the stub binds the bridge gateway).
 // Run against a built image without contacting a deployed backend or SigNoz:
@@ -228,8 +281,9 @@ func TestImageGateway(t *testing.T) {
 	}
 	badSignature := validToken[:signatureStart] + replacement + validToken[signatureStart+1:]
 	invalidTokens := []string{"", "Bearer invalid", badSignature, signToken(time.Now().Add(-time.Minute).Unix())}
+	protocols := []string{"http", "grpc", "grpc-zstd"}
 	for _, signal := range []string{"traces", "logs", "metrics"} {
-		for _, protocol := range []string{"http", "grpc"} {
+		for _, protocol := range protocols {
 			t.Run(protocol+"/"+signal, func(t *testing.T) {
 				body, export := request(signal, protocol, conn)
 				for _, token := range append(invalidTokens, validToken) {
@@ -260,7 +314,7 @@ func TestImageGateway(t *testing.T) {
 	}
 	want := map[string]bool{}
 	for _, signal := range []string{"traces", "logs", "metrics"} {
-		for _, protocol := range []string{"http", "grpc"} {
+		for _, protocol := range protocols {
 			want["/v1/"+signal+":"+protocol] = true
 		}
 	}
@@ -347,6 +401,10 @@ func signToken(exp int64) string {
 }
 
 func request(signal, marker string, conn *grpc.ClientConn) ([]byte, func(context.Context) error) {
+	var options []grpc.CallOption
+	if marker == "grpc-zstd" {
+		options = append(options, grpc.UseCompressor("zstd"))
+	}
 	spoof := func(attrs pcommon.Map) {
 		attrs.PutStr("smoke.case", marker)
 		attrs.PutStr("space.id", "untrusted-space")
@@ -364,14 +422,20 @@ func request(signal, marker string, conn *grpc.ClientConn) ([]byte, func(context
 		span.SetTraceID(pcommon.TraceID{1})
 		span.SetSpanID(pcommon.SpanID{1})
 		body, _ := req.MarshalProto()
-		return body, func(ctx context.Context) error { _, err := ptraceotlp.NewGRPCClient(conn).Export(ctx, req); return err }
+		return body, func(ctx context.Context) error {
+			_, err := ptraceotlp.NewGRPCClient(conn).Export(ctx, req, options...)
+			return err
+		}
 	case "logs":
 		req := plogotlp.NewExportRequest()
 		resource := req.Logs().ResourceLogs().AppendEmpty()
 		spoof(resource.Resource().Attributes())
 		resource.ScopeLogs().AppendEmpty().LogRecords().AppendEmpty().Body().SetStr("runtime-smoke")
 		body, _ := req.MarshalProto()
-		return body, func(ctx context.Context) error { _, err := plogotlp.NewGRPCClient(conn).Export(ctx, req); return err }
+		return body, func(ctx context.Context) error {
+			_, err := plogotlp.NewGRPCClient(conn).Export(ctx, req, options...)
+			return err
+		}
 	default:
 		req := pmetricotlp.NewExportRequest()
 		resource := req.Metrics().ResourceMetrics().AppendEmpty()
@@ -381,7 +445,7 @@ func request(signal, marker string, conn *grpc.ClientConn) ([]byte, func(context
 		metric.SetEmptyGauge().DataPoints().AppendEmpty().SetIntValue(1)
 		body, _ := req.MarshalProto()
 		return body, func(ctx context.Context) error {
-			_, err := pmetricotlp.NewGRPCClient(conn).Export(ctx, req)
+			_, err := pmetricotlp.NewGRPCClient(conn).Export(ctx, req, options...)
 			return err
 		}
 	}
