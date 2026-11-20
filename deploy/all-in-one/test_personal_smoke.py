@@ -1,7 +1,9 @@
 """Check the artifact and readback identities that qualify personal edition smoke."""
 
+from contextlib import redirect_stdout
 import gzip
 import hashlib
+from io import StringIO
 import json
 from pathlib import Path
 import shutil
@@ -10,7 +12,7 @@ from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
 
-from sample_trace import prepare_demo, trace_complete
+from sample_trace import Platform, main as sample_main, prepare_demo, trace_complete
 from smoke import QualificationError, inspect, read_candidate, read_diagnosis, require_archive_parity
 
 
@@ -119,6 +121,38 @@ class DockerResourceTests(unittest.TestCase):
 
 
 class ReadbackTests(unittest.TestCase):
+    @patch("sample_trace.Platform")
+    @patch("sample_trace.getpass.getpass", return_value="sample password")
+    @patch("sample_trace.sys.stdin.isatty", return_value=True)
+    @patch("builtins.input", side_effect=("y", "sample@example.invalid"))
+    def test_sample_command_uses_the_personal_space_without_team_ownership(
+        self, _input, _isatty, _password, platform,
+    ):
+        space_id, trace_id = "a" * 32, "b" * 32
+        agent_id = "12345678-1234-1234-1234-1234567890ab"
+        demo = {
+            "agent_uuid": agent_id, "agent_product": "custom",
+            "diagnoser_uuid": "dg-a1b2c3d4", "trace_id": trace_id,
+            "comparison_trace_id": "c" * 32, "span_count": 1,
+        }
+        client = platform.return_value
+        client.origin = Platform(5174).origin
+        client.api.side_effect = [
+            {"items": [
+                {"type": 1, "space_id": space_id, "is_owner": False},
+                {"type": 2, "space_id": "d" * 32, "is_owner": True},
+            ]},
+            demo,
+            {"traceId": trace_id, "meta": {"complete": True, "expectedSpanCount": 1},
+             "spans": [{"trace_id": trace_id, "span_id": "e" * 16}]},
+        ]
+        output = StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(sample_main([]), 0)
+        self.assertEqual(client.api.call_args_list[1].args, (f"/spaces/{space_id}/onboarding/demo",))
+        self.assertIn(f"/trace?spaceId={space_id}&agent=custom&agent_uuid={agent_id}&traceId={trace_id}",
+                      output.getvalue())
+
     def test_demo_accepts_the_product_rule_identity(self):
         client = Mock()
         receipt = {

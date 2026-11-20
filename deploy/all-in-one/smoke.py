@@ -11,14 +11,17 @@ from pathlib import Path
 import platform
 import re
 import secrets
+import selectors
+import signal
 import socket
 import subprocess
 import sys
 from tempfile import TemporaryDirectory
 import time
 import uuid
+from urllib.parse import parse_qs, urlsplit
 
-from sample_trace import DemoError, Platform, prepare_demo, resource_id, wait_for_trace
+from sample_trace import DemoError, Platform, prepare_demo, resource_id, trace_complete, wait_for_trace
 
 
 MANIFESTS = {"amd64": "all-in-one-manifest.json", "arm64": "all-in-one-manifest-arm64.json"}
@@ -216,6 +219,57 @@ def verify_running(name, manifest, web, otlp):
     return inspect("container", name, ".Id")
 
 
+def run_sample_trace(directory, name, email, password):
+    """Drive the packaged interactive command without writing credentials to CI logs."""
+    args = [
+        sys.executable, str(directory / "install-all-in-one.py"), "--from-dir", str(directory),
+        "--name", name, "--sample-trace",
+    ]
+    replies = iter((
+        (b"Import the example [y/N]? ", "y"),
+        (b"AI Vision email: ", email),
+        (b"AI Vision password: ", password),
+    ))
+    pending = next(replies, None)
+    output = bytearray()
+    deadline = time.monotonic() + 240
+    master, slave = os.openpty()
+    with os.fdopen(master, "wb", buffering=0) as terminal, os.fdopen(slave, "rb", buffering=0) as stdin:
+        with subprocess.Popen(
+            args, stdin=stdin, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True,
+            env={**os.environ, "PYTHONUNBUFFERED": "1"},
+        ) as process:
+            try:
+                with selectors.DefaultSelector() as selector:
+                    selector.register(process.stdout, selectors.EVENT_READ)
+                    while selector.select(max(0, deadline - time.monotonic())):
+                        chunk = os.read(process.stdout.fileno(), 4096)
+                        if not chunk:
+                            break
+                        output.extend(chunk)
+                        require(len(output) <= 16384, "The sample command produced unexpected terminal output.")
+                        if pending is not None and pending[0] in output:
+                            terminal.write((pending[1] + "\n").encode("utf-8"))
+                            pending = next(replies, None)
+                    else:
+                        raise QualificationError("The packaged sample command timed out.")
+                status = process.wait(timeout=max(0, deadline - time.monotonic()))
+                require(status == 0, f"The packaged sample command exited with status {status}.")
+                require(pending is None, "The packaged sample command did not request consent and credentials.")
+            finally:
+                if process.poll() is None:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+
+    lines = output.decode("utf-8", errors="replace").splitlines()
+    marker = "Open the synthetic sample in your signed-in browser:"
+    links = [lines[index + 1] for index in range(len(lines) - 1) if lines[index] == marker]
+    require(len(links) == 1, "The packaged sample command did not print one Trace link.")
+    return urlsplit(links[0])
+
+
 def start_diagnosis(client, space_id, demo):
     scope = f"/spaces/{space_id}/diagnose"
     body = {
@@ -321,8 +375,33 @@ def qualify(directory, name, manifest, entries):
         require(client.login(email, password).get("user_uuid") == user_id,
                 "Could not authenticate the newly registered account.")
 
-        print("Importing the product Quickstart sample and verifying its trace and rule result.", flush=True)
+        agents = f"/spaces/{space_id}/agents"
+        require(client.api(agents) == [], "The new account's personal space already has an Agent.")
+        print("Importing the Quickstart sample through the packaged --sample-trace command.", flush=True)
+        link = run_sample_trace(directory, name, email, password)
+        params = parse_qs(link.query, strict_parsing=True)
+        require(link.scheme == "http" and link.netloc == f"127.0.0.1:{web}" and link.path == "/trace"
+                and not link.fragment and params.get("spaceId") == [space_id]
+                and params.get("source_system") == ["signoz"],
+                "The sample command linked to a different host or personal space.")
+        imported = client.api(agents)
+        require(len(imported) == 1 and params.get("agent_uuid") == [imported[0]["agent_uuid"]]
+                and params.get("agent") == [imported[0]["agent_product"]],
+                "The sample command did not import the linked Agent into the personal space.")
+        trace_ids = params.get("traceId", [])
+        require(len(trace_ids) == 1 and re.fullmatch(r"[0-9a-f]{32}", trace_ids[0]),
+                "The sample command linked to an invalid Trace.")
+        trace_id = trace_ids[0]
+        detail = client.api(f"/spaces/{space_id}/signoz/trace/{trace_id}/detail", params={
+            "agent_uuid": imported[0]["agent_uuid"], "agent_product": imported[0]["agent_product"], "detail": "1",
+        })
+        require(detail and trace_complete(detail, trace_id, (detail.get("meta") or {}).get("expectedSpanCount")),
+                "The Trace linked by the sample command was not complete.")
+
+        # The API reuses the imported example and returns the full receipt for rule diagnosis and persistence.
         demo = prepare_demo(client, space_id)
+        require(trace_id == demo["trace_id"] and imported[0]["agent_uuid"] == demo["agent_uuid"],
+                "The sample command did not link to the expected example.")
         wait_for_trace(client, space_id, demo)
         wait_for_trace(client, space_id, demo, comparison=True)
         receipt = start_diagnosis(client, space_id, demo)
@@ -382,7 +461,7 @@ def main(argv=None):
         parser.exit(1, f"All-in-One smoke: {error}\n")
     except (AttributeError, KeyError, OSError, TypeError, ValueError, subprocess.TimeoutExpired) as error:
         parser.exit(1, f"All-in-One smoke: {type(error).__name__}.\n")
-    print("All-in-One candidate passed signup, sample, diagnosis, shutdown and volume recreation.")
+    print("All-in-One candidate passed signup, packaged sample command, diagnosis, shutdown and volume recreation.")
     return 0
 
 
