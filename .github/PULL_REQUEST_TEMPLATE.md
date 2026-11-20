@@ -1,4 +1,6 @@
 <!--
+Before submitting, check the source branch and PR title against CONTRIBUTING.md.
+Example: branch cicd/check-pr-names, title "ci: Check Gitflow branch names and PR titles".
 Keep the four headings below and replace the prompts with evidence. A small change can use one sentence per section.
 Review pasted text and attachments for credentials, private URLs, and customer data.
 -->

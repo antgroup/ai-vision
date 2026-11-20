@@ -10,7 +10,7 @@ Core maintainers from Ant Group and OceanBase lead AI Vision's initial open-sour
 | RFC 0002 | [Versioning, Branches, and the Initial Release Plan](0002-versioning-and-releases.md) | `draft` | `in_progress` |
 | RFC 0003 | [RFC and Architecture Decision Record Process](0003-rfc-and-adr-process.md) | `draft` | `in_progress` |
 
-Each RFC still requires its own acceptance decision. Approval and merge of the governance PR can put the working agreement in `GOVERNANCE.md` into effect without automatically approving these proposals. Partial implementation of RFC 0001 refers to the contribution guide, PR template, and bootstrap governance document. RFC 0002 provides unified versioning, the version page, test tiers, and daily/candidate workflows; Gitflow, remote release setup, and hosted acceptance remain pending. RFC 0003 has authoring aids and a scoped ADR CI check; its process remains a proposal awaiting adoption.
+Each RFC still requires its own acceptance decision. Approval and merge of the governance PR can put the working agreement in `GOVERNANCE.md` into effect without automatically approving these proposals. Partial implementation of RFC 0001 refers to the contribution guide, PR template, and bootstrap governance document. RFC 0002 provides unified versioning, the version page, test tiers, Daily/candidate workflows, and Gitflow naming checks. The migration to protected `main` and `develop`, the change to the Daily source branch, and stable release setup remain separate. RFC 0003 has authoring aids and a scoped ADR CI check; its process remains a proposal awaiting adoption.
 
 ## How to use these records
 

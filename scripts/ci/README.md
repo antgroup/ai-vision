@@ -2,17 +2,17 @@
 
 During project bootstrap, use ordinary Markdown to record validation and screenshots. The [PR template](../../.github/PULL_REQUEST_TEMPLATE.md) has four required level-two headings: `Problem and impact`, `Validation`, `Screenshots and interaction`, and `Compatibility and unverified scope`. Fill each section with actual information. Documentation-only changes can record link and diff checks; explain when there is no visual impact.
 
-[pr-evidence.yml](../../.github/workflows/pr-evidence.yml) only checks that these four sections exist once and contain more than whitespace, comments, or template placeholders. Results appear in the job and Actions summary. A passing check means the material has been filled in; it does not authenticate the tested SHA, test execution, screenshots, or business behavior. No JSON declaration, run/job ID, or Git tree fingerprint is required. See the [contribution guide](../../CONTRIBUTING.md) for evidence requirements.
-
-Authors record the actual tested commit and environment. For a dirty worktree, record the baseline and a reviewable diff, then manually confirm which results apply after committing. Keep the actual source identity with screenshots, recordings, and command output. Report failures, checks that were not run, and environment limitations honestly; do not relabel them as passing. Maintainers use the diff to assess whether validation is sufficient.
+[pr-evidence.yml](../../.github/workflows/pr-evidence.yml) checks the [Gitflow branch and PR title convention](../../CONTRIBUTING.md#name-the-branch-and-pr) and checks that each of the four body sections appears once with actual content. Results appear in the `PR material completeness` job and Actions summary. No JSON declaration, run/job ID, or Git tree fingerprint is required. Maintainers assess the diff and verify that the evidence covers the tested SHA, environment, and behavior. Include failures, unrun checks, and environment limits in the PR.
 
 ## Security and initial setup
 
-The workflow uses `pull_request` with only `contents: read`. It does not request project secrets or write commit statuses. It checks out the event's `base.sha` and runs only the checker already present in the target branch. The PR body is read as data from `GITHUB_EVENT_PATH`: it is not interpolated into shell commands, its commands are not executed, and attachments are not downloaded. Fork PRs follow GitHub's approval and read-only permission rules.
+The workflow runs on `pull_request` with only `contents: read`. It checks out the event's `base.sha` and runs the checker already present in that target revision. It reads the title, branch and body as data from `GITHUB_EVENT_PATH`. It does not interpolate PR content into shell commands, execute body commands, or download attachments. Fork PRs follow GitHub's approval and read-only permission rules.
 
-For the first PR introducing this workflow, the target branch has no checker. The job displays a bootstrap notice and skips automatic validation. **A completed bootstrap job does not mean the material check passed.** Maintainers must review the evidence, checker, and local tests manually. After merging, verify success with a completed PR body and failure with an empty template, then verify body edits and fork behavior. Do not make this a required check before those hosted checks have run. For a PR changing the checker, the body job uses the target branch's rules. The metadata CI suite and local tests exercise the candidate implementation.
+If the base does not yet contain a checker, the job displays a bootstrap notice and skips validation. A PR changing the checker runs the old policy in this job; exercise the new policy in the metadata CI suite or locally. After the policy reaches the target branch, verify with a compliant PR, a bad branch or title, a corrected title or body on the same commit, and a fork PR before making the check required on a protected branch.
 
-The `edited` event checks a new snapshot of the body. Body edits do not trigger the separate code CI workflow described below. This check does not provide atomic consistency between body edits, base updates, and merging. Automated edits made with the repository's `GITHUB_TOKEN` may not trigger a new workflow. Maintainers must still review the current body and applicable checks before merging. This implementation does not configure remote branch protection or required checks.
+A title or body edit triggers the metadata check without triggering the separate source CI workflow. Results apply to the event snapshot. Automated edits made with the repository's `GITHUB_TOKEN` may not trigger a new run, so review the current title, source branch, body, and checks before merging.
+
+The workflow checks PR metadata. It does not restrict branch creation or pushes, enforce protections or approvals, verify branch ancestry, or configure merge methods. Ordinary PRs still use the default branch unless a maintainer directs them elsewhere. Special release, hotfix, and backmerge routes have repository and target checks; the migration to `develop` for ordinary PRs and Daily builds remains separate.
 
 ## Local validation
 
@@ -21,11 +21,12 @@ Use Python 3.12 and install PyYAML 6.0.3 in your validation environment; the wor
 ```bash
 python3 -m pip install PyYAML==6.0.3
 python3 -m unittest discover -s scripts/ci -p 'test_*.py' -v
-python3 scripts/ci/pr_evidence.py --body-file /tmp/pr.md
+python3 scripts/ci/pr_evidence.py --body-file /tmp/pr.md \
+  --branch cicd/check-pr-names --title "ci: Check Gitflow branch names and PR titles"
 python3 scripts/ci/pr_evidence.py --event /tmp/pr-event.json --summary /tmp/pr-summary.md
 ```
 
-Use `--body-file` to check the exact Markdown before submission. Both entry points use the same checker. The event file only needs `{"pull_request":{"body":"Complete PR Markdown body"}}`. Output contains fixed diagnostics; it does not echo the body, links, or commands.
+Use `--body-file` alone for a body-only preflight, or supply `--branch` and `--title` together to check an ordinary PR's names as well. Use `--event` for the full policy, including release and bot context. Use a GitHub PR event payload for that mode. Output contains fixed diagnostics and does not echo PR text or branch names.
 
 ## Test tiers
 
