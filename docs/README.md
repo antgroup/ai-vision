@@ -36,3 +36,5 @@ Complete instructions for installation, onboarding, manual deployment, diagnosis
 - Maintain complete user tutorials and illustrations on the documentation site. This repository retains entry points, version differences, and maintenance boundaries.
 - If an index, design document, and implementation disagree, check the source and tests and explain the difference. Historical proposals are not automatically current behavior.
 - When a change affects external usage, also check the corresponding documentation site pages. For capabilities that have not been released, retain an explicit source-version entry point, such as the [seekdb deployment instructions](../aivision-cli/README.md#choose-the-docker-datastore).
+
+<!-- Temporary Gitflow naming probe. Do not merge. -->
