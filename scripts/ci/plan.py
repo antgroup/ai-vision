@@ -280,9 +280,8 @@ def make_plan(
                 "LICENSE",
                 "NOTICE",
                 ".github/CODEOWNERS",
-            ) or path.startswith("website/"):
-                # The website has its own deployment workflow; these paths do
-                # not change the platform. Metadata checks still run.
+            ):
+                # These paths do not change the platform. Metadata checks still run.
                 continue
             else:
                 all_checks("Unclassified runtime path")
