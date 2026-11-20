@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      # Read the policy already in the target branch. PR text stays in the event
+      # Read the policy already in the target branch. PR metadata stays in the event
       # JSON; no head code, dependencies, attachments, or body commands are run.
       - name: Check out target-branch policy
         uses: actions/checkout@v4
@@ -32,13 +32,13 @@ jobs:
             echo 'available=true' >> "$GITHUB_OUTPUT"
           else
             echo 'available=false' >> "$GITHUB_OUTPUT"
-            echo '::notice::Bootstrap: target branch has no PR checker. Maintainer review is required; no material validation was performed.'
+            echo '::notice::Bootstrap: target branch has no PR checker. Maintainer review is required; no naming or material validation was performed.'
             cat >> "$GITHUB_STEP_SUMMARY" <<'EOF'
-          ## PR material check: not run
+          ## PR naming and material check: not run
 
-          The target branch does not have the checker yet. Maintainers must manually review this PR's evidence and implementation. A completed bootstrap job does not mean the material check passed and is not sufficient to enable a required check.
+          The target branch does not have the checker yet. Maintainers must manually review this PR's evidence and implementation. A completed bootstrap job does not mean naming or materials passed validation and is not sufficient to enable a required check.
           EOF
           fi
-      - name: Check event-body completeness
+      - name: Check PR naming and material completeness
         if: steps.policy.outputs.available == 'true'
         run: python3 scripts/ci/pr_evidence.py --event "$GITHUB_EVENT_PATH" --summary "$GITHUB_STEP_SUMMARY"

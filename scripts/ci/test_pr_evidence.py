@@ -23,7 +23,7 @@ No database migration. Linux and released artifacts are unverified and need chec
 
 
 class EvidenceTests(unittest.TestCase):
-    def check(self, body, *, body_file=False):
+    def check(self, body, *, body_file=False, metadata=None, extra_args=()):
         with tempfile.TemporaryDirectory() as directory:
             summary = Path(directory) / 'summary.md'
             if body_file:
@@ -32,10 +32,17 @@ class EvidenceTests(unittest.TestCase):
                 mode = '--body-file'
             else:
                 input_file = Path(directory) / 'event.json'
-                input_file.write_text(json.dumps({'pull_request': {'body': body}}))
+                pull_request = {
+                    'body': body, 'title': 'fix(cli): Report missing stable versions',
+                    'head': {'ref': 'fix/stable-version', 'repo': {'id': 2}},
+                    'base': {'ref': 'ci', 'repo': {'id': 1}},
+                    'user': {'login': 'contributor', 'type': 'User'},
+                }
+                pull_request.update(metadata or {})
+                input_file.write_text(json.dumps({'pull_request': pull_request}))
                 mode = '--event'
             result = subprocess.run(
-                [sys.executable, str(SCRIPT), mode, str(input_file), '--summary', str(summary)],
+                [sys.executable, str(SCRIPT), mode, str(input_file), '--summary', str(summary), *extra_args],
                 text=True, capture_output=True, check=False,
             )
             return result, summary.read_text() if summary.exists() else ''
@@ -45,6 +52,56 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn('manual review', summary)
         self.assertNotIn('36 passed', summary)
+
+    def test_generated_names_and_untyped_titles_fail_independently(self):
+        for branch, title, expected in (
+            ('codex/stable-version', 'fix: Report missing versions', 'Branch name'),
+            ('fix/stable-version', 'Report missing versions', 'PR title'),
+            ('feature/cli-oauth', 'docs: Explain OAuth', 'match the branch prefix'),
+            ('ci/stable-version', 'ci: Update checks', 'Branch name'),
+            ('fix/a/b', 'fix: Report missing versions', 'Branch name'),
+            ('fix/Upper_case', 'fix: Report missing versions', 'Branch name'),
+            ('fix/stable-version', 'fix(cli): ', 'PR title'),
+            ('fix/stable-version', 'fix: Update\nversions', 'PR title'),
+        ):
+            with self.subTest(branch=branch, title=title):
+                result, summary = self.check(BODY, metadata={'head': {'ref': branch}, 'title': title})
+                self.assertEqual(result.returncode, 1, result.stdout)
+                self.assertIn(expected, summary)
+
+    def test_release_routes_require_same_repository_and_expected_base(self):
+        for branch, base, title, same_repo, expected in (
+            ('release/0.6.0', 'main', 'release: Prepare 0.6.0', True, 0),
+            ('hotfix/0.6.1', 'main', 'fix!: Repair stable installs', True, 0),
+            ('main', 'develop', 'release: Backmerge 0.6.0', True, 0),
+            ('main', 'release/0.6.1', 'release: Backport the stable fix', True, 0),
+            ('release/0.6.0', 'main', 'release: Prepare 0.6.0', False, 1),
+            ('release/0.6.0', 'ci', 'release: Prepare 0.6.0', True, 1),
+            ('release/0.6.0', 'main', 'feat: Prepare 0.6.0', True, 1),
+            ('hotfix/v0.6.1', 'main', 'fix: Repair stable installs', True, 1),
+            ('main', 'develop', 'release: Backmerge 0.6.0', False, 1),
+        ):
+            with self.subTest(branch=branch, base=base, title=title, same_repo=same_repo):
+                result, _ = self.check(BODY, metadata={
+                    'title': title, 'head': {'ref': branch, 'repo': {'id': 1 if same_repo else 2}},
+                    'base': {'ref': base, 'repo': {'id': 1}},
+                })
+                self.assertEqual(result.returncode, expected, result.stdout)
+
+    def test_dependabot_exception_preserves_body_check(self):
+        metadata = {'title': 'Bump example from 1 to 2', 'head': {'ref': 'dependabot/go_modules/example'},
+                    'user': {'login': 'dependabot[bot]', 'type': 'Bot'}}
+        self.assertEqual(self.check(BODY, metadata=metadata)[0].returncode, 0)
+        self.assertEqual(self.check('', metadata=metadata)[0].returncode, 1)
+        metadata['user']['type'] = 'User'
+        self.assertEqual(self.check(BODY, metadata=metadata)[0].returncode, 1)
+
+    def test_local_preflight_accepts_matching_feature_type_with_scope(self):
+        args = ('--title', 'feat(agent-lens)!: Add streaming diagnoses', '--branch', 'feature/streaming-diagnoses')
+        self.assertEqual(self.check(BODY, body_file=True, extra_args=args)[0].returncode, 0)
+        self.assertEqual(self.check(BODY, body_file=True, extra_args=args[:2])[0].returncode, 2)
+        args = ('--title', 'ci: Check PR names', '--branch', 'cicd/gitflow-naming')
+        self.assertEqual(self.check(BODY, body_file=True, extra_args=args)[0].returncode, 0)
 
     def test_each_required_section_must_be_present(self):
         for title in ('Problem and impact', 'Validation', 'Screenshots and interaction', 'Compatibility and unverified scope'):

@@ -10,7 +10,7 @@ decision_record: null
 
 # Versioning, Branches, and the Initial Release Plan
 
-This proposal is awaiting review. Contributions currently target `main`. See the [version guide](../version-info.md) for the shared product version and version page, and the [CI guide](../../scripts/ci/README.md) for implemented test tiers and the daily/candidate pipeline. Gitflow, remote release setup, and hosted acceptance remain pending. Workflow files do not establish successful validation or adopt this proposal.
+This proposal is awaiting review. The [contribution guide](../../CONTRIBUTING.md#branches-and-prs) defines the Gitflow naming convention. Ordinary contributions continue to target the repository's default branch until the branch migration. See the [version guide](../version-info.md) for the shared product version and version page and the [CI guide](../../scripts/ci/README.md) for implemented checks and candidate workflows. The naming check does not change protected branches or adopt this proposal in full.
 
 ## Goals and scope
 
@@ -29,9 +29,9 @@ Dates are targets subject to acceptance checks. Initially, maintain only one sta
 | Published tag → `hotfix/<version>` → `main` | Fix the current stable version and complete affected validation |
 | `main` → `develop` | Merge back through a PR after each release or hotfix; propagate necessary fixes to an active release branch |
 
-Release, hotfix, and backmerge operations preserve commit history so released fixes are not lost. Normally, keep only one active release branch. Branch names should express their purpose; `codex/*` is also accepted. Protection rules govern source, review, and checks rather than treating names as permissions.
+Release, hotfix, and backmerge operations preserve commit history so released fixes are not lost. Normally, keep only one active release branch. Follow the [branch and PR naming rules](../../CONTRIBUTING.md#name-the-branch-and-pr). Protection rules govern source, review, and checks; a matching branch name does not grant release permissions or prove source ancestry.
 
-The migration PR creates branches, configures necessary protection, and updates the contribution guide. Until it is enabled, ordinary PRs continue to target `main`; contributors should not be directed to an unavailable branch. Never overwrite stable version tags or move the recommended release entry point to a failed candidate.
+The naming convention is the first step. The migration establishes `main` and `develop`, configures their protections and history-preserving merges for release flows, adjusts Daily build and promotion inputs, and updates the contribution guide. Until that migration, ordinary PRs continue to target the default branch unless directed by maintainers. Never overwrite stable version tags or move the recommended release entry point to a failed candidate.
 
 ## Pride Versioning and compatibility
 
@@ -51,7 +51,7 @@ Release records preserve the actual source SHA, artifact checksums or image dige
 
 ## Daily builds and stable releases
 
-After Gitflow is enabled, build daily from a fixed, full `develop` SHA. Until that migration, the implemented schedule uses the default branch's event SHA (currently `main`) at 18:23 UTC, or 02:23 Beijing time the next day. It does not silently check out another branch. The release identifies one fixed source commit. Newly built components use that source; unchanged components may reuse an earlier verified digest and preserve their real historical build identity. All five bundled service images receive the same immutable product-version tag. A component can therefore carry multiple release tags without being rebuilt.
+After Gitflow is enabled, build Daily from a fixed, full `develop` SHA. Until then, the [product candidate workflow](../../.github/workflows/release-images.yml) uses the selected branch's event SHA for manual runs and reserves the rolling Daily and dev aliases for the default branch. The previous scheduled Daily trigger is paused. The release identifies one fixed source commit. Newly built components use that source; unchanged components may reuse an earlier verified digest and preserve their real historical build identity. All five bundled service images receive the same immutable product-version tag. A component can therefore carry multiple release tags without being rebuilt.
 
 Daily versions identify a dated candidate snapshot, for example `0.0.1-daily.20261021`. The first snapshot for a date has no revision suffix; another accepted snapshot for that date uses `.2`, then `.3`. A manual run can fix the snapshot date explicitly, while a scheduled run uses its original creation date in Asia/Shanghai. Keep the selected date and revision across midnight and candidate retries. Workflow reruns do not change the product version; cumulative workflow run numbers and full run ID/attempt belong in operational build metadata. Published versions cannot be overwritten. The numeric base comes from `VERSION`, which is not modified during the build. Manual development builds remain separate from Daily snapshots.
 
@@ -87,12 +87,13 @@ The release lead reviews scope and blockers during preparation and again before 
 
 ## Incremental implementation
 
-1. Bootstrap governance and contribution entry points: use a concise PR template with the current `main` workflow. Maintainers review actual results; the description check only checks that required sections are filled in.
+1. Bootstrap governance and contribution entry points: use a concise PR template with the default branch workflow. The body check validates section completeness, and maintainers review actual results.
 2. Product versioning and the version page: implement a shared version source, current version, update checks, and release notes, with relevant code checks.
 3. Test tiers and candidate automation: implement path selection, Linux daily checks, broader release checks, fixed artifact identities, and publication gates. Validate hosted behavior and failure handling before relying on them.
-4. Gitflow and remote protection: migrate branches and configure confirmed owners, required checks, protected release approval, and release backmerges separately.
+4. Gitflow naming: use purpose-based branches and typed PR titles. Check them in the existing PR job, along with body completeness.
+5. Gitflow routing and remote protection: establish the stable and integration branches, configure confirmed owners, required checks, protected release approval and release backmerges, and update Daily build and promotion inputs.
 
-The first step ships in an independent governance PR. The second and third provide root `VERSION=0.0.1`, shared build identity, version APIs and a page, test tiers, and candidate workflows, so implementation remains `in_progress`. The fourth step and actual hosted acceptance remain pending. Source code or workflow files alone do not establish release acceptance.
+Implementation remains `in_progress`. The naming check is independent of branch protection and release permissions. Source code or workflow files alone do not establish release acceptance.
 
 ## References
 
