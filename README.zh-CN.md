@@ -34,9 +34,9 @@
 
 > 由蚂蚁集团可观测团队与 OceanBase 联合研发。
 
-<p align="center">
-  <img src="docs/assets/readme/demo.zh-CN.webp" width="800" alt="AI Vision 产品演示 · 4 分 41 秒">
-</p>
+**观看产品演示 · 4:41**
+
+https://github.com/user-attachments/assets/afceb310-cd5f-4712-8904-5cde5f740f77
 
 > [!NOTE]
 > **个人部署** · 把这句话发给能执行命令的 AI 助手。
