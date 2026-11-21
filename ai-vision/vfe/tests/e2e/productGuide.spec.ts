@@ -1323,6 +1323,59 @@ test("demo consent, MCP config readback, diagnosis evidence and comparison requi
   expect(errors).toEqual([])
 })
 
+test("the guide keeps Cancel reachable in the compact MCP import dialog", async ({
+  page,
+}, testInfo) => {
+  const spanId = "3333333333333333"
+  const { state, text, card, errors } = await prepareGuide(page, {
+    demoWrites: [{ consent: true, language: "zh-CN" }],
+    demoTraceReads: 2,
+    guidePending: false,
+  })
+  await page.evaluate(
+    ({ key, traceId, spanId }) => {
+      localStorage.setItem(
+        key,
+        JSON.stringify({
+          step: "mcpConfig",
+          status: "active",
+          demo: { traceId, ruleUuid: "rule-a", evidenceSpanId: spanId },
+        })
+      )
+    },
+    {
+      key: guideStorageKey("reviewer", guideSpace, guideAgent),
+      traceId: guideTraceId,
+      spanId,
+    }
+  )
+  await page.goto(
+    `${guideStart.replace("/dashboard", "/trace")}&traceId=${guideTraceId}&focus_span=${spanId}`
+  )
+  await page.locator('[data-product-guide="mcp-config-open"]').click()
+  const config = page.locator('[data-product-guide="mcp-config"]')
+  await config
+    .getByRole("button", { name: uiText("zh-CN", "labs.mcp.import.open") })
+    .click()
+  const importer = page.locator('[data-product-guide="mcp-import"]')
+  await expect(card).toContainText(text("steps.mcpSearch"))
+  await page.screenshot({
+    path: testInfo.outputPath("guided-mcp-import.png"),
+    animations: "disabled",
+  })
+  await importer
+    .getByRole("button", {
+      name: uiText("zh-CN", "common.cancel"),
+      exact: true,
+    })
+    .click({ timeout: 3000 })
+  await expect(importer).toHaveCount(0)
+  await expect(config).toBeVisible()
+  expect(state.mcpConfigWrites).toBeUndefined()
+  expect(state.unexpected).toEqual([])
+  expect(errors).toEqual([])
+})
+
 test("the guide can skip an unreadable MCP configuration and continue to diagnosis", async ({
   page,
 }) => {
