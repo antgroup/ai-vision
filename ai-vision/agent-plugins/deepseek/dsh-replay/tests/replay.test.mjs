@@ -58,6 +58,115 @@ test('runReplay rebuilds CHAT -> LLM -> TOOL spans into ExportTraceServiceReques
   }
 });
 
+test('v4 replay counts a present empty tool name as the first token', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-replay-tool-timing-'));
+  try {
+    const start = 1787218900000;
+    const header = { type: 'session', version: 4, id: 'tool-timing', createdAt: start, isSeeded: false, delegationDepth: 0 };
+    const tool = { type: 'tool-call', id: 'call-1', name: 'read', arguments: '{"file_path":"sample.txt"}' };
+    const step = { turn: 1, step: 1 };
+    const variants = [
+      { type: 'chunk', time: start + 5, chunk: { type: 'tool-call-delta', index: 0, id: tool.id, name: '', argumentsDelta: '' } },
+      { type: 'tool-call-chunks', time0: start + 5, index: 0, id: tool.id, name: '', args: [''], dt: [] },
+    ];
+    for (const firstRecord of variants) {
+      const events = [
+        { type: 'turn/start', time: start, data: { turn: 1 } },
+        { type: 'step/start', time: start, data: step },
+        {
+          type: 'assistant/message', time: start + 121, surfaceOp: 'append',
+          data: {
+            ...step,
+            message: {
+              role: 'assistant', id: 'assistant-1', content: [tool],
+              source: { kind: 'model', provider: 'deepseek-official', model: 'deepseek-flash' },
+            },
+            stream: [
+              firstRecord,
+              { type: 'tool-call-chunks', time0: start + 45, index: 0, id: tool.id, name: tool.name, args: [tool.arguments], dt: [] },
+            ],
+          },
+        },
+        { type: 'tool/call', time: start + 122, data: { ...step, callId: tool.id, name: tool.name, arguments: tool.arguments } },
+        {
+          type: 'tool/result', time: start + 123, surfaceOp: 'append', sourceEventSeqs: [3],
+          data: {
+            ...step,
+            message: {
+              role: 'tool', id: 'tool-1', toolCallId: tool.id, isError: false,
+              source: { kind: 'tool', callId: tool.id }, content: [{ type: 'text', text: 'sample' }],
+            },
+          },
+        },
+        { type: 'step/end', time: start + 124, data: step },
+        { type: 'turn/end', time: start + 125, data: { turn: 1, reason: { kind: 'completed' } } },
+      ];
+      const transcript = join(dir, 'session.jsonl');
+      const rows = [header, ...events.map((event, seq) => ({ ...event, seq }))];
+      writeFileSync(transcript, rows.map(row => JSON.stringify(row)).join('\n') + '\n');
+      const output = await runReplay(transcript, join(dir, `spans_${firstRecord.type}.jsonl`));
+      const spans = readFileSync(output.spans, 'utf8').trim().split('\n')
+        .flatMap(line => JSON.parse(line).resourceSpans)
+        .flatMap(resource => resource.scopeSpans).flatMap(scope => scope.spans);
+      const llm = spans.find(span => span.name === 'chat deepseek-flash');
+      const timing = key => Number(llm.attributes.find(attr => attr.key === key)?.value.intValue);
+      assert.equal(timing('gen_ai.response.time_to_first_token'), 5, firstRecord.type);
+      assert.equal(timing('agentic.llm.generation.duration_ms'), 116, firstRecord.type);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('v4 replay reconstructs signed packed timing within the step bounds', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'dsh-replay-signed-timing-'));
+  try {
+    const start = 1787218900000;
+    const header = { type: 'session', version: 4, id: 'signed-timing', createdAt: start, isSeeded: false, delegationDepth: 0 };
+    const step = { turn: 1, step: 1 };
+    const cases = [
+      { name: 'within step', offset: 100, expected: [90, 31] },
+      { name: 'before step', offset: 5, expected: [undefined, undefined] },
+      { name: 'after completion', offset: 150, expected: [undefined, undefined] },
+    ];
+    for (const { name, offset, expected } of cases) {
+      const events = [
+        { type: 'turn/start', time: start, data: { turn: 1 } },
+        { type: 'step/start', time: start, data: step },
+        {
+          type: 'assistant/message', time: start + 121, surfaceOp: 'append',
+          data: {
+            ...step,
+            message: {
+              role: 'assistant', id: 'assistant-1', content: [{ type: 'text', text: 'Done.' }],
+              source: { kind: 'model', provider: 'deepseek-official', model: 'deepseek-flash' },
+            },
+            stream: [{ type: 'text-chunks', time0: start + offset, index: 0, dt: [-10], texts: ['', 'Done.'] }],
+          },
+        },
+        { type: 'step/end', time: start + 122, data: step },
+        { type: 'turn/end', time: start + 123, data: { turn: 1, reason: { kind: 'completed' } } },
+      ];
+      const transcript = join(dir, 'session.jsonl');
+      const rows = [header, ...events.map((event, seq) => ({ ...event, seq }))];
+      writeFileSync(transcript, rows.map(row => JSON.stringify(row)).join('\n') + '\n');
+      const output = await runReplay(transcript, join(dir, 'spans_signed_timing.jsonl'));
+      const spans = readFileSync(output.spans, 'utf8').trim().split('\n')
+        .flatMap(line => JSON.parse(line).resourceSpans)
+        .flatMap(resource => resource.scopeSpans).flatMap(scope => scope.spans);
+      const llm = spans.find(span => span.name === 'chat deepseek-flash');
+      assert.ok(llm, name);
+      const timings = ['gen_ai.response.time_to_first_token', 'agentic.llm.generation.duration_ms'].map(key => {
+        const attr = llm.attributes.find(entry => entry.key === key);
+        return attr && Number(attr.value.intValue);
+      });
+      assert.deepEqual(timings, expected, name);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('privacy replay redacts content while preserving structure', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'dsh-replay-privacy-'));
   try {

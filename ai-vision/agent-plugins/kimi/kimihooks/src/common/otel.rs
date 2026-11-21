@@ -8,7 +8,7 @@
 //! 与 cchooks 的关系：不复用 cchooks 的 `common/otel.rs`（它强依赖 transcript 数据结构），
 //! 而是直接调用 `agentic-otel-common` 的低层 OTLP 类型，独立但与 cchooks 风格一致。
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde_json::Value;
 
@@ -20,7 +20,7 @@ use agentic_otel_common::{
         OtelAttribute, OtelHistogram, OtelHistogramDataPoint, OtelLogRecord, OtelMetric,
         OtelNumberDataPoint, OtelSpan, OtelStatus, OtelSum, SPAN_KIND_CLIENT, SPAN_KIND_INTERNAL,
     },
-    parse_agentic_tool, serialize_messages_default, tool_span_name, truncate_value,
+    parse_agentic_tool, serialize_messages_default, tool_span_name, truncate_value, AgenticToolInfo,
 };
 
 // re-export OtelSpan 供 kimihooks_replay 等外部 bin crate 使用
@@ -231,6 +231,21 @@ struct PendingPre {
     tool_input: Value,
 }
 
+impl PendingPre {
+    fn tool_info(&self, call_id: &str) -> AgenticToolInfo {
+        let skill_name = if self.tool_name == "Skill" {
+            self.tool_input
+                .get("skill")
+                .and_then(Value::as_str)
+                .map(str::trim)
+                .filter(|name| !name.is_empty())
+        } else {
+            None
+        };
+        parse_agentic_tool(&self.tool_name, call_id, skill_name)
+    }
+}
+
 enum ToolOutcome {
     Success { output: String },
     Failure { error: String },
@@ -248,7 +263,7 @@ fn make_tool_span(
     session_id: &str,
     log_cfg: &ContentLogConfig,
 ) -> OtelSpan {
-    let info = parse_agentic_tool(&pre.tool_name, call_id, None);
+    let info = pre.tool_info(call_id);
     let span_name = tool_span_name(&info);
 
     let mut attributes: Vec<OtelAttribute> = Vec::with_capacity(20);
@@ -586,7 +601,7 @@ fn make_tool_result_event(
     end_ns: String,
     result_payload: String,
 ) -> OtelLogRecord {
-    let info = parse_agentic_tool(&pre.tool_name, call_id, None);
+    let info = pre.tool_info(call_id);
     let span_name = tool_span_name(&info);
 
     let start_i: i128 = pre.start_ns.parse().unwrap_or(0);
@@ -728,7 +743,7 @@ pub fn build_tool_decision_events(
             }
             "PostToolUse" | "PostToolUseFailure" => {
                 if let Some(pre) = pending.remove(&call_id) {
-                    let info = parse_agentic_tool(&pre.tool_name, &call_id, None);
+                    let info = pre.tool_info(&call_id);
                     let span_name = tool_span_name(&info);
 
                     let mut attrs: Vec<OtelAttribute> = Vec::with_capacity(16);
@@ -849,16 +864,11 @@ pub fn build_api_request_events(
             _ => 0,
         });
 
-        // model: kimi wire 不暴露精确模型名，从 token_usage 的 presence 推断 provider
-        // 若有 _model 字段（未来 wire 版本可能添加），优先使用
         let model_name = p
             .get("model")
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
-        let provider = p
-            .get("_provider")
-            .and_then(|v| v.as_str())
-            .unwrap_or(if p["source"] == "kimi-code" { "unknown" } else { "moonshot" });
+        let provider = model_call_system(p, model_name);
 
         // token usage（三层映射）
         let tu = p.get("token_usage");
@@ -943,11 +953,7 @@ pub fn build_api_request_events(
 
         // ── Recommended ──
         attrs.push(OtelAttribute::string("gen_ai.system", provider));
-        if let Some(explicit) = p.get("_provider").and_then(Value::as_str).filter(|s| !s.is_empty()) {
-            attrs.push(OtelAttribute::string("gen_ai.provider.name", explicit));
-        } else if let Some(extracted) = agentic_otel_common::extract_provider_name(model_name) {
-            attrs.push(OtelAttribute::string("gen_ai.provider.name", extracted));
-        } else { attrs.push(OtelAttribute::string("gen_ai.provider.name", provider)); }
+        attrs.push(OtelAttribute::string("gen_ai.provider.name", model_call_provider(p, model_name, provider)));
         if (code_wire && input_known && output_known) || (!code_wire && total_tokens > 0) {
             attrs.push(OtelAttribute::int(
                 "gen_ai.usage.total_tokens",
@@ -1309,11 +1315,7 @@ pub fn build_llm_metrics(
             .and_then(|v| v.as_str())
             .unwrap_or("unknown")
             .to_string();
-        let provider = p
-            .get("_provider")
-            .and_then(|v| v.as_str())
-            .unwrap_or(if p["source"] == "kimi-code" { "unknown" } else { "moonshot" })
-            .to_string();
+        let provider = model_call_system(p, &model).to_string();
 
         let start_ts = p.get("_start_ts").and_then(|v| v.as_f64());
         let end_ts = p.get("_end_ts").and_then(|v| v.as_f64());
@@ -2156,8 +2158,10 @@ fn build_root_span_numbered(
     let mut user_inputs: Vec<String> = Vec::new();
     let mut user_content: Vec<Value> = Vec::new();
     let mut llm_steps: Vec<&Value> = Vec::new();
-    let mut has_failure = false;
-    let mut terminal_error = None;
+    let mut turn_end = None;
+    let mut pending_tools = HashSet::new();
+    let mut kimi_code = false;
+    let mut tool_failed = false;
 
     let mut saw_any_event = false;
     for rec in records {
@@ -2170,6 +2174,7 @@ fn build_root_span_numbered(
             .payload
             .get("_source_timestamp")
             .and_then(|v| v.as_f64());
+        kimi_code |= rec.payload["source"] == "kimi-code";
         match event {
             "TurnBegin" => {
                 saw_any_event = true;
@@ -2186,17 +2191,22 @@ fn build_root_span_numbered(
             "TurnEnd" => {
                 saw_any_event = true;
                 turn_end_ts = ts;
-                terminal_error = match rec.payload["reason"].as_str() {
-                    Some("cancelled") => Some("cancelled"), Some("failed") => Some("turn_error"),
-                    Some("blocked") => Some("blocked"), _ => None,
-                };
+                turn_end = Some(&rec.payload);
             }
             "LLMStep" => {
                 saw_any_event = true;
                 llm_steps.push(&rec.payload);
             }
-            "PostToolUseFailure" => {
-                has_failure = true;
+            "PreToolUse" => {
+                if let Some(id) = rec.payload["tool_call_id"].as_str().filter(|id| !id.is_empty()) {
+                    pending_tools.insert(id);
+                }
+            }
+            "PostToolUse" | "PostToolUseFailure" => {
+                tool_failed |= event == "PostToolUseFailure";
+                if let Some(id) = rec.payload["tool_call_id"].as_str() {
+                    pending_tools.remove(id);
+                }
             }
             _ => {}
         }
@@ -2291,13 +2301,28 @@ fn build_root_span_numbered(
         attrs.push(OtelAttribute::string("agentic.runtime.cwd", &effective_cwd));
     }
 
-    let status = if let Some(error) = terminal_error {
-        attrs.push(OtelAttribute::string("error.type", error));
-        OtelStatus::error(error)
-    } else if has_failure {
-        OtelStatus::error("turn contained tool failure".to_string())
-    } else {
-        OtelStatus::ok()
+    // Kimi Code has terminal evidence separate from the tool results.
+    let reason = turn_end.and_then(|end| end["reason"].as_str());
+    let status = match reason {
+        Some("completed") => OtelStatus::ok(),
+        Some(reason @ ("cancelled" | "failed" | "blocked")) => {
+            let error = if reason == "failed" { "turn_error" } else { reason };
+            attrs.push(OtelAttribute::string("error.type", error));
+            OtelStatus::error(error)
+        }
+        // Legacy Python snapshots may omit the outcome even after StopFailure.
+        // Preserve their historical classification until that hook can be bound to a turn.
+        _ if !kimi_code && tool_failed => OtelStatus::error("turn contained tool failure"),
+        _ if !kimi_code => OtelStatus::ok(),
+        // Kimi Code's ordinary Stop runs before turn.ended is appended. Use
+        // the latest finished step and receipts, never the presence of output.
+        None if turn_end.is_none() && pending_tools.is_empty() && llm_steps.last().is_some_and(|step| {
+            step["source"] == "kimi-code"
+                && step["finish_reason"] == "end_turn"
+                && step["_step_end_ts"].is_number()
+                && step["_turn_snapshot_incomplete"] != true
+        }) => OtelStatus::ok(),
+        _ => OtelStatus::unset(),
     };
 
     // 使用确定性 span_id：同一 session + turn_number 始终产生相同的 root span_id。
@@ -2328,6 +2353,27 @@ fn llm_output_messages(p: &Value) -> String {
     let mut message = OpenAIMessage::assistant_with_tool_calls(p["output_text"].as_str(), calls).with_content(&p["output_content"]);
     if let Some(thinking) = p["thinking"].as_str().filter(|s| !s.is_empty()) { message.reasoning_content = Some(thinking.to_string()); }
     serialize_messages_default(&[message], 0)
+}
+
+fn model_call_system<'a>(p: &'a Value, model: &'a str) -> &'a str {
+    if let Some(provider) = p["_provider"].as_str().filter(|value| !value.is_empty()) {
+        return provider;
+    }
+    if p["source"] == "kimi-code" {
+        // Keep the full routed model ID and use its first namespace as the
+        // provider identifier, not the upstream model publisher.
+        agentic_otel_common::extract_provider_name(model).unwrap_or("unknown")
+    } else {
+        "moonshot"
+    }
+}
+
+fn model_call_provider<'a>(p: &Value, model: &'a str, system: &'a str) -> &'a str {
+    if p["source"] == "kimi-code" || p["_provider"].as_str().is_some_and(|value| !value.is_empty()) {
+        system
+    } else {
+        agentic_otel_common::extract_provider_name(model).unwrap_or(system)
+    }
 }
 
 fn append_code_usage_boundaries(attrs: &mut Vec<OtelAttribute>, p: &Value) {
@@ -2444,26 +2490,20 @@ pub fn build_llm_spans(
         let input_tokens = input_tokens + if code_wire { cache_read + cache_creation } else { 0 };
 
         let mut attrs: Vec<OtelAttribute> = Vec::with_capacity(16);
-        let native_model = p.get("model").and_then(Value::as_str).filter(|s| !s.is_empty()).unwrap_or(model_name);
+        let native_model = p.get("model").and_then(Value::as_str).filter(|s| !s.is_empty())
+            .unwrap_or(if code_wire { "unknown" } else { model_name });
         let effective_model = if native_model.is_empty() { "unknown" } else { native_model };
         let native_error = match p["finish_reason"].as_str() {
             Some("error") => Some("provider_error"), Some("interrupted") => Some("cancelled"), _ => None,
         };
-        let provider = p.get("_provider").and_then(Value::as_str).filter(|s| !s.is_empty()).unwrap_or(if p["source"] == "kimi-code" { "unknown" } else { "moonshot" });
+        let provider = model_call_system(p, effective_model);
 
         attrs.push(OtelAttribute::string("gen_ai.span.kind", "LLM"));
         attrs.push(OtelAttribute::string("gen_ai.operation.name", "chat"));
         attrs.push(OtelAttribute::string("gen_ai.system", provider));
         attrs.push(OtelAttribute::string("gen_ai.request.model", effective_model));
         attrs.push(OtelAttribute::string("gen_ai.response.model", "unknown"));
-        // gen_ai.provider.name：优先从 model_name 提取，退化到默认 provider
-        if let Some(explicit) = p.get("_provider").and_then(Value::as_str).filter(|s| !s.is_empty()) {
-            attrs.push(OtelAttribute::string("gen_ai.provider.name", explicit));
-        } else if let Some(extracted) = agentic_otel_common::extract_provider_name(effective_model) {
-            attrs.push(OtelAttribute::string("gen_ai.provider.name", extracted));
-        } else {
-            attrs.push(OtelAttribute::string("gen_ai.provider.name", provider));
-        }
+        attrs.push(OtelAttribute::string("gen_ai.provider.name", model_call_provider(p, effective_model, provider)));
         attrs.push(OtelAttribute::string("ant.username", &username));
         attrs.push(OtelAttribute::string("user.id", &username));
         // gen_ai.input/output.messages — always present, [REDACTED] when off

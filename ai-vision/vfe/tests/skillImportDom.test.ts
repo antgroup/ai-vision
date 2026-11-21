@@ -77,10 +77,10 @@ async function fixture(
       fetches.push(payload)
       return { ...entry, content }
     },
-    saveSkillConfigs: async (_space: string, configs: unknown[]) => {
+    saveSkillConfigBatch: async (_space: string, configs: { name: string }[]) => {
       saves.push(...configs)
       await saveGate
-      return configs
+      return configs.map(({ name }) => ({ requestedName: name, name }))
     },
     searchSkillRegistry: async () => ({
       skills: [
@@ -114,6 +114,13 @@ async function fixture(
     })
     new Function("require", "exports", outputText)((name: string) => {
       if (name === "./skillApi") return api
+      if (name === "@/components/labs/shared/localImportBatchCollision")
+        return load(
+          new URL(
+            "../src/components/labs/shared/localImportBatchCollision.ts",
+            import.meta.url
+          )
+        )
       if (name === "react-i18next")
         return { useTranslation: () => ({ t: (key: string) => key }) }
       if (name === "@/components/ui/button")

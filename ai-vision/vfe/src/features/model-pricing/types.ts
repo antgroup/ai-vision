@@ -6,6 +6,9 @@ export interface CostCoverage {
   aliasCalls: number
   catalogCalls: number
   referenceCalls: number
+  partialCostSources?: Partial<
+    Record<"manual" | "alias" | "catalog" | "reference", number>
+  >
   subscriptionCalls?: number
   listPriceEquivalentCalls?: number
   unknownCalls: number

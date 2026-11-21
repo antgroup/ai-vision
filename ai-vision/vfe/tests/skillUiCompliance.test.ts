@@ -133,9 +133,9 @@ function pageFixture({
         queryFn,
       }: {
         queryKey: unknown[]
-        queryFn?: () => unknown
+        queryFn?: (context: object) => unknown
       }) => {
-        if (!queryKey.includes("configs") && scans) queryFn?.()
+        if (!queryKey.includes("configs") && scans) queryFn?.({})
         return queryKey.includes("configs") ? configs : stats
       },
     },
@@ -842,6 +842,14 @@ test("Skill file import previews all accepted and rejected entries and verifies 
         useSpace: () => ({ currentSpace: { id: "space", role: 1 } }),
       },
       "./skillConfigImport": parser,
+      "./skillLocalImport": {},
+      "./skillImportRemote": {},
+      "@/components/labs/shared/localImportReview": {
+        useLocalImportReview: () => ({ entries: [], status: "idle" }),
+      },
+      "@/components/labs/shared/LocalImportConflicts": {
+        LocalImportConflicts: "LocalImportConflicts",
+      },
       "./skillApi": {
         saveSkillConfigs: async (_space: string, configs: unknown[]) => {
           saved.push(configs)
@@ -1189,7 +1197,8 @@ async function pageScopeFixture() {
         if (failedStats) throw new Error("new-window failure")
         return { overview: { calls: 7 }, skills: [] }
       },
-      listSkillConfigs: async () => [],
+      listSkillConfigSummaries: async () => [],
+      getSkillConfig: async () => null,
       deleteSkillConfig: async (spaceId: string, skill: string) => {
         deleteCalls.push([spaceId, skill])
         return new Promise<void>((_resolve, reject) => {

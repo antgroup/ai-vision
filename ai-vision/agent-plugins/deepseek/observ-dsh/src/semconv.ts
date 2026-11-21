@@ -59,6 +59,7 @@ export const AntLlmSpanAttributes = {
   GEN_AI_REQUEST_MAX_TOKENS: 'gen_ai.request.max_tokens',
   GEN_AI_REQUEST_STOP_SEQUENCES: 'gen_ai.request.stop_sequences',
   GEN_AI_RESPONSE_FINISH_REASONS: 'gen_ai.response.finish_reasons',
+  GEN_AI_RESPONSE_TIME_TO_FIRST_TOKEN: 'gen_ai.response.time_to_first_token',
   GEN_AI_USAGE_INPUT_TOKENS: 'gen_ai.usage.input_tokens',
   GEN_AI_USAGE_OUTPUT_TOKENS: 'gen_ai.usage.output_tokens',
   GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS: 'gen_ai.usage.cache_read.input_tokens',
@@ -71,6 +72,8 @@ export const AntLlmSpanAttributes = {
   AGENTIC_TURN_NUMBER: 'agentic.turn.number',
   AGENTIC_STEP_NUMBER: 'agentic.step.number',
   AGENTIC_LLM_RETRY_COUNT: 'agentic.llm.retry.count',
+  AGENTIC_LLM_STARTED_RETRY_COUNT: 'agentic.llm.retry_count',
+  AGENTIC_LLM_GENERATION_DURATION_MS: 'agentic.llm.generation.duration_ms',
   ANT_USERNAME: 'ant.username',
   ANT_UID: 'ant.uid',
 } as const;

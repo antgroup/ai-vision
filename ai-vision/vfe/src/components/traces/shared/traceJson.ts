@@ -52,3 +52,12 @@ export function parseStructuredTraceJson(
   }
   return null
 }
+
+/** Project a bounded JSON string for a tree while preserving it for copy. */
+export function structuredTracePreview(value: unknown): unknown {
+  if (typeof value !== "string" || value.length > 65536) return value
+  const first = value.trimStart()[0]
+  return first === "{" || first === "["
+    ? (parseStructuredTraceJson(value) ?? value)
+    : value
+}

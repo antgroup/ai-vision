@@ -419,6 +419,22 @@ async function fixture(
     calls.push({ url: path, init })
     const data = await respond(path, init)
     if (data instanceof Response) return data
+    const url = new URL(path, dom.window.location.href)
+    if (
+      url.pathname.endsWith("/labs/mcp/configs") &&
+      url.searchParams.get("view") === "detail" &&
+      Array.isArray(data)
+    ) {
+      // Older UI fixtures declare a saved inventory; resolve its selected row.
+      const target = data.find(
+        (item) => item.serverId === url.searchParams.get("serverId")
+      )
+      if (!target)
+        return new Response(JSON.stringify({ code: 3006 }), { status: 404 })
+      return new Response(JSON.stringify({ code: 0, data: target }), {
+        status: 200,
+      })
+    }
     return new Response(JSON.stringify({ code: 0, data }), { status: 200 })
   })
   const modules = new Map<string, unknown>()
@@ -676,6 +692,108 @@ function button(document: Document, text: string) {
     ) ?? null
   )
 }
+
+test("MCP catalogue requests summaries and loads only the selected server in the same window", async () => {
+  const location =
+    "/labs/mcp?agent=ClaudeCode&spaceId=space-a&agent_uuid=instance-a&source_system=otel"
+  const ui = await fixture(location)
+  const { McpPage } = ui.load<{ McpPage: ComponentType }>(
+    "labs/mcp/McpPage.tsx"
+  )
+  const target = "target/server"
+  const scope = { from: "2026-01-01T00:00:00Z", to: "2026-11-17T00:00:00Z" }
+  const server = {
+    serverId: target,
+    sourceAgents: ["ClaudeCode"],
+    stats: { calls: 5, errorRate: 0, p50Ms: 2, p95Ms: 3 },
+  }
+  const fullConfig = {
+    ...config(target),
+    description: "Searchable description",
+    raw: { command: "unique command" },
+  }
+  const summary: Partial<typeof fullConfig> = { ...fullConfig }
+  delete summary.raw
+  ui.setResponder(async (path) => {
+    const url = new URL(path, "https://vision.example.test")
+    if (url.pathname.endsWith("/configs"))
+      return url.searchParams.has("serverId") ? fullConfig : [summary]
+    if (url.pathname.endsWith("/observations")) {
+      const detail = url.searchParams.get("detailServer") === target
+      return {
+        ...observation,
+        scope,
+        servers: [
+          detail
+            ? {
+                ...server,
+                tools: [
+                  {
+                    toolName: "detail-only-tool",
+                    rawName: "detail-only-tool",
+                    stats: server.stats,
+                  },
+                ],
+                recentCalls: [],
+              }
+            : { ...server, calledToolCount: 1, lastSeen: scope.to },
+        ],
+      }
+    }
+    return { tools: [], syncedAt: null }
+  })
+  const views = () =>
+    ui.calls.map(({ url }) => new URL(url, "https://vision.example.test"))
+  try {
+    await ui.render(createElement(McpPage))
+    assert.equal(
+      views()
+        .find((url) => url.pathname.endsWith("/configs"))
+        ?.searchParams.get("view"),
+      "summary"
+    )
+    assert.equal(
+      views()
+        .find((url) => url.pathname.endsWith("/observations"))
+        ?.searchParams.get("view"),
+      "summary"
+    )
+    assert.equal(
+      views().some(
+        (url) =>
+          url.searchParams.has("serverId") ||
+          url.searchParams.has("detailServer")
+      ),
+      false
+    )
+    assert.match(
+      ui.document.querySelector("article")?.textContent ?? "",
+      /Searchable description/
+    )
+
+    await ui.navigate(
+      `${location}&server=${encodeURIComponent(target)}&tab=tools`
+    )
+    const detail = views().find((url) => url.searchParams.has("detailServer"))
+    assert.equal(detail?.searchParams.get("detailServer"), target)
+    assert.equal(detail?.searchParams.get("fromTimestamp"), scope.from)
+    assert.equal(detail?.searchParams.get("toTimestamp"), scope.to)
+    assert.equal(detail?.searchParams.get("agent_uuid"), "instance-a")
+    assert.equal(detail?.searchParams.get("source_system"), "otel")
+    assert.equal(
+      views()
+        .find((url) => url.searchParams.get("view") === "detail")
+        ?.searchParams.get("serverId"),
+      target
+    )
+    assert.match(
+      ui.document.querySelector('[role="dialog"]')?.textContent ?? "",
+      /detail-only-tool/
+    )
+  } finally {
+    await ui.cleanup()
+  }
+})
 
 test("imported servers without calls remain unknown and are excluded from the healthy filter", async () => {
   const ui = await fixture(
@@ -3108,7 +3226,8 @@ test("MCP drawer retries failed Space configuration from a deep link without an 
   let configReads = 0
   ui.setResponder(async (path) => {
     if (path.endsWith("/tools")) return { tools: [], syncedAt: null }
-    if (++configReads === 1) throw new Error("config request failed")
+    if (path.includes("view=detail") && ++configReads === 1)
+      throw new Error("config request failed")
     return [config()]
   })
   const { McpPage } = ui.load<{ McpPage: ComponentType }>(
@@ -4855,4 +4974,123 @@ test("whole-window memory kinds survive API adaptation when recent calls hide th
     assert.equal(detail.callEntity, "mixed")
     assert.equal(detail.stats.calls, 202)
   } finally { await ui.cleanup() }
+})
+
+test("MCP batch writes submit only explicit overwrite versions", async () => {
+  const ui = await fixture()
+  const { saveMcpConfigBatch } = ui.load<typeof import("../src/labs/mcp/mcpApi.ts")>(
+    "labs/mcp/mcpApi.ts"
+  )
+  ui.setResponder(async () => [])
+  try {
+    await saveMcpConfigBatch("space-a", [{ ...config("github"), transport: "http" }], [
+      { name: "github", version: "2026-11-06T14:00:00+00:00" },
+    ])
+    const request = ui.calls.find(({ init }) => init?.method === "PUT")
+    assert.ok(request)
+    assert.deepEqual(JSON.parse(String(request.init?.body)).overwrites, [
+      { name: "github", version: "2026-11-06T14:00:00+00:00" },
+    ])
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("MCP removal carries the complete service name as a query value", async () => {
+  const ui = await fixture()
+  const { deleteMcpConfig } = ui.load<typeof import("../src/labs/mcp/mcpApi.ts")>(
+    "labs/mcp/mcpApi.ts"
+  )
+  ui.setResponder(async () => null)
+  try {
+    await deleteMcpConfig("space-a", "Team/Docs")
+    const request = ui.calls.find(({ init }) => init?.method === "DELETE")
+    assert.ok(request)
+    const url = new URL(request.url, "https://test")
+    assert.equal(url.pathname, "/api/v2/spaces/space-a/labs/mcp/configs")
+    assert.equal(url.searchParams.get("serverId"), "Team/Docs")
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("MCP local import confirms stored spellings and retries only unconfirmed configs", async () => {
+  const ui = await fixture()
+  const { McpConfigImportDialog } = ui.load<{
+    McpConfigImportDialog: ComponentType<Record<string, unknown>>
+  }>("labs/mcp/McpConfigImportDialog.tsx")
+  const savedBatches: string[][] = []
+  ui.setResponder(async (path, init) => {
+    if (init?.method !== "PUT") return []
+    const { configs } = JSON.parse(String(init.body))
+    savedBatches.push(
+      configs.map((entry: { serverId: string }) => entry.serverId)
+    )
+    if (savedBatches.length === 2) return new Response("{}", { status: 503 })
+    const canonicalId = (serverId: string) =>
+      serverId === "server-0" ? "Server-0" : serverId
+    const items = configs as { serverId: string; importedAt: string }[]
+    if (path.endsWith("?response=receipts")) {
+      return items.map(({ serverId, importedAt }) => ({
+        requestedServerId: serverId,
+        serverId: canonicalId(serverId),
+        importedAt,
+      }))
+    }
+    return items.map((config) => ({
+      ...config,
+      serverId: canonicalId(config.serverId),
+    }))
+  })
+  let closed = false
+  try {
+    await ui.render(
+      createElement(McpConfigImportDialog, {
+        open: true,
+        onOpenChange: (next: boolean) => {
+          closed = !next
+        },
+        spaceId: "space-a",
+        observedServerIds: [],
+      })
+    )
+    await ui.click(button(ui.document, "labs.mcp.import.tabs.paste"))
+
+    const input =
+      ui.document.querySelector<HTMLInputElement>('input[type="file"]')!
+    const text = JSON.stringify({
+      mcpServers: Object.fromEntries(
+        Array.from({ length: 51 }, (_, index) => [
+          `server-${index}`,
+          { command: "fixture-stdio" },
+        ])
+      ),
+    })
+    Object.defineProperty(input, "files", {
+      value: [{ name: "mcp.json", size: text.length, text: async () => text }],
+    })
+    await act(async () => {
+      input.dispatchEvent(
+        new ui.document.defaultView!.Event("change", { bubbles: true })
+      )
+    })
+    await ui.flush()
+    assert.equal(savedBatches.length, 0)
+
+    await ui.click(button(ui.document, "labs.mcp.import.save"))
+    assert.deepEqual(
+      savedBatches.map((batch) => batch.length),
+      [50, 1]
+    )
+    assert.equal(closed, false)
+    assert.match(
+      ui.document.body.textContent!,
+      /labs\.mcp\.import\.local\.partial/
+    )
+    await ui.click(button(ui.document, "labs.mcp.import.save"))
+    assert.deepEqual(savedBatches.slice(1), [["server-50"], ["server-50"]])
+    assert.equal(closed, true)
+  } finally {
+    await ui.cleanup()
+  }
 })

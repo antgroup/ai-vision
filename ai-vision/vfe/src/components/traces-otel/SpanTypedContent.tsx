@@ -27,7 +27,7 @@ import {
   TRACE_CODE_PREVIEW_PAGE_SIZE,
   traceCodeFences,
 } from "@/components/traces/shared/traceCodeFences"
-import { parseStructuredTraceJson } from "../traces/shared/traceJson"
+import { structuredTracePreview } from "../traces/shared/traceJson"
 import { TraceEnhancedVisibility } from "@/components/traces/shared/traceEnhancedVisibility"
 import { MetadataTree } from "./shared/MetadataTree"
 import { markdownMediaComponents } from "./shared/MarkdownMedia"
@@ -70,24 +70,6 @@ function formatFor(value: unknown, field?: string): ContentFormat {
   return "markdown"
 }
 
-/** Enhanced presentation only: one bounded JSON layer; copy retains the source. */
-function structuredPreview(
-  value: unknown,
-  field?: string,
-  format?: ContentFormat
-): unknown {
-  if (
-    typeof value !== "string" ||
-    value.length > 65536 ||
-    format === "code" ||
-    formatFor(value, field) === "code"
-  )
-    return value
-  if (!value.trimStart().startsWith("{") && !value.trimStart().startsWith("["))
-    return value
-  return parseStructuredTraceJson(value) ?? value
-}
-
 /** Typed presentation never changes the original value used for copy. */
 export function SpanTypedContent({
   value,
@@ -99,6 +81,7 @@ export function SpanTypedContent({
   compact = false,
   previewLines = 4,
   treeLayout = "table",
+  paginateTree = false,
   renderFrame,
 }: {
   value: unknown
@@ -110,11 +93,19 @@ export function SpanTypedContent({
   compact?: boolean
   previewLines?: number
   treeLayout?: "table" | "outline"
-  renderFrame?: (controls: ReactNode, content: ReactNode) => ReactNode
+  paginateTree?: boolean
+  renderFrame?: (
+    controls: ReactNode,
+    content: ReactNode,
+    text: string
+  ) => ReactNode
 }) {
   const { t } = useTranslation()
   const active = useContext(TraceEnhancedVisibility) !== false
-  const displayedValue = structuredPreview(value, field, format)
+  const displayedValue =
+    format === "code" || isLiteralField(field)
+      ? value
+      : structuredTracePreview(value)
   const fences = useMemo(() => {
     if (
       !active ||
@@ -359,6 +350,7 @@ export function SpanTypedContent({
             traceCode={active}
             layout={treeLayout}
             expansion={treeExpansion}
+            paginate={paginateTree}
           />
         ) : code ? (
           <TraceCodeSnippet
@@ -413,7 +405,7 @@ export function SpanTypedContent({
       data-content-format={kind}
     >
       {renderFrame ? (
-        renderFrame(controls, enhancedContent)
+        renderFrame(controls, enhancedContent, text)
       ) : (
         <>
           {controls}

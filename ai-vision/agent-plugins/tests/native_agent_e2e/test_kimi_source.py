@@ -45,7 +45,7 @@ def proof(scenario="tool-loop"):
         common = {"gen_ai.conversation.id": session, "gen_ai.chat.id": f"{session}-turn-{turn+1}"}
         root = {"trace_id": f"{turn+1:032x}", "span_id": root_id, "parent_span_id": "", "scope_name": "kimihooks",
                 "resource": resource, "start_time_unix_nano": (1100 + turn * 1000) * 1000000,
-                "end_time_unix_nano": int(((1400 if cancelled else 1320) + turn * 1000) / 1000.0 * 1000000000), "status": {"code": 2 if cancelled or scenario == "tool-error" else 1},
+                "end_time_unix_nano": int(((1400 if cancelled else 1320) + turn * 1000) / 1000.0 * 1000000000), "status": {"code": 2 if cancelled else 1},
                 "attributes": {**common, "gen_ai.span.kind": "CHAT", "agentic.turn.number": turn + 1, "gen_ai.input.messages": json.dumps([{"role": "user", "content": prompt}]), "gen_ai.output.messages": json.dumps([{"role": "assistant", "content": "pending " if cancelled else "receipt: abc123"}])}}
         spans.append(root)
         history.append({"role": "user", "content": prompt})
@@ -188,6 +188,16 @@ class KimiSourceTests(unittest.TestCase):
     def test_literal_available_native_scenes(self):
         for scenario in ("tool-loop", "stream", "multi-turn", "tool-error", "unknown-usage", "cancel"):
             with self.subTest(scenario=scenario): self.assertTrue(kimi_matches(proof(scenario))["verified"], kimi_matches(proof(scenario)))
+
+    def test_root_status_does_not_inherit_child_error_or_treat_partial_output_as_success(self):
+        for scenario, wrong_status in (("tool-error", 2), ("cancel", 1)):
+            with self.subTest(scenario=scenario):
+                report = proof(scenario)
+                self.assertTrue(kimi_matches(report)["verified"])
+                root = next(s for s in report["exports"][0]["spans"] if not s.get("parent_span_id"))
+                root["status"]["code"] = wrong_status
+                recapture(report)
+                self.assertEqual(kimi_matches(report)["failures"], ["kimi.source.signal.root_status"])
 
     def test_cache_sdk_loss_does_not_become_strict_provider_reconciliation(self):
         self.assertFalse(kimi_matches(proof("cache-usage"))["verified"])

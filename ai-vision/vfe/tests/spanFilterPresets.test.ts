@@ -36,6 +36,21 @@ const preset = (id = "one", name = "Slow tools"): SavedSpanFilterPreset => ({
 const document = (presets: unknown[] = [preset()]) =>
   JSON.stringify({ version: 1, presets })
 
+test("saved error searches keep showing all errors unless tool noise is explicitly hidden", () => {
+  const initial = preset()
+  const focused = preset()
+  focused.query.filters.hideCompletedTurnToolErrors = true
+  assert.deepEqual(parseSpanFilterPresets(document([focused])), {
+    ok: true,
+    presets: [focused],
+  })
+  assert.equal(sameSpanFilterQuery(initial.query, focused.query), false)
+  assert.deepEqual(parseSpanFilterPresets(document([initial])), {
+    ok: true,
+    presets: [initial],
+  })
+})
+
 test("cost-only combinations round trip with explicit metric and currency while legacy combinations remain unchanged", () => {
   const value = preset()
   value.query = {

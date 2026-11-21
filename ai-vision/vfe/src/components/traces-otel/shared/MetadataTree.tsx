@@ -1,6 +1,7 @@
 import { toast } from "sonner"
 import { writeClipboardText } from "@/lib/clipboard"
 import { TraceDocumentPreviews } from "@/components/traces/shared/TraceDocumentPreviews"
+import { TraceRecordControls } from "@/components/traces/shared/TraceRecordControls"
 import { TraceMarkdownLink } from "@/components/traces/shared/TraceTextContent"
 import { TraceMediaContent } from "@/components/traces/shared/TraceMedia"
 import { traceMediaParts } from "@/components/traces/shared/traceMediaProjection"
@@ -168,6 +169,7 @@ function MetadataRows({
   traceCode = false,
   layout = "table",
   parentPath = "$",
+  paginate = false,
 }: {
   data: Record<string, unknown>
   level?: number
@@ -176,11 +178,13 @@ function MetadataRows({
   traceCode?: boolean
   layout?: "table" | "outline"
   parentPath?: string
+  paginate?: boolean
 }) {
   const { t } = useTranslation()
   const [localToggled, setLocalToggled] = useState<Record<string, boolean>>({})
   const [prevCollapseVersion, setPrevCollapseVersion] =
     useState(collapseVersion)
+  const [visible, setVisible] = useState(5)
 
   if (prevCollapseVersion !== collapseVersion) {
     setPrevCollapseVersion(collapseVersion)
@@ -188,21 +192,28 @@ function MetadataRows({
   }
 
   const allCollapsed = collapseVersion > 0 && collapseVersion % 2 === 1
-  const entries = Object.entries(data)
+  const entries =
+    Array.isArray(data) && paginate
+      ? Object.entries(data.slice(0, visible))
+      : Object.entries(data)
+  const total = Array.isArray(data) && paginate ? data.length : entries.length
+  const shown = paginate ? Math.min(visible, total) : total
 
   const toggle = (key: string, isOpen: boolean) =>
     setLocalToggled((prev) => ({ ...prev, [key]: !isOpen }))
 
   return (
     <>
-      {entries.map(([key, value]) => {
+      {(paginate ? entries.slice(0, shown) : entries).map(([key, value]) => {
         const isObject =
           value !== null && typeof value === "object" && !Array.isArray(value)
         const isArray = Array.isArray(value)
         const isExpandable = isObject || isArray
-        const childEntries = isExpandable
-          ? Object.entries(value as Record<string, unknown>)
-          : []
+        const childCount = isArray
+          ? value.length
+          : isObject
+            ? Object.keys(value).length
+            : 0
         const baseOpen = allCollapsed
           ? false
           : layout === "outline" && collapseVersion > 0
@@ -262,15 +273,15 @@ function MetadataRows({
                   <button
                     type="button"
                     onClick={() => toggle(key, isOpen)}
-                    disabled={childEntries.length === 0}
+                    disabled={childCount === 0}
                     aria-label={`${isOpen ? t("traceLabels.collapse") : t("traceLabels.expand")} ${key}`}
-                    aria-expanded={isOpen && childEntries.length > 0}
+                    aria-expanded={isOpen && childCount > 0}
                     title={path}
                     className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-muted/50 px-2 py-1.5 text-left hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:cursor-default"
                   >
                     <ChevronDown
                       aria-hidden
-                      className={`size-3.5 shrink-0 text-muted-foreground ${isOpen ? "" : "-rotate-90"} ${childEntries.length ? "" : "invisible"}`}
+                      className={`size-3.5 shrink-0 text-muted-foreground ${isOpen ? "" : "-rotate-90"} ${childCount ? "" : "invisible"}`}
                     />
                     <span className="min-w-0 font-mono text-sm font-semibold [overflow-wrap:anywhere]">
                       {label}
@@ -281,10 +292,10 @@ function MetadataRows({
                           ? "spanContent.jsonArray"
                           : "spanContent.jsonObject"
                       )}{" "}
-                      · {childEntries.length}
+                      · {childCount}
                     </span>
                   </button>
-                  {isOpen && childEntries.length > 0 && (
+                  {isOpen && childCount > 0 && (
                     <ul
                       className={`mt-1 space-y-1 border-l-2 border-border ${level < 4 ? "ml-3 pl-3" : "ml-1 pl-1"}`}
                     >
@@ -296,6 +307,7 @@ function MetadataRows({
                         traceCode={traceCode}
                         layout="outline"
                         parentPath={path}
+                        paginate={paginate}
                       />
                     </ul>
                   )}
@@ -350,7 +362,7 @@ function MetadataRows({
               </td>
               <td className="px-3 py-2 align-top text-sm break-all">
                 {isExpandable ? (
-                  childEntries.length === 0 ? (
+                  childCount === 0 ? (
                     <span className="text-muted-foreground italic">
                       {t(
                         isArray
@@ -360,7 +372,7 @@ function MetadataRows({
                     </span>
                   ) : (
                     <span className="text-muted-foreground italic">
-                      {childEntries.length} {t("traceLabels.items")}
+                      {childCount} {t("traceLabels.items")}
                     </span>
                   )
                 ) : (
@@ -368,7 +380,7 @@ function MetadataRows({
                 )}
               </td>
             </tr>
-            {isExpandable && isOpen && childEntries.length > 0 && (
+            {isExpandable && isOpen && childCount > 0 && (
               <MetadataRows
                 data={value as Record<string, unknown>}
                 level={level + 1}
@@ -380,6 +392,17 @@ function MetadataRows({
           </React.Fragment>
         )
       })}
+      {paginate && total > 5 && (
+        <li className="min-w-0">
+          <TraceRecordControls
+            shown={shown}
+            total={total}
+            onMore={() => setVisible(shown + 5)}
+            onAll={() => setVisible(total)}
+            onCollapse={() => setVisible(5)}
+          />
+        </li>
+      )}
     </>
   )
 }
@@ -392,6 +415,7 @@ export function MetadataTree({
   traceCode = false,
   layout = "table",
   expansion,
+  paginate = false,
 }: {
   data: unknown
   markdown?: boolean
@@ -400,6 +424,7 @@ export function MetadataTree({
   traceCode?: boolean
   layout?: "table" | "outline"
   expansion?: "all" | "none"
+  paginate?: boolean
 }) {
   const { t } = useTranslation()
   const [collapseVersion, setCollapseVersion] = useState(0)
@@ -488,6 +513,7 @@ export function MetadataTree({
             markdown={markdown}
             traceCode={traceCode}
             layout="outline"
+            paginate={paginate}
           />
         </ul>
       ) : (

@@ -49,6 +49,31 @@ class ModelPricingSemanticsTests(SimpleTestCase):
     def test_exact_provider_identity_prevents_same_model_custom_host_pricing(self):
         self.assertEqual(usage([price(provider="https://proxy.example")])["cost"]["reason"], "price_not_configured")
 
+    def test_routed_kimi_call_can_be_priced_but_legacy_placeholders_cannot(self):
+        attrs = {"gen_ai.usage.input_tokens": 100, "gen_ai.usage.output_tokens": 20,
+                 "gen_ai.usage.cache_read.input_tokens": 30}
+        observed_at = "2026-02-01T00:00:00Z"
+        model = "gateway/route/model-a"
+        rate = price("reference", provider="gateway", model=model, cacheReadInput="0.1",
+                     cacheWriteInput="2.5", catalogProvider="another-host", catalogModel="model-a")
+        lookup = {"model": model, "provider": "gateway", "observed_at": observed_at}
+        cost = normalize_usage(attrs, prices=[rate], **lookup)["cost"]
+        self.assertEqual((cost["total"], cost["pricingSource"]), ("0.000223", "reference"))
+        manual = price(provider="gateway", model=model, cacheReadInput="0.1")
+        cost = normalize_usage(attrs, prices=[manual, rate], **lookup)["cost"]
+        self.assertEqual((cost["total"], cost["pricingSource"]), ("0.000223", "manual"))
+        for provider, model, reason in (
+            ("unknown", "unknown", "provider_unknown"),
+            ("gateway", "unknown", "model_unknown"),
+        ):
+            with self.subTest(reason=reason):
+                old_rule = price("reference", provider=provider, model=model)
+                cost = normalize_usage(attrs, model=model, provider=provider, prices=[old_rule], observed_at=observed_at)["cost"]
+                self.assertEqual((cost["total"], cost["reason"]), (None, reason))
+                reported = normalize_usage({**attrs, "gen_ai.usage.total_cost": 0}, model=model,
+                                           provider=provider, prices=[old_rule], observed_at=observed_at)["cost"]
+                self.assertEqual((reported["total"], reported["source"]), ("0", "reported"))
+
     def test_current_catalog_values_old_observation_and_marks_basis(self):
         rate = price("catalog", effectiveFrom=None, valuationBasis="current_catalog",
                      catalogProvider="vendor", catalogModel="m", catalogSnapshot="snapshot-sha")
@@ -69,14 +94,77 @@ class ModelPricingSemanticsTests(SimpleTestCase):
         self.assertEqual(result["output"], "0.00011")
         self.assertEqual(result["details"]["reasoning"], "0.00005")
 
-    def test_absent_optional_rate_values_do_not_require_bucket_measurements(self):
-        self.assertEqual(usage([price(cacheReadInput=None, cacheWriteInput=None, reasoning=None)])["cost"]["total"], "0.00028")
+    def test_missing_optional_usage_keeps_base_estimate_and_unknown_measurements(self):
+        result = usage([price(cacheReadInput="0", cacheWriteInput="1", reasoning="0")])
+        self.assertEqual([result[k] for k in ("cacheReadInput", "cacheWriteInput", "reasoning")], [None, None, None])
+        self.assertEqual(result["cost"]["details"], {"input": "0.0002", "output": "0.00008"})
+        self.assertEqual((result["cost"]["source"], result["cost"]["total"]), ("estimated", "0.00028"))
 
-    def test_required_cache_and_reasoning_measurements_cannot_be_missing(self):
-        for bucket, reason in (("cacheReadInput", "cache_usage_missing"), ("reasoning", "reasoning_usage_missing")):
-            with self.subTest(bucket=bucket):
-                self.assertEqual(usage([price(**{bucket: "1"})])["cost"]["reason"], reason)
-        self.assertEqual(usage([price(reasoning="10")], **{"gen_ai.usage.reasoning.output_tokens": 21})["cost"]["reason"], "overlapping_usage_buckets")
+    def test_unpriced_optional_tokens_are_excluded_and_explicit_free_usage_is_retained(self):
+        attrs = {
+            "gen_ai.usage.cache_read.input_tokens": 30,
+            "gen_ai.usage.cache_write.input_tokens": 10,
+            "gen_ai.usage.reasoning.output_tokens": 5,
+        }
+        base_only = usage([price()], **attrs)["cost"]
+        self.assertEqual(base_only["details"], {"input": "0.00012", "output": "0.00006"})
+        self.assertEqual((base_only["total"], base_only["knownSubtotal"], base_only["reason"]),
+                         (None, "0.00018", "price_bucket_missing"))
+        free_reads = usage([price(cacheReadInput="0")], **attrs)["cost"]
+        self.assertEqual(free_reads["details"], {**base_only["details"], "cacheReadInput": "0"})
+        self.assertEqual((free_reads["total"], free_reads["knownSubtotal"]), (None, "0.00018"))
+
+    def test_unpriced_usage_does_not_masquerade_as_zero_cost(self):
+        attrs = {"gen_ai.usage.cache_read.input_tokens": 100, "gen_ai.usage.reasoning.output_tokens": 20}
+        unknown = usage([price()], **attrs)["cost"]
+        self.assertEqual((unknown["total"], unknown.get("knownSubtotal"), unknown["reason"]),
+                         (None, None, "price_bucket_missing"))
+        partial = usage([price(cacheReadInput="0")], **attrs)["cost"]
+        self.assertEqual((partial["total"], partial["knownSubtotal"]), (None, "0"))
+        free = usage([price(cacheReadInput="0", reasoning="0")], **attrs)["cost"]
+        self.assertEqual((free["total"], free["reason"]), ("0", None))
+        no_tokens = usage([price()], **{"gen_ai.usage.input_tokens": 0, "gen_ai.usage.output_tokens": 0})["cost"]
+        self.assertEqual((no_tokens["total"], no_tokens["reason"]), ("0", None))
+
+    def test_incomplete_call_contributes_only_to_trace_and_session_subtotals(self):
+        partial = call("partial", usage([price("reference")], **{"gen_ai.usage.cache_read.input_tokens": 40}))
+        complete = call("complete", usage([price()]))
+        result = aggregate_usage([partial])
+        self.assertIsNone(result["cost"]["total"])
+        coverage = result["costCoverage"]
+        self.assertEqual((coverage["knownCostCalls"], coverage["unknownCalls"]), (0, 1))
+        self.assertEqual((coverage["knownSubtotal"], coverage["referenceSubtotal"]), ("0.0002", "0.0002"))
+        self.assertEqual(coverage["unknownReasons"], {"price_bucket_missing": 1})
+        self.assertEqual(coverage.get("partialCostSources"), {"reference": 1})
+        self.assertEqual(coverage["referenceCalls"], 0)
+        combined = aggregate_trace_usage([{"usage": result, "coverage": {"billableCalls": 1}},
+                                          {"usage": aggregate_usage([complete]), "coverage": {"billableCalls": 1}}])
+        self.assertIsNone(combined["cost"]["total"])
+        self.assertEqual(combined["costCoverage"]["knownSubtotal"], "0.00048")
+        self.assertEqual(combined["costCoverage"].get("partialCostSources"), {"reference": 1})
+        child = {**partial, "parentObservationId": "complete"}
+        self.assertIsNone(aggregate_usage([complete, child])["costCoverage"]["knownSubtotal"])
+
+    def test_partial_catalog_and_reported_charges_retain_independent_sources(self):
+        cached = {"gen_ai.usage.cache_read.input_tokens": 40}
+        partial = call("partial", usage([price("catalog")], **cached))
+        reported = call("reported", usage([], **{"gen_ai.usage.total_cost": "1"}))
+        missing = call("missing", usage([price("catalog")], **{
+            "gen_ai.usage.cache_read.input_tokens": 100,
+            "gen_ai.usage.reasoning.output_tokens": 20,
+        }))
+        coverage = aggregate_usage([partial, reported, missing])["costCoverage"]
+        self.assertEqual(coverage["knownSubtotal"], "1.0002")
+        self.assertEqual((coverage["reportedCalls"], coverage["catalogCalls"], coverage["unknownCalls"]), (1, 0, 2))
+        self.assertEqual(coverage.get("partialCostSources"), {"catalog": 1})
+
+    def test_impossible_breakdowns_are_rejected_even_without_optional_rates(self):
+        for attrs in (
+            {"gen_ai.usage.reasoning.output_tokens": 21},
+            {"gen_ai.usage.cache_read.input_tokens": 91, "gen_ai.usage.cache_write.input_tokens": 10},
+        ):
+            with self.subTest(attrs=attrs):
+                self.assertEqual(usage([price()], **attrs)["cost"]["reason"], "overlapping_usage_buckets")
 
     def test_unsupported_tariff_remains_unknown_and_reported_zero_wins(self):
         rates = [price(unsupportedReason="unsupported_conditional_tariff")]

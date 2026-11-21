@@ -15,11 +15,13 @@ import {
   resolveSkillDetailFields,
 } from "@/labs/skill/skillDisplay"
 import {
+  isStructuredTraceValue,
   resolveSpanContent,
   resolveToolSpanOutcome,
   sameContentValue,
 } from "./spanContent"
 import { TraceRootIO } from "./TraceRootIO"
+import { structuredTracePreview } from "../traces/shared/traceJson"
 import { spanIO } from "./spanIO"
 import {
   SpanContentEnhancement,
@@ -46,6 +48,7 @@ import { CostSummary } from "@/features/model-pricing/CostSummary"
 import { PowerContextRunCard } from "@/labs/memory/PowerContextRunCard"
 import { resolvePowerContextSpan } from "@/labs/memory/powerContextSpans"
 import { PowerContextSpanIcon } from "@/labs/memory/powerContextSpanIcons"
+import { DshSpanDetails } from "./DshSpanDetails"
 
 const IO_KEYS = new Set([
   "gen_ai.input.messages",
@@ -142,7 +145,9 @@ export function SpanDetailPanel({
       fetchNativeSpanDetail(spaceId, traceId, spanId, {
         agentProduct,
         agentUuid,
-        mediaView: contentMode ? contentMode === "enhanced" : formatMode !== "json",
+        mediaView: contentMode
+          ? contentMode === "enhanced"
+          : formatMode !== "json",
         from: fromTimestamp,
         to: toTimestamp,
         sourceSystem,
@@ -355,7 +360,12 @@ export function SpanDetailPanel({
         </>
       )}
       {outputData !== undefined &&
-        (rootSpan && enhanced ? (
+        (enhanced &&
+        (rootSpan ||
+          (focusIO === "output" &&
+            isStructuredTraceValue(
+              structuredTracePreview(outputData.value)
+            ))) ? (
           <TraceRootIO
             key={`${span.span_id}/output`}
             value={outputData.value}
@@ -422,6 +432,8 @@ export function SpanDetailPanel({
           <ModelCallRoleBadge role={resolveModelCallRole(span, traceSpans)} />
         )}
       </div>
+
+      {enhanced && <DshSpanDetails span={span} />}
 
       {span.costCoverage && (
         <CostSummary

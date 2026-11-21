@@ -23,6 +23,7 @@ adds timing/error/retry detail that the log does not carry.
 | `session.header.origin` | `gen_ai.agent.origin` | subagent marker |
 | `session.header.agentPreset` | `agentic.agent.preset` | |
 | `turn/start.data.turn` | `agentic.turn.number` | |
+| Native step number from `step/start`, `step/end`, `assistant/message` or `tool/call` | `agentic.step.number` | Model and tool spans can belong to the same step |
 | `turn/end.data.reason` | `gen_ai.response.finish_reasons`, `error.type` | `completed`→`stop`, `aborted`→`aborted`, `error`→failure code |
 | `request/header.header.config.provider` | `gen_ai.provider.name` | normalized to `deepseek` enum |
 | `request/header.header.config.model` | `gen_ai.request.model` / `gen_ai.response.model` | |
@@ -36,10 +37,13 @@ adds timing/error/retry detail that the log does not carry.
 | `assistant/message.usage.cacheReadTokens` | `gen_ai.usage.cache_read.input_tokens` | |
 | `assistant/message.usage.cacheWriteTokens` | `gen_ai.usage.cache_creation.input_tokens` | |
 | `assistant/message.interrupted` | `gen_ai.response.finish_reasons=['aborted']` | |
+| Native step/start and first qualifying delta in `assistant/message.data.stream` | `gen_ai.response.time_to_first_token` | Milliseconds, with a complete unambiguous stream |
+| First qualifying delta and `assistant/message` timestamp | `agentic.llm.generation.duration_ms` | Milliseconds, independent of subsequent tool execution |
 | `tool/call.callId` | `gen_ai.tool.call.id` | |
 | `tool/call.name` | `gen_ai.tool.name` + classification `agentic.tool.*` | |
 | `tool/result.error` / content `isError` | `error.type` | |
-| `agent/request-error.failure` | `error.type`, `agentic.error.category`, `agentic.llm.retry.count` | |
+| `llm/retry-started` | `agentic.llm.retry_count` | Counts actual starts. A scheduled delay alone supplies no retry count. |
+| `agent/request-error.failure` | `agentic.error.category`, `agentic.llm.retry.count` | Request-error metric and legacy failure count |
 
 ## Metrics
 

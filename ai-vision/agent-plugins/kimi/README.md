@@ -19,13 +19,15 @@ Kimi Code 的 hook 配置位于 `$KIMI_CODE_HOME/config.toml`（默认 `~/.kimi-
 
 新版 wire 异步追加，普通 `Stop` 可能先读到尚未刷完的前缀。生产 hook 最多重读 1 秒，等待当前 turn 的最后一个 step 以 `end_turn` 结束，且实际工具结果和完整 JSONL 尾部均已可见；不会等待 hook 返回后才写入的 `turn.ended`。超过等待时间仍只处理实际读到的快照，不补造结果或用量。去重指纹也取自同一份已解析快照，避免把稍后追加的内容误记为已经导出。
 
+Kimi Code 的工具调用失败只标记对应的 tool span。回合根 span 按终态报告：正常结束为 OK，明确失败、取消或被阻止为 ERROR，终态未采到为 UNSET。普通 `Stop` 尚未读到 `turn.ended` 时，可用匹配的最后一次 `end_turn` 和已收到的工具结果确认结束。部分输出本身不代表回合已完成。旧 Python CLI 未提供终态时，沿用既有状态分类。
+
 新版只确认主 agent 的 turn、LLM、tool 和终止语义。独立子 agent 的父子关联、compaction、辅助模型调用及重试次数尚未完成原生验证；不套用旧版 positional subagent 配对，也不生成缺少起点的 compaction 时长。下面的 C6/C8 能力与手动安装说明适用于旧 Python CLI。样例来源见 [fixtures/README.md](kimihooks/tests/fixtures/README.md)。
 
 `0.4.1` 修复了原有日志缺口：日志使用同批实际导出的 trace/span ID，模型和工具按原生身份关联；resource-only 属性留在 Resource；关闭内容采集时写入 `[REDACTED]`，不会误作源字段缺失。Stop 的三信号只发送当前 turn，续聊不重复发送旧轮次日志和用量。新增现役 `agent.api_request.count/duration` 按每轮独立区间报告 delta（不保留跨轮累计计数），旧 `agent.llm_request.*` 的名称和既有 temporality 保留兼容；token counter 计新输入，Code LLM span/log 的输入总量包含缓存。直方图上界遵循 OTLP 的包含规则。
 
-真实 2.1.1 loopback 探针发现下列 SDK 信息损失，适配器不会根据期望值补数据：
+本机隔离探针观察到以下用量字段：
 
-- HTTP 未提供 usage 与明确全 0，在宿主 wire 中均变成四项全 0，连 `usage.record` 也无法区分。因此全 0 的主输入/输出省略数值并写 `.missing="true"`；显式全 0 场景只能作为固定版本的有界兼容，不能称为严格保真。这个保守判断仅适用于 Code 四项全 0；旧 Python wire 继续使用原解析路径，部分字段协议的已知 0 单独回归。
+- Kimi Code 2.1.1 和 2.6.3 都会把 HTTP 未提供用量和显式全零写成相同的 `usage.record`。两版都记录 `inputOther`、`output`、`inputCacheCreation` 为 0，2.1.1 还会记录 `inputCacheRead` 为 0，2.6.3 则省略该字段。遇到这两种记录时，插件将输入、输出用量标记为缺失（`.missing="true"`）。其他部分用量记录保留已知的零值。
 - OpenAI adapter 的 cache creation 固定为 0，reasoning/tool token 无原生可用字段；省略这些数值并标记缺失。cache read 正数可用；0 可能是宿主缺省补值，同样不能当作已报告的零。
 - 部分 HTTP usage 字段缺失会被上游补成 0，无法逐方向恢复原始 presence。输入消息增量、系统提示、请求模型和响应 ID 分别按实际来源绑定；没有完整请求历史时不补造 System/tool history。
 

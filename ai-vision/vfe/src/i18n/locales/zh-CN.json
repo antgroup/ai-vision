@@ -3,7 +3,10 @@
     "html": "预览 HTML",
     "markdown": "预览 Markdown",
     "preview": "预览",
-    "source": "源码"
+    "source": "源码",
+    "linkPreviewError": "无法在 Trace 中预览此网页",
+    "linkRequestHint": "网站可能限制了跨域访问，或此链接暂时无法访问。",
+    "linkResponseHint": "此链接未返回可预览的 HTML。"
   },
   "traceMedia": {
     "load": "加载",
@@ -2644,6 +2647,16 @@
     "pluginDescription": "在 Agent 所在机器安装采集插件，任务数据上报到当前 AI Vision 空间",
     "builtInGroup": "Agent 开发框架",
     "thirdPartyGroup": "Agent 应用接入",
+    "connection": {
+      "title": "接入信息",
+      "dialogTitle": "{{name}} · 接入信息",
+      "agentUuid": "Agent UUID",
+      "spaceUuid": "Space UUID",
+      "baseUrl": "AI Vision 地址",
+      "copyField": "复制 {{field}}",
+      "notAvailable": "暂无",
+      "installHint": "如需在另一台机器安装，请在 Agent 市场打开该应用的接入向导。"
+    },
     "removeTitle": "从频道移除 {{name}}？",
     "removeDescription": "移除后，{{name}} 将不再出现在你的 Agent 频道中。可随时在 Agent 市场加回，历史数据不受影响。",
     "removeCollectionHint": "如需同时停止数据采集，请将 CLI 接入命令中的 install 改为 uninstall 后执行。",
@@ -2786,10 +2799,39 @@
   },
   "labs": {
     "common": {
+      "importConflicts": {
+        "heading": "导入冲突",
+        "localDescription": "保存前确认同名配置。",
+        "checking": "正在检查已有名称…",
+        "checkFailed": "无法检查已有名称。",
+        "chooseSource": "选择来源",
+        "skip": "跳过此组",
+        "action": "导入操作",
+        "keep": "保留已有",
+        "replace": "覆盖已有",
+        "rename": "另存为",
+        "confirmReplace": "确认覆盖",
+        "willReplace": "将覆盖",
+        "newName": "新名称",
+        "confirmName": "确认名称",
+        "nameConfirmed": "名称已确认",
+        "checkingName": "正在检查名称…",
+        "invalidName": "请输入 1–128 个字符的名称。",
+        "nameTaken": "此名称已被使用。",
+        "nameCheckFailed": "无法检查此名称，请重试。",
+        "nameMatchesAgent": "请使用 Agent 实际上报的名称。",
+        "finish": "完成",
+        "savedSoFar_one": "已保存 {{count}} 项。",
+        "savedSoFar_other": "已保存 {{count}} 项。",
+        "duplicates_one": "已跳过 {{count}} 份相同内容",
+        "duplicates_other": "已跳过 {{count}} 份相同内容"
+      },
       "registrySource": "来源",
       "all": "全部",
       "close": "关闭",
       "cancel": "取消",
+      "importCancelledSaved_one": "已停止导入，已保存 {{count}} 项。",
+      "importCancelledSaved_other": "已停止导入，已保存 {{count}} 项。",
       "backToTrace": "返回轨迹",
       "collapse": "收起",
       "expand": "展开说明",
@@ -2955,14 +2997,32 @@
       "import": {
         "open": "导入配置",
         "title": "导入 MCP 配置",
-        "desc": "服务名称须与调用记录一致。同名导入会覆盖已有配置。",
+        "desc": "服务名称须与调用记录一致。",
+        "pasteDesc": "服务名称须与调用记录一致。保存粘贴的 JSON 会覆盖已有同名配置。",
         "tabs": {
           "search": "搜索",
           "paste": "粘贴 JSON"
         },
+        "local": {
+          "choose": "选择 JSON 文件",
+          "backToPaste": "返回粘贴",
+          "reading": "正在读取 JSON 文件…",
+          "skipped": "未导入的文件或服务",
+          "limit": "一次可读取 100 份 JSON、最多 500 个服务，文件总大小不超过 8 MiB。请选择较小的批次。",
+          "partial": "已保存 {{saved}} 个服务，另有 {{pending}} 个待保存。再次点击保存可重试。",
+          "issue": {
+            "notJson": "请选择 JSON 文件",
+            "tooLarge": "文件超过 1 MiB",
+            "unreadable": "无法读取文件",
+            "invalidJson": "JSON 格式有误",
+            "noServers": "没有找到可用的 MCP 服务",
+            "invalidServers": "部分服务不符合配置要求",
+            "duplicate": "所选文件中服务名称重复"
+          }
+        },
         "registry": {
           "directorySummary": "公开目录索引 · 仅支持查看项目",
-          "hint": "此处导入可观测配置，不会为 Agent 安装服务。搜索和配置不会安装软件包或运行工具。同名导入会覆盖已有配置。",
+          "hint": "导入观测配置后，可按服务名称关联调用记录。MCP 服务在 Agent 环境中安装。",
           "searchPlaceholder": "搜索 MCP 服务",
           "source": "来源",
           "allSources": "全部来源",
@@ -2995,6 +3055,7 @@
         "label": "配置 JSON",
         "privacy": "在浏览器内解析，环境变量和请求头只保存名称，参数和地址中疑似密钥的内容会被替换为 ******",
         "error": {
+          "duplicateServer": "JSON 中有重复的 MCP 服务名称",
           "invalidJson": "不是合法的 JSON，请检查括号和引号",
           "noServers": "没有找到 MCP 服务。需要包含 mcpServers 对象，且每个服务有 command 或 url",
           "saveFailed": "保存失败，请稍后重试"
@@ -3289,6 +3350,7 @@
         "callOk": "成功",
         "callError": "失败",
         "noCalls": "窗口内暂无调用记录",
+        "noMatchingCalls": "没有符合筛选条件的记录",
         "viewTrace": "查看轨迹",
         "repository": "来源仓库",
         "requestedRef": "请求引用",
@@ -3344,6 +3406,21 @@
         "matched": "有调用",
         "unmatched": "无调用",
         "save": "保存 {{count}} 项",
+        "local": {
+          "files": "选择文件",
+          "folder": "选择文件夹",
+          "backToPaste": "返回粘贴",
+          "reading": "正在读取 Skill 文件…",
+          "empty": "没有找到 SKILL.md。",
+          "limit": "一次最多读取 500 份 Skill 文件，合计最多 16 MiB。请分次选择。",
+          "rejected": "{{path}}：{{reason}}",
+          "invalid": "Skill 格式无效、缺少名称或字段过长",
+          "duplicate": "所选文件中有同名 Skill，请只保留一份",
+          "tooLarge": "Skill 文件过大",
+          "unreadable": "无法读取",
+          "saveFailed": "已保存 {{saved}} 项，有 {{pending}} 项未确认保存，可以重试。",
+          "retry": "重试 {{count}} 项"
+        },
         "saveDisabled": "保存",
         "error": {
           "invalidFormat": "无法识别的格式：需要 SKILL.md（以 --- 开头的 front matter）、JSON 清单或简单 YAML 清单。",
@@ -3970,13 +4047,13 @@
     "collectorLabel": "采集用户",
     "collectorHint": "来自旧版采集身份字段，不代表标准 SDK 任务用户 ID。",
     "more": "更多筛选",
-    "status": "轨迹状态",
+    "status": "回合状态",
     "statusValues": {
       "error": "失败",
       "ok": "成功",
       "unset": "未上报"
     },
-    "statusHint": "按根节点上报的状态筛选，子节点失败或重试不会改变此状态。",
+    "statusHint": "按整轮结果筛选。工具调用的异常可在详情中查看。",
     "duration": "耗时",
     "minimumDuration": "最短耗时",
     "durationHint": "完整轨迹从最早开始到最晚结束。支持 ms、s、min，最小为 1 ms。",
@@ -4115,6 +4192,16 @@
     "latencyBucketHelp": "展示后端返回的时间桶延迟；空桶保持未知。最小值和最大值只比较已返回的桶值，不代表单次请求分位数。",
     "overlappingTokenHelp": "部分 Token 字段存在包含关系，或未覆盖全部分量；此图保留各项原始趋势，不进行构成加总。",
     "tokenCompositionHelp": "折线保留输入（含缓存）、缓存输入和输出；柱状图与饼图按非缓存输入、缓存输入、输出计算，缓存只计一次。缺少有效分量时仅显示趋势。"
+  },
+  "dshSpanDetails": {
+    "title": "DSH 步骤位置",
+    "session": "DSH 会话 ID",
+    "copySession": "复制 DSH 会话 ID",
+    "turn": "第 {{number}} 轮",
+    "step": "第 {{number}} 步",
+    "firstToken": "首 Token 耗时",
+    "generation": "生成耗时",
+    "retries": "重试次数"
   },
   "traceLabels": {
     "emptyArray": "空数组",
@@ -4654,6 +4741,7 @@
     "revealSelected": "定位当前调用",
     "title": "筛选 Span",
     "errors": "异常",
+    "hideCompletedTurnToolErrors": "隐藏已完成回合的工具失败",
     "lowConfidence": "低置信度",
     "duration": "耗时",
     "tokens": "模型 Token",
@@ -4956,7 +5044,7 @@
       "selectedCatalog": "选定目录模型",
       "providerPlaceholder": "遥测中的提供方 ID",
       "modelPlaceholder": "遥测中的模型 ID",
-      "identityHint": "请保留原始计费身份。兼容同一种 API 协议不代表具有相同价格。",
+      "identityHint": "请填写调用上报的供应商和模型 ID，不能使用 unknown。兼容同一种 API 协议不代表价格相同。",
       "effectiveHint": "必须明确指定。可为历史记录设置过去的时间；时间使用当前设备时区。",
       "saveError": "规则保存失败。请检查提供方、模型、价格和生效时间后重试。",
       "back": "返回修改",
@@ -5032,6 +5120,7 @@
       "officialEquivalentLabel": "按模型官方价估算",
       "archivedEquivalentLabel": "按历史官方价估算",
       "equivalentLabel": "订阅用量估算",
+      "partialEquivalentLabel": "订阅估算小计",
       "coverageCompact": "{{known}}/{{total}} 已计算",
       "detailsShort": "明细",
       "overlapCompact": "不可加总",
@@ -5074,11 +5163,8 @@
         "reasons": {
           "officialPrice": "暂无可用的模型官方价，无法估算。",
           "publisherExchangeRate": "厂商以其他币种报价，缺少换算汇率，暂时无法估算。",
-          "price": "缺少匹配的有效单价，暂时无法估算。",
+          "price": "缺少适用的 Token 单价，无法计算完整费用。",
           "usage": "缺少完整用量，暂时无法估算。",
-          "cache": "缺少缓存用量，暂时无法估算。",
-          "equivalentCache": "缺少缓存用量，暂时无法估算按量参考。",
-          "reasoning": "缺少推理用量，暂时无法按所选单价估算。",
           "identity": "缺少供应商或模型信息，无法匹配单价。",
           "time": "调用时间缺失，无法确定应使用的单价。",
           "rules": "单价规则无效或存在冲突，请检查价格规则。",
@@ -5088,7 +5174,7 @@
           "currency": "暂不支持汇总上报金额的币种。",
           "invalidBilling": "计费方式不明确，暂时无法确定费用。"
         },
-        "partialEquivalentHint": "仅包含可估算的订阅用量，尚不涵盖全部调用。"
+        "partialEquivalentHint": "仅包含可估算的订阅用量，完整估算仍未知。"
       },
       "subscriptionActualUnknown": "订阅实际扣费未知",
       "resolvePrice": "补充模型价格"
@@ -5105,14 +5191,13 @@
     "reasons": {
       "unavailable": "价格或用量依据不足",
       "provider_unknown": "提供方未上报",
+      "model_unknown": "模型 ID 未上报",
       "official_model_price_unavailable": "缺少可用的官方基准价",
       "publisher_exchange_rate_unavailable": "缺少厂商报价的换算汇率",
       "price_not_configured": "未配置匹配价格",
       "pricing_time_missing": "调用时间未知",
       "price_not_effective": "该时间没有生效的规则",
       "usage_missing": "用量未完整上报",
-      "cache_usage_missing": "缓存用量未知",
-      "reasoning_usage_missing": "推理用量未知",
       "unsupported_pricing": "包含不支持的计费条件",
       "overlapping_usage_buckets": "Token 分类存在重叠",
       "price_bucket_missing": "缺少对应 Token 价格",
@@ -5142,7 +5227,7 @@
       "retainedCompact": "沿用已存汇率"
     },
     "workspace": {
-      "missingIdentityHint": "调用未上报完整的供应商或模型信息。可填写信息查找价格；规则不会补写原始调用，请在接入端补齐信息。",
+      "missingIdentityHint": "这些调用缺少供应商或模型 ID，无法按规则估算费用。填写信息可以查价，但新规则不会补写这些调用的计费身份。请在采集端补齐信息。",
       "modelDetailsTitle": "模型费用详情",
       "resultTitle": "费用结果",
       "priceOptionsTitle": "查找或配置单价",
@@ -5177,7 +5262,7 @@
         "missingOfficialPrice": "缺少可用的官方基准价",
         "mixed": "混合计费",
         "missingPrice": "待补价格",
-        "missingUsage": "查看原因"
+        "missingUsage": "不可计算"
       },
       "inspect": "查看详情",
       "browse": "查询模型价格",

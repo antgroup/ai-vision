@@ -23,10 +23,16 @@ replace earlier applicable prices. Fuzzy candidates are suggestions only; they
 are never selected automatically.
 
 Rates use decimal USD per million tokens. Canonical input includes cache reads
-and writes, and output includes reasoning tokens. Separate rates replace the
-corresponding portions of input/output; they are not additional charges on top
-of inclusive token totals. Missing necessary measurements, invalid/overlapping
-buckets, and unsupported tariff conditions preserve a null cost with a reason.
+and writes, and output includes reasoning tokens. Cache reads, cache writes,
+and reasoning use a separate rate (including an explicit zero) only when both
+the rate and the token count are available. Measured optional tokens are
+removed from the base-rate calculation. If a measured bucket has no rate,
+the full call cost remains unknown and the priced usage, when present,
+contributes to the known subtotal. When a breakdown is not reported, there is no
+separate charge or deduction for it; the remaining observed input/output
+is still priced. Unreported breakdowns remain unknown in usage, not zero.
+Missing required base rates or inclusive counts, overlapping buckets, and
+unsupported tariff conditions preserve a null cost with a reason.
 
 The complete total remains unknown if any included billable call has unknown
 cost. A separate known subtotal can be displayed for non-overlapping calls.
@@ -118,7 +124,7 @@ their effective dates. **Prices and exchange rates** holds occasional catalog
 and FX maintenance; source/version details are collapsed by default.
 
 The observed inventory uses a bounded complete native telemetry window and
-reports why calls cannot be priced. Missing usage cannot be repaired by
+reports why calls cannot be priced. Missing required usage cannot be repaired by
 selecting a price. Refreshing a relative period advances its end to the current
 time; a custom period keeps both explicit boundaries.
 
@@ -138,8 +144,8 @@ or excessively nested successful upstream JSON returns
 Saving or deleting a price rule also invalidates this Space's cached Trace,
 Session and framework cost queries. An already viewed historical Trace can be
 re-estimated from its original usage when the rule's effective date covers that
-call; no model rerun or telemetry rewrite is needed. Missing usage remains
-unknown, and existing reported costs keep their normal precedence.
+call; no model rerun or telemetry rewrite is needed. Missing required usage
+remains unknown for pricing, and reported costs keep their normal precedence.
 
 Trace and Session lists, their details, and framework summaries share a compact
 cost row showing the amount and calculation coverage. **Details** opens pricing
@@ -231,17 +237,17 @@ These supplements apply only to subscription estimates, with provenance
 `official_publisher` for current cards and `archived_publisher` for retired ones.
 
 The estimate uses published base rates, excluding time, context, service tier,
-and tool surcharges. Measured cache reads and writes use their published rates.
-The remaining input uses the regular input rate, including when either cache
-measurement is missing. Missing measurements stay unknown in usage. An
+and tool surcharges. The same optional rate rules apply to cache and reasoning
+breakdowns. Missing measurements stay unknown in usage. An
 unresolvable model, unsupported base tariff, or missing required usage leaves
 the estimate unknown. Legacy
 `estimateListPrice` rule inputs and `aivision.billing.estimate_list_price` span
 attributes are accepted for compatibility. The estimate is automatic.
 
 `costCoverage.subscriptionCalls` is a subset of unknown monetary calls.
-`listPriceEquivalentCalls` records the priced subset of those subscription calls;
-missing prices or usage must not imply full equivalent coverage.
+`listPriceEquivalentCalls` counts only fully priced subscription estimates.
+Priced usage from an incomplete estimate can still contribute to the
+subscription subtotal, and the call stays in the estimate's unknown reasons.
 `listPriceEquivalentSubtotal` is separate from both `knownSubtotal` and
 `referenceSubtotal`, and must never be added to them. This lets a user assess
 the approximate pay-as-you-go scale of a subscription month without claiming
@@ -311,6 +317,9 @@ The authenticated API base is
 Native usage responses add `costCoverage` with call counts by pricing source,
 unknown reasons, additive known/reference subtotals, and a currency. Existing
 `cost.source=reported|estimated` and nullable `cost.total` remain compatible.
+When an incomplete call contributes to the known subtotal, `partialCostSources`
+records the source of that priced portion. The call remains outside the counts
+of fully priced calls.
 Consumers must not infer monetary completeness from model-name matches or
 reconstruct totals from the spans loaded in a browser. Catalog/rule versions
 participate in derived projection fingerprints to prevent reuse of stale prices.

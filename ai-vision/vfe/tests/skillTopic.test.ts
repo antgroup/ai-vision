@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import ts from "typescript"
+import * as batchCollision from "../src/components/labs/shared/localImportBatchCollision.ts"
 
 function remoteFixture(
   count: number,
@@ -10,6 +11,7 @@ function remoteFixture(
   duplicateName = false
 ) {
   const saved: string[][] = []
+  const writeIntents: unknown[] = []
   const fetched: string[] = []
   let fail = failSecond
   let failedFetch = false
@@ -42,39 +44,39 @@ function remoteFixture(
         target: ts.ScriptTarget.ES2022,
       },
     }).outputText
-  )(
-    (name: string) =>
-      name === "./skillConfigImport"
-        ? parser
-        : {
-            fetchRegistrySkill: async (
-              _space: string,
-              payload: { path: string }
-            ) => {
-              fetched.push(payload.path)
-              if (payload.path === failFetchPath && !failedFetch) {
-                failedFetch = true
-                throw new Error("fetch offline")
-              }
-              return {
-                content: `---\nname: ${duplicateName ? "deploy" : payload.path}\n---\nbody`,
-              }
-            },
-            saveSkillConfigs: async (
-              _space: string,
-              configs: { name: string }[]
-            ) => {
-              saved.push(configs.map((c) => c.name))
-              if (fail && saved.length === 2) {
-                fail = false
-                throw new Error("offline")
-              }
-              return configs
-            },
-          },
-    exports
-  )
+  )((name: string) => {
+    if (name === "./skillConfigImport") return parser
+    if (name === "@/components/labs/shared/localImportBatchCollision")
+      return batchCollision
+    return {
+      fetchRegistrySkill: async (_space: string, payload: { path: string }) => {
+        fetched.push(payload.path)
+        if (payload.path === failFetchPath && !failedFetch) {
+          failedFetch = true
+          throw new Error("fetch offline")
+        }
+        return {
+          content: `---\nname: ${duplicateName ? "deploy" : payload.path}\n---\nbody`,
+        }
+      },
+      saveSkillConfigBatch: async (
+        _space: string,
+        configs: { name: string }[],
+        overwrites?: unknown
+      ) => {
+        saved.push(configs.map((c) => c.name))
+        writeIntents.push(overwrites)
+        if (fail && saved.length === 2) {
+          fail = false
+          throw new Error("offline")
+        }
+        return configs.map(({ name }) => ({ requestedName: name, name }))
+      },
+    }
+  }, exports)
   return {
+    saveBatch:
+      exports.saveSkillConfigBatches as typeof import("../src/labs/skill/skillImportRemote.ts").saveSkillConfigBatches,
     install: exports.installRepoSkills as (
       ...args: unknown[]
     ) => Promise<Record<string, unknown>>,
@@ -85,9 +87,39 @@ function remoteFixture(
       description: "",
     })),
     saved,
+    writeIntents,
     fetched,
   }
 }
+
+test("guarded Skill batching limits the complete request and scopes confirmations", async () => {
+  const f = remoteFixture(0)
+  const configs = ["one", "two"].map((name) => ({
+    name,
+    description: "",
+    path: "SKILL.md",
+    source: "skillmd",
+    raw: { content: "# Definition" },
+    allowedTools: [],
+    license: "",
+    compatibility: "",
+    importedAt: "2026-11-17T00:00:00Z",
+  }))
+  const overwrites = [{ name: "two", version: "2026-11-17T00:00:00Z" }]
+  const maxBytes = new TextEncoder().encode(
+    JSON.stringify({ skills: configs, overwrites: [] })
+  ).length
+  const saved = await f.saveBatch(
+    "space",
+    configs,
+    maxBytes,
+    () => true,
+    overwrites
+  )
+  assert.deepEqual(saved.savedNames, ["one", "two"])
+  assert.deepEqual(f.saved, [["one"], ["two"]])
+  assert.deepEqual(f.writeIntents, [[], overwrites])
+})
 
 test("remote Skill imports save more than fifty entries in bounded batches", async () => {
   const f = remoteFixture(51)

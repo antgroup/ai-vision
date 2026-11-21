@@ -100,6 +100,43 @@ test("legacy preview output follows the leaf that supplied it", async ({
   expect(unexpected).toEqual([])
 })
 
+test("legacy structured output opens the same indexed tree at a leaf without input", async ({
+  page,
+}) => {
+  await prepare(page)
+  const output = [{ result: { passed: false } }, { result: { passed: true } }]
+  const unexpected = await publicTrace(page, {
+    ...trace,
+    semantics: undefined,
+    spans: [
+      { ...root, attributes: { "openinference.span.kind": "AGENT" } },
+      {
+        ...root,
+        span_id: "legacy-leaf",
+        parent_span_id: "root",
+        attributes: {
+          "gen_ai.operation.name": "chat",
+          "gen_ai.output.messages": JSON.stringify(output),
+        },
+      },
+    ],
+  })
+  const preview = page.locator("[data-trace-overview-output]")
+  await expect(preview.locator('[data-json-path="$[0]"]')).toBeVisible()
+  await preview.locator("[data-overview-output-source]").click()
+  const source = page.getByTestId("native-span-detail")
+  await expect(source).toHaveAttribute("data-span-id", "legacy-leaf")
+  await expect(source.locator("[data-content-toolbar]")).toHaveCount(1)
+  for (const index of [0, 1]) {
+    await expect(source.locator(`[data-json-path="$[${index}]"]`)).toBeVisible()
+  }
+  await source.locator('[data-json-path="$[0].result"] > button').click()
+  await expect(
+    source.locator('[data-json-path="$[0].result.passed"] [data-json-value]')
+  ).toHaveText("false")
+  expect(unexpected).toEqual([])
+})
+
 test("canonical output with unproven span provenance remains fully readable and copyable in the overview", async ({
   page,
 }) => {
@@ -124,12 +161,7 @@ test("canonical output with unproven span provenance remains fully readable and 
   })
   const overview = page.locator("[data-trace-overview-output]")
   await expect(overview.locator("[data-overview-output-source]")).toHaveCount(0)
-  await overview
-    .getByRole("button", {
-      name: label("traceProcess.fullOutput"),
-      exact: true,
-    })
-    .click()
+  await expect(overview.locator("[data-json-outline]")).toBeVisible()
   await overview
     .getByRole("button", { name: label("traceLabels.expandAll"), exact: true })
     .click()

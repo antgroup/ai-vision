@@ -37,6 +37,14 @@ DSH 的 `inputTokens` 是非缓存输入；`gen_ai.usage.input_tokens` 是含缓
 替换和压缩后的跨 turn 历史。turn 输入只取人类 `source.kind=user` 提示，runtime context
 仍进入模型输入。响应模型与 ID 优先读取 pi replay metadata 中的 provider `responseModel` /
 `responseId`，否则读取 assistant source model / message ID；0.2 system/developer 保留输入角色。
+
+模型调用、工具和子 Agent 调用通过 `agentic.step.number` 保留原生步骤号，结合会话 ID 与
+`agentic.turn.number` 可对照 DSH 原生轨迹。同一步骤可以包含一次模型调用和多次工具调用。
+当单次正常完成的模型生成有原生流式输出和结束时间证据时，记录首 Token 等待
+`gen_ai.response.time_to_first_token` 和首 Token 到生成完成的耗时
+`agentic.llm.generation.duration_ms`，单位均为毫秒。缺失或无法拆分的时间字段省略。
+原生 `llm/retry-started` 事件提供 `agentic.llm.retry_count`，表示该步骤实际开始的重试次数。
+
 单次模型输出的文本和 tool arguments 共用 65536-byte 内容预算，截断保留 UTF-8 边界和
 显式 byte marker，tool ID/name 与输出 JSON 结构保留。
 
@@ -149,7 +157,8 @@ dsh --profile web
 | `step/start` + `request/header` + `request/context` → `step/end` | `chat {model}`（LLM/CLIENT，`gen_ai.operation.name=chat`） |
 | `tool/call` → `tool/result` | `execute_tool {name}`（TOOL/INTERNAL） |
 | `assistant/message.usage` | token / cache / api metrics |
-| `agent/request-error` | retry count + `agent.api_request.error.count` |
+| `llm/retry-started` | `agentic.llm.retry_count` |
+| `agent/request-error` | `agent.api_request.error.count` 和兼容字段 `agentic.llm.retry.count` |
 
 ## 目录
 

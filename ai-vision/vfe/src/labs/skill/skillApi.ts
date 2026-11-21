@@ -1,8 +1,14 @@
 import { fetchWithSession } from "@/lib/api"
 import { getPresetTimeWindow } from "@/lib/timeFilter"
+import { readLocalImportBatchCollision } from "@/components/labs/shared/localImportBatchCollision"
+import type {
+  LocalImportMatch,
+  LocalImportOverwrite,
+} from "@/components/labs/shared/localImportReview"
 
 import type {
   SkillConfig,
+  SkillConfigSummary,
   SkillObservabilityResult,
   SkillQueryParams,
   SkillHistoryFilters,
@@ -34,15 +40,19 @@ async function skillFetch(
     // Error bodies are still the {code, message} envelope; surface the
     // backend message when present.
     const text = await response.text().catch(() => "")
+    let collision
     let message = ""
     let code: number | null = null
     try {
       const body = JSON.parse(text)
       message = body?.message ?? ""
       code = typeof body?.code === "number" ? body.code : null
+      if (response.status === 409 && code === 3105)
+        collision = readLocalImportBatchCollision(body.data, message)
     } catch {
       // keep empty: fall through to the generic error below
     }
+    if (collision) throw collision
     throw new SkillApiError(
       message || `Skill API error ${response.status}`,
       code
@@ -57,12 +67,14 @@ async function skillFetch(
 /** Aggregated skill calls and containment edges for the selected window. */
 export async function listSkillStats(
   params: SkillQueryParams,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  view?: "summary"
 ): Promise<SkillObservabilityResult> {
   const search = new URLSearchParams({
     agent_product: params.agentProduct,
     ...resolveScanWindow(params),
     ...(params.agentUuid ? { agent_uuid: params.agentUuid } : {}),
+    ...(view ? { view } : {}),
   })
   return (await skillFetch(
     `/api/v2/spaces/${encodeURIComponent(params.spaceId)}/labs/skill/observations?${search}`,
@@ -81,6 +93,46 @@ export async function listSkillConfigs(
   return Array.isArray(data) ? (data as SkillConfig[]) : []
 }
 
+export async function listSkillConfigSummaries(
+  spaceId: string,
+  signal?: AbortSignal
+): Promise<SkillConfigSummary[]> {
+  const data = await skillFetch(`${configUrl(spaceId)}?view=summary`, {
+    signal,
+  })
+  return Array.isArray(data) ? (data as SkillConfigSummary[]) : []
+}
+
+export async function getSkillConfig(
+  spaceId: string,
+  name: string,
+  signal?: AbortSignal
+): Promise<SkillConfig | null> {
+  const search = new URLSearchParams({ view: "detail", name })
+  try {
+    return (await skillFetch(`${configUrl(spaceId)}?${search}`, {
+      signal,
+    })) as SkillConfig
+  } catch (error) {
+    if (error instanceof SkillApiError && error.code === 3104) return null
+    throw error
+  }
+}
+
+export async function checkSkillImportConflicts(
+  spaceId: string,
+  names: string[],
+  signal?: AbortSignal
+): Promise<LocalImportMatch[]> {
+  const data = await skillFetch(`${configUrl(spaceId)}?view=conflicts`, {
+    method: "POST",
+    body: JSON.stringify({ names }),
+    signal,
+  })
+  if (!Array.isArray(data)) throw new SkillApiError("Invalid conflict response")
+  return data as LocalImportMatch[]
+}
+
 /** Upserts by `name`; configs are already sanitized by the import parser. */
 export async function saveSkillConfigs(
   spaceId: string,
@@ -93,11 +145,30 @@ export async function saveSkillConfigs(
   return Array.isArray(data) ? (data as SkillConfig[]) : []
 }
 
+interface SkillSaveReceipt {
+  requestedName: string
+  name: string
+}
+
+/** Confirm the submitted writes without returning the stored Skill bodies. */
+export async function saveSkillConfigBatch(
+  spaceId: string,
+  skills: SkillConfig[],
+  overwrites?: readonly LocalImportOverwrite[]
+): Promise<SkillSaveReceipt[]> {
+  const data = await skillFetch(`${configUrl(spaceId)}?response=receipts`, {
+    method: "PUT",
+    body: JSON.stringify({ skills, overwrites }),
+  })
+  return Array.isArray(data) ? (data as SkillSaveReceipt[]) : []
+}
+
 export async function deleteSkillConfig(
   spaceId: string,
   name: string
 ): Promise<void> {
-  await skillFetch(`${configUrl(spaceId)}/${encodeURIComponent(name)}`, {
+  const search = new URLSearchParams({ name })
+  await skillFetch(`${configUrl(spaceId)}?${search}`, {
     method: "DELETE",
   })
 }

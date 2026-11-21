@@ -2,6 +2,7 @@ import {
   collectTraceUserInput,
   resolveReportedInputKind,
 } from "../traces/shared/traceUserInput.ts"
+import { traceRecordedTextPart } from "../traces/shared/traceCodeTextParts.ts"
 import type { OTelSpan } from "./types"
 
 export interface ContentMessage {
@@ -299,11 +300,10 @@ export function resolveSpanContent(
   )
     return null
   const candidateOutputs = sequence(output)
-  const outputs = candidateOutputs?.every(
-    (value) => messageRole(value) !== null
-  )
-    ? candidateOutputs
-    : null
+  const outputs =
+    candidateOutputs && isRecordedMessageSequence(candidateOutputs)
+      ? candidateOutputs
+      : null
   const latest = outputs?.at(-1)
   return {
     kind: "conversation",
@@ -334,14 +334,21 @@ export function contentPreview(
   return { text: text.slice(0, limit), truncated: text.length > limit }
 }
 
-/** Extract presentation content while leaving the full message available on expansion. */
-export function messageContent(value: unknown): unknown {
-  if (!record(value)) return value
-  const message = record(value.kwargs)
+function messageBody(value: Record<string, unknown>) {
+  return record(value.kwargs)
     ? value.kwargs
     : record(value.data)
       ? value.data
       : value
+}
+
+/** Extract presentation content while leaving the full message available on expansion. */
+export function messageContent(
+  value: unknown,
+  { includeToolCalls = true }: { includeToolCalls?: boolean } = {}
+): unknown {
+  if (!record(value)) return value
+  const message = messageBody(value)
   const content = Object.hasOwn(message, "content")
     ? message.content
     : message.parts
@@ -350,7 +357,8 @@ export function messageContent(value: unknown): unknown {
     (record(message.additional_kwargs)
       ? message.additional_kwargs.tool_calls
       : undefined)
-  if (calls !== undefined) return { content, tool_calls: calls }
+  if (includeToolCalls && calls !== undefined)
+    return { content, tool_calls: calls }
   return content === undefined ? value : content
 }
 
@@ -379,4 +387,28 @@ export function messageRole(value: unknown): string | null {
     ToolMessage: "tool",
   }
   return typeof type === "string" ? (roles[type] ?? null) : null
+}
+
+export function isRecordedMessageSequence(value: readonly unknown[]): boolean {
+  return (
+    value.length > 0 &&
+    value.every(
+      (item) =>
+        record(item) &&
+        messageRole(item) !== null &&
+        (messageContent(item) !== item ||
+          typeof messageBody(item).reasoning_content === "string")
+    )
+  )
+}
+
+/** Typed message and content blocks retain their specialized rendering. */
+export function isStructuredTraceValue(value: unknown): boolean {
+  if (!record(value) && !Array.isArray(value)) return false
+  if (!Array.isArray(value)) return true
+  if (isRecordedMessageSequence(value)) return false
+  const typedContent =
+    value.every((item) => record(item) && typeof item.type === "string") &&
+    value.some((item) => traceRecordedTextPart(item) !== null)
+  return !typedContent
 }

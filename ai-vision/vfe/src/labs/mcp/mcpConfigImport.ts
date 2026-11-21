@@ -6,7 +6,7 @@ import type {
 
 export const MASK = "******"
 
-export type McpImportError = "invalidJson" | "noServers"
+export type McpImportError = "invalidJson" | "noServers" | "duplicateServer"
 
 export interface McpImportResult {
   configs: McpServerConfig[]
@@ -15,6 +15,11 @@ export interface McpImportResult {
   /** Pasted header values per server id, used for the one-shot tools/list
    * sync right after import; never sent to the configs API. */
   headerValuesByServerId: Record<string, Record<string, string>>
+}
+
+interface McpImportEntry {
+  config: McpServerConfig
+  headerValues?: Record<string, string>
 }
 
 const SECRET_KEY = /token|secret|password|passwd|api[-_]?key|auth|credential/i
@@ -35,16 +40,65 @@ function looksLikeEntry(value: unknown) {
   )
 }
 
-/**
- * Accepts `{ mcpServers: {...} }` (Cursor, Claude Code), `{ servers: {...} }`
- * (VS Code), or a bare `{ name: entry }` map.
- */
-function serverMap(root: unknown): Record<string, unknown> | null {
-  if (!isRecord(root)) return null
-  for (const key of ["mcpServers", "servers", "mcp_servers"]) {
-    if (isRecord(root[key])) return root[key] as Record<string, unknown>
+function skipWhitespace(text: string, start: number) {
+  let index = start
+  while (/\s/.test(text[index] ?? "")) index++
+  return index
+}
+
+function quotedEnd(text: string, start: number) {
+  for (let index = start + 1; index < text.length; index++) {
+    if (text[index] === '"') return index + 1
+    if (text[index] === "\\") index++
   }
-  return Object.values(root).some(looksLikeEntry) ? root : null
+  return text.length
+}
+
+function valueEnd(text: string, start: number) {
+  let depth = 0
+  for (let index = start; index < text.length; index++) {
+    const char = text[index]
+    if (char === '"') index = quotedEnd(text, index) - 1
+    else if (char === "[" || char === "{") depth++
+    else if (char === "]" || char === "}") {
+      if (!depth) return index
+      depth--
+    } else if (char === "," && !depth) return index
+  }
+  return text.length
+}
+
+// JSON.parse validates the input. Walk only the structure of an object to
+// recover the ranges that its last-wins property lookup cannot represent.
+function objectProperties(text: string, start: number) {
+  const properties: { name: string; start: number; end: number }[] = []
+  let index = skipWhitespace(text, start + 1)
+  while (text[index] === '"') {
+    const keyEnd = quotedEnd(text, index)
+    const name = JSON.parse(text.slice(index, keyEnd)) as string
+    const valueStart = skipWhitespace(text, skipWhitespace(text, keyEnd) + 1)
+    const end = valueEnd(text, valueStart)
+    properties.push({ name, start: valueStart, end })
+    if (text[end] !== ",") break
+    index = skipWhitespace(text, end + 1)
+  }
+  return properties
+}
+
+// Cursor and Claude Code use mcpServers, VS Code uses servers. A bare map
+// remains supported. Multiple occurrences of a wrapper keep their entries.
+function serverProperties(text: string) {
+  const root = objectProperties(text, skipWhitespace(text, 0))
+  for (const key of ["mcpServers", "servers", "mcp_servers"]) {
+    const wrappers = root.filter(
+      (property) => property.name === key && text[property.start] === "{"
+    )
+    if (wrappers.length)
+      return wrappers.flatMap((property) =>
+        objectProperties(text, property.start)
+      )
+  }
+  return root
 }
 
 /** Allowed keys of a server entry's `memory` block; mirrors the backend
@@ -170,19 +224,43 @@ export function parseMcpConfigJson(
   text: string,
   now = new Date()
 ): McpImportResult | McpImportError {
+  const parsed = parseMcpConfigEntries(text, now)
+  if (typeof parsed === "string") return parsed
+  if (parsed.duplicateServer) return "duplicateServer"
+  return {
+    configs: parsed.entries.map(({ config }) => config),
+    skipped: parsed.skipped,
+    headerValuesByServerId: Object.fromEntries(
+      parsed.entries.flatMap(({ config, headerValues }) =>
+        headerValues ? [[config.serverId, headerValues] as const] : []
+      )
+    ),
+  }
+}
+
+export function parseMcpConfigEntries(
+  text: string,
+  now = new Date()
+):
+  | { entries: McpImportEntry[]; skipped: string[]; duplicateServer: boolean }
+  | Exclude<McpImportError, "duplicateServer"> {
   let root: unknown
   try {
     root = JSON.parse(text)
   } catch {
     return "invalidJson"
   }
-  const servers = serverMap(root)
-  if (!servers || !Object.keys(servers).length) return "noServers"
+  if (!isRecord(root)) return "noServers"
+  const properties = serverProperties(text)
 
-  const configs: McpServerConfig[] = []
+  const entries: McpImportEntry[] = []
   const skipped: string[] = []
-  const headerValuesByServerId: Record<string, Record<string, string>> = {}
-  for (const [serverId, value] of Object.entries(servers)) {
+  const names = new Set<string>()
+  let duplicateServer = false
+  for (const { name: serverId, start, end } of properties) {
+    if (names.has(serverId)) duplicateServer = true
+    names.add(serverId)
+    const value: unknown = JSON.parse(text.slice(start, end))
     if (!looksLikeEntry(value)) {
       skipped.push(serverId)
       continue
@@ -194,38 +272,38 @@ export function parseMcpConfigJson(
     const args = Array.isArray(entry.args)
       ? entry.args.filter((item): item is string => typeof item === "string")
       : undefined
-    const headerValues = isRecord(entry.headers)
+    const connectionHeaders = isRecord(entry.headers)
       ? Object.fromEntries(
           Object.entries(entry.headers).filter(
             (item): item is [string, string] => typeof item[1] === "string"
           )
         )
       : {}
-    if (Object.keys(headerValues).length > 0) {
-      headerValuesByServerId[serverId] = headerValues
-    }
     const transport = transportOf(entry, rawUrl)
-    configs.push({
-      serverId,
-      description:
-        typeof entry.description === "string"
-          ? entry.description.trim() || undefined
-          : undefined,
-      memory: memorySemanticsOf(entry),
-      transport,
-      command:
-        transport === "stdio" && typeof entry.command === "string"
-          ? entry.command
-          : undefined,
-      args: transport === "stdio" && args ? maskArgs(args) : undefined,
-      url: transport !== "stdio" && rawUrl ? maskUrl(rawUrl) : undefined,
-      envKeys: isRecord(entry.env) ? Object.keys(entry.env) : [],
-      headerKeys: isRecord(entry.headers) ? Object.keys(entry.headers) : [],
-      raw: sanitizeEntry(entry),
-      importedAt: now.toISOString(),
+    entries.push({
+      config: {
+        serverId,
+        description:
+          typeof entry.description === "string"
+            ? entry.description.trim() || undefined
+            : undefined,
+        memory: memorySemanticsOf(entry),
+        transport,
+        command:
+          transport === "stdio" && typeof entry.command === "string"
+            ? entry.command
+            : undefined,
+        args: transport === "stdio" && args ? maskArgs(args) : undefined,
+        url: transport !== "stdio" && rawUrl ? maskUrl(rawUrl) : undefined,
+        envKeys: isRecord(entry.env) ? Object.keys(entry.env) : [],
+        headerKeys: isRecord(entry.headers) ? Object.keys(entry.headers) : [],
+        raw: sanitizeEntry(entry),
+        importedAt: now.toISOString(),
+      },
+      headerValues: Object.keys(connectionHeaders).length
+        ? connectionHeaders
+        : undefined,
     })
   }
-  return configs.length
-    ? { configs, skipped, headerValuesByServerId }
-    : "noServers"
+  return entries.length ? { entries, skipped, duplicateServer } : "noServers"
 }

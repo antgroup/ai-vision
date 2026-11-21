@@ -31,6 +31,8 @@ export interface StepState {
   span: Span;
   context: Context;
   startedAt: number;
+  /** Timestamp from the native step/start event, independent of span fallbacks. */
+  nativeStartedAt?: number;
   endedAt?: number;
   requestConfig?: DshLlmCallConfig;
   provider?: string;
@@ -42,6 +44,10 @@ export interface StepState {
   finishReason?: string;
   interrupted?: boolean;
   retryCount: number;
+  /** Durable retry starts, distinguished from failed requests and scheduled delays. */
+  nativeRetries?: Set<string>;
+  /** A stream settled without an assistant message, including on replay. */
+  hasUncommittedAttempt?: boolean;
   closed: boolean;
   /** Deferred close time: set when step/end arrives before any assistant/message for this step. */
   pendingEnd?: number;

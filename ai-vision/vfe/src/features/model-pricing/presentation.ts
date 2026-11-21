@@ -1,5 +1,10 @@
 import type { CatalogStatus, CostCoverage, PricingRates } from "./types.ts"
 
+export function knownPricingIdentity(value: string | null): string | null {
+  const trimmed = value?.trim()
+  return trimmed && trimmed.toLowerCase() !== "unknown" ? trimmed : null
+}
+
 export function catalogProvenance(
   catalog?: Pick<CatalogStatus, "sourceType" | "sourceUrl" | "sourceRevision">
 ) {
@@ -66,7 +71,7 @@ export function costPresentation(
   if (
     coverage?.additive &&
     coverage.knownSubtotal !== null &&
-    coverage.knownCostCalls > 0
+    coverage.knownSubtotal !== undefined
   )
     return { kind: "subtotal" as const, value: coverage.knownSubtotal }
   return { kind: "unknown" as const, value: null }

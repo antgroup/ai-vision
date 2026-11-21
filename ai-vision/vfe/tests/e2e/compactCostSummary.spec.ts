@@ -533,7 +533,7 @@ test("mixed monetary subtotal and subscription reference remain separate with cl
   ).toBeVisible()
 })
 
-test("missing cache usage explains unavailable subscription equivalents in details", async ({
+test("missing required usage explains unavailable subscription equivalents in details", async ({
   page,
 }) => {
   const { summary } = await showCost(page, {
@@ -549,7 +549,7 @@ test("missing cache usage explains unavailable subscription equivalents in detai
         knownSubtotal: null,
         listPriceEquivalentSubtotal: null,
         unknownReasons: { subscription_billing: 2 },
-        listPriceEquivalentUnknownReasons: { cache_usage_missing: 2 },
+        listPriceEquivalentUnknownReasons: { usage_missing: 2 },
       },
       null
     ),
@@ -560,7 +560,7 @@ test("missing cache usage explains unavailable subscription equivalents in detai
   )
   await expect(row).not.toContainText("USD")
   await expect(summary.locator("[data-subscription-equivalent]")).toHaveCount(0)
-  const reason = uiText("en-US", "modelPricing.reasons.cache_usage_missing")
+  const reason = uiText("en-US", "modelPricing.reasons.usage_missing")
   await expect(summary).not.toContainText(reason)
   await summary.locator("[data-cost-details-trigger]").click()
   const details = page.locator("[data-cost-details-body]")
@@ -569,7 +569,7 @@ test("missing cache usage explains unavailable subscription equivalents in detai
   )
   await expect(
     details.getByText(
-      uiText("en-US", "modelPricing.cost.popup.reasons.equivalentCache"),
+      uiText("en-US", "modelPricing.cost.popup.reasons.usage"),
       { exact: true }
     )
   ).toBeVisible()

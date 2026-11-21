@@ -20,12 +20,12 @@ import {
   mcpStatusCoverage,
 } from "./mcpDisplay"
 import { McpServerDescription } from "./McpServerDescription"
-import type { McpServer, McpServerConfig } from "./types"
+import type { McpServer, McpConfigSummary } from "./types"
 
 interface McpServerCardProps {
   feature?: "mcp" | "memory"
   server: McpServer
-  config?: McpServerConfig
+  config?: McpConfigSummary
   onOpen: (serverId: string) => void
   onImport?: () => void
   configStatus?: "loading" | "error" | "ready"

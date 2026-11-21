@@ -1,7 +1,7 @@
-import { type CSSProperties } from "react"
+import type { CSSProperties, MouseEventHandler } from "react"
 import { useTranslation } from "react-i18next"
 import { useNavigate } from "react-router-dom"
-import { AppWindow, MinusCircle, Pencil } from "lucide-react"
+import { AppWindow, Info, MinusCircle, Pencil } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -42,6 +42,7 @@ export interface AgentCardProps {
   framework?: string
   capabilities?: Record<string, unknown> | null
   integration?: { icon: string | null; onEdit?: () => void }
+  onViewConnection?: MouseEventHandler<HTMLButtonElement>
   onRemove?: () => void
 }
 
@@ -57,11 +58,14 @@ export function AgentCard({
   framework,
   capabilities,
   integration,
+  onViewConnection,
   onRemove,
 }: AgentCardProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const detail = description || resolveAgentDisplayName(agentProduct, [])
+  const setupAction = onViewConnection ?? integration?.onEdit
+  const SetupIcon = onViewConnection ? Info : Pencil
 
   const traceSupported = getCapability(capabilities, "supports_trace")
   const traceDisabledTip =
@@ -177,21 +181,21 @@ export function AgentCard({
         </div>
 
         {/* Action buttons */}
-        <div
-          className={cn(
-            "mt-auto flex gap-2",
-            integration?.onEdit && "flex-wrap"
-          )}
-        >
-          {integration?.onEdit && (
+        <div className={cn("mt-auto flex gap-2", setupAction && "flex-wrap")}>
+          {setupAction && (
             <Button
               variant="outline"
               size="sm"
               className="flex-1 bg-background font-normal"
-              onClick={integration.onEdit}
+              aria-haspopup={onViewConnection ? "dialog" : undefined}
+              onClick={setupAction}
             >
-              <Pencil className="size-3.5" aria-hidden="true" />
-              {t("agentAccess.editSetup")}
+              <SetupIcon className="size-3.5" aria-hidden="true" />
+              {t(
+                onViewConnection
+                  ? "agentAccess.connection.title"
+                  : "agentAccess.editSetup"
+              )}
             </Button>
           )}
           <Button

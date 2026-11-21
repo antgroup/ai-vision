@@ -248,7 +248,7 @@ test("legacy scene stays visible and removable without offering unsupported metr
   const ui = await setup({ scene: "old-scene", tags: ["a,b"] })
   try {
     assert.ok(ui.document.body.textContent!.includes("old-scene"))
-    assert.equal(ui.button("Trace status"), undefined)
+    assert.equal(ui.button("Run status"), undefined)
     assert.equal(ui.button("Duration"), undefined)
     await ui.click("Clear Scene filter")
     assert.deepEqual(ui.query(), { scene: undefined, tags: ["a,b"] })
@@ -336,7 +336,7 @@ test("native metrics apply exact thresholds, reject fractional node counts, and 
       ui.button("Clear all"),
       "An active external query needs an available clear action"
     )
-    await ui.click("Trace status")
+    await ui.click("Run status")
     await ui.click("Failed")
     assert.equal(ui.query().status, "error")
     await ui.click("Duration")
@@ -387,7 +387,7 @@ test("applied controls edit and remove independently without clearing other cond
     })
     assert.equal(ui.document.querySelector('[role="dialog"]'), null)
 
-    await ui.click("Clear Trace status filter")
+    await ui.click("Clear Run status filter")
     assert.equal(ui.query().status, undefined)
     assert.equal(ui.query().minSpanCount, 30)
     await ui.click("Clear Call-node count filter")

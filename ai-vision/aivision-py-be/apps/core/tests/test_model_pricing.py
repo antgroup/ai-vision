@@ -140,6 +140,17 @@ class PricingApiTests(TestCase):
         self.assertEqual(response.status_code, 200, response.data)
         self.assertEqual(response.data['data']['rates']['input'], '0')
 
+    def test_rules_cannot_target_placeholder_billing_identity(self):
+        for field, prompt in (
+            ('provider', 'Enter a known billing provider'),
+            ('model', 'Enter a known model ID'),
+        ):
+            with self.subTest(field=field):
+                response = self.client.post(self.base + '/rules', {**self.body, field: ' Unknown '}, format='json')
+                self.assertEqual(response.status_code, 400, response.data)
+                self.assertIn(prompt, response.json()['message'])
+        self.assertEqual(self.client.get(self.base).data['data']['rules'], [])
+
     def test_versions_freeze_catalog_and_delete_is_space_scoped(self):
         pricing.store_catalog(catalog())
         alias = {**self.body, 'provider': 'openai', 'kind': 'alias', 'catalogProvider': 'openai', 'catalogModel': 'same'}

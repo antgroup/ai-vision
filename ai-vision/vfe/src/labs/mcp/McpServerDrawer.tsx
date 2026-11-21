@@ -441,8 +441,12 @@ function McpServerDrawerContent({
                     queryParams={queryParams}
                   />
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {t("labs.mcp.topic.statsUnknown")}
+                  <p role="status" className="text-sm text-muted-foreground">
+                    {t(
+                      observationsStatus === "loading"
+                        ? "labs.common.loading"
+                        : "labs.mcp.topic.statsUnknown"
+                    )}
                   </p>
                 )}
               </TabsContent>

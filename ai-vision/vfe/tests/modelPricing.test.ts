@@ -461,10 +461,30 @@ test("cost presentation preserves explicit zero, partial subtotal and unknown ov
     }),
     { kind: "unknown", value: null }
   )
-  assert.deepEqual(costPresentation(null, { ...coverage, knownCostCalls: 0 }), {
-    kind: "unknown",
-    value: null,
+  assert.deepEqual(
+    costPresentation(null, {
+      ...coverage,
+      knownCostCalls: 0,
+      knownSubtotal: null,
+    }),
+    { kind: "unknown", value: null }
+  )
+})
+test("cost presentation shows the priced portion when no call is fully priced", () => {
+  const partial = {
+    ...coverage,
+    billableCalls: 1,
+    knownCostCalls: 0,
+    reportedCalls: 0,
+    unknownCalls: 1,
+    knownSubtotal: "0.00018",
+    unknownReasons: { price_bucket_missing: 1 },
+  }
+  assert.deepEqual(costPresentation(null, partial), {
+    kind: "subtotal",
+    value: "0.00018",
   })
+  assert.equal(pricingModelState(partial), "missingPrice")
 })
 test("manual rates preserve optional missing rates and permit explicit decimal zero", () => {
   assert.equal(
@@ -673,16 +693,16 @@ test("subscription estimate gaps distinguish official rates from configurable pr
   }
   assert.equal(pricingNeedsAttention(missingPrice), true)
   assert.equal(pricingModelState(missingPrice), "missingPrice")
-  const missingCache = {
+  const missingUsage = {
     ...subscription,
-    listPriceEquivalentUnknownReasons: { cache_usage_missing: 1 },
+    listPriceEquivalentUnknownReasons: { usage_missing: 1 },
   }
-  assert.equal(pricingNeedsAttention(missingCache), true)
-  assert.equal(pricingModelState(missingCache), "missingUsage")
+  assert.equal(pricingNeedsAttention(missingUsage), true)
+  assert.equal(pricingModelState(missingUsage), "missingUsage")
   assert.equal(
     pricingNeedsAttention({
       ...subscription,
-      listPriceEquivalentUnknownReasons: { cache_usage_missing: 0 },
+      listPriceEquivalentUnknownReasons: { usage_missing: 0 },
     }),
     false
   )
@@ -736,6 +756,29 @@ test("cost details offer configuration only for ordinary monetary gaps", () => {
   assert.equal(pricingLink(mixed)?.props.href, pricingHref)
 })
 
+test("cost subtotal explains partial catalog provenance without counting a fully priced call", () => {
+  const { CostSummary } = nativeUiHarness().load<{
+    CostSummary: (props: { coverage: CostCoverage }) => unknown
+  }>("features/model-pricing/CostSummary.tsx")
+  const mixed = {
+    ...coverage,
+    billableCalls: 2,
+    knownCostCalls: 1,
+    reportedCalls: 1,
+    manualCalls: 0,
+    referenceCalls: 0,
+    referenceSubtotal: null,
+    knownSubtotal: "0.0012",
+    partialCostSources: { catalog: 1 },
+    unknownReasons: { price_bucket_missing: 1 },
+  }
+  const details = uiText(CostSummary({ coverage: mixed }))
+  assert.match(details, /modelPricing\.cost\.popup\.sources\.reported/)
+  assert.match(details, /modelPricing\.cost\.popup\.sources\.catalog/)
+  assert.match(details, /modelPricing\.cost\.currentCatalog/)
+  assert.doesNotMatch(details, /modelPricing\.cost\.catalog/)
+})
+
 test("demo costs are labeled as simulated and retain server cost evidence", () => {
   const { CostSummary } = nativeUiHarness({
     "./presentation": {
@@ -776,13 +819,13 @@ test("pricing gap labels normalize rich tariff reasons and preserve evidence cou
   assert.deepEqual(
     pricingFailureReasons({
       "unsupported_context_pricing:272000; unsupported_context_pricing:1000000; missing_prices": 2,
-      cache_usage_missing: 1,
-      usage_missing: 0,
+      usage_missing: 1,
+      model_unknown: 0,
     }),
     [
       { code: "unsupported_pricing", count: 2 },
       { code: "price_not_configured", count: 2 },
-      { code: "cache_usage_missing", count: 1 },
+      { code: "usage_missing", count: 1 },
     ]
   )
 })

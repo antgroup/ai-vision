@@ -55,12 +55,18 @@ export function CostSummary({
       : { amount: amount ?? null, currency: coverage.currency }
   const display = format(cost.value)
   const reference = format(coverage.referenceSubtotal)
+  const hasReference = coverage.referenceCalls > 0 || reference.amount !== null
   const equivalent = format(coverage.listPriceEquivalentSubtotal)
   const hasEquivalent =
     coverage.listPriceEquivalentSubtotal !== null &&
     coverage.listPriceEquivalentSubtotal !== undefined &&
     equivalent.amount !== null
-  const hasSubscription = (coverage.subscriptionCalls ?? 0) > 0
+  const subscriptionCalls = coverage.subscriptionCalls ?? 0
+  const estimatedSubscriptions = coverage.listPriceEquivalentCalls ?? 0
+  const partialEquivalentCoverage =
+    hasEquivalent && estimatedSubscriptions < subscriptionCalls
+  const partialEstimateOnly = hasEquivalent && estimatedSubscriptions === 0
+  const hasSubscription = subscriptionCalls > 0
   const equivalentSources = coverage.listPriceEquivalentSources ?? {}
   const pricedSources = Object.keys(equivalentSources).filter(
     (source) => equivalentSources[source] > 0
@@ -101,7 +107,11 @@ export function CostSummary({
     "reference",
   ] as const
   const monetarySources = sourceKinds.filter(
-    (kind) => coverage[`${kind}Calls`] > 0
+    (kind) =>
+      coverage[`${kind}Calls`] > 0 ||
+      (cost.kind === "subtotal" &&
+        kind !== "reported" &&
+        (coverage.partialCostSources?.[kind] ?? 0) > 0)
   )
   const equivalentKinds = [...sourceKinds, ...officialSources] as const
   const subscriptionSources = equivalentKinds.filter(
@@ -112,15 +122,18 @@ export function CostSummary({
   const officialLabel = archivedOnly
     ? "archivedEquivalentLabel"
     : "officialEquivalentLabel"
-  const equivalentLabel =
-    archivedOnly || (officialEquivalent && onlySubscription)
+  const equivalentLabel = partialEstimateOnly
+    ? "partialEquivalentLabel"
+    : archivedOnly || (officialEquivalent && onlySubscription)
       ? officialLabel
       : "equivalentLabel"
-  const equivalentCompact = archivedOnly
-    ? "archivedEquivalentCompact"
-    : officialEquivalent && onlySubscription
-      ? "officialEquivalentCompact"
-      : "equivalentCompact"
+  const equivalentCompact = partialEstimateOnly
+    ? "amountTrigger.partialSubscriptionEstimate"
+    : archivedOnly
+      ? "archivedEquivalentCompact"
+      : officialEquivalent && onlySubscription
+        ? "officialEquivalentCompact"
+        : "equivalentCompact"
   const equivalentIsPrimary =
     onlySubscription &&
     coverage.additive &&
@@ -143,18 +156,13 @@ export function CostSummary({
       ? "subscriptionActualUnknown"
       : monetaryLabel
   const knownCalls = equivalentIsPrimary
-    ? (coverage.listPriceEquivalentCalls ?? 0)
+    ? estimatedSubscriptions
     : coverage.knownCostCalls
   const totalCalls = equivalentIsPrimary
-    ? (coverage.subscriptionCalls ?? 0)
+    ? subscriptionCalls
     : coverage.billableCalls
   const partialCostCoverage =
     coverage.additive && knownCalls > 0 && knownCalls < totalCalls
-  const estimatedSubscriptions = coverage.listPriceEquivalentCalls ?? 0
-  const partialEquivalentCoverage =
-    hasEquivalent &&
-    estimatedSubscriptions > 0 &&
-    estimatedSubscriptions < (coverage.subscriptionCalls ?? 0)
   let amountTriggerLabel = "modelPricing.cost.unknown"
   if (amountTrigger && primaryDisplay.amount !== null) {
     if (simulated) {
@@ -165,7 +173,7 @@ export function CostSummary({
         : "modelPricing.cost.amountTrigger.subscriptionEstimate"
     } else if (monetaryLabel === "estimatedTotal") {
       amountTriggerLabel = "modelPricing.cost.estimatedTotal"
-    } else if (coverage.referenceCalls > 0) {
+    } else if (hasReference) {
       amountTriggerLabel = "modelPricing.cost.amountTrigger.referenceSubtotal"
     } else {
       amountTriggerLabel =
@@ -189,7 +197,6 @@ export function CostSummary({
   const reasonLabels: Record<string, string> = {
     usage_missing: "usage",
     overlapping_usage_buckets: "buckets",
-    reasoning_usage_missing: "reasoning",
     price_not_configured: "price",
     official_model_price_unavailable: "officialPrice",
     publisher_exchange_rate_unavailable: "publisherExchangeRate",
@@ -214,10 +221,12 @@ export function CostSummary({
           (code !== "ambiguous_nested_generations" || coverage.additive)
       )
       .map(({ code }) => {
-        if (isEquivalent && isSubscriptionPriceFailure(code))
+        if (
+          isEquivalent &&
+          (!hasEquivalent || code !== "price_bucket_missing") &&
+          isSubscriptionPriceFailure(code)
+        )
           return "officialPrice"
-        if (code === "cache_usage_missing")
-          return isEquivalent ? "equivalentCache" : "cache"
         if (code === "unsupported_pricing") return "unsupported"
         return reasonLabels[code] ?? "unavailable"
       })
@@ -316,9 +325,11 @@ export function CostSummary({
               <>
                 <dt className="text-muted-foreground">
                   {t(
-                    officialEquivalent
-                      ? `modelPricing.cost.${officialLabel}`
-                      : `modelPricing.cost.popup.${onlySubscription ? "equivalent" : "subscriptionEquivalent"}`
+                    partialEstimateOnly
+                      ? "modelPricing.cost.partialEquivalentLabel"
+                      : officialEquivalent
+                        ? `modelPricing.cost.${officialLabel}`
+                        : `modelPricing.cost.popup.${onlySubscription ? "equivalent" : "subscriptionEquivalent"}`
                   )}
                 </dt>
                 <dd className="min-w-0 font-medium break-all tabular-nums">
@@ -360,7 +371,7 @@ export function CostSummary({
               )}
             </p>
           )}
-          {(coverage.referenceCalls > 0 || equivalentSources.reference > 0) && (
+          {(hasReference || equivalentSources.reference > 0) && (
             <p className="text-muted-foreground">
               {t("modelPricing.cost.popup.referenceHint")}
             </p>
@@ -452,7 +463,7 @@ export function CostSummary({
                     </span>
                   ))}
               </div>
-              {coverage.referenceCalls > 0 && (
+              {hasReference && (
                 <p className="text-muted-foreground">
                   {t("modelPricing.cost.referenceSubtotal", {
                     amount: reference.amount ?? t("traceLabels.unknown"),
@@ -516,7 +527,7 @@ export function CostSummary({
                     ))}
                 </div>
               )}
-              {(coverage.catalogCalls > 0 ||
+              {(monetarySources.includes("catalog") ||
                 equivalentSources.catalog > 0 ||
                 equivalentSources.official_catalog > 0) && (
                 <p className="text-muted-foreground">
@@ -544,7 +555,7 @@ export function CostSummary({
 
   const compactStatus = (
     <>
-      {coverage.referenceCalls > 0 && (
+      {hasReference && (
         <span className="text-xs text-muted-foreground">
           {t("modelPricing.cost.referenceIncluded")}
         </span>

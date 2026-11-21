@@ -49,7 +49,12 @@ const FILTER_KEYS = [
   "model",
   "toolNames",
 ]
-const OPTIONAL_FILTER_KEYS = ["toolNameMode", "tokenMetric", "minCost"]
+const OPTIONAL_FILTER_KEYS = [
+  "toolNameMode",
+  "tokenMetric",
+  "minCost",
+  "hideCompletedTurnToolErrors",
+]
 
 export function spanFilterStorageKey(
   viewerId: string,
@@ -79,6 +84,7 @@ export function hasSpanFilterQuery({
   return Boolean(
     search.trim() ||
     filters.errorOnly ||
+    filters.hideCompletedTurnToolErrors ||
     filters.lowConfidenceOnly ||
     filters.kinds.length ||
     filters.minDurationMs !== null ||
@@ -96,6 +102,7 @@ export function sameSpanFilterQuery(
   const normalize = ({ search, filters }: SpanFilterQuery) => ({
     search: search.trim(),
     errorOnly: filters.errorOnly,
+    hideCompletedTurnToolErrors: filters.hideCompletedTurnToolErrors === true,
     lowConfidenceOnly: filters.lowConfidenceOnly,
     kinds: [...new Set(filters.kinds)].sort(),
     minDurationMs: filters.minDurationMs,
@@ -166,6 +173,8 @@ function parseQuery(value: unknown): SpanFilterQuery | null {
         tokenMetric === "output") &&
       (!hasCost || filters.minCost === null || minCost !== null) &&
       typeof filters.errorOnly === "boolean" &&
+      (!Object.hasOwn(filters, "hideCompletedTurnToolErrors") ||
+        typeof filters.hideCompletedTurnToolErrors === "boolean") &&
       typeof filters.lowConfidenceOnly === "boolean" &&
       Array.isArray(filters.kinds) &&
       filters.kinds.length <= Object.keys(KIND_NAMES).length &&
@@ -192,6 +201,9 @@ function parseQuery(value: unknown): SpanFilterQuery | null {
     search: value.search,
     filters: {
       errorOnly: filters.errorOnly,
+      ...(filters.hideCompletedTurnToolErrors
+        ? { hideCompletedTurnToolErrors: true }
+        : {}),
       lowConfidenceOnly: filters.lowConfidenceOnly,
       kinds: [...filters.kinds] as SpanFilterKind[],
       minDurationMs: filters.minDurationMs,

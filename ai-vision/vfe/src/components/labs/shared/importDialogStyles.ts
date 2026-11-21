@@ -39,4 +39,6 @@ export const importDialogStyles = {
   compactAction: `${action} h-8`,
   compactGhost: `${ghost} h-8`,
   footer: "shrink-0 gap-2",
+  localToolbarButton: "h-8 px-2.5",
+  localFooter: "flex-row flex-wrap justify-end",
 } as const

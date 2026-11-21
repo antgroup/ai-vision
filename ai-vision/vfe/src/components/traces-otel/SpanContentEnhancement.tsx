@@ -27,6 +27,7 @@ import { PowerContextMemoryContent } from "./PowerContextMemoryContent"
 import { parsePowerContextContent } from "./powerContextContent"
 import {
   contentPreview,
+  isStructuredTraceValue,
   messageContent,
   messageRole,
   resolveToolOutcome,
@@ -49,20 +50,22 @@ export function ConversationContent({
 }) {
   const { t } = useTranslation()
   const [visible, setVisible] = useState(5)
+  const structured = isStructuredTraceValue(value) && !traceMediaParts(value)
   const parts = useMemo(
     () =>
-      Array.isArray(value)
+      !structured && Array.isArray(value)
         ? traceCodeTextParts(value.map(traceRecordedTextPart))
         : [],
-    [value]
+    [structured, value]
   )
-  if (!Array.isArray(value) || value.length === 0)
+  if (structured || !Array.isArray(value) || value.length === 0)
     return (
       <SpanContentExcerpt
         value={value}
         showCopy={false}
         previewLines={previewLines}
         treeLayout="outline"
+        paginateTree={structured}
         renderFrame={renderFrame}
       />
     )

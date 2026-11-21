@@ -63,7 +63,7 @@ const BUILTIN_MEMORY_SERVER_DECLARATIONS: MemorySemanticsByServer = {
  * result-shape fallback below.
  */
 export function declaredMemorySemantics(
-  configs: McpServerConfig[] | undefined
+  configs: Pick<McpServerConfig, "serverId" | "memory">[] | undefined
 ): MemorySemanticsByServer {
   const declared: MemorySemanticsByServer = {}
   for (const [serverId, semantics] of Object.entries(
