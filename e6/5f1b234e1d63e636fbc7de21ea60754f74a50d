@@ -1,0 +1,409 @@
+scripts/ci/test_release_candidate.py
+  s_7ddb4c6ac82aba::t_098e38d4541517 13,25-29,37,53,57,60-61,203-208
+  s_7ddb4c6ac82aba::t_4c194f018d560c 139
+ai-vision/agent-plugins/docs/semconv/skill_mcp.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 62,191,197,202
+deploy/docker/.env.example
+  s_7ddb4c6ac82aba::t_4185b9ac4e1d1b 21-24
+  s_7ddb4c6ac82aba::t_9ab756d6e354a1 12,20
+  s_7ddb4c6ac82aba::t_030198f8ec5b43 8-11
+ai-vision/agent-plugins/scripts/validate_capabilities.py
+  s_7ddb4c6ac82aba::t_ac6963f996bab7 140-143
+ai-vision/agent-plugins/pi/pireplay/test/capability-probe.test.ts
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 11
+website/public/app.js
+  s_7ddb4c6ac82aba::t_58622ed073d747 12
+ai-vision/vfe/package.json
+  s_7ddb4c6ac82aba::t_964fa1dd2c8294 121
+ai-vision/docs/spaces/README.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 100
+ai-vision/agent-plugins/demos/java-demo/src/main/java/io/aivision/demo/AgentOtelDemo.java
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 154,165,171-172
+deploy/docker/compose.yaml
+  s_7ddb4c6ac82aba::t_50c7fc4552b396 56,114,149,177,240,276,315,350
+ai-vision/aivision-py-be/aivision_backend/build_info.py
+  s_7ddb4c6ac82aba::t_605dd7b67a21b5 30-31,167,173,176,184,238
+.github/workflows/release-images.yml
+  s_7ddb4c6ac82aba::t_ce65cbfffa31f1 60,94-101,157,404,488,517-523,559,588,614,623,650,682
+  s_7ddb4c6ac82aba::t_9059ce5fafd3cd 453,467,469,478
+deploy/all-in-one/main.go
+  s_7ddb4c6ac82aba::t_5d7c7518522044 372
+ai-vision/vfe/src/components/diagnose/builtinDiagnoserPolicy.ts
+  s_7ddb4c6ac82aba::t_964fa1dd2c8294 1,22,32-35
+ai-vision/docs/validation/trace-feedback-2026-10-22/README.md
+  s_7ddb4c6ac82aba::t_e11bf39618ee1a 35
+GOVERNANCE.md
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 16
+scripts/ci/README.md
+  s_7ddb4c6ac82aba::t_d92585fba0d93b 150
+  s_7ddb4c6ac82aba::t_bdbf1822d7d2eb 148-149
+  s_7ddb4c6ac82aba::t_d8128c35433365 154,159,248
+  s_7ddb4c6ac82aba::t_adb834554e78a7 196-198,266,268-274
+.github/workflows/website-pages.yml
+  s_7ddb4c6ac82aba::t_9ab756d6e354a1 21
+aivision-cli/internal/deploy/generate/product_test.go
+  s_7ddb4c6ac82aba::t_a3a6d3b16838d1 388-406
+deploy/docker/README.md
+  s_7ddb4c6ac82aba::t_030198f8ec5b43 128-131
+.github/ISSUE_TEMPLATE/1-bug-report.yml
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 10
+docs/deployment/en/dev-image-release.md
+  s_7ddb4c6ac82aba::t_1fc1ac386a3ded 135
+  s_7ddb4c6ac82aba::t_6de3bed159b4fb 54
+  s_7ddb4c6ac82aba::t_bdbf1822d7d2eb 87
+ai-vision/agent-plugins/kimi/constitution/20-mcp-skill-subagent.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 47-48
+website/public/index.html
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 32,88,90,92
+ai-vision/agent-plugins/.gitignore
+  s_7ddb4c6ac82aba::t_81fcb8b642ef5d 162
+ai-vision/docs/spaces/01-space-observation-integration-mvp.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 427,440-441,453
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_7ddb4c6ac82aba::t_207b5b03a57776 2598
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_7ddb4c6ac82aba::t_207b5b03a57776 2615
+ai-vision/agent-plugins/claudecode/cchooks/src/common/otel.rs
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 6033,6035,6117,6128,6168,6178
+ai-vision/agent-plugins/pi/observ-pi/test/core.test.ts
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 366
+ai-vision/agent-plugins/codex/capabilities/E3.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 7,15
+ai-vision/aivision-py-be/apps/core/AGENTS.md
+  s_7ddb4c6ac82aba::t_a6951de711cae4 31-36
+ai-vision/aivision-py-be/apps/core/tests/test_v2_encryption_integration.py
+  s_7ddb4c6ac82aba::t_ca30debf09ed13 313,327
+README.md
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 226,228,234-235,238
+.github/workflows/diagnostics-e2e.yml
+  s_7ddb4c6ac82aba::t_5a2475765a26ba 200,202-206
+.github/workflows/promote-release.yml
+  s_7ddb4c6ac82aba::t_ce65cbfffa31f1 31,51
+ai-vision/agent-plugins/codex/CAPABILITIES.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 31
+aivision-cli/internal/cli/component_aliases_test.go
+  s_7ddb4c6ac82aba::t_84f2f91677d27a 9,54-86
+  s_7ddb4c6ac82aba::t_2caf66b66ba231 87-88
+aivision-cli/internal/deploy/kubernetes/app.go
+  s_7ddb4c6ac82aba::t_a0e1fd66bff82c 124-125,127
+scripts/ci/test_release_reuse.py
+  s_7ddb4c6ac82aba::t_098e38d4541517 13,42,45,134
+  s_7ddb4c6ac82aba::t_4c194f018d560c 92,128,158
+.github/workflows/native-agent-e2e.yml
+  s_7ddb4c6ac82aba::t_5a2475765a26ba 269,271-275
+aivision-cli/README.md
+  s_7ddb4c6ac82aba::t_d92585fba0d93b 837-841
+  s_7ddb4c6ac82aba::t_4185b9ac4e1d1b 750
+  s_7ddb4c6ac82aba::t_1895b45e9ded0d 751-753
+  s_7ddb4c6ac82aba::t_5d7c7518522044 830,836,844
+README.ja.md
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 212,214,220-221,224
+agentlens/docker/Dockerfile.selfhost
+  s_7ddb4c6ac82aba::t_7a8bd2896418fd 7
+  s_7ddb4c6ac82aba::t_24eacebdd1bdd6 54,58
+  s_7ddb4c6ac82aba::t_ee3c969e48eeef 8-10
+deploy/kubernetes/helm-roadmap.md
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 10,12
+scripts/ci/product_registry.py
+  s_7ddb4c6ac82aba::t_7514afbccaec63 1,18-24,26-28
+ai-vision/vfe/src/pages/about/releaseInfo.ts
+  s_7ddb4c6ac82aba::t_70a456ea87dd83 62
+scripts/ci/test_native_cli_archive.py
+  s_7ddb4c6ac82aba::t_b05fa2ee18cf19 3,17-19,64
+ai-vision/docs/v2/frontend-component-layers.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 561,565
+aivision-cli/internal/deploy/runtime/app.go
+  s_7ddb4c6ac82aba::t_a0e1fd66bff82c 86-96,107,128
+  s_7ddb4c6ac82aba::t_d92585fba0d93b 291-299
+ai-vision/vfe/tests/cliOnboarding.test.ts
+  s_7ddb4c6ac82aba::t_e356852e61bbb5 142
+ai-vision/agent-plugins/pi/capabilities/E3.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 16
+ai-vision/agent-plugins/demos/nodejs-demo/src/index.mjs
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 210,221,227-228
+ai-vision/vfe/tests/builtinRuleLabels.test.ts
+  s_7ddb4c6ac82aba::t_ca30debf09ed13 21-32
+ai-vision/agent-plugins/kimi/CAPABILITIES.md
+  s_7ddb4c6ac82aba::t_e3ccca5be9bb29 66,103
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 31
+scripts/ci/release_assets.py
+  s_7ddb4c6ac82aba::t_7514afbccaec63 12,36-39,49-51,54,72,75-80,107
+ai-vision/aivision-py-be/.env.example
+  s_7ddb4c6ac82aba::t_86feddec8cf25d 31-34
+ai-vision/docs/spaces/08-space-observation-manual-provisioning-sop.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 124
+.github/workflows/ci.yml
+  s_7ddb4c6ac82aba::t_9059ce5fafd3cd 26-29,207
+docs/testing/trace-process-validation.md
+  s_7ddb4c6ac82aba::t_3efed07caeb4dd 5
+ai-vision/aivision-py-be/apps/core/trace_query/service.py
+  s_7ddb4c6ac82aba::t_ca30debf09ed13 397
+ai-vision/agent-plugins/hermes/CAPABILITIES.md
+  s_7ddb4c6ac82aba::t_51be3734c5e3fa 93
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 55,72
+ai-vision/vfe/src/features/plugins/PluginWorkspace.tsx
+  s_7ddb4c6ac82aba::t_ca30debf09ed13 309
+ai-vision/docs/diagnose/design.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 82
+docs/version-info.md
+  s_7ddb4c6ac82aba::t_3efed07caeb4dd 8
+scripts/ci/test_public_release.py
+  s_7ddb4c6ac82aba::t_098e38d4541517 11,101,133,143,270-272
+  s_7ddb4c6ac82aba::t_e21a9d0c6c820f 146-162
+  s_7ddb4c6ac82aba::t_4c194f018d560c 129-132,142
+ai-vision/agent-plugins/openclaw/observ-openclaw/index.ts
+  s_7ddb4c6ac82aba::t_81fcb8b642ef5d 10,48,147
+ai-vision/aivision-py-be/apps/core/tests/test_labs_mcp.py
+  s_7ddb4c6ac82aba::t_207b5b03a57776 805
+scripts/ci/test_public_registry.py
+  s_7ddb4c6ac82aba::t_00d4bc9c41319b 87-101
+aivision-cli/internal/deploy/compose/project_test.go
+  s_7ddb4c6ac82aba::t_4185b9ac4e1d1b 43
+ai-vision/aivision-py-be/apps/core/tests/test_labs_memory.py
+  s_7ddb4c6ac82aba::t_207b5b03a57776 514,1405
+docs/deployment/assets/sandbox-input-budget-manifest.json
+  s_7ddb4c6ac82aba::t_8c4a4523d3eb76 4
+README.en.md
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 212,214,220-221,224
+ai-vision/aivision-py-be/apps/core/management/commands/seed_data.py
+  s_7ddb4c6ac82aba::t_964fa1dd2c8294 81-82,120-131
+website/README.md
+  s_7ddb4c6ac82aba::t_58622ed073d747 35
+  s_7ddb4c6ac82aba::t_3efed07caeb4dd 33
+scripts/ci/openshell_catalog.py
+  s_7ddb4c6ac82aba::t_512d27133cd4d7 3-4
+aivision-cli/deploy/assets-manifest.json
+  s_7ddb4c6ac82aba::t_e218bfa71628da 10,150
+  s_7ddb4c6ac82aba::t_50c7fc4552b396 5,50
+deploy/docker/compose.seekdb.yaml
+  s_7ddb4c6ac82aba::t_50c7fc4552b396 58,116,151,179,248,314,353,388
+deploy/native-packaging/Dockerfile.native-agentlens
+  s_7ddb4c6ac82aba::t_5d7c7518522044 13
+deploy/kubernetes/README.md
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 66,165
+  s_7ddb4c6ac82aba::t_030198f8ec5b43 87
+  s_7ddb4c6ac82aba::t_391e95196ce746 89
+  s_7ddb4c6ac82aba::t_9ab756d6e354a1 156
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_7ddb4c6ac82aba::t_207b5b03a57776 2615
+AGENTS.md
+  s_7ddb4c6ac82aba::t_4e885aab952812 27
+deploy/blueprints/aivision.yaml
+  s_7ddb4c6ac82aba::t_4185b9ac4e1d1b 53,74-78
+scripts/ci/test_native_archive_boundary.py
+  s_7ddb4c6ac82aba::t_b05fa2ee18cf19 1-148
+CONTRIBUTING.md
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 7-8,74
+docs/README.md
+  s_7ddb4c6ac82aba::t_e11bf39618ee1a 25-26
+ai-vision/docs/v2/receipt-page-design.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 93-95,120,122
+aivision-cli/deploy/kubernetes/helm-roadmap.md
+  s_7ddb4c6ac82aba::t_e218bfa71628da 10,12
+aivision-cli/internal/deploy/generate/product.go
+  s_7ddb4c6ac82aba::t_030198f8ec5b43 308-321
+.github/ISSUE_TEMPLATE/config.yml
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 7
+agentlens/docs/configuration.md
+  s_7ddb4c6ac82aba::t_ac6963f996bab7 40
+ai-vision/vfe/tests/versionInfoDom.test.ts
+  s_7ddb4c6ac82aba::t_b6b765bac7f06a 663,669-679
+ai-vision/agent-plugins/docs/semconv/spans.yaml
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 641
+ai-vision/agent-plugins/kimi/kimihooks/src/common/http_export.rs
+  s_7ddb4c6ac82aba::t_51be3734c5e3fa 16,279
+aivision-cli/internal/deploy/kubernetes/secrets.go
+  s_7ddb4c6ac82aba::t_391e95196ce746 224-225,228-233
+  s_7ddb4c6ac82aba::t_a0e1fd66bff82c 226-227
+  s_7ddb4c6ac82aba::t_030198f8ec5b43 12-13
+  s_7ddb4c6ac82aba::t_84f2f91677d27a 195-198
+  s_7ddb4c6ac82aba::t_8ec0a67671b9f6 234
+aivision-cli/deploy/kubernetes/README.md
+  s_7ddb4c6ac82aba::t_e218bfa71628da 66,165
+  s_7ddb4c6ac82aba::t_ae646bb023587d 156
+  s_7ddb4c6ac82aba::t_50c7fc4552b396 87
+  s_7ddb4c6ac82aba::t_e2e7f3be938c2a 89
+scripts/ci/native_candidate.py
+  s_7ddb4c6ac82aba::t_b05fa2ee18cf19 22-23,287,299
+aivision-cli/internal/cli/source_coordinates_test.go
+  s_7ddb4c6ac82aba::t_5d7c7518522044 14
+  s_7ddb4c6ac82aba::t_d92585fba0d93b 37-39
+aivision-cli/blueprints/aivision-source.yaml
+  s_7ddb4c6ac82aba::t_e218bfa71628da 52,55-56,544,562
+  s_7ddb4c6ac82aba::t_50c7fc4552b396 57
+scripts/ci/public_registry.py
+  s_7ddb4c6ac82aba::t_00d4bc9c41319b 29-30,38-42,217-218,230-231
+scripts/ci/test_workflow_contracts.py
+  s_7ddb4c6ac82aba::t_4c0f7931309f5f 200-210,213-218,220-222,224-228
+  s_7ddb4c6ac82aba::t_d8128c35433365 293-296,298-299,305
+  s_7ddb4c6ac82aba::t_6de3bed159b4fb 135-140,155-156
+  s_7ddb4c6ac82aba::t_9059ce5fafd3cd 183-184,186-188,193,197-198,211-212,219,223
+  s_7ddb4c6ac82aba::t_4e885aab952812 175-177,191,239,255
+  s_7ddb4c6ac82aba::t_035a6aba8cf9af 199
+ai-vision/aivision-py-be/aivision_backend/settings.py
+  s_7ddb4c6ac82aba::t_19841313c845cb 34
+.github/ISSUE_TEMPLATE/2-feature-request.yml
+  s_7ddb4c6ac82aba::t_8ef1a64ccbec35 10
+ai-vision/agent-plugins/Makefile
+  s_7ddb4c6ac82aba::t_5d4584480b21e5 347
+ai-vision/agent-plugins/kimi/capabilities/B5.md
+  s_7ddb4c6ac82aba::t_e3ccca5be9bb29 11
+aivision-cli/blueprints/aivision.yaml
+  s_7ddb4c6ac82aba::t_e218bfa71628da 53,74-78
+scripts/ci/native_cli_archive.py
+  s_7ddb4c6ac82aba::t_b05fa2ee18cf19 1-213
+agentlens/docs/deployment.md
+  s_7ddb4c6ac82aba::t_51be3734c5e3fa 114-115
+ai-vision/agent-plugins/opencode/capabilities/E3.md
+  s_7ddb4c6ac82aba::t_51be3734c5e3fa 14
+ai-vision/agent-plugins/pi/pireplay/src/golden/scenarios.ts
+  s_7ddb4c6ac82aba::t_5d4584480b21e5 8
+docs/testing/session-status-validation-20261109.md
+  s_7ddb4c6ac82aba::t_3efed07caeb4dd 5
+ai-vision/AGENTS.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 87
+KNOWN_ISSUES.md
+  s_7ddb4c6ac82aba::t_3efed07caeb4dd 9,11,29,37,43,55,69
+deploy/native-packaging/delivery-2026-10-28-amd64.md
+  s_7ddb4c6ac82aba::t_adb834554e78a7 105-109
+ai-vision/agent-plugins/weaver/weaver-guard/src/server/dashboard-constants.js
+  s_7ddb4c6ac82aba::t_5d4584480b21e5 515
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_7ddb4c6ac82aba::t_ca30debf09ed13 98
+ai-vision/agent-plugins/claudecode/CAPABILITIES.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 31
+ai-vision/agent-plugins/docs/data-use/token-usage.md
+  s_7ddb4c6ac82aba::t_81fcb8b642ef5d 5-6
+ai-vision/agent-plugins/CAPABILITIES.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 165
+deploy/native-packaging/release-contract.md
+  s_7ddb4c6ac82aba::t_552287fbfe06e3 2,4,9-10,12-13,16,18-24,26-30,32,34,36-69,73-78
+ai-vision/agent-plugins/langfuse/examples/eino/go.mod
+  s_7ddb4c6ac82aba::t_51be3734c5e3fa 1
+ai-vision/aivision-py-be/apps/core/tests/test_seed_data.py
+  s_7ddb4c6ac82aba::t_964fa1dd2c8294 10-37
+deploy/AGENTS.md
+  s_7ddb4c6ac82aba::t_552287fbfe06e3 1,4-18,21-22,24,26-29,31-45,51-53
+  s_7ddb4c6ac82aba::t_446d3410aaee7c 46-50
+ai-vision/agent-plugins/claudecode/capabilities/E3.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 7,15
+docs/deployment/assets/sandbox-input-transport-manifest.json
+  s_7ddb4c6ac82aba::t_8c4a4523d3eb76 3
+deploy/native-packaging/README.md
+  s_7ddb4c6ac82aba::t_cc673bba128998 216
+  s_7ddb4c6ac82aba::t_adb834554e78a7 24,43-44,47-49,212-215,217
+agentlens/src/agentlens/config.py
+  s_7ddb4c6ac82aba::t_ac6963f996bab7 27
+agentlens/docker/Dockerfile.sandbox-plugin.selfhost
+  s_7ddb4c6ac82aba::t_24eacebdd1bdd6 42-43
+ai-vision/agent-plugins/METHODOLOGY.md
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 481
+scripts/ci/release_candidate.py
+  s_7ddb4c6ac82aba::t_b927d706515011 10,33,47-49,61,63,90,101-103,137
+ai-vision/vfe/src/components/agents/AgentCard.tsx
+  s_7ddb4c6ac82aba::t_964fa1dd2c8294 128
+aivision-cli/internal/deploy/runtime/source_repo_test.go
+  s_7ddb4c6ac82aba::t_f0467ef649a991 1-48
+deploy/blueprints/aivision-source.yaml
+  s_7ddb4c6ac82aba::t_5d7c7518522044 52,55-56,544,562
+  s_7ddb4c6ac82aba::t_d92585fba0d93b 57
+ai-vision/agent-plugins/kimi/capabilities/B1.md
+  s_7ddb4c6ac82aba::t_e3ccca5be9bb29 11
+docs/deployment/zh-CN/dev-image-release.md
+  s_7ddb4c6ac82aba::t_c81e714d19b7ab 87
+  s_7ddb4c6ac82aba::t_1fc1ac386a3ded 135
+  s_7ddb4c6ac82aba::t_6de3bed159b4fb 54
+scripts/ci/release_publish.py
+  s_7ddb4c6ac82aba::t_ed54c82a429738 17,20,56-57,66-67,83,154,156-160,163,166,175-177,186-187,190,210,227,271,280,294,310,342,378-381,441,443,448-450,475-479,545-546,579,591,599,608,705
+ai-vision/docs/backend/unify-agent-config-to-db.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 25
+ai-vision/agent-plugins/openclaw/observ-openclaw/semconv/attribute_groups.yaml
+  s_7ddb4c6ac82aba::t_24eacebdd1bdd6 224,746,1012
+ai-vision/agent-plugins/codex/cdxhooks/src/common/otel.rs
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 6078,6080,6148,6174,6187,6194,6439
+ai-vision/agent-plugins/kimi/kimihooks/src/common/otel.rs
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 3160,3169
+agentlens/docker/Dockerfile.rule-worker
+  s_7ddb4c6ac82aba::t_24eacebdd1bdd6 34,36
+docs/deployment/assets/openshell-bootstrap-manifest.json
+  s_7ddb4c6ac82aba::t_e1ed481ac8d7b4 66,93,107,124,141,158,171
+ai-vision/agent-plugins/docs/semconv/traces.md
+  s_7ddb4c6ac82aba::t_7a8bd2896418fd 36
+scripts/ci/test_release.py
+  s_7ddb4c6ac82aba::t_4c194f018d560c 47,865-872,1056-1057,1061,1223,1234-1235,1444-1446,1450,1483-1484,1495-1501,1513,1518
+  s_7ddb4c6ac82aba::t_ed54c82a429738 4,20,43-46,50-57,289,295,297,304,307,313,315,324,331,333,336,339,344,348,355-356,359,363,366,368-369,376-378,382,385,392,395,403,410,412,417,420,447,452,458,463,468,471,473-475,479,492,494-496,501,526-530,541,575-576,583,587,595-596,621,624-627,634,699-700,710-711,747-750,767,786,792,829,831-832,834,836,840,842-845,876,918,929-930,1064-1065,1099,1109-1110,1200,1241-1242,1401-1403,1405
+  s_7ddb4c6ac82aba::t_9b9daf0b66d724 48-49
+skills/README.md
+  s_7ddb4c6ac82aba::t_3efed07caeb4dd 4-7,30-33
+aivision-cli/internal/deploy/kubernetes/app_test.go
+  s_7ddb4c6ac82aba::t_9ab756d6e354a1 516
+  s_7ddb4c6ac82aba::t_84f2f91677d27a 21,439-483
+  s_7ddb4c6ac82aba::t_391e95196ce746 422-438,484-485
+deploy/docker/compose.external-oceanbase.yaml
+  s_7ddb4c6ac82aba::t_50c7fc4552b396 56,114,149,177,198,234,273,308
+ai-vision/agent-plugins/weaver/weaver-guard/src/server/dashboard-prompt.js
+  s_7ddb4c6ac82aba::t_5d4584480b21e5 909-910
+aivision-cli/internal/deploy/kubernetes/config.go
+  s_7ddb4c6ac82aba::t_a0e1fd66bff82c 24,32
+  s_7ddb4c6ac82aba::t_84f2f91677d27a 22,37
+  s_7ddb4c6ac82aba::t_65837eb3ba4acd 23
+.github/workflows/seekdb-deploy-smoke.yml
+  s_7ddb4c6ac82aba::t_8f18f2bf998429 33-38,41-43
+  s_7ddb4c6ac82aba::t_9059ce5fafd3cd 30,39-40
+deploy/docker/compose.external-seekdb.yaml
+  s_7ddb4c6ac82aba::t_50c7fc4552b396 56,114,149,177,198,234,273,308
+ai-vision/docs/spaces/07-langfuse-internal-provisioning-api-design.md
+  s_7ddb4c6ac82aba::t_207b5b03a57776 1
+aivision-cli/internal/deploy/components/components.go
+  s_7ddb4c6ac82aba::t_a0e1fd66bff82c 8,13-14,55-80
+  s_7ddb4c6ac82aba::t_751f5545e23f94 81
+deploy/native-packaging/delivery-2026-10-28-amd64-revision2.md
+  s_7ddb4c6ac82aba::t_fad350a16faa52 120-122
+  s_7ddb4c6ac82aba::t_adb834554e78a7 147-150
+ai-vision/agent-plugins/docs/semconv/attribute_groups.yaml
+  s_7ddb4c6ac82aba::t_885e0de0d1ec6f 1232,1237,1324
+  s_7ddb4c6ac82aba::t_81fcb8b642ef5d 71
+ai-vision/agent-plugins/docs/semconv/mapping/token-normalizer.md
+  s_7ddb4c6ac82aba::t_81fcb8b642ef5d 54,82
+docs/deployment/assets/enhanced-rule-runtime-manifest.json
+  s_7ddb4c6ac82aba::t_bb0dbefcc50772 135,149,163,177,191,205,219,233
+scripts/ci/release_reuse.py
+  s_7ddb4c6ac82aba::t_b927d706515011 15,81-82,91-92,116,130,132-133,175-177,209
+ai-vision/agent-plugins/openclaw/observ-openclaw/package.json
+  s_7ddb4c6ac82aba::t_24eacebdd1bdd6 81
+.github/workflows/framework-e2e.yml
+  s_7ddb4c6ac82aba::t_5a2475765a26ba 417,419-423,481,483-487,577,579-583
+deploy/README.md
+  s_7ddb4c6ac82aba::t_cc673bba128998 21-25,36
+ai-vision/agent-plugins/openclaw/CAPABILITIES.md
+  s_7ddb4c6ac82aba::t_5d4584480b21e5 145
+ai-vision/aivision-py-be/apps/core/tests/test_releases.py
+  s_7ddb4c6ac82aba::t_605dd7b67a21b5 17-18,114-132
+  s_7ddb4c6ac82aba::t_92abdbf2e1d614 133
+ai-vision/docs/openapi/query/openapi-external.yaml
+  s_7ddb4c6ac82aba::t_ca30debf09ed13 7-8,1267
+ai-vision/package.json
+  s_7ddb4c6ac82aba::t_964fa1dd2c8294 22
+scripts/ci/test_native_workflow_scope.py
+  s_7ddb4c6ac82aba::t_4e885aab952812 82-83
+docs/superpowers/plans/2026-11-03-cross-repo-public-daily.md
+  s_7ddb4c6ac82aba::t_6762afc9cdceeb 3,17
+scripts/ci/test_ci_runtime_budget.py
+  s_7ddb4c6ac82aba::t_e4d73281b205e0 1,13,24,27,29-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "e65f1b234e1d63e636fbc7de21ea60754f74a50d",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

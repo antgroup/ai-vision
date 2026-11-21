@@ -1,0 +1,93 @@
+ai-vision/aivision-py-be/apps/core/tests/test_pricing_inventory_snapshot.py
+  s_0ba4aa59e34a4f::t_1734fe1e6a7f32 142-146,291
+ai-vision/vfe/src/features/model-pricing/CostSummary.tsx
+  s_0ba4aa59e34a4f::t_aa74e9ee41f5bc 58,176,374,466,558
+  s_0ba4aa59e34a4f::t_68fb4463828235 110-114,530
+  s_0ba4aa59e34a4f::t_fc127b6968bc12 162
+  s_0ba4aa59e34a4f::t_50286281416d01 64-69,125-127,130-136,159,224-228,328-332
+ai-vision/agent-plugins/kimi/README.md
+  s_0ba4aa59e34a4f::t_9d2df8360f6435 28,30
+ai-vision/vfe/src/features/model-pricing/types.ts
+  s_0ba4aa59e34a4f::t_2fc64140f7907d 9-11
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing_subscription.py
+  s_0ba4aa59e34a4f::t_19eb5d0ad2e4f9 4,60-84
+  s_0ba4aa59e34a4f::t_1734fe1e6a7f32 202-207,214,218
+  s_0ba4aa59e34a4f::t_6179d2bfa9fa41 85
+ai-vision/vfe/src/components/agents/AgentCard.tsx
+  s_0ba4aa59e34a4f::t_75f3c57cc3cf75 4,45,61,67-68,184-185,190-191,193-198
+ai-vision/aivision-py-be/apps/core/trace_query/semantics/usage.py
+  s_0ba4aa59e34a4f::t_bc17bf99f120f5 755-757,796-799
+  s_0ba4aa59e34a4f::t_aa74e9ee41f5bc 495,502-504,516-523,525,730-740,744-747,751-754,758-759
+  s_0ba4aa59e34a4f::t_50286281416d01 748-750
+  s_0ba4aa59e34a4f::t_871ab98044c10f 233-234,240-249
+ai-vision/vfe/src/features/model-pricing/presentation.ts
+  s_0ba4aa59e34a4f::t_aa74e9ee41f5bc 74
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model.py
+  s_0ba4aa59e34a4f::t_bc17bf99f120f5 28
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_0ba4aa59e34a4f::t_4e56eb0a7c0628 16,232-234
+  s_0ba4aa59e34a4f::t_75f3c57cc3cf75 381,1006-1019,1036,1043
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing.py
+  s_0ba4aa59e34a4f::t_5ff4617a7d938d 144-147
+  s_0ba4aa59e34a4f::t_86a18a423e7555 151
+ai-vision/docs/observability/model-pricing.md
+  s_0ba4aa59e34a4f::t_aa74e9ee41f5bc 29-31,248-250
+  s_0ba4aa59e34a4f::t_bc17bf99f120f5 320-322
+ai-vision/vfe/tests/modelPricing.test.ts
+  s_0ba4aa59e34a4f::t_1734fe1e6a7f32 464,470-485,487
+  s_0ba4aa59e34a4f::t_fc127b6968bc12 465-469
+  s_0ba4aa59e34a4f::t_525e7d371654e9 759-778,780-781
+  s_0ba4aa59e34a4f::t_2fc64140f7907d 779
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing_semantics.py
+  s_0ba4aa59e34a4f::t_1734fe1e6a7f32 111-112,115-137,140-143,145-146
+  s_0ba4aa59e34a4f::t_cc2a57e3c1545f 138-139,144,147-159
+ai-vision/vfe/tests/e2e/modelPricing.spec.ts
+  s_0ba4aa59e34a4f::t_50286281416d01 1040-1068,1073-1097,1102-1130
+  s_0ba4aa59e34a4f::t_fc127b6968bc12 1664
+  s_0ba4aa59e34a4f::t_14689e058698cb 1069-1072,1098-1101
+ai-vision/aivision-py-be/apps/core/data/models-dev-NOTICE.txt
+  s_0ba4aa59e34a4f::t_f91047b9d6fa21 5,7
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_0ba4aa59e34a4f::t_aa74e9ee41f5bc 5169,5180
+  s_0ba4aa59e34a4f::t_75f3c57cc3cf75 2652
+  s_0ba4aa59e34a4f::t_50286281416d01 5126
+ai-vision/agent-plugins/kimi/kimihooks/src/hooks/stop.rs
+  s_0ba4aa59e34a4f::t_ed2d3514f33481 1522-1531
+  s_0ba4aa59e34a4f::t_b9e57773c8aed6 874-878,1543
+  s_0ba4aa59e34a4f::t_9d2df8360f6435 879
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_0ba4aa59e34a4f::t_50286281416d01 5126
+  s_0ba4aa59e34a4f::t_aa74e9ee41f5bc 5169,5180
+  s_0ba4aa59e34a4f::t_75f3c57cc3cf75 2626
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_0ba4aa59e34a4f::t_75f3c57cc3cf75 2652
+  s_0ba4aa59e34a4f::t_50286281416d01 5123
+  s_0ba4aa59e34a4f::t_aa74e9ee41f5bc 5166,5177
+ai-vision/vfe/tests/e2e/agentApplicationConnection.spec.ts
+  s_0ba4aa59e34a4f::t_75f3c57cc3cf75 11,13-14,53-54,58-60,123,130-131,137,140,145,186,192,215-220
+  s_0ba4aa59e34a4f::t_93a341cdff7718 57,97-116
+  s_0ba4aa59e34a4f::t_4e56eb0a7c0628 126-129,132-135,197-200,221-223
+  s_0ba4aa59e34a4f::t_4ab33345e6b2ce 224
+ai-vision/aivision-py-be/apps/core/trace_query/metrics_projection.py
+  s_0ba4aa59e34a4f::t_aa74e9ee41f5bc 32-36
+ai-vision/aivision-py-be/apps/core/services/model_pricing.py
+  s_0ba4aa59e34a4f::t_5ff4617a7d938d 411-414
+ai-vision/vfe/src/pages/onboarding/ApplicationConnectionDetails.tsx
+  s_0ba4aa59e34a4f::t_4e56eb0a7c0628 54,91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c03100bab1598f9d47abef7628ec84f04a6647a7",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

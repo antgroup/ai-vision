@@ -1,0 +1,249 @@
+ai-vision/aivision-py-be/apps/core/views/share.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 13,386-394
+  s_7ddb4c6ac82aba::t_b53206ef7e4752 395
+ai-vision/agent-plugins/tests/native_agent_e2e/drivers/_process.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1,3,6-7,90-165
+ai-vision/aivision-py-be/apps/core/services/onboarding_demo.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 6,23-26,41-43,85-101,117,175-215,217,235,245-275,285-289,298-304
+ai-vision/aivision-py-be/apps/core/services/model_pricing.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 484,529-543
+ai-vision/aivision-py-be/apps/core/views/__init__.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 43
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 75-76,2415-2425,4673-4674,4745-4746,5712-5714,5716-5745,5833
+ai-vision/aivision-py-be/apps/core/views/agent.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 5,15,18-24,30,33-39,393-469
+  s_7ddb4c6ac82aba::t_ce198ad0523301 470-471
+ai-vision/vfe/src/contexts/TimeFilterContext.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 11,13,18-24,52-53,70-73,138-142,160-164,172-173,177-178,181-182,187,190,193,197,202-219,262,275,331
+ai-vision/vfe/tests/e2e-platform/onboardingDemo.spec.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 197,270,321,331-337
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 7,10,14,223-288
+  s_7ddb4c6ac82aba::t_280de41fd2f3b3 289
+ai-vision/vfe/src/features/model-pricing/PricingCurrency.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 2,140,144-149,153,155,158,160-163,167-169,173-175,179-181,188
+ai-vision/vfe/tests/e2e/modelPricing.spec.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 45-46,308-309,316-326,432,435-461,463-493,496,501-618,621-622,626,628-637,644-734,777-803,940,942,1222,1230-1234,1237-1239,1477-1482,1506,1508
+ai-vision/vfe/src/components/traces-otel/DetailDrawer/NativeDetailDrawer.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 27,46,72,119
+ai-vision/vfe/tests/hermesDashboardIdentityDom.test.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 113-116
+ai-vision/aivision-py-be/apps/core/services/space_key_policy.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 7-11,15,23-43,45-54
+ai-vision/aivision-py-be/apps/core/tests/test_onboarding_demo.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 10,58-114,209-211,300-302,305-306,314-315,323-324,328-355,391-397,403-405,410,413-415,417-432,435,437-439,461-503
+ai-vision/vfe/tests/modelConnectionNavigationDom.test.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 252
+deploy/all-in-one/repack.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-124
+ai-vision/vfe/src/components/header/AutoRefreshControl.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 21-25,45-46,48-52
+.github/workflows/framework-e2e.yml
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 124-134,137,164-167,169,343-346
+ai-vision/vfe/src/components/layout/SpaceSelect.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 43,132-133,150
+ai-vision/agent-plugins/tests/native_agent_e2e/drivers/pi.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 17,20,50,64-74,77-80,127-132,134-138,140-145,185-189
+ai-vision/vfe/src/agents/dashboards/DashboardEntry.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 45-48,392-394
+ai-vision/vfe/src/components/product-guide/useProductGuide.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 6,11
+ai-vision/vfe/tests/e2e/productGuide.fixtures.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 6-10,23,163-214,342-344,427-458,461-464,693-703,705,709-710,721-726,729,736-740,770-782,784-786,790-796,798-799
+ai-vision/agent-plugins/tests/native_agent_e2e/test_pi_driver.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 7-8,10-11,17-18,121-226
+  s_7ddb4c6ac82aba::t_e8a020fb07816d 227
+ai-vision/aivision-py-be/apps/core/views/onboarding_demo.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 119,127-129,140,147-148,167-172
+deploy/all-in-one/test_elf_strip.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-107
+ai-vision/aivision-py-be/apps/core/migrations/0038_project_onboarding_credentials.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-26
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 114-115,747-758
+ai-vision/vfe/src/components/header/agentselector/AgentSelector.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 180,182,187-188,194,197,202-205
+docs/deployment/en/dev-image-release.md
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 50-51,123-124,126-127
+ai-vision/aivision-py-be/apps/core/services/credential_service.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 13,22-32,76-91
+  s_7ddb4c6ac82aba::t_f6e73f9bf56143 92-93
+scripts/ci/test_workflow_contracts.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 423-424,567-571,573-574,584-586,619,624-631
+scripts/ci/release_publish.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 31-32,208,211,215-219,221,261-290,296,304,315-400,440,446-447,450-452,455-458,460-462,483,488-490,492-498,527-528,533-535,570-572,574-581,626,642-668,696-699
+ai-vision/agent-plugins/tests/native_agent_e2e/test_owned_process.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-82
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 76-77,2433-2443,4662-4663,4734-4735,5701-5703,5705-5734,5822
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 195,343-345,351-355,368-386
+scripts/ci/test_ci_runtime_budget.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-146
+ai-vision/vfe/src/components/layout/AppShell.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 21,35-36,41-44,84,96-101,182,217-230,261-264,423,462-470,476,480-485,495-499,741-743,830,832-837,840,842-881,886-892
+ai-vision/vfe/src/lib/timeFilter.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 9-14,84-85,90-96,112-115,119,140-141,149-153,189-190
+ai-vision/agent-plugins/tests/framework_e2e/generate_onboarding_demo.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1,7,13,18-19,21,38-67,69-109,118-120,128-138,140,142-153,156,158-168,186,189-193,195-204,215-231,244-255,257,262,270-291,304,308,311-315,320,322,324-339,342-344,349-365,410-412,418-602,614,616-635,638-640,642-646,651,658-663,675-954,970-971,973-976,978-987,992-994,1003-1008,1012,1021,1027-1031,1034-1037,1047-1085
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 703-706
+ai-vision/vfe/tests/onboardingPagesDom.test.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 121-131,137-141,211,237-245,311-316,340-343,351,372-377,392-395,532-534,985-1155,1885-1981
+ai-vision/vfe/src/features/model-pricing/ModelPricingContent.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1,4,18-19,42-43,45-47,56,66-80,88-99,106,108,111-126,233-239,259,261-265,276,284,290-291,293-300,352,370-376,447,590,733,740-744
+deploy/all-in-one/elf_strip.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-273
+ai-vision/agent-plugins/tests/diagnostics_e2e/test_docker_database.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 3-4,9,17-21,27-28,32-33,37-49,84-94,96-97,106-115,133,160,174-202
+  s_7ddb4c6ac82aba::t_4063a56bd4508f 203
+ai-vision/aivision-py-be/apps/core/urls/api/biz.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 20,281-284
+  s_7ddb4c6ac82aba::t_e9d4c5f5914eb2 285
+deploy/all-in-one/slim.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-132
+ai-vision/agent-plugins/tests/framework_e2e/docker_database.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 7,20-27,36-66,105-107,121,162,164,173,201,223
+ai-vision/aivision-py-be/apps/core/tests/test_langfuse_onboarding.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 3,22,33,95-287,401,469-480,490
+ai-vision/vfe/src/features/model-pricing/CostSummary.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 29,37,248,250,500,513-517,554-562
+ai-vision/vfe/tests/e2e-platform/onboardingShowcase.spec.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-282
+ai-vision/vfe/tests/e2e/agentSetupSaveOrder.spec.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-99
+ai-vision/vfe/tests/traceSourceSwitchDom.test.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 93-96
+docs/deployment/zh-CN/dev-image-release.md
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 50-51,123-124,126-127
+.github/workflows/compose-deploy-smoke.yml
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 36-47
+ai-vision/aivision-py-be/apps/core/tests/test_agent_scoped_shares.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 9,121-150
+  s_7ddb4c6ac82aba::t_c588e92afb7400 151
+ai-vision/vfe/src/components/product-guide/DemoConsentDialog.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-9,11-14,36-42,45-75,81,87,98-166,171,176,178-182,185,187,218-219,222-239,241-258,261,265-268,283-287,291-295,298-365
+scripts/ci/test_release_candidate.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 84-165
+ai-vision/vfe/src/pages/onboarding/useOnboarding.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 2-15,19,80,205-317,321,325,328-329,346,354,360,381,461,465,469,479-503,505-512,530,559-562,568-572,578,597
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 6-9,12,108-286,1046,1059,1076-1078,1082-1084,1240-1246,1323-1376,1379
+  s_7ddb4c6ac82aba::t_28d7a110bfc6fa 1377-1378,1380
+ai-vision/agent-plugins/claudecode/cchooks/src/common/otel.rs
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 4575-4576,4579-4598,4608,4636,4660-4690
+  s_7ddb4c6ac82aba::t_bef0d8f0279362 4691
+ai-vision/agent-plugins/tests/diagnostics_e2e/docker_database.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 11,23-30,39-46,88-95,107-108,195,204-205,228-229,395
+ai-vision/aivision-py-be/apps/core/tests/test_pricing_inventory_transport.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 30-46,49-54
+.github/workflows/promote-release.yml
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 16-19,46,49-50,58,70,73-74,78
+ai-vision/aivision-py-be/apps/core/tests/test_space_key_quota.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-107
+.github/workflows/release-images.yml
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 31-34,362,376-381,401
+ai-vision/aivision-py-be/apps/core/views/space_keys.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 14-18,54,63
+ai-vision/vfe/src/components/agents/AgentCard.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 4,43,58,116,119-124,162-175,179-195
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 2-5,180,290,751,839,1016-1028,1053,1630,1646,1850
+ai-vision/vfe/src/components/product-guide/DemoControls.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-38
+ai-vision/vfe/src/pages/LangfuseOnboardingPage.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 3,11,25,71-73,84,96,98,104-108,129-147,149-152,154-164,171-173,177-181,185-186,189-190,193-196,232-243,247-254,259-264,302,382-384,430,433,459,470-471,485-495,500,503-504,515-518,524,527,535-545,563-567,569
+ai-vision/vfe/src/agents/lib/agent-display.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-13,17,20
+ai-vision/vfe/src/components/traces-otel/NativeSessionDetailPanel.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 2-5,349,382,799-804,810,813,961,973-977,980-992
+ai-vision/aivision-py-be/apps/core/models/space_keys.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 25-33
+ai-vision/vfe/src/features/model-pricing/timeRange.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-21
+ai-vision/vfe/src/pages/onboarding/frameworkGuides.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 54-67
+ai-vision/aivision-py-be/apps/core/tests/test_pricing_inventory_snapshot.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 13-14,127-161
+  s_7ddb4c6ac82aba::t_796749bcffe58b 162-163
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 168,185,192,1022-1033,1052-1058,1933,2031
+ai-vision/vfe/tests/agentIntegrationsDom.test.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 22,76-80,246-247,261-268
+ai-vision/vfe/tests/e2e/agentSetupEditing.spec.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-160
+deploy/all-in-one/build.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 14-15,263-265,282,296,358-359,428-429
+deploy/all-in-one/test_slim.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-68
+scripts/ci/release_candidate.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 66-67,89-90,99-100,123-131,134,148,161-162
+ai-vision/vfe/tests/modelPricing.test.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 16,23-64,144,147-148,259,739-773
+  s_7ddb4c6ac82aba::t_f63dd3840620ed 774
+scripts/ci/README.md
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 48-49,53,59-66,69-71,98-99,116
+  s_7ddb4c6ac82aba::t_270a182588f3ef 55
+  s_7ddb4c6ac82aba::t_72f001e9c84c3f 54,117
+ai-vision/vfe/src/pages/onboarding/OnboardingPageTemplate.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 33,53-54,67,83-88,156,158-159,166-170,198-207,217-328,445-447,482-498,510-513,547-636,648,650-652
+scripts/ci/test_native_workflow_scope.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 20-21,111,130-131,133,166-197
+  s_7ddb4c6ac82aba::t_78b570214a82ea 198
+ai-vision/vfe/src/components/product-guide/ProductGuide.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 19,21-26,101,153,163-184,277-281,284-288,290-294,329-362,364,367,482-486,894,899,972,1007-1017,1069-1070,1086-1087,1094,1099,1105,1202,1316-1320
+ai-vision/vfe/src/components/traces-otel/SpanDetailPanel.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 67,90,401
+ai-vision/vfe/src/pages/RelayOnboardingPage.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 3-7,10,25,35-36,47,55,58,60,66-70,79-88,90,92,105-106,110,129-177,184-186,217,228-232,236-243,250,265-268,287-297,324,326,385,472-474
+.github/workflows/ci.yml
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 63-64,75-78,90-93,99-102
+ai-vision/vfe/src/agents/traces/TraceEntry.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 36-39,63-69,77,524
+ai-vision/agent-plugins/tests/framework_e2e/test_docker_database.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 6-7,12-13,19-24,35,117-129,164,195-204,206-207,215-222,422-463
+  s_7ddb4c6ac82aba::t_8fe017688e6f89 464
+ai-vision/vfe/src/pages/SharePage.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 42,195,254,309,341
+ai-vision/vfe/tests/e2e/qualityTimeRange.spec.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 11,26-31,40,125-128,130,142-145,152,210-242
+  s_7ddb4c6ac82aba::t_6cec52c289ea6c 243-244
+deploy/all-in-one/README.md
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 20-65
+deploy/all-in-one/test_repack.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 1-103
+scripts/ci/test_release.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 582-584,671,685,860-1289
+  s_7ddb4c6ac82aba::t_160eb02a686eb7 1290-1291
+.github/workflows/diagnostics-e2e.yml
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 115-118
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 75-76,2441-2451,4673-4674,4745-4746,5712-5714,5716-5745,5833
+ai-vision/vfe/src/features/model-pricing/pricingQueryInvalidation.ts
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 3-4,9
+.github/workflows/native-agent-e2e.yml
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 80-94
+ai-vision/agent-plugins/tests/framework_e2e/execute_rag.py
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 250-251,294-295
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 8,37,94,96-101
+ai-vision/vfe/src/components/header/TimeFilterControl.tsx
+  s_7ddb4c6ac82aba::t_8cc205b6c766e6 19,148-156,226-227,285-288
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "59cf76488037b1be3e5875aaa2f8629118250e0a",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

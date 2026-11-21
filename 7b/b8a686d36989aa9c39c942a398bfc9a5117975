@@ -1,0 +1,84 @@
+ai-vision/agent-plugins/tests/diagnostics_e2e/validate_local.py
+  s_7ddb4c6ac82aba::t_554def18581630 25-26,84-115,144
+scripts/ci/README.md
+  s_7ddb4c6ac82aba::t_1687af364fdee3 59-62
+ai-vision/agent-plugins/tests/diagnostics_e2e/test_validate_local.py
+  s_7ddb4c6ac82aba::t_dca79ef5b22674 431,443,445-447,453-459
+ai-vision/agent-plugins/scripts/tests/test_onboarding_runtime.py
+  s_7ddb4c6ac82aba::t_814ab6142a261e 11,19-24,39-40,47-59,93,95-102
+  s_7ddb4c6ac82aba::t_7672af514e2b15 1,3,25-34
+ai-vision/agent-plugins/scripts/connect
+  s_7ddb4c6ac82aba::t_b4db1be36e8648 717-721
+  s_7ddb4c6ac82aba::t_cbedb35adb0313 13,84-94,105-108
+ai-vision/agent-plugins/tests/native_agent_e2e/test_hermes_driver.py
+  s_7ddb4c6ac82aba::t_960a0e69893320 8-9,12-13,19,22,159,177,201-269
+  s_0ba4aa59e34a4f::t_e2fa52de4b8d81 270
+ai-vision/agent-plugins/scripts/privacy_hook_probe.py
+  s_7ddb4c6ac82aba::t_cbedb35adb0313 149-153
+.github/workflows/diagnostics-e2e.yml
+  s_7ddb4c6ac82aba::t_f5a2500b228e09 82
+ai-vision/agent-plugins/scripts/tests/test_onboarding_status.py
+  s_7ddb4c6ac82aba::t_814ab6142a261e 12,24
+ai-vision/agent-plugins/scripts/tests/test_onboarding_native.py
+  s_7ddb4c6ac82aba::t_b4db1be36e8648 92
+  s_7ddb4c6ac82aba::t_3c9b6d9a363887 6,67-71,77-91,93-103
+  s_7ddb4c6ac82aba::t_814ab6142a261e 137-139
+  s_7ddb4c6ac82aba::t_33e9922834f9ee 104
+docs/deployment/zh-CN/dev-image-release.md
+  s_7ddb4c6ac82aba::t_1687af364fdee3 127-128
+docs/deployment/en/dev-image-release.md
+  s_7ddb4c6ac82aba::t_1687af364fdee3 123-124
+scripts/ci/test_release.py
+  s_7ddb4c6ac82aba::t_8d265cbeeaa701 574-578,588-593,602-605,620,1123-1152
+  s_7ddb4c6ac82aba::t_c5a517c3b1f5d2 1154-1168,1172-1173,1197-1199
+  s_7ddb4c6ac82aba::t_f3d83eaf18625d 1007-1046,1050-1122,1153,1169-1171,1174-1196,1200-1209
+  s_7ddb4c6ac82aba::t_5a4d113a844bc9 1047-1049
+ai-vision/agent-plugins/scripts/tests/test_onboarding_http.py
+  s_7ddb4c6ac82aba::t_cbedb35adb0313 1-193
+ai-vision/agent-plugins/scripts/tests/test_onboarding_privacy.py
+  s_7ddb4c6ac82aba::t_814ab6142a261e 90-94
+ai-vision/agent-plugins/README.md
+  s_7ddb4c6ac82aba::t_cbedb35adb0313 102-105
+scripts/ci/release_publish.py
+  s_7ddb4c6ac82aba::t_ed0d586e4906af 375-378
+  s_7ddb4c6ac82aba::t_ca44bc3f0d44e9 5,337-374,379-386,545-546,553-554
+ai-vision/agent-plugins/scripts/hook_runtime.py
+  s_7ddb4c6ac82aba::t_cbedb35adb0313 7,17-18,30-40,81-84,104-105,107-116,428-433
+ai-vision/agent-plugins/scripts/tests/test_privacy_hook_probe.py
+  s_7ddb4c6ac82aba::t_cbedb35adb0313 52-55,57,59,92-94,98-100,102,109,111,118,120-143
+ai-vision/agent-plugins/tests/native_agent_e2e/drivers/hermes.py
+  s_7ddb4c6ac82aba::t_0b21cfed504d91 18,21,76,81-90,92,145-147,153-163
+ai-vision/agent-plugins/scripts/tests/onboarding_test_helpers.py
+  s_7ddb4c6ac82aba::t_3c9b6d9a363887 28
+  s_7ddb4c6ac82aba::t_814ab6142a261e 1-3,5-13,18-27,29-33
+  s_7ddb4c6ac82aba::t_fd4516c4ce930a 4,14-17
+ai-vision/agent-plugins/opencode/observ-opencode/scripts/test-config-priority.ts
+  s_7ddb4c6ac82aba::t_428dd79576c9bd 5,23-26,108-109,117,119-120,126,129-130
+ai-vision/agent-plugins/tests/diagnostics_e2e/test_ci_quick_acceptance.py
+  s_7ddb4c6ac82aba::t_1e6f9d61781201 143-170
+  s_7ddb4c6ac82aba::t_88401a263891fb 1-142,171-173
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7bb8a686d36989aa9c39c942a398bfc9a5117975",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

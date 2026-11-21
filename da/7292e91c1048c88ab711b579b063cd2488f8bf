@@ -1,0 +1,58 @@
+ai-vision/aivision-py-be/apps/core/tests/test_trace_attachment.py
+  h_300a4f369432d5 49
+ai-vision/vfe/docker/nginx.conf.template
+  h_300a4f369432d5 48-60,98-103
+ai-vision/vfe/docker/smoke.py
+  h_300a4f369432d5 10,41,46,49,53-69,105-113,171
+ai-vision/vfe/playwright.config.ts
+  h_300a4f369432d5 3-4,15,21-30
+ai-vision/vfe/src/components/traces-lf/SessionDetailPanel/SessionDetailPanel.tsx
+  h_300a4f369432d5 27
+ai-vision/vfe/src/components/traces-lf/shared/MetadataTree.tsx
+  h_300a4f369432d5 28
+ai-vision/vfe/src/components/traces-otel/NativeSessionDetailPanel.tsx
+  h_300a4f369432d5 39
+ai-vision/vfe/src/components/traces-otel/SessionDetailPanel/SessionDetailPanel.tsx
+  h_300a4f369432d5 23
+ai-vision/vfe/src/components/traces/shared/TraceMedia.tsx
+  h_300a4f369432d5 4-5,72,75,106,130,156,216-227,264
+ai-vision/vfe/src/components/traces/shared/TracePdfPreview.tsx
+  h_300a4f369432d5 24,42
+ai-vision/vfe/tests/e2e/traceMediaPdf.spec.ts
+  h_300a4f369432d5 1-81
+ai-vision/vfe/tests/frameworkLifecycleDom.test.ts
+  h_300a4f369432d5 31-32,99-101
+ai-vision/vfe/tests/mcpDom.test.ts
+  h_300a4f369432d5 515
+ai-vision/vfe/tests/nativeUiHarness.ts
+  h_300a4f369432d5 276
+ai-vision/vfe/tests/observationTraceProcess.test.ts
+  h_300a4f369432d5 275
+ai-vision/vfe/tests/skillUiCompliance.test.ts
+  h_300a4f369432d5 279
+docs/deployment/en/docker.md
+  h_300a4f369432d5 102-105
+docs/deployment/zh-CN/docker.md
+  h_300a4f369432d5 81-84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "da7292e91c1048c88ab711b579b063cd2488f8bf",
+  "prompts": {},
+  "humans": {
+    "h_300a4f369432d5": {
+      "author": "laochou.sc <laochou.sc@digital-engine.com>"
+    }
+  },
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

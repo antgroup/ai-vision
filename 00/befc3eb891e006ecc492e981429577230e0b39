@@ -1,0 +1,60 @@
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/mod.rs
+  h_300a4f369432d5 77-78
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/semantics.rs
+  h_300a4f369432d5 1207-1208
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/tests.rs
+  h_300a4f369432d5 381-408
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/tool_normalization.rs
+  h_300a4f369432d5 83-102
+ai-vision/agent-plugins/codex/cdxhooks/src/common/transcript/turn_builder.rs
+  h_300a4f369432d5 1163-1164
+ai-vision/aivision-py-be/apps/core/tests/test_labs_mcp_registry.py
+  h_300a4f369432d5 1-404
+ai-vision/aivision-py-be/apps/core/tests/test_labs_memory.py
+  h_300a4f369432d5 206-250
+ai-vision/aivision-py-be/apps/core/urls/api/v2.py
+  h_300a4f369432d5 16-17,76-85
+ai-vision/aivision-py-be/apps/core/views/__init__.py
+  h_300a4f369432d5 168
+ai-vision/aivision-py-be/apps/core/views/labs_mcp_registry.py
+  h_300a4f369432d5 1-575
+ai-vision/aivision-py-be/apps/core/views/labs_memory.py
+  h_300a4f369432d5 171-177
+ai-vision/vfe/package.json
+  h_300a4f369432d5 38
+ai-vision/vfe/src/i18n/locales/en-US.json
+  h_300a4f369432d5 2733-2764
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  h_300a4f369432d5 2733-2764
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  h_300a4f369432d5 2717-2748
+ai-vision/vfe/src/labs/mcp/McpConfigImportDialog.tsx
+  h_300a4f369432d5 16-17,22,57-58,60,75-81,92,130,167,180-250,252-291,293-295,298-308,310-317,319-332,334-356,358-370,392
+ai-vision/vfe/src/labs/mcp/McpImportRegistryPanel.tsx
+  h_300a4f369432d5 1-530
+ai-vision/vfe/src/labs/mcp/mcpApi.ts
+  h_300a4f369432d5 217-277
+ai-vision/vfe/src/labs/mcp/mcpConfigImport.ts
+  h_300a4f369432d5 169-227
+ai-vision/vfe/src/labs/mcp/mcpRegistryImport.ts
+  h_300a4f369432d5 1-122
+ai-vision/vfe/tests/e2e/mcpImportUx.spec.ts
+  h_300a4f369432d5 2,41-46
+ai-vision/vfe/tests/e2e/mcpRegistryImport.spec.ts
+  h_300a4f369432d5 1-385
+ai-vision/vfe/tests/mcpDom.test.ts
+  h_300a4f369432d5 617-622,626,1093-1259,1283-1288,1298-1305,1879-1880,1948-1953,2113-2118,2180-2183,2238-2239,2253-2256
+ai-vision/vfe/tests/mcpRegistryImport.test.ts
+  h_300a4f369432d5 1-252
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "00befc3eb891e006ecc492e981429577230e0b39",
+  "prompts": {},
+  "humans": {
+    "h_300a4f369432d5": {
+      "author": "laochou.sc <laochou.sc@digital-engine.com>"
+    }
+  }
+}

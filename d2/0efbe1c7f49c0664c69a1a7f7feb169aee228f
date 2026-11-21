@@ -1,0 +1,84 @@
+ai-vision/vfe/src/components/traces-lf/TraceDetailPanel/TraceDetailPanel.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1
+ai-vision/vfe/src/components/traces-lf/shared/MetadataTree.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1-2,40,42-44,236
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_237e54ee5d7efe::t_9c2928171988ac 2,4,895,899-904
+  s_237e54ee5d7efe::t_41351313d1d73e 1
+  s_237e54ee5d7efe::t_fc9690ad0258a2 905
+ai-vision/vfe/src/components/agents/guidance/SetupStepsSection.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1-2
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_237e54ee5d7efe::t_41351313d1d73e 13
+ai-vision/vfe/src/components/diagnose/badcase-detail/TraceDetailSections.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1-2,159
+ai-vision/vfe/src/features/model-connections/CopyValue.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,33
+ai-vision/vfe/src/features/plugins/OpenShellBootstrap.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,315
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_237e54ee5d7efe::t_41351313d1d73e 13
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_237e54ee5d7efe::t_41351313d1d73e 13
+ai-vision/vfe/src/pages/settings/UnifiedKeysSection.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1
+  s_237e54ee5d7efe::t_0fbfb0c2182a83 235-241
+ai-vision/vfe/src/components/diagnose/diagnoser/RawTraceVariablePicker.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,1606
+ai-vision/vfe/src/components/labs/shared/CopyableCode.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,26
+ai-vision/vfe/src/components/traces-otel/TraceDetailPanel/TraceDetailPanel.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1-2
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,672
+ai-vision/vfe/src/pages/settings/invitationClipboard.ts
+  s_237e54ee5d7efe::t_41351313d1d73e 1,5
+ai-vision/vfe/src/pages/onboarding/useOnboarding.ts
+  s_237e54ee5d7efe::t_41351313d1d73e 1,95
+ai-vision/vfe/src/pages/settings/SettingsPage.tsx
+  s_237e54ee5d7efe::t_0fbfb0c2182a83 179-183,185
+  s_237e54ee5d7efe::t_1b980a62707f16 184
+  s_237e54ee5d7efe::t_41351313d1d73e 1
+ai-vision/vfe/src/pages/about/AboutPage.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,143
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1-2,40,42-44,280
+ai-vision/vfe/src/pages/settings/SpaceKeysManagement.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1
+ai-vision/vfe/src/components/bizcharts/datatable/DataTable.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,247
+ai-vision/vfe/src/components/traces-otel/shared/JsonDetailWidgets.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1-2,408-417,420
+ai-vision/vfe/src/pages/DownloadPage.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1-2
+ai-vision/vfe/src/features/plugins/PluginWorkspace.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,291,295
+ai-vision/vfe/src/components/traces/shared/TraceTextContent.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,25
+ai-vision/vfe/src/labs/skill/SkillDrawer.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,467,472,807
+ai-vision/vfe/src/components/traces/ShareDialog.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,99
+ai-vision/vfe/src/components/traces-lf/shared/JsonDetailWidgets.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1-2,434-441,444
+ai-vision/vfe/src/features/plugins/OpenShellInstallation.tsx
+  s_237e54ee5d7efe::t_41351313d1d73e 1,216
+ai-vision/vfe/tests/e2e/clipboard.spec.ts
+  s_237e54ee5d7efe::t_c21c7e8b042bd7 1-199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d20efbe1c7f49c0664c69a1a7f7feb169aee228f",
+  "prompts": {},
+  "sessions": {
+    "s_237e54ee5d7efe": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c665-ea38-7251-b06f-eeec172163a8",
+        "model": "group/keygate-dedfefd51120f283"
+      },
+      "human_author": null
+    }
+  }
+}

@@ -1,0 +1,25 @@
+ai-vision/vfe/src/components/traces/shared/TraceDocumentPreviewContent.tsx
+  s_0ba4aa59e34a4f::t_be98cc5ebc1ab4 152
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_0ba4aa59e34a4f::t_be98cc5ebc1ab4 8-9
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_0ba4aa59e34a4f::t_be98cc5ebc1ab4 8-9
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_0ba4aa59e34a4f::t_be98cc5ebc1ab4 8-9
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ee9a12d0bb520ec9735af9fd952d9ed69673dfef",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

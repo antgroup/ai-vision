@@ -1,0 +1,31 @@
+README.en.md
+  s_d47cba2fff0854::t_5320e016b575fa 3,5
+README.ja.md
+  s_d47cba2fff0854::t_5320e016b575fa 26
+README.zh-CN.md
+  s_d47cba2fff0854::t_5320e016b575fa 26
+docs/assets/readme/README.md
+  s_d47cba2fff0854::t_5320e016b575fa 3,45
+CONTRIBUTING.md
+  s_d47cba2fff0854::t_5320e016b575fa 74
+README.zh-TW.md
+  s_d47cba2fff0854::t_3194a49e485998 1-162
+README.md
+  s_d47cba2fff0854::t_5320e016b575fa 26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "53b84e7a64f8879a25a5453c8c4c3b16dbdea6d4",
+  "prompts": {},
+  "sessions": {
+    "s_d47cba2fff0854": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ed83-8bc3-7652-856b-9e3b75235765",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

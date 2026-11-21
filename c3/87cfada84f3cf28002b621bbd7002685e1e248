@@ -1,0 +1,138 @@
+scripts/ci/test_plugin_build_scope.py
+  s_7ddb4c6ac82aba::t_c551aeae8a9c81 27
+scripts/ci/release_publish.py
+  s_7ddb4c6ac82aba::t_2d847a07829131 165,178,205,209,212,576-577,701,710
+  s_7ddb4c6ac82aba::t_fe0a555a3ea7ae 75,82,89,91-94,166-175,177,182,185,194-196,210,213-218,288,518,530-532,534-539,545-546,549-551,553,558-562,565,572-574,579,582,597,650,681-685,690
+  s_7ddb4c6ac82aba::t_e3681ceba7e7cc 14-20,533,575,578
+  s_7ddb4c6ac82aba::t_0be1a0f70b174c 626-631,635
+  s_6eed30fd231f9b::t_766a105a0c445e 211
+deploy/native-packaging/release-contract.md
+  s_7ddb4c6ac82aba::t_ff844192a14c5b 28-30
+  s_7ddb4c6ac82aba::t_389b4c43c71345 26-27
+scripts/ci/test_public_registry.py
+  s_7ddb4c6ac82aba::t_acd6ed7c65c29d 8,71-72
+  s_7ddb4c6ac82aba::t_4a3c85273c1b54 106,109
+  s_7ddb4c6ac82aba::t_f3f3e7b29c85c0 9,91-99
+  s_7ddb4c6ac82aba::t_21bea489bca8f3 1-7,10-70,73-90,100-105,107-108,110-141
+scripts/ci/release_candidate.py
+  s_7ddb4c6ac82aba::t_a7679ff10e136f 43,51-54,61
+  s_7ddb4c6ac82aba::t_aafabbeba80c61 16,41-42,45-49,62-64,82,91
+  s_7ddb4c6ac82aba::t_7d064139f6581c 136-140,147
+  s_7ddb4c6ac82aba::t_0a96f3aaf14d33 10,90
+scripts/ci/release_reuse.py
+  s_7ddb4c6ac82aba::t_7d90e2dfddc419 8,15,81-82,84,91-92,95,103,116-119,124,132-133,165,207-210,215
+docs/deployment/en/dev-image-release.md
+  s_7ddb4c6ac82aba::t_1c751678e0da0d 41-42,133
+  s_7ddb4c6ac82aba::t_efa5b6f955d5e0 5,29,33,87,117
+  s_7ddb4c6ac82aba::t_ff844192a14c5b 48,52,85
+  s_7ddb4c6ac82aba::t_8f3f64e8162257 35,37,54
+  s_7ddb4c6ac82aba::t_0bd73f4624157d 59,62,76,92-93
+  s_7ddb4c6ac82aba::t_508d28201ac2a0 17
+  s_0ba4aa59e34a4f::t_92301e4ec3181b 86
+ai-vision/vfe/tests/versionInfoDom.test.ts
+  s_7ddb4c6ac82aba::t_3b9cf4d151ae6d 71-79,81,100,656,663-676,691,799,851,853,865
+.github/workflows/release-cli.yml
+  s_7ddb4c6ac82aba::t_a4b2208768baf2 49,75-80
+ai-vision/vfe/src/pages/about/releaseInfo.ts
+  s_7ddb4c6ac82aba::t_62b16ae4bf84b1 7-8,63-66
+.github/workflows/release-plugins.yml
+  s_7ddb4c6ac82aba::t_a2dbb47cf1fce0 54
+aivision-cli/README.md
+  s_7ddb4c6ac82aba::t_8f3f64e8162257 8-9,742-743,797-798
+  s_7ddb4c6ac82aba::t_389b4c43c71345 327-329,723-724,730,732,740-741,744-751,757-759,803-806,811-812
+ai-vision/aivision-py-be/aivision_backend/build_info.py
+  s_7ddb4c6ac82aba::t_62b16ae4bf84b1 30-39,171-177,183,260-267
+scripts/ci/test_release.py
+  s_7ddb4c6ac82aba::t_accb80f33bac62 1533-1534,1564-1565,1582-1584,1591-1604
+  s_7ddb4c6ac82aba::t_844b4f5ff4a88d 616
+ai-vision/aivision-py-be/aivision_backend/releases.py
+  s_7ddb4c6ac82aba::t_62b16ae4bf84b1 17-20
+docs/deployment/zh-CN/dev-image-release.md
+  s_7ddb4c6ac82aba::t_efa5b6f955d5e0 5,29,33,87,117
+  s_7ddb4c6ac82aba::t_508d28201ac2a0 17
+  s_7ddb4c6ac82aba::t_1c751678e0da0d 41-42,133
+  s_7ddb4c6ac82aba::t_ff844192a14c5b 48,52,85
+  s_7ddb4c6ac82aba::t_8f3f64e8162257 35,37,54
+  s_7ddb4c6ac82aba::t_0bd73f4624157d 59,62,76,92-93
+  s_0ba4aa59e34a4f::t_cbcf14e51717a7 86
+docs/version-info.md
+  s_7ddb4c6ac82aba::t_56892c91389c0b 8,22-28
+  s_7ddb4c6ac82aba::t_8f3f64e8162257 52
+ai-vision/aivision-py-be/apps/core/tests/test_build_info.py
+  s_7ddb4c6ac82aba::t_ef4ff72881207e 72-89,365-405
+  s_7ddb4c6ac82aba::t_b2e196a428ec97 406
+scripts/ci/README.md
+  s_7ddb4c6ac82aba::t_abf1358b6767c5 211-215
+  s_7ddb4c6ac82aba::t_52a2c3252e0de5 203-210,242-251
+ai-vision/aivision-py-be/apps/core/tests/test_releases.py
+  s_7ddb4c6ac82aba::t_ef4ff72881207e 71,96,108-110
+  s_7ddb4c6ac82aba::t_56892c91389c0b 22,230,248
+  s_7ddb4c6ac82aba::t_dc0c55725d02a5 111
+.github/workflows/promote-release.yml
+  s_7ddb4c6ac82aba::t_54203bf0b134c8 30-32,51-54
+scripts/ci/public_registry.py
+  s_7ddb4c6ac82aba::t_6d0854c6952d44 173-175
+  s_7ddb4c6ac82aba::t_2f72d7733bb708 76-92,101,103-109,138-142
+  s_7ddb4c6ac82aba::t_b21c62a69e2e29 1-75,93-100,102,110-137,143-172,176-200
+scripts/ci/test_workflow_contracts.py
+  s_7ddb4c6ac82aba::t_4e116b2ad975e2 184-187,227-231,234-235,241-246
+  s_7ddb4c6ac82aba::t_3f6afdb4c6cdf0 143,149,164-170,177-183,188-200,205-226,232-233,236-240
+  s_7ddb4c6ac82aba::t_778524032dd18e 171-176,201-204
+  s_7ddb4c6ac82aba::t_28ec2acd9e4cd8 247
+scripts/ci/test_ci_runtime_budget.py
+  s_7ddb4c6ac82aba::t_9afe9ea76e8746 14-15,24,26,49-53,56,61,66-71
+scripts/ci/product_registry.py
+  s_7ddb4c6ac82aba::t_6ce8a50682d510 1-44
+scripts/ci/test_public_release.py
+  s_7ddb4c6ac82aba::t_27c9420983e0dd 184-191,197,214-240
+  s_7ddb4c6ac82aba::t_e01474c64b81e6 1-13,15-34,36-125,127-129,134-138,143-162,164,168-174,176,178-183,192-196,198-199,201-213,241-260
+  s_7ddb4c6ac82aba::t_4e5fe4aef5949e 126,130-133,139-142
+  s_7ddb4c6ac82aba::t_b456f177684dda 200
+  s_7ddb4c6ac82aba::t_42d9e2c72ebe11 14,35,163,165-167,175,177
+scripts/ci/test_prepare_platform_disk.py
+  s_7ddb4c6ac82aba::t_0db8dba82d7a5e 183,188-189,209
+.github/workflows/release-images.yml
+  s_7ddb4c6ac82aba::t_cf8d1b395fdc05 4-5,64,73,94,99-104,109-114,122,171,198-220,222-243,251,329,338,366,408,410-411,417-418,427,440,445-446,459-463,494-511,514-518,544
+  s_7ddb4c6ac82aba::t_dc495c11e158df 123-125,221
+  s_7ddb4c6ac82aba::t_959028f0c14057 95,105-108,536-538,553-562
+  s_7ddb4c6ac82aba::t_42298960c2924b 532-535
+  s_7ddb4c6ac82aba::t_f9e4ac1bbf7944 637-641,648-653,659,678-682,689-694,715-719,726-731
+  s_7ddb4c6ac82aba::t_674fe9aff4f843 620-622,660-662
+deploy/AGENTS.md
+  s_7ddb4c6ac82aba::t_8f3f64e8162257 13-14
+  s_7ddb4c6ac82aba::t_389b4c43c71345 11-12,15
+scripts/ci/release_assets.py
+  s_7ddb4c6ac82aba::t_93559c3b858230 12,50,69-71,92-99,113,129-130,159-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c387cfada84f3cf28002b621bbd7002685e1e248",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_6eed30fd231f9b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e8db-f00b-79c3-9361-e4ce90d5577f",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

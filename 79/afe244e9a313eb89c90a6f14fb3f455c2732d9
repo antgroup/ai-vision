@@ -1,0 +1,184 @@
+ai-vision/vfe/src/pages/settings/SettingsPage.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 33,237-241,359-401,419,435,445,460,533,568,584,594,609,655
+ai-vision/vfe/src/components/product-guide/DemoConsentDialog.tsx
+  s_e9b64f95b6f8f0::t_ec2bec2209159c 5,161
+ai-vision/vfe/src/components/bizcharts/datatable/DataTable.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 36,277,279
+docs/testing/sdk-value-contract-20261112.md
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-89
+ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionsSection.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 17
+agentlens/tests/unit/infra/ob/test_native_builder.py
+  s_e9b64f95b6f8f0::t_27eb93864d3837 36-37,47-52,57-59,63-67
+ai-vision/vfe/src/components/bizcharts/charts/ChartPanel.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 99,794,978-979,984
+ai-vision/vfe/src/components/diagnose/diagnoser/CodeMirrorEditor.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 23-24,230,232
+ai-vision/vfe/src/labs/skill/SkillPage.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 475-482
+ai-vision/vfe/tests/e2e/labsImportDialogs.spec.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 398-399
+ai-vision/vfe/src/pages/settings/SpaceKeysManagement.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 20,30,385
+docs/testing/images/pr174-review-20261112/evidence.json
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-710
+ai-vision/vfe/src/agents/traces/TraceSearchBar.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 14-15,411-412
+ai-vision/vfe/tests/e2e/sdkValueContract.spec.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1,4-12,20-25,31,40-44,49-61,65-74,76-125,127-144,146,150-220,223-225
+ai-vision/vfe/src/components/dialogs/DialogContent.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-35
+ai-vision/vfe/src/labs/mcp/McpOverview.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 59,72
+ai-vision/aivision-py-be/apps/core/tests/test_local_auth.py
+  s_e9b64f95b6f8f0::t_ec2bec2209159c 60
+ai-vision/vfe/src/labs/mcp/McpToolsSyncDialog.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 13,58-61
+ai-vision/vfe/src/components/traces-lf/shared/MarkdownMedia.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 3-4,191
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 5-6,62,65
+ai-vision/vfe/src/components/diagnose/diagnoser/ModelConnectionPickerModal.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 14,91
+ai-vision/vfe/src/features/model-connections/ModelConnectionForm.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 9,433-443,446-448
+ai-vision/vfe/src/pages/diagnose/JobPage.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 32
+ai-vision/vfe/src/components/labs/shared/LabsIntroBanner.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1,3,9-13,41-67,69-98,102-103
+ai-vision/vfe/src/components/labs/shared/LabsServerCatalogueToolbar.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 52-53,63-67,140-149
+ai-vision/vfe/src/features/model-connections/ConnectionActions.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 14,24,308-312,339
+ai-vision/vfe/src/labs/skill/SkillOverview.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 57,73
+ai-vision/vfe/src/pages/settings/MemberManagement.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 48
+ai-vision/vfe/src/pages/settings/UnifiedKeysSection.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 23,33,520
+ai-vision/vfe/tests/e2e/memoryObservability.spec.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 487-488,496-499,501,538-540,542-546,550-552,575,804
+ai-vision/vfe/tests/e2e/modelPricing.spec.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 574-584
+deploy/native-packaging/README.md
+  s_e9b64f95b6f8f0::t_27eb93864d3837 176-179,181
+deploy/native-packaging/test_build.py
+  s_e9b64f95b6f8f0::t_27eb93864d3837 147-158
+  s_e9b64f95b6f8f0::t_a2a152a957567e 159
+ai-vision/vfe/src/labs/skill/SkillConfigImportDialog.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 15,118-122
+ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 653-681,858,880
+ai-vision/vfe/eslint.config.js
+  s_e9b64f95b6f8f0::t_27eb93864d3837 70-93
+  s_e9b64f95b6f8f0::t_01ca8d5d19e555 69
+ai-vision/vfe/src/features/model-pricing/ModelPricingContent.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 18-19,788
+ai-vision/vfe/src/features/model-pricing/PricingSettingsDialog.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 6-7,54-55
+docs/testing/images/sdk-contract-20261112/evidence.json
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-50
+ai-vision/vfe/src/features/plugins/PluginWorkspace.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 61,69-74
+docs/testing/images/modal-sizing-20261112/evidence.json
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-1084
+ai-vision/vfe/src/components/traces-otel/shared/MarkdownMedia.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 5-6,193
+ai-vision/vfe/tests/e2e/taskDialogLayout.spec.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-147
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 83-88
+docs/testing/images/ui-reading-20261112/evidence.json
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-650
+ai-vision/vfe/src/features/sandbox-connections/SandboxConnectionForm.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 12,68
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 36,44,949-950
+ai-vision/vfe/src/components/layout/SpaceSelect.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 19,182
+ai-vision/vfe/src/labs/memory/MemoryOverview.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 32
+ai-vision/vfe/src/components/diagnose/job/TaskDetailDialog.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 24,33,119,142,214
+docs/testing/ui-reading-validation-20261112.md
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-82
+ai-vision/vfe/tests/e2e/dialogSizing.spec.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-141
+ai-vision/vfe/src/components/diagnose/diagnoser/CreateLlmDiagnoserModal.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 28,771-775
+ai-vision/vfe/src/features/model-pricing/PricingModelResolver.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 7-8,90-91
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_e9b64f95b6f8f0::t_27eb93864d3837 2099,2205,2236,2239,2287,2803,2991,3126,3258,4106,4137,4140,4188,4268-4269
+ai-vision/vfe/src/labs/memory/MemoryPage.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 239
+deploy/native-packaging/build.py
+  s_e9b64f95b6f8f0::t_27eb93864d3837 125-139,323
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_e9b64f95b6f8f0::t_27eb93864d3837 2107,2213,2244,2247,2295,2812,3002,3137,3269,4117,4148,4151,4199,4279-4280
+agentlens/native/build.py
+  s_e9b64f95b6f8f0::t_27eb93864d3837 50-67
+docs/testing/pr174-review-20261112.md
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-117
+agentlens/native/README.md
+  s_e9b64f95b6f8f0::t_27eb93864d3837 16-18
+ai-vision/vfe/src/labs/mcp/McpPage.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 218
+ai-vision/aivision-py-be/apps/core/services/personal_space_service.py
+  s_e9b64f95b6f8f0::t_ec2bec2209159c 23-24
+ai-vision/vfe/src/pages/diagnose/DiagnoserPage.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 20
+ai-vision/vfe/tests/e2e/mcpRegistryImport.spec.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 484
+ai-vision/vfe/src/components/dialogs/AlertDialogContent.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-28
+ai-vision/vfe/src/features/model-connections/DiagnosticValidationDialog.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 20,59-62
+ai-vision/vfe/src/pages/settings/AddMemberSheet.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 17,172
+ai-vision/vfe/tests/frameworkLifecycleDom.test.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 26-30
+docs/testing/modal-sizing-validation-20261112.md
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-126
+ai-vision/docs/frontend-ui-quality-guide.md
+  s_e9b64f95b6f8f0::t_27eb93864d3837 5-33
+ai-vision/vfe/src/labs/mcp/McpConfigImportDialog.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 15
+  s_e9b64f95b6f8f0::t_b55a2d928910a3 180-181
+ai-vision/vfe/src/components/dialogs/dialogLayout.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-20
+ai-vision/vfe/src/features/model-connections/ModelConnectionDetail.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 324
+ai-vision/vfe/src/features/model-connections/ModelConnectionsSection.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 7-8,399-403,463
+ai-vision/vfe/src/features/model-pricing/PricingRuleForm.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 7-8,91-92
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_e9b64f95b6f8f0::t_27eb93864d3837 2090,2196,2227,2230,2278,2812,3002,3137,3269,4117,4148,4151,4199,4279-4280
+ai-vision/vfe/src/components/traces/ShareDialog.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 11-12,107
+ai-vision/vfe/src/components/diagnose/diagnoser/RawTraceVariablePicker.tsx
+  s_e9b64f95b6f8f0::t_27eb93864d3837 25,1620-1621,1625,1649,1658,1670,2047
+ai-vision/vfe/tests/frameworkModuleLoading.test.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 74-86,299-301,338-342
+ai-vision/vfe/src/components/labs/shared/importDialogStyles.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 8
+ai-vision/vfe/src/components/dialogs/useDialogFocus.ts
+  s_e9b64f95b6f8f0::t_27eb93864d3837 1-33
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "79afe244e9a313eb89c90a6f14fb3f455c2732d9",
+  "prompts": {},
+  "sessions": {
+    "s_e9b64f95b6f8f0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ce77-82ff-7431-a6e8-b8aa6de748b7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

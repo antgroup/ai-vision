@@ -1,0 +1,45 @@
+ai-vision/vfe/tests/reportedCostDom.test.ts
+  s_2f5254e8b447ea::t_948d1b089adc1b 3-7
+  s_2f5254e8b447ea::t_6ec565a64a328a 17
+  s_2f5254e8b447ea::t_d84281cd25ac8a 18-22,80
+ai-vision/vfe/src/features/model-pricing/presentation.ts
+  s_2f5254e8b447ea::t_cc605de0d65428 117-125,128-130,138-139,141-143,145,149
+  s_2f5254e8b447ea::t_948d1b089adc1b 126-127,146-148
+ai-vision/vfe/src/features/model-pricing/ReportedCost.tsx
+  s_2f5254e8b447ea::t_0585f72789033a 2,4-7,59-62,64,69,90-101
+  s_2f5254e8b447ea::t_5c32a376089c3a 65,68
+  s_2f5254e8b447ea::t_948d1b089adc1b 66-67,86-89
+ai-vision/vfe/tests/e2e/langfuseCosts.spec.ts
+  s_2f5254e8b447ea::t_bdaac389b4a467 261-265,268-271
+ai-vision/aivision-py-be/apps/core/services/official_model_pricing.py
+  s_2f5254e8b447ea::t_fb28480aa1feb0 100-103
+ai-vision/vfe/tests/modelPricing.test.ts
+  s_2f5254e8b447ea::t_948d1b089adc1b 609-612,650-653,670-673
+  s_2f5254e8b447ea::t_bdaac389b4a467 10,644-648
+  s_2f5254e8b447ea::t_cc0458954a359b 578,599-608,615-619,642-643,649,654-669,674-683
+  s_2f5254e8b447ea::t_a76782d9bd86c8 684-685
+ai-vision/aivision-py-be/apps/core/tests/test_official_model_pricing.py
+  s_2f5254e8b447ea::t_40765f98dd7fb8 80-89
+ai-vision/vfe/tests/e2e/compactCostSummary.spec.ts
+  s_2f5254e8b447ea::t_bdaac389b4a467 193-195
+  s_2f5254e8b447ea::t_948d1b089adc1b 154-155,180-182,196-226
+ai-vision/vfe/src/features/model-pricing/CostSummary.tsx
+  s_2f5254e8b447ea::t_948d1b089adc1b 159-162,291-297
+  s_2f5254e8b447ea::t_441d5579588553 9-13,163-167,169-181,299-300
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "56aea0e8722e4caad2c6c61d53b2703b514b825b",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

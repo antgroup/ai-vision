@@ -1,0 +1,33 @@
+ai-vision/vfe/tests/chartSemantics.test.ts
+  s_2f5254e8b447ea::t_de9228f68e1544 49,106-115,118-121,123-124
+ai-vision/vfe/tests/frameworkModuleLoading.test.ts
+  s_2f5254e8b447ea::t_ae56e5c76b8ae9 99,104-107
+  s_2f5254e8b447ea::t_b5d7d8201ece3a 461
+ai-vision/aivision-py-be/apps/core/tests/test_signoz_trace_provider.py
+  s_2f5254e8b447ea::t_a0b4915e3c8ffd 2,299-346
+  s_2f5254e8b447ea::t_6fcf81360e8ff3 347
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py
+  s_2f5254e8b447ea::t_686befce66c392 811-812,820-833,835,842,913-914,916
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  s_2f5254e8b447ea::t_5c1d93eb84e32a 405
+  s_2f5254e8b447ea::t_556c4c7535db3d 487-494
+  s_2f5254e8b447ea::t_b5d7d8201ece3a 413-416
+ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx
+  s_2f5254e8b447ea::t_1e9349fa55fc07 12-15,356-357,494-504,506-512,995-1006,1008-1009,1018
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "44f69888fc2023e764df1590fdda7c0ed91fe2b2",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

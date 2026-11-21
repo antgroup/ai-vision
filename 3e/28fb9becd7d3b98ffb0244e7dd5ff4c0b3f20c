@@ -1,0 +1,74 @@
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2f5254e8b447ea::t_548da7ca0e30c0 4725-4726,4746,4753,4768,4782-4783,4789,4822
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2f5254e8b447ea::t_548da7ca0e30c0 4714-4715,4735,4742,4757,4771-4772,4778,4811
+ai-vision/vfe/src/features/model-pricing/CostSummary.tsx
+  s_2f5254e8b447ea::t_c3da829dec9b4b 16-21,60-62,64,68-69,101,107-109,111-112,114-116,164,271,293-297,417
+  s_2f5254e8b447ea::t_a2db2842bb4ad8 65-66
+ai-vision/aivision-py-be/apps/core/services/publisher_subscription_prices.py
+  s_2f5254e8b447ea::t_fc0b3ca767e07f 5,20,29,38
+  s_2f5254e8b447ea::t_6eb86a164aaf89 1,3,6,8-19,21-28,30-37,39-49,62-70,72-86
+  s_2f5254e8b447ea::t_52ea74df0ad0a1 2,4,7,50-61,71
+ai-vision/docs/observability/model-pricing.md
+  s_2f5254e8b447ea::t_0418253b32ab21 199-216
+ai-vision/aivision-py-be/apps/core/tests/test_publisher_subscription_prices.py
+  s_2f5254e8b447ea::t_7e7a669edce526 98-101,103-105
+  s_2f5254e8b447ea::t_fffc52f5130e23 1-9,11-91
+  s_2f5254e8b447ea::t_0786ed740112b3 10,109-166
+  s_2f5254e8b447ea::t_e646f3bf25c04b 92-97,102,106-108
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model.py
+  s_2f5254e8b447ea::t_f19345137830d3 28
+ai-vision/aivision-py-be/apps/core/trace_query/semantics/usage.py
+  s_2f5254e8b447ea::t_dd0fab0499a225 18,96-99,114,234,309-310,317-320,333-334,336-337,429
+  s_2f5254e8b447ea::t_88870a097478f7 83-90,308,335
+  s_2f5254e8b447ea::t_4e03469c698d18 722
+ai-vision/vfe/tests/e2e/compactCostSummary.spec.ts
+  s_2f5254e8b447ea::t_5f2655e5d65c26 720-784
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2f5254e8b447ea::t_548da7ca0e30c0 4725-4726,4746,4753,4768,4782-4783,4789,4822
+ai-vision/vfe/tests/modelPricingCurrency.test.ts
+  s_2f5254e8b447ea::t_37e303a9d18a3e 291-295
+  s_2f5254e8b447ea::t_a8cda3129892ea 267-274,278-279,290,317-336
+  s_2f5254e8b447ea::t_335d4c97a90928 9,93,265,275
+  s_2f5254e8b447ea::t_7e4042f08fb884 337-340
+ai-vision/vfe/src/features/model-pricing/pricingQueryInvalidation.ts
+  s_2f5254e8b447ea::t_37e303a9d18a3e 43
+  s_2f5254e8b447ea::t_52f5d62731cc94 11,21-28,39-42
+ai-vision/vfe/tests/modelPricing.test.ts
+  s_2f5254e8b447ea::t_a8cda3129892ea 61,72-76
+ai-vision/vfe/src/features/model-pricing/PricingCurrency.tsx
+  s_2f5254e8b447ea::t_fc0b3ca767e07f 96
+  s_2f5254e8b447ea::t_335d4c97a90928 9,93-95,97
+  s_2f5254e8b447ea::t_52f5d62731cc94 81-83
+ai-vision/aivision-py-be/apps/core/services/model_pricing.py
+  s_2f5254e8b447ea::t_8905e8d787f000 25,416
+ai-vision/aivision-py-be/apps/core/services/official_model_pricing.py
+  s_2f5254e8b447ea::t_e646f3bf25c04b 105-115
+  s_2f5254e8b447ea::t_fabe7e6079e214 76,78-80,84,103-104,116-117
+  s_2f5254e8b447ea::t_650a47b5b0e09a 19-20,131,145-146,148
+  s_2f5254e8b447ea::t_4e03469c698d18 7,81-83
+  s_2f5254e8b447ea::t_d96cf644610bf7 17-18,21,130,132,147,158-159
+  s_2f5254e8b447ea::t_7e7a669edce526 142-144
+  s_2f5254e8b447ea::t_e49652057813b4 64-68,94-102,118-125,138-140,163-170
+  s_2f5254e8b447ea::t_dd14b6f0a67764 22-23,42-44
+  s_2f5254e8b447ea::t_d294267eb7b8d8 126
+ai-vision/aivision-py-be/apps/core/tests/test_official_model_pricing.py
+  s_2f5254e8b447ea::t_ebb7f6781649b2 80-84,88,90-94,99-110
+  s_2f5254e8b447ea::t_83632102f2de8d 85-87,89,95-98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3e28fb9becd7d3b98ffb0244e7dd5ff4c0b3f20c",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

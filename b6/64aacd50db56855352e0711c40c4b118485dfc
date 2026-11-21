@@ -1,0 +1,66 @@
+ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx
+  s_2f5254e8b447ea::t_3fd7cdf469ba7e 480-485
+  s_2f5254e8b447ea::t_46f7682ae06f9f 829-831
+  s_2f5254e8b447ea::t_30ad6764893a69 12,473-474,476-477,479,486-494,823
+  s_2f5254e8b447ea::t_190f20215e7bfe 7-10,560-572,574-580,828,833,837,848
+  s_2f5254e8b447ea::t_58ffc3b72f7738 573
+ai-vision/vfe/tests/frameworkDashboard.test.ts
+  s_2f5254e8b447ea::t_ab346711b5c282 284
+ai-vision/vfe/tests/frameworkModuleLoading.test.ts
+  s_2f5254e8b447ea::t_0f1953178bdda9 4,10-13,56-59,78,81-82,307-312,319-321,326,332-333
+  s_2f5254e8b447ea::t_58ffc3b72f7738 327
+  s_2f5254e8b447ea::t_46f7682ae06f9f 97-99,313-318,322-325,328-331
+  s_2f5254e8b447ea::t_4cc935a1f589ee 334-338
+ai-vision/vfe/src/components/traces-otel/api.ts
+  s_2f5254e8b447ea::t_2bef207ed3a356 3,31-34
+ai-vision/vfe/src/agents/shared/hooks/useSectionQuery.ts
+  s_2f5254e8b447ea::t_190f20215e7bfe 15-17,31,138-142
+  s_2f5254e8b447ea::t_ddbd2ba98add69 14
+ai-vision/vfe/tests/nativeQueryTransport.test.ts
+  s_2f5254e8b447ea::t_f4ef2fde3d5fe7 23-24
+  s_2f5254e8b447ea::t_3f83796eebbd8c 34-37,164-166,187-189,194-197,209-214,219-225,230-236
+  s_2f5254e8b447ea::t_d9eae51e788049 9-12,38-40,60-66,82,98,110,127-163,167-186,190-193,198-208,215-218,226-229,237-239
+  s_2f5254e8b447ea::t_76c7a0f5a5120d 240
+ai-vision/vfe/tests/chartSemantics.test.ts
+  s_2f5254e8b447ea::t_e23f8567a51ddc 8,49-52,56-65,70-72,76-120
+  s_2f5254e8b447ea::t_72ef8fc7d38ea0 53-55,66-69,73-75
+  s_2f5254e8b447ea::t_1c4d0e803ea046 121
+ai-vision/vfe/src/components/traces-otel/nativeQueryScheduler.ts
+  s_2f5254e8b447ea::t_2bef207ed3a356 5,55-56
+ai-vision/vfe/src/agents/lib/dashboardQueryAdapter.ts
+  s_2f5254e8b447ea::t_2bef207ed3a356 18,32-37,206,212-216
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2f5254e8b447ea::t_190f20215e7bfe 410
+ai-vision/vfe/tests/dashboardQueryStateDom.test.ts
+  s_2f5254e8b447ea::t_190f20215e7bfe 10-13,38-41
+ai-vision/vfe/src/agents/lib/agentQueryCrypto.ts
+  s_2f5254e8b447ea::t_099f1f1981acdc 121
+  s_2f5254e8b447ea::t_10bf1de31b6ab2 16-19
+  s_2f5254e8b447ea::t_bef202b3becff5 115-120,122-123
+ai-vision/vfe/src/agents/lib/dashboardQueryError.ts
+  s_2f5254e8b447ea::t_10bf1de31b6ab2 9-15
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2f5254e8b447ea::t_190f20215e7bfe 392
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  s_2f5254e8b447ea::t_c4056934a99b39 327-329
+  s_2f5254e8b447ea::t_2bef207ed3a356 28-30
+  s_2f5254e8b447ea::t_8fbf7e76e79168 166-167,169-174
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2f5254e8b447ea::t_190f20215e7bfe 409
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b664aacd50db56855352e0711c40c4b118485dfc",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

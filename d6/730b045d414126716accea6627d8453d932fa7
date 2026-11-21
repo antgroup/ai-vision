@@ -1,0 +1,83 @@
+scripts/ci/test_release_candidate.py
+  s_7ddb4c6ac82aba::t_786dafcbde99b6 27-35,43,84-113
+  s_7ddb4c6ac82aba::t_ba9b938f0452f5 114
+.github/workflows/native-agent-e2e.yml
+  s_7ddb4c6ac82aba::t_230c610f9f97c3 85
+  s_7ddb4c6ac82aba::t_97e2e98f0e12bc 14-17,37-40,79-84,87,91,93,95,99-100,111-118,122,124-125,133-135,140-142,146,156,159
+scripts/ci/test_workflow_contracts.py
+  s_7ddb4c6ac82aba::t_832401ca1bf8ab 93-97,170-171,193-194,488-492,504-511
+  s_0ba4aa59e34a4f::t_f149b380b3e3f8 512
+deploy/tests/test_deploy_smoke.py
+  s_7ddb4c6ac82aba::t_98f96d6fdcee40 359-362
+  s_7ddb4c6ac82aba::t_f817523e1327e6 388-391
+  s_7ddb4c6ac82aba::t_786dafcbde99b6 320-321,340-349
+  s_7ddb4c6ac82aba::t_b00496e9a7eeb8 364-387,392-429
+  s_0ba4aa59e34a4f::t_db70dad6d2fe9f 363
+ai-vision/agent-plugins/pi/pireplay/test/config.test.ts
+  s_7ddb4c6ac82aba::t_978cfd5c63e566 41
+ai-vision/agent-plugins/tests/framework_e2e/test_signoz_precision.py
+  s_7ddb4c6ac82aba::t_978cfd5c63e566 5,145-146
+scripts/ci/test_native_workflow_scope.py
+  s_7ddb4c6ac82aba::t_97e2e98f0e12bc 20-21,23-25
+  s_7ddb4c6ac82aba::t_b55a66a0e85764 43,46-48,69-70,130-131,133,135,149-150,163-193
+  s_7ddb4c6ac82aba::t_f0d41ad2362442 124-125,155-162
+scripts/ci/plan.py
+  s_7ddb4c6ac82aba::t_67c1057af10191 380-382
+  s_7ddb4c6ac82aba::t_1a1f359ff3de24 10-11,297-299,373-379,383-384
+.github/workflows/ci.yml
+  s_7ddb4c6ac82aba::t_1a1f359ff3de24 136
+ai-vision/agent-plugins/pi/observ-pi/test/config.test.ts
+  s_7ddb4c6ac82aba::t_978cfd5c63e566 28-29,295,311,319
+ai-vision/agent-plugins/tests/framework_e2e/test_browser_platform.py
+  s_7ddb4c6ac82aba::t_978cfd5c63e566 160,163
+scripts/ci/release_candidate.py
+  s_7ddb4c6ac82aba::t_f817523e1327e6 15-16,34,45-52
+scripts/ci/test_native_unit_scope.py
+  s_7ddb4c6ac82aba::t_87e4a93c43999b 202-203
+  s_7ddb4c6ac82aba::t_d0cc121453f5af 1-201,204-237
+scripts/ci/native_unit_scope.py
+  s_7ddb4c6ac82aba::t_1a1f359ff3de24 1-60,63-72
+  s_7ddb4c6ac82aba::t_97e2e98f0e12bc 61-62
+.github/workflows/deployment-assets.yml
+  s_7ddb4c6ac82aba::t_67c1057af10191 14
+  s_7ddb4c6ac82aba::t_b299c593666e39 12-13,15,26-30,32,36,41,49,57,64,76,83
+.github/workflows/compose-deploy-smoke.yml
+  s_7ddb4c6ac82aba::t_b299c593666e39 19-22,30
+scripts/ci/README.md
+  s_7ddb4c6ac82aba::t_98f96d6fdcee40 146
+  s_7ddb4c6ac82aba::t_67c1057af10191 45-69,131-134
+  s_7ddb4c6ac82aba::t_eb263c76de2e52 135
+deploy/tests/seekdb_deploy_smoke.py
+  s_7ddb4c6ac82aba::t_f817523e1327e6 16-17,58,285-287
+scripts/ci/deployment_assets_scope.py
+  s_7ddb4c6ac82aba::t_b299c593666e39 1-40,43-44,46-48,50-52,55-56,58-71,77-95,97-98,100,102-120
+  s_7ddb4c6ac82aba::t_393f092edeffdf 41-42,45,49,53-54,57,72-76,96,99,101
+scripts/ci/test_ci_cost_controls.py
+  s_7ddb4c6ac82aba::t_24d77e8a32e22a 29-30,72,74-75,205,225,248
+  s_7ddb4c6ac82aba::t_4536f85a8a0231 1-28,31-71,73,76-81,83-108,121-204,206-224,226-247,249-282
+  s_7ddb4c6ac82aba::t_844671891651ed 82,109-120
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d6730b045d414126716accea6627d8453d932fa7",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
