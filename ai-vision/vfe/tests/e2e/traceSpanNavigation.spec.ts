@@ -32,6 +32,64 @@ const detail = {
   ],
 }
 
+test("the optional tool failure filter keeps other errors visible and can be removed", async ({
+  page,
+}) => {
+  const language = "zh-CN"
+  const label = (key: string) => uiText(language, `nativeSpanFilters.${key}`)
+  const requests: string[] = []
+  page.on("request", (request) => {
+    if (request.url().includes("/api/")) requests.push(request.url())
+  })
+  await page.setViewportSize({ width: 390, height: 850 })
+  await prepare(page, language)
+  const unexpected = await publicTrace(page, {
+    ...trace,
+    spans: [
+      ...trace.spans,
+      {
+        ...trace.spans[4],
+        span_id: "service-error",
+        name: "Storage connection",
+        attributes: { "gen_ai.span.kind": "SPAN" },
+        status: { code: "ERROR", message: "Unavailable" },
+      },
+    ],
+  })
+  const tree = page.getByTestId("trace-tree-results")
+  const failedTool = tree.getByText("github.search", { exact: true })
+  const serviceError = tree.getByText("Storage connection", { exact: true })
+  await expect(failedTool).toBeVisible()
+  await page.getByRole("button", { name: label("errors"), exact: true }).click()
+  await expect(failedTool).toBeVisible()
+  await expect(serviceError).toBeVisible()
+  const filterPanel = page.getByRole("button", { name: label("title") })
+  await filterPanel.click()
+  const hideToolErrors = page.getByRole("checkbox", {
+    name: label("hideCompletedTurnToolErrors"),
+  })
+  await hideToolErrors.check()
+  await filterPanel.click()
+  await expect(failedTool).toHaveCount(0)
+  await expect(serviceError).toBeVisible()
+  for (const view of ["timeline", "graph", "chain"]) {
+    await page
+      .getByRole("radio", { name: uiText(language, `traceLabels.${view}`) })
+      .click()
+    await expect(failedTool).toHaveCount(0)
+    await expect(serviceError).toBeVisible()
+  }
+  const removeCondition = label("removeCondition").replace(
+    "{{label}}",
+    label("hideCompletedTurnToolErrors")
+  )
+  await page.getByRole("button", { name: removeCondition, exact: true }).click()
+  await expect(failedTool).toBeVisible()
+  await expect(serviceError).toBeVisible()
+  expect(requests).toHaveLength(1)
+  expect(unexpected).toEqual([])
+})
+
 test("switching from Enhanced to Original keeps the selected span after the trace reloads", async ({
   page,
 }, testInfo) => {

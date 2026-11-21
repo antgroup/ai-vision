@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils"
 
 import { skillProvenanceCounts } from "@/labs/skill/skillDisplay"
 import type {
-  SkillConfig,
+  SkillConfigSummary,
   SkillLoadState,
   SkillStat,
   SkillStatsState,
@@ -29,7 +29,7 @@ interface SkillCardProps {
   stat: SkillStat | null
   statState?: SkillStatsState
   configState?: SkillLoadState
-  config?: SkillConfig
+  config?: SkillConfigSummary
   onOpen: (name: string) => void
   onImport?: () => void
 }

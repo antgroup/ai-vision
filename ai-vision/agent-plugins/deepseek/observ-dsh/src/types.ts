@@ -171,12 +171,25 @@ export interface DshStepEndData {
   turn: number;
   step: number;
 }
+/** Native archived output chunks. The timestamp deltas follow each fragment. */
+export type DshAssistantStreamRecord =
+  | { type: 'chunk'; time: number; chunk: { type: string; text?: string; name?: string; argumentsDelta?: string } }
+  | { type: 'text-chunks' | 'reasoning-chunks'; time0: number; dt: readonly number[]; texts: readonly string[] }
+  | { type: 'tool-call-chunks'; time0: number; dt: readonly number[]; args: readonly string[]; name?: string };
+
 export interface DshAssistantMessageData {
   turn: number;
   step: number;
   message: DshAssistantMessage;
   usage?: DshTokenUsage;
   interrupted?: true;
+  stream?: readonly DshAssistantStreamRecord[];
+}
+export interface DshRetryStartedData {
+  turn: number;
+  step: number;
+  retryId: string;
+  retry: number;
 }
 export interface DshToolCallData {
   turn: number;

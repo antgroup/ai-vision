@@ -29,8 +29,11 @@ def _validate_cost(cost):
     for field in ('currency', 'source', 'pricingSource', 'reason'):
         if cost.get(field) is not None and not isinstance(cost[field], str):
             raise ValueError('invalid metrics cost evidence')
-    for field in ('total', 'input', 'output'):
-        value = cost[field]
+    if cost.get('knownSubtotal') is not None and (
+            cost['total'] is not None or cost.get('reason') != 'price_bucket_missing'):
+        raise ValueError('invalid metrics cost subtotal')
+    for field in ('total', 'input', 'output', 'knownSubtotal'):
+        value = cost.get(field)
         if value is None:
             continue
         if type(value) not in (str, int, float):

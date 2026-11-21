@@ -217,6 +217,11 @@ def _price_time(value):
         return None
 
 
+def pricing_identity(value: Any) -> str | None:
+    value = value.strip() if isinstance(value, str) else ""
+    return value if value and value.casefold() != "unknown" else None
+
+
 def _cost(attrs, usage, *, model, provider, prices, observed_at):
     """Resolve billing basis before interpreting SDK money as a call charge.
 
@@ -225,14 +230,23 @@ def _cost(attrs, usage, *, model, provider, prices, observed_at):
     separately; never add it to known monetary subtotals. An explicit per-call
     mode permits a Space/model default to coexist with pay-as-you-go accounts.
     """
+    reported_identity = (provider, model)
+    provider, model = pricing_identity(provider), pricing_identity(model)
     mode = attrs.get("aivision.billing.mode")
     valid_prices = isinstance(prices, (list, tuple)) and (
         prices.valid if isinstance(prices, IndexedModelPrices)
         else all(isinstance(item, dict) for item in prices)
     )
-    candidates = (list(prices.candidates(provider, model)) if isinstance(prices, IndexedModelPrices) else [
-        item for item in prices or [] if _metered_price(item) and item.get("provider") == provider and item.get("model") == model
-    ]) if isinstance(prices, (list, tuple)) else []
+    # Existing subscription rules can classify legacy placeholder identities.
+    # Use their exact reported identity for billing mode, with normalized
+    # provider and model still required to apply a call tariff.
+    lookup = (provider, model) if provider and model else reported_identity
+    candidates = ()
+    if isinstance(prices, IndexedModelPrices):
+        candidates = prices.candidates(*lookup)
+    elif isinstance(prices, (list, tuple)) and all(isinstance(part, str) for part in lookup):
+        candidates = [item for item in prices if _metered_price(item)
+                      and (item.get("provider"), item.get("model")) == lookup]
     markers = [item for item in candidates if item.get("pricingSource") == "subscription"]
     if mode is None and not markers:
         return _pay_as_you_go_cost(attrs, usage, model=model, provider=provider, prices=prices, observed_at=observed_at)
@@ -277,9 +291,7 @@ def _cost(attrs, usage, *, model, provider, prices, observed_at):
         if reported.get("details"):
             result["reportedCost"]["details"] = reported["details"]
     if not error:
-        resolved_model = attrs.get("gen_ai.response.model")
-        if not isinstance(resolved_model, str) or not resolved_model.strip():
-            resolved_model = model
+        resolved_model = pricing_identity(attrs.get("gen_ai.response.model")) or model
         result["listPriceEquivalent"] = _official_base_estimate(
             usage, model=resolved_model, provider=provider, prices=prices, observed_at=observed_at
         )
@@ -321,13 +333,6 @@ def _official_base_estimate(usage, *, model, provider, prices, observed_at):
     reason = price.get("unsupportedReason")
     if isinstance(reason, str) and reason and _can_use_base_tariff(reason):
         del price["unsupportedReason"]
-    # Apply the base input rate to tokens without a reported cache split.
-    # Preserve both the reported buckets and missing measurements in usage.
-    for bucket in ("cacheReadInput", "cacheWriteInput"):
-        if usage[bucket] is None:
-            price[bucket] = None
-    if usage["reasoning"] is None and _decimal(price.get("reasoning")) == _decimal(price.get("output")):
-        price["reasoning"] = None
     estimate = _pay_as_you_go_cost({}, usage, model=price["model"], provider=price["provider"],
                                   prices=[price], observed_at=observed_at)
     if supplement is not None:
@@ -418,6 +423,9 @@ def _pay_as_you_go_cost(attrs, usage, *, model, provider, prices, observed_at):
     if not provider:
         result["reason"] = "provider_unknown"
         return result
+    if not model:
+        result["reason"] = "model_unknown"
+        return result
     if prices is not None and (
         not isinstance(prices, (list, tuple))
         or (not prices.valid if isinstance(prices, IndexedModelPrices)
@@ -483,22 +491,18 @@ def _pay_as_you_go_cost(attrs, usage, *, model, provider, prices, observed_at):
     if usage["input"] is None or usage["output"] is None:
         result["reason"] = "usage_missing"
         return result
+    # Remove measured optional buckets from inclusive totals even when unpriced.
+    unpriced_usage = False
     parts = {"input": Decimal(usage["input"]), "output": Decimal(usage["output"])}
-    for key in ("cacheReadInput", "cacheWriteInput"):
+    for key, base in (("cacheReadInput", "input"), ("cacheWriteInput", "input"), ("reasoning", "output")):
         count = usage[key]
-        if count is None and _decimal(price.get(key)) is not None:
-            result["reason"] = "cache_usage_missing"
-            return result
         if count:
-            parts[key] = Decimal(count)
-            parts["input"] -= Decimal(count)
-    if _decimal(price.get("reasoning")) is not None:
-        if usage["reasoning"] is None:
-            result["reason"] = "reasoning_usage_missing"
-            return result
-        if usage["reasoning"]:
-            parts["reasoning"] = Decimal(usage["reasoning"])
-            parts["output"] -= parts["reasoning"]
+            quantity = Decimal(count)
+            parts[base] -= quantity
+            if price.get(key) is None:
+                unpriced_usage = True
+            else:
+                parts[key] = quantity
     if parts["input"] < 0 or parts["output"] < 0:
         result["reason"] = "overlapping_usage_buckets"
         return result
@@ -509,8 +513,16 @@ def _pay_as_you_go_cost(attrs, usage, *, model, provider, prices, observed_at):
             result["reason"] = "price_bucket_missing"
             return result
         amounts[key] = value * rate / unit
+    subtotal = _text(sum(amounts.values(), Decimal(0)))
+    if unpriced_usage:
+        result["reason"] = "price_bucket_missing"
+        if any(parts.values()):
+            result.update(knownSubtotal=subtotal, source="estimated",
+                          details={key: _text(value) for key, value in amounts.items()})
+        return result
+
     result.update(
-        total=_text(sum(amounts.values(), Decimal(0))),
+        total=subtotal,
         input=_text(
             sum(
                 (value for key, value in amounts.items() if key not in {"output", "reasoning"}), Decimal(0)
@@ -715,32 +727,42 @@ def cost_coverage(observations, *, context=None, _ambiguous_calls=None):
             result["subscriptionCalls"] += 1
             equivalent = cost.get("listPriceEquivalent") or {}
             amount = _decimal(equivalent.get("total"))
-            if amount is not None and equivalent.get("currency", "USD") == "USD":
-                equivalents.append(amount)
-                result["listPriceEquivalentCalls"] += 1
-                source = equivalent.get("pricingSource")
-                if source in ("manual", "alias", "catalog", "reference", "official_catalog", *PUBLISHER_PRICE_SOURCES):
-                    sources = result.setdefault("listPriceEquivalentSources", {})
-                    sources[source] = sources.get(source, 0) + 1
-            elif amount is None and cost.get("estimateListPrice") is True:
+            if equivalent.get("currency", "USD") == "USD":
+                subtotal = amount if amount is not None else _decimal(equivalent.get("knownSubtotal"))
+                if subtotal is not None:
+                    equivalents.append(subtotal)
+                    source = equivalent.get("pricingSource")
+                    if source in ("manual", "alias", "catalog", "reference", "official_catalog", *PUBLISHER_PRICE_SOURCES):
+                        sources = result.setdefault("listPriceEquivalentSources", {})
+                        sources[source] = sources.get(source, 0) + 1
+                if amount is not None:
+                    result["listPriceEquivalentCalls"] += 1
+            if amount is None and cost.get("estimateListPrice") is True:
                 reason = equivalent.get("reason") or "cost_missing"
                 reasons = result.setdefault("listPriceEquivalentUnknownReasons", {})
                 reasons[reason] = reasons.get(reason, 0) + 1
-        amount = _decimal(cost.get("total"))
-        if amount is None or cost.get("currency", "USD") != "USD":
-            reason = cost.get("reason") or "cost_missing"
-            if cost.get("currency", "USD") != "USD":
-                reason = "unsupported_currency"
+
+        is_usd = cost.get("currency", "USD") == "USD"
+        amount = _decimal(cost.get("total")) if is_usd else None
+        source = "reported" if cost.get("source") == "reported" else cost.get("pricingSource", "manual")
+        subtotal = amount
+        if is_usd and amount is None:
+            subtotal = _decimal(cost.get("knownSubtotal"))
+        if subtotal is not None:
+            known.append(subtotal)
+            if source == "reference":
+                reference.append(subtotal)
+            if amount is None and source in {"manual", "alias", "catalog", "reference"}:
+                sources = result.setdefault("partialCostSources", {})
+                sources[source] = sources.get(source, 0) + 1
+        if amount is None:
+            reason = (cost.get("reason") or "cost_missing") if is_usd else "unsupported_currency"
             result["unknownCalls"] += 1
             result["unknownReasons"][reason] = result["unknownReasons"].get(reason, 0) + 1
             continue
         result["knownCostCalls"] += 1
-        source = "reported" if cost.get("source") == "reported" else cost.get("pricingSource", "manual")
         if source in {"reported", "manual", "alias", "catalog", "reference"}:
             result[source + "Calls"] += 1
-        known.append(amount)
-        if source == "reference":
-            reference.append(amount)
     if result["additive"]:
         result["knownSubtotal"] = _text(sum(known, Decimal(0))) if known else None
         result["referenceSubtotal"] = _text(sum(reference, Decimal(0))) if reference else None
@@ -771,9 +793,10 @@ def combine_cost_coverage(coverages):
         for reason, count in item.get("listPriceEquivalentUnknownReasons", {}).items():
             reasons = result.setdefault("listPriceEquivalentUnknownReasons", {})
             reasons[reason] = reasons.get(reason, 0) + count
-        for source, count in item.get("listPriceEquivalentSources", {}).items():
-            sources = result.setdefault("listPriceEquivalentSources", {})
-            sources[source] = sources.get(source, 0) + count
+        for field in ("listPriceEquivalentSources", "partialCostSources"):
+            for source, count in item.get(field, {}).items():
+                sources = result.setdefault(field, {})
+                sources[source] = sources.get(source, 0) + count
     result["additive"] = all(item.get("additive") is True for item in coverages)
     if result["additive"]:
         for field in ("knownSubtotal", "referenceSubtotal", "listPriceEquivalentSubtotal"):

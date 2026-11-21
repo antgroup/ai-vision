@@ -28,10 +28,12 @@ export function TraceCopyButton({
   value,
   label,
   className,
+  showLabel = false,
 }: {
   value: string
   label: string
   className?: string
+  showLabel?: boolean
 }) {
   const { t } = useTranslation()
   const [copiedValue, setCopiedValue] = useState<string | null>(null)
@@ -48,9 +50,9 @@ export function TraceCopyButton({
   return (
     <Button
       type="button"
-      variant="ghost"
+      variant={showLabel ? "outline" : "ghost"}
       size="sm"
-      className={cn("size-7 shrink-0 p-0", className)}
+      className={cn("shrink-0", !showLabel && "size-7 p-0", className)}
       title={copied ? `${label}: ${t("traceUserInput.copied")}` : label}
       aria-label={label}
       onClick={(event) => {
@@ -62,6 +64,7 @@ export function TraceCopyButton({
       }}
     >
       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+      {showLabel && label}
       <span className="sr-only" role="status">
         {copied ? t("traceUserInput.copied") : ""}
       </span>

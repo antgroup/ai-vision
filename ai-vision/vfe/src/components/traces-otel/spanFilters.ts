@@ -15,6 +15,7 @@ export type SpanFilterKind = SpanKind | "unknown"
 
 export interface SpanFilters {
   errorOnly: boolean
+  hideCompletedTurnToolErrors?: boolean
   lowConfidenceOnly: boolean
   kinds: readonly SpanFilterKind[]
   toolNames: readonly string[]
@@ -44,6 +45,7 @@ export function createSpanFilters(): SpanFilters {
 export function hasSpanFilters(filters: SpanFilters): boolean {
   return (
     filters.errorOnly ||
+    filters.hideCompletedTurnToolErrors === true ||
     filters.lowConfidenceOnly ||
     filters.kinds.length > 0 ||
     filters.toolNames.length > 0 ||
@@ -52,6 +54,50 @@ export function hasSpanFilters(filters: SpanFilters): boolean {
     (filters.minCost !== null && filters.minCost !== undefined) ||
     filters.model !== ""
   )
+}
+
+/** Hide only explicitly declared tool errors under a verified successful root. */
+export function getCompletedTurnToolErrorIds(
+  spans: readonly OTelSpan[],
+  rootSpanId: string,
+  tree: readonly SpanTreeNode[]
+): Set<string> {
+  const result = new Set<string>()
+  const root = spans.find((span) => span.span_id === rootSpanId)
+  if (
+    !root ||
+    (root.parent_span_id && !/^0+$/.test(root.parent_span_id)) ||
+    isErrorSpan(root) ||
+    !["1", "OK", "STATUS_CODE_OK"].includes(
+      String(root.status?.code ?? "").toUpperCase()
+    )
+  )
+    return result
+  const rootSubtreeIds = getSpanSubtreeIds(tree, rootSpanId)
+  for (const span of spans) {
+    if (
+      span.span_id === rootSpanId ||
+      !rootSubtreeIds.has(span.span_id) ||
+      !isErrorSpan(span)
+    )
+      continue
+    const attrs = span.attributes ?? {}
+    const is = (value: unknown, ...choices: string[]) =>
+      typeof value === "string" && choices.includes(value.trim().toLowerCase())
+    const operation =
+      typeof attrs["gen_ai.operation.name"] === "string"
+        ? attrs["gen_ai.operation.name"].trim().toLowerCase()
+        : ""
+    if (
+      operation === "execute_tool" ||
+      operation === "tool" ||
+      (!operation &&
+        (is(attrs["gen_ai.span.kind"], "tool", "mcp") ||
+          is(attrs["langfuse.observation.type"], "tool")))
+    )
+      result.add(span.span_id)
+  }
+  return result
 }
 
 /** A tool name is evidence only on a declared tool call, not a wrapper or decision. */
@@ -82,6 +128,7 @@ export function filterSpans(
     searchMatchIds?: ReadonlySet<string>
     lowConfidenceSpanIds?: ReadonlySet<string>
     scopeSpanIds?: ReadonlySet<string>
+    completedTurnToolErrorIds?: ReadonlySet<string>
     exchangeRates?: SpanCostExchangeRates
   } = {}
 ): Set<string> {
@@ -92,6 +139,11 @@ export function filterSpans(
     if (context.searchMatchIds && !context.searchMatchIds.has(span.span_id))
       continue
     if (filters.errorOnly && !isErrorSpan(span)) continue
+    if (
+      filters.hideCompletedTurnToolErrors &&
+      context.completedTurnToolErrorIds?.has(span.span_id)
+    )
+      continue
     if (
       filters.minCost !== null &&
       filters.minCost !== undefined &&

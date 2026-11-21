@@ -1,10 +1,13 @@
 import json
 from unittest.mock import patch
 
+from django.db import connection
 from django.test import SimpleTestCase
+from django.test.utils import CaptureQueriesContext
+from django.utils import timezone
 from rest_framework.test import APIClient
 
-from apps.core.models import Space
+from apps.core.models import SkillConfig, Space
 from apps.core.tests.helpers import (
     SpaceKeyTestCase,
     create_local_user,
@@ -642,6 +645,97 @@ class SkillConfigApiTests(SpaceKeyTestCase):
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
+    def test_config_summary_keeps_metadata_without_loading_markdown(self):
+        base = f"/api/v2/spaces/{self.space.uuid}/labs/skill/configs"
+        content = "---\nname: docs\n---\n" + "Example content. " * 2000
+        SkillConfig.objects.create(
+            space=self.space,
+            name="docs",
+            description="Read the docs",
+            path="src/SKILL.md",
+            raw={"content": content},
+        )
+        legacy = self.client.get(base)
+        self.assertEqual(legacy.status_code, 200)
+        [full] = legacy.json()["data"]
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(base, {"view": "summary"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["data"],
+            [{key: value for key, value in full.items() if key != "raw"}],
+        )
+        config_queries = [
+            entry["sql"]
+            for entry in queries
+            if SkillConfig._meta.db_table in entry["sql"]
+        ]
+        self.assertEqual(len(config_queries), 1, config_queries)
+        self.assertNotRegex(config_queries[0], r"\braw\b")
+        self.assertEqual(self.client.get(base, {"view": "detail", "name": "docs"}).json()["data"], full)
+
+    def test_config_detail_respects_read_scope_and_soft_delete(self):
+        config = SkillConfig.objects.create(space=self.space, name="..")
+        base = f"/api/v2/spaces/{self.space.uuid}/labs/skill/configs"
+        params = {"view": "detail", "name": config.name}
+        reader = create_local_user("read-detail")
+        self.client.force_authenticate(user=reader)
+        denied = self.client.get(base, params)
+        self.assertEqual(denied.status_code, 400)
+        self.assertEqual(denied.json()["code"], 3002)
+        create_test_space_member(space=self.space, user=reader, role=3)
+        self.assertEqual(self.client.get(base, params).json()["data"]["name"], "..")
+        config.gmt_deleted = timezone.now()
+        config.save(update_fields=["gmt_deleted"])
+        response = self.client.get(base, params)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["code"], 3104)
+        self.space.status = 0
+        self.space.save(update_fields=["status"])
+        self.assertEqual(self.client.get(base, params).json()["code"], 3001)
+
+    def test_observation_summary_preserves_overview_and_history(self):
+        url = f"/api/v2/spaces/{self.space.uuid}/labs/skill/observations"
+        params = {
+            "fromTimestamp": "2026-01-01T00:00:00Z",
+            "toTimestamp": "2026-01-02T00:00:00Z",
+        }
+        spans = [
+            _native_skill_span("parent", "root", "docs"),
+            _native_skill_span("child", "parent", "report"),
+        ]
+
+        def get(**options):
+            response = self.client.get(url, {**params, **options})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["code"], 0)
+            return response.json()["data"]
+
+        with patch(
+            "apps.core.views.labs_skill.get_default_trace_query_service"
+        ) as factory:
+            factory.return_value.list_skill_spans.return_value = {
+                "spans": spans,
+                "spanMeta": {"totalItems": len(spans), "totalPages": 1},
+            }
+            legacy = get()
+            summary = get(view="summary")
+            history = get(history_skill="docs")
+            projected_history = get(view="summary", history_skill="docs")
+
+        self.assertTrue(legacy["relations"])
+        self.assertEqual(
+            summary,
+            {
+                "overview": legacy["overview"],
+                "skills": [
+                    {key: value for key, value in row.items() if key != "recentCalls"}
+                    for row in legacy["skills"]
+                ],
+            },
+        )
+        self.assertEqual(projected_history, history)
+
     def test_config_roundtrip(self):
         payload = {
             "skills": [
@@ -674,6 +768,34 @@ class SkillConfigApiTests(SpaceKeyTestCase):
             f"/api/v2/spaces/{self.space.uuid}/labs/skill/configs"
         )
         self.assertEqual(listed.json()["data"], [])
+
+    def test_import_receipts_include_only_the_written_names(self):
+        url = f"/api/v2/spaces/{self.space.uuid}/labs/skill/configs"
+        SkillConfig.objects.create(space=self.space, name="unrelated")
+        SkillConfig.objects.create(space=self.space, name="Docs")
+        # OceanBase uses a case-insensitive collation, while SQLite may insert
+        # a second row. The receipt always names the row this request wrote.
+        stored_name = (
+            "Docs"
+            if SkillConfig.objects.filter(space=self.space, name="docs").exists()
+            else "docs"
+        )
+        content = "---\nname: docs\n---\n" + "Example content. " * 2000
+        response = self.client.put(
+            f"{url}?response=receipts",
+            {"skills": [{"name": "docs", "raw": {"content": content}}]},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertEqual(len(response.data["data"]), 1)
+        self.assertEqual(
+            response.data["data"], [{"requestedName": "docs", "name": stored_name}]
+        )
+        listed = self.client.get(url)
+        skills = {entry["name"]: entry for entry in listed.data["data"]}
+        self.assertIn("unrelated", skills)
+        self.assertEqual(skills[stored_name]["raw"]["content"], content)
 
     def test_history_queries_records_beyond_recent_preview_and_filters_before_paging(self):
         spans = [_skill_span(f"span-{index}", "root", "deploy", index) for index in range(205)]

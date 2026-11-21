@@ -16,6 +16,7 @@ const {
   hasSpanFilters,
   filterSpans,
   filterSpanTree,
+  getCompletedTurnToolErrorIds,
   getSpanFilterOptions,
   getSpanRepeatGroups,
   getSpanSubtreeIds,
@@ -46,6 +47,83 @@ const model = (
   })
 const leaf = (id: string): SpanTreeNode => ({ spanId: id, children: [] })
 const ids = (values: Set<string>) => [...values]
+
+test("focus filters hide only declared tool errors in the completed trace branch", () => {
+  const error = { code: "STATUS_CODE_ERROR", message: "failed" }
+  const root = span("root", {}, { status: { code: "OK", message: "" } })
+  const tool = span(
+    "read",
+    { "gen_ai.operation.name": "execute_tool" },
+    { status: error }
+  )
+  const mcp = span("mcp", { "gen_ai.span.kind": "MCP" }, { status: error })
+  const model = span(
+    "model",
+    {
+      "gen_ai.operation.name": "chat",
+      "gen_ai.span.kind": "TOOL",
+    },
+    { status: error }
+  )
+  const ambiguous = span("tool in name only", {}, { status: error })
+  const orphan = span(
+    "outside",
+    { "gen_ai.span.kind": "TOOL" },
+    { status: error }
+  )
+  const tree = [
+    {
+      spanId: "root",
+      children: [
+        { spanId: "read", children: [leaf("model")] },
+        leaf("mcp"),
+        leaf(ambiguous.span_id),
+      ],
+    },
+    leaf("outside"),
+  ]
+  const spans = [root, tool, mcp, model, ambiguous, orphan]
+  const hidden = getCompletedTurnToolErrorIds(spans, "root", tree)
+  const filters = { ...createSpanFilters(), errorOnly: true }
+  const focused = { ...filters, hideCompletedTurnToolErrors: true }
+  assert.deepEqual(ids(filterSpans(spans, filters)), [
+    "read",
+    "mcp",
+    "model",
+    ambiguous.span_id,
+    "outside",
+  ])
+  const matches = filterSpans(spans, focused, {
+    completedTurnToolErrorIds: hidden,
+  })
+  assert.deepEqual(ids(matches), ["model", ambiguous.span_id, "outside"])
+  assert.deepEqual(filterSpanTree(tree, matches)[0].children[0], {
+    spanId: "read",
+    children: [leaf("model")],
+  })
+  for (const [rootSpanId, status] of [
+    ["missing", "OK"],
+    ["root", "ERROR"],
+    ["root", "UNSET"],
+  ]) {
+    const candidate = [
+      { ...root, status: { code: status, message: "" } },
+      ...spans.slice(1),
+    ]
+    assert.equal(
+      getCompletedTurnToolErrorIds(candidate, rootSpanId, tree).size,
+      0
+    )
+  }
+  assert.equal(
+    getCompletedTurnToolErrorIds(
+      [{ ...root, parent_span_id: "missing-parent" }, ...spans.slice(1)],
+      "root",
+      tree
+    ).size,
+    0
+  )
+})
 
 test("monetary input stays exact, bounded, and explicit about its currency and metric", () => {
   assert.equal(parseSpanCostAmount(" .5000 "), "0.5")

@@ -4,7 +4,7 @@ import { TraceTextContent } from "@/components/traces/shared/TraceTextContent"
 import { cn } from "@/lib/utils"
 
 import { resolveMcpDescription } from "./mcpDescription"
-import type { McpDescription, McpServerConfig } from "./types"
+import type { McpConfigSummary, McpDescription } from "./types"
 
 export function McpServerDescription({
   server,
@@ -13,7 +13,7 @@ export function McpServerDescription({
   feature = "mcp",
 }: {
   server: McpDescription & { serverId: string }
-  config?: McpServerConfig
+  config?: McpConfigSummary
   className?: string
   feature?: "mcp" | "memory"
 }) {

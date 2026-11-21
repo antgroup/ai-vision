@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 import textwrap
 import time
@@ -6,7 +7,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Thread
 from unittest.mock import Mock, patch
 
+from django.db import connection
 from django.test import SimpleTestCase, override_settings
+from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -789,6 +792,159 @@ class LabsMcpConfigToolsTests(SpaceKeyTestCase):
             f"{self.config.server_id}/tools"
         )
 
+    def test_config_summary_keeps_metadata_without_loading_raw_or_tools(self):
+        self.config.memory_semantics = {"searchTools": ["lookup"]}
+        self.config.tools = [{"name": "large-tool"}]
+        self.config.raw = {**self.config.raw, "description": "  Legacy description  "}
+        self.config.save(update_fields=["memory_semantics", "tools", "raw"])
+        base = f"/api/v2/spaces/{self.space.uuid}/labs/mcp/configs"
+        legacy = self.client.get(base)
+        self.assertEqual(legacy.status_code, 200)
+        [full] = legacy.json()["data"]
+        with CaptureQueriesContext(connection) as queries:
+            response = self.client.get(base, {"view": "summary"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json()["data"],
+            [
+                {
+                    **{key: value for key, value in full.items() if key != "raw"},
+                    "displayDescription": "  Legacy description  ",
+                }
+            ],
+        )
+        config_queries = [
+            entry["sql"]
+            for entry in queries
+            if McpServerConfig._meta.db_table in entry["sql"]
+        ]
+        self.assertEqual(len(config_queries), 1, config_queries)
+        self.assertIn("JSON_EXTRACT", config_queries[0])
+        other_sql = re.sub(
+            r'JSON_(?:EXTRACT|TYPE)\(["`][^"`]+["`]\.["`]raw["`],',
+            "",
+            config_queries[0],
+        )
+        self.assertNotRegex(other_sql, r"\b(raw|tools|tools_synced_at)\b")
+        self.assertEqual(self.client.get(base, {"view": "detail", "serverId": "github"}).json()["data"], full)
+
+    def test_config_summary_description_fallback_preserves_json_string_types(self):
+        raw_descriptions = ["null", "123", "false", 123, False, None, ["text"], {"text": "text"}]
+        McpServerConfig.objects.bulk_create(
+            [
+                McpServerConfig(
+                    space=self.space, server_id=f"fallback-{index}", raw={"description": value}
+                )
+                for index, value in enumerate(raw_descriptions)
+            ]
+        )
+        base = f"/api/v2/spaces/{self.space.uuid}/labs/mcp/configs"
+        response = self.client.get(base, {"view": "summary"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            {
+                row["serverId"]: row["displayDescription"]
+                for row in response.json()["data"]
+                if "displayDescription" in row
+            },
+            {"fallback-0": "null", "fallback-1": "123", "fallback-2": "false"},
+        )
+
+    def test_config_detail_respects_read_scope_and_soft_delete(self):
+        base = f"/api/v2/spaces/{self.space.uuid}/labs/mcp/configs"
+        self.config.server_id = "docs/tools"
+        self.config.save(update_fields=["server_id"])
+        params = {"view": "detail", "serverId": self.config.server_id}
+        reader = create_local_user("read-detail")
+        self.client.force_authenticate(user=reader)
+        denied = self.client.get(base, params)
+        self.assertEqual(denied.status_code, 400)
+        self.assertEqual(denied.json()["code"], 3002)
+        create_test_space_member(space=self.space, user=reader, role=3)
+        self.assertEqual(
+            self.client.get(base, params).json()["data"]["serverId"], "docs/tools"
+        )
+        self.config.gmt_deleted = timezone.now()
+        self.config.save(update_fields=["gmt_deleted"])
+        response = self.client.get(base, params)
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["code"], 3006)
+        self.space.status = 0
+        self.space.save(update_fields=["status"])
+        self.assertEqual(self.client.get(base, params).json()["code"], 3001)
+
+    def test_observation_summary_and_targeted_detail_preserve_full_window_stats(self):
+        tool_names = [
+            "mcp__github__search",
+            "mcp__github__search",
+            "mcp__github__fetch",
+            "mcp__docs__lookup",
+            "mcp__memos__memo_search",
+        ]
+        spans = [
+            {
+                "trace_id": f"trace-{index}",
+                "span_id": f"span-{index}",
+                "status": {"code": "ERROR" if index == 0 else "OK"},
+                "start_time_unix_nano": (index + 1) * 10**9,
+                "attributes": {
+                    "agentic.tool.type": "mcp",
+                    "agentic.tool.raw_name": name,
+                    "agentic.tool.duration_ms": index * 100,
+                },
+            }
+            for index, name in enumerate(tool_names)
+        ]
+        params = {
+            "fromTimestamp": "2026-01-01T00:00:00Z",
+            "toTimestamp": "2026-01-02T00:00:00Z",
+        }
+        url = f"/api/v2/spaces/{self.space.uuid}/labs/mcp/observations"
+
+        def get(**options):
+            response = self.client.get(url, {**params, **options})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["code"], 0)
+            return response.json()["data"]
+
+        with patch(
+            "apps.core.views.labs_mcp.get_default_trace_query_service"
+        ) as factory:
+            factory.return_value.list_mcp_spans.return_value = {
+                "spans": spans,
+                "spanMeta": {"totalItems": len(spans), "totalPages": 1},
+            }
+            legacy = get()
+            summary = get(view="summary")
+            detail = get(detailServer="github")
+            missing = get(detailServer="GITHUB")
+            history = get(historyServer="github")
+            projected_history = get(view="summary", detailServer="docs", historyServer="github")
+
+        self.assertEqual([row["serverId"] for row in legacy["servers"]], ["docs", "github"])
+        self.assertIn("memos", legacy["memoryServerIds"])
+        self.assertEqual(
+            summary,
+            {
+                **legacy,
+                "servers": [
+                    {
+                        **{
+                            key: value
+                            for key, value in row.items()
+                            if key not in {"tools", "recentCalls"}
+                        },
+                        "calledToolCount": len(row["tools"]),
+                        "lastSeen": row["recentCalls"][0]["timestamp"],
+                    }
+                    for row in legacy["servers"]
+                ],
+            },
+        )
+        self.assertEqual(detail, {**legacy, "servers": [legacy["servers"][1]]})
+        self.assertEqual(missing, {**legacy, "servers": []})
+        self.assertEqual(projected_history, history)
+
     def test_memory_registry_covers_builtin_products_without_imported_declarations(self):
         declared = _declared_memory_server_ids(self.space)
 
@@ -1138,6 +1294,62 @@ class LabsMcpConfigToolsTests(SpaceKeyTestCase):
         self.assertNotIn("keep-private", json.dumps(self.config.raw))
         self.assertEqual(self.config.tools, [])
         self.assertIsNone(self.config.tools_synced_at)
+
+    def test_import_receipts_include_only_written_config_and_saved_revision(self):
+        url = f"/api/v2/spaces/{self.space.uuid}/labs/mcp/configs"
+        McpServerConfig.objects.create(space=self.space, server_id="Docs")
+        stored_id = (
+            "Docs"
+            if McpServerConfig.objects.filter(space=self.space, server_id="docs").exists()
+            else "docs"
+        )
+        response = self.client.put(
+            f"{url}?response=receipts",
+            {
+                "configs": [
+                    {
+                        "serverId": "docs",
+                        "transport": "stdio",
+                        "command": "fixture-docs",
+                        "raw": {},
+                    }
+                ]
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200, response.data)
+        saved = McpServerConfig.objects.get(space=self.space, server_id="docs")
+        self.assertEqual(saved.command, "fixture-docs")
+        self.assertEqual(len(response.data["data"]), 1)
+        self.assertEqual(
+            response.data["data"],
+            [
+                {
+                    "requestedServerId": "docs",
+                    "serverId": stored_id,
+                    "importedAt": saved.imported_at.isoformat(),
+                }
+            ],
+        )
+        listed = self.client.get(url)
+        self.assertIn("github", {config["serverId"] for config in listed.data["data"]})
+
+    def test_receipts_use_distinct_revisions_for_repeated_row_writes(self):
+        url = f"/api/v2/spaces/{self.space.uuid}/labs/mcp/configs?response=receipts"
+        config = {"serverId": "github", "transport": "http", "raw": {}}
+        with patch(
+            "apps.core.views.labs_mcp.timezone.now",
+            return_value=self.config.imported_at,
+        ):
+            response = self.client.put(url, {"configs": [config, config]}, format="json")
+
+        self.assertEqual(response.status_code, 200, response.data)
+        receipts = response.data["data"]
+        self.assertEqual(len(receipts), 2)
+        self.config.refresh_from_db()
+        self.assertLess(receipts[0]["importedAt"], receipts[1]["importedAt"])
+        self.assertEqual(receipts[1]["importedAt"], self.config.imported_at.isoformat())
 
     def test_delete_and_reimport_restores_one_config_without_old_tools(self):
         original_id = self.config.pk

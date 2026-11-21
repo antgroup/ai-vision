@@ -101,7 +101,6 @@ async function labsPage(
               "Imported only; no calls are available in this window.",
             path: "/fixture/SKILL.md",
             source: "skillmd",
-            raw: {},
             allowedTools: [],
             license: "",
             compatibility: "",
@@ -115,7 +114,6 @@ async function labsPage(
             url: "https://example.invalid/mcp",
             envKeys: [],
             headerKeys: [],
-            raw: {},
             importedAt: timestamp,
           },
         ]
@@ -124,7 +122,7 @@ async function labsPage(
       json: { code: 0, data: observations(feature, measurement) },
     })
   )
-  await page.route(`**/labs/${feature}/configs`, (route) =>
+  await page.route(`**/labs/${feature}/configs?view=summary`, (route) =>
     route.fulfill({ json: { code: 0, data: configs } })
   )
   await page.route(`**/labs/${feature}/configs/*/tools`, (route) =>
@@ -141,6 +139,7 @@ async function labsPage(
     const url = new URL(response.url())
     return (
       url.pathname.endsWith(`/labs/${feature}/configs`) &&
+      url.searchParams.get("view") === "summary" &&
       response.request().method() === "GET"
     )
   })

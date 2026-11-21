@@ -35,8 +35,9 @@ import { SkillDrawer } from "@/labs/skill/SkillDrawer"
 import { SkillOverview } from "@/labs/skill/SkillOverview"
 import {
   deleteSkillConfig,
+  getSkillConfig,
   listSkillCallHistory,
-  listSkillConfigs,
+  listSkillConfigSummaries,
   listSkillStats,
 } from "@/labs/skill/skillApi"
 import {
@@ -126,21 +127,31 @@ export function SkillPage() {
   )
   const canQueryStats = !!spaceId && !!params.agentProduct
   const statsQuery = useQuery({
-    queryKey: ["labs", "skill", "stats", params],
-    queryFn: () => listSkillStats(params),
+    queryKey: ["labs", "skill", "stats", params, "summary"],
+    queryFn: ({ signal }) => listSkillStats(params, signal, "summary"),
     retry: false,
     enabled: canQueryStats,
   })
   const configsQueryKey = ["labs", "skill", "configs", spaceId]
   const configsQuery = useQuery({
-    queryKey: configsQueryKey,
-    queryFn: ({ signal }) => listSkillConfigs(spaceId, signal),
+    queryKey: [...configsQueryKey, "summary"],
+    queryFn: ({ signal }) => listSkillConfigSummaries(spaceId, signal),
     staleTime: 60_000,
     enabled: !!spaceId,
     retry: false,
   })
+  const canLoadDefinition = !!spaceId && !!openSkillName
+  const detailQuery = useQuery({
+    queryKey: [...configsQueryKey, "detail", openSkillName],
+    queryFn: ({ signal }) =>
+      getSkillConfig(spaceId, openSkillName ?? "", signal),
+    staleTime: 60_000,
+    enabled: canLoadDefinition,
+    retry: false,
+  })
   const { refetch: refetchStats } = statsQuery
   const { refetch: refetchConfigs } = configsQuery
+  const { refetch: refetchDetail } = detailQuery
   const absoluteScope = JSON.stringify(params)
   const refresh = useRef({ tick: refreshTick, scope: absoluteScope })
   useEffect(() => {
@@ -150,8 +161,17 @@ export function SkillPage() {
       // A changed absolute window is a new query; identical fixed windows refetch.
       if (sameWindow && canQueryStats) void refetchStats()
       void refetchConfigs()
+      if (canLoadDefinition) void refetchDetail()
     }
-  }, [refreshTick, absoluteScope, canQueryStats, refetchStats, refetchConfigs])
+  }, [
+    refreshTick,
+    absoluteScope,
+    canQueryStats,
+    canLoadDefinition,
+    refetchStats,
+    refetchConfigs,
+    refetchDetail,
+  ])
   const data = statsQuery.data
   const configs = useMemo(() => configsQuery.data ?? [], [configsQuery.data])
   const statsState: SkillStatsState = !canQueryStats
@@ -541,15 +561,21 @@ export function SkillPage() {
         key={`${spaceId}:${openSkillName}`}
         skillName={openSkillName}
         stat={openSkillName ? (statByName.get(openSkillName) ?? null) : null}
-        config={openSkillName ? configByName.get(openSkillName) : undefined}
+        config={detailQuery.data ?? undefined}
         statState={statsState}
-        configState={configState}
+        configState={
+          detailQuery.data !== undefined
+            ? "ready"
+            : detailQuery.isError
+              ? "error"
+              : "loading"
+        }
         statsError={statsQuery.isError}
-        configError={configsQuery.isError}
+        configError={detailQuery.isError}
         onRetryStats={
           canQueryStats ? () => void statsQuery.refetch() : undefined
         }
-        onRetryConfig={() => void configsQuery.refetch()}
+        onRetryConfig={() => void refetchDetail()}
         onClose={() => openSkill(null)}
         onImport={canManage ? () => setImportOpen(true) : undefined}
         onDeleteConfig={canManage ? removeConfig : undefined}

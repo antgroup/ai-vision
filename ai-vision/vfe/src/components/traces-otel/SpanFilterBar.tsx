@@ -159,6 +159,12 @@ export function SpanFilterBar({
       label: t("nativeSpanFilters.errors"),
       clear: () => onChange({ ...filters, errorOnly: false }),
     })
+  if (filters.hideCompletedTurnToolErrors)
+    conditions.push({
+      key: "completedTurnToolErrors",
+      label: t("nativeSpanFilters.hideCompletedTurnToolErrors"),
+      clear: () => onChange({ ...filters, hideCompletedTurnToolErrors: false }),
+    })
   if (filters.lowConfidenceOnly)
     conditions.push({
       key: "confidence",
@@ -476,6 +482,22 @@ export function SpanFilterBar({
                       }
                     />
                     {t("nativeSpanFilters.lowConfidence")}
+                  </label>
+                  <label className="flex min-w-0 items-start gap-1.5 text-xs">
+                    <input
+                      type="checkbox"
+                      className="mt-0.5 size-3.5 shrink-0 accent-primary"
+                      checked={filters.hideCompletedTurnToolErrors === true}
+                      onChange={(event) =>
+                        onChange({
+                          ...filters,
+                          hideCompletedTurnToolErrors: event.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-pretty">
+                      {t("nativeSpanFilters.hideCompletedTurnToolErrors")}
+                    </span>
                   </label>
                 </div>
               </fieldset>

@@ -7,7 +7,12 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogTitle } from "@/components/ui/dialog"
 import { DialogContent } from "@/components/dialogs/DialogContent"
 import { createPricingRule } from "./api"
-import { emptyRates, rateFields, validManualRates } from "./presentation"
+import {
+  emptyRates,
+  knownPricingIdentity,
+  rateFields,
+  validManualRates,
+} from "./presentation"
 import type { PricingCandidate, PricingRates, PricingRuleKind } from "./types"
 import { usePricingCurrency } from "./PricingCurrency"
 
@@ -44,8 +49,8 @@ export function PricingRuleForm({
   const [error, setError] = useState(false)
   const effectiveDate = effective ? new Date(effective) : null
   const valid = Boolean(
-    provider.trim() &&
-    model.trim() &&
+    knownPricingIdentity(provider) &&
+    knownPricingIdentity(model) &&
     effectiveDate &&
     Number.isFinite(effectiveDate.getTime()) &&
     (kind !== "manual" || validManualRates(rates))

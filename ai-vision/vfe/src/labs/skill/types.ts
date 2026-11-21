@@ -24,6 +24,8 @@ export interface SkillConfig {
   importedAt: string
 }
 
+export type SkillConfigSummary = Omit<SkillConfig, "raw">
+
 export interface SkillCallRef {
   name: string
   derived: boolean
@@ -60,7 +62,8 @@ export interface SkillStat {
   p95Ms: number | null
   lastSeen: string | null
   sourceAgents: string[]
-  recentCalls: SkillCallRef[]
+  /** Omitted from the catalogue summary. */
+  recentCalls?: SkillCallRef[]
 }
 
 export interface SkillOverview {

@@ -13,6 +13,7 @@ import {
   CircleCheck,
   CircleMinus,
   Copy,
+  Info,
   Loader2,
   Plus,
   Store,
@@ -56,6 +57,7 @@ import { WarningsBar } from "@/components/agents/guidance"
 import { OnboardingGuideSections } from "@/components/agents/guidance/OnboardingGuideSections"
 import { HermesRelayGuide } from "./onboarding/HermesRelayGuide"
 import { isHermesRelayOnboarding } from "./onboarding/hermesRelayConfiguration"
+import { ApplicationConnectionDetails } from "./onboarding/ApplicationConnectionDetails"
 import { EnableSteps, Fireworks } from "@/components/agents/celebration"
 import {
   sortItemsByAgentProduct,
@@ -126,7 +128,6 @@ interface FleetAgent {
 
 interface ModalAgent {
   name: string
-  type: string
   product: string
   setupMode: string
   status: string
@@ -136,6 +137,7 @@ interface ModalAgent {
   capabilities: Record<string, unknown> | null
   disabledAgentUuid?: string
   agentUuid?: string
+  readOnly?: boolean
 }
 
 // ── Helpers ──
@@ -186,11 +188,13 @@ function AgentFleetContent({
   agentTypes,
   onGoToMarket,
   onRefresh,
+  onViewGuide,
 }: {
   agents: FleetAgent[]
   agentTypes: AgentTypeData[]
   onGoToMarket?: () => void
   onRefresh: () => void
+  onViewGuide: (agent: ModalAgent, trigger: HTMLButtonElement) => void
 }) {
   const { currentSpace } = useSpace()
   const navigate = useNavigate()
@@ -225,7 +229,9 @@ function AgentFleetContent({
   const { t } = useTranslation()
   const agentTypeNameMap = new Map(
     agentTypes.flatMap((agentType) => {
-      const label = resolveAgentDisplayName(agentType.agent_product, [agentType])
+      const label = resolveAgentDisplayName(agentType.agent_product, [
+        agentType,
+      ])
       return [
         [agentType.agent_name, label],
         [agentType.agent_product, label],
@@ -257,10 +263,10 @@ function AgentFleetContent({
       [agentType.agent_product, agentType.capabilities],
     ])
   )
-  const categoryMap = new Map(
+  const agentTypeByProductOrName = new Map(
     agentTypes.flatMap((agentType) => [
-      [agentType.agent_name, agentType.category],
-      [agentType.agent_product, agentType.category],
+      [agentType.agent_name, agentType],
+      [agentType.agent_product, agentType],
     ])
   )
 
@@ -280,7 +286,7 @@ function AgentFleetContent({
   )
 
   const isBuiltIn = (agentProduct: string) => {
-    const category = categoryMap.get(agentProduct)
+    const category = agentTypeByProductOrName.get(agentProduct)?.category
     return category === "BUILT_IN" || category === "BUILTIN" || !category
   }
 
@@ -320,7 +326,11 @@ function AgentFleetContent({
     )
   }
 
-  const renderGroup = (title: string, items: FleetAgent[]) => {
+  const renderGroup = (
+    title: string,
+    items: FleetAgent[],
+    isApplication = false
+  ) => {
     if (items.length === 0) return null
     const themes = getCardThemes(items.map((agent) => agent.agent_product))
     return (
@@ -333,6 +343,9 @@ function AgentFleetContent({
               identity?.displayName ||
               agentTypeNameMap.get(agent.agent_product) ||
               resolveAgentDisplayName(agent.agent_product, [])
+            const agentType = isApplication
+              ? agentTypeByProductOrName.get(agent.agent_product)
+              : undefined
             return (
               <AgentCard
                 key={agent.id}
@@ -365,6 +378,28 @@ function AgentFleetContent({
                 }
                 framework={identity?.framework}
                 capabilities={capabilitiesMap.get(agent.agent_product)}
+                onViewConnection={
+                  isApplication && agent.uuid
+                    ? (event) =>
+                        onViewGuide(
+                          {
+                            name: displayName,
+                            product: agent.agent_product,
+                            setupMode: agentType?.setup_mode || "AUTO",
+                            status:
+                              agent.status === 1 ? "connected" : "pending",
+                            desc:
+                              agentType?.description || agent.description || "",
+                            configGuide: agentType?.config_guide ?? undefined,
+                            capabilities:
+                              capabilitiesMap.get(agent.agent_product) ?? null,
+                            agentUuid: agent.uuid,
+                            readOnly: true,
+                          },
+                          event.currentTarget
+                        )
+                    : undefined
+                }
                 integration={
                   identity
                     ? {
@@ -409,7 +444,7 @@ function AgentFleetContent({
       <div className="space-y-8">
         {renderGroup(t("langfuseOnboarding.fleetGroupTitle"), integrationFleet)}
         {renderGroup(t("agentAccess.builtInGroup"), builtInFleet)}
-        {renderGroup(t("agentAccess.thirdPartyGroup"), customFleet)}
+        {renderGroup(t("agentAccess.thirdPartyGroup"), customFleet, true)}
       </div>
 
       {/* Remove confirmation dialog */}
@@ -698,7 +733,6 @@ function AgentMarketContent({
               onViewGuide(
                 {
                   name: displayName,
-                  type: agentType.agent_name,
                   product: agentType.agent_product,
                   setupMode: agentType.setup_mode || "AUTO",
                   status: isDisabled
@@ -938,7 +972,7 @@ function OnboardingDialog({
 
   const handleClose = () => {
     setEnablePhase(null)
-    if (isPlugin || manualOnboarding) onRefresh?.()
+    if (!modalAgent.readOnly && (isPlugin || manualOnboarding)) onRefresh?.()
     onClose()
   }
 
@@ -969,6 +1003,20 @@ function OnboardingDialog({
     t
   )
 
+  const DialogIcon = modalAgent.readOnly ? Info : Terminal
+  const dialogTitle = t(
+    modalAgent.readOnly
+      ? "agentAccess.connection.dialogTitle"
+      : modalAgent.product === "Hermes"
+        ? modalAgent.status === "disabled"
+          ? "hermesOnboarding.disabledDialogTitle"
+          : "hermesOnboarding.dialogTitle"
+        : modalAgent.status === "connected"
+          ? "agentAccess.connectedTitle"
+          : "agentAccess.connectTitle",
+    { name: modalAgent.name }
+  )
+
   return (
     <Dialog open onOpenChange={(open) => !open && handleClose()}>
       <DialogContent
@@ -985,42 +1033,32 @@ function OnboardingDialog({
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-muted">
-                <Terminal
+                <DialogIcon
                   className="size-5 text-foreground"
                   aria-hidden="true"
                 />
               </div>
               <div className="min-w-0 wrap-break-word">
                 <DialogTitle className="leading-snug">
-                  {modalAgent.product === "Hermes"
-                    ? t(
-                        modalAgent.status === "disabled"
-                          ? "hermesOnboarding.disabledDialogTitle"
-                          : "hermesOnboarding.dialogTitle"
-                      )
-                    : modalAgent.status === "connected"
-                      ? t("agentAccess.connectedTitle", {
-                          name: modalAgent.name,
-                        })
-                      : t("agentAccess.connectTitle", {
-                          name: modalAgent.name,
-                        })}
+                  {dialogTitle}
                 </DialogTitle>
                 {description && (
                   <DialogDescription>{description}</DialogDescription>
                 )}
               </div>
             </div>
-            <DialogClose asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="shrink-0"
-                aria-label={t("common.close")}
-              >
-                <X className="size-4" aria-hidden="true" />
-              </Button>
-            </DialogClose>
+            {!modalAgent.readOnly && (
+              <DialogClose asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0"
+                  aria-label={t("common.close")}
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </Button>
+              </DialogClose>
+            )}
           </div>
         </CardHeader>
 
@@ -1033,7 +1071,44 @@ function OnboardingDialog({
               {(enableMutation.error || enableBackMutation.error)?.message}
             </p>
           )}
-          {hermesOnboardingUnavailable ? (
+          {modalAgent.readOnly ? (
+            <>
+              <div className="min-h-0 space-y-5 overflow-y-auto pr-1">
+                <ApplicationConnectionDetails
+                  spaceId={spaceId}
+                  agentUuid={modalAgent.agentUuid}
+                />
+                {isConfigGuideV2(configGuide) && (
+                  <OnboardingGuideSections
+                    guide={configGuide}
+                    hasInstallationCommand={false}
+                    agentName={modalAgent.name}
+                    agentProduct={modalAgent.product}
+                    readOnly
+                  />
+                )}
+                {isPlugin && (
+                  <p className="text-sm text-muted-foreground">
+                    {t("agentAccess.connection.installHint")}
+                  </p>
+                )}
+                {isConfigGuideV2(configGuide) &&
+                  !!configGuide.warnings?.length && (
+                    <WarningsBar warnings={configGuide.warnings} />
+                  )}
+              </div>
+              <CapabilityBadges capabilities={modalAgent.capabilities} />
+              <div className="flex shrink-0 justify-end border-t pt-4">
+                <Button
+                  variant="outline"
+                  className="font-normal"
+                  onClick={handleClose}
+                >
+                  {t("common.close")}
+                </Button>
+              </div>
+            </>
+          ) : hermesOnboardingUnavailable ? (
             <>
               <p role="alert" className="text-sm text-muted-foreground">
                 {t("hermesOnboarding.unavailable")}
@@ -1399,6 +1474,10 @@ function SpaceAgentsPage() {
   )
   const [modalAgent, setModalAgent] = useState<ModalAgent | null>(null)
   const guideTrigger = useRef<HTMLButtonElement | null>(null)
+  const openGuide = (agent: ModalAgent, trigger: HTMLButtonElement) => {
+    guideTrigger.current = trigger
+    setModalAgent(agent)
+  }
 
   const agents: FleetAgent[] = contextAgents.map((a) => ({
     id: a.id ?? 0,
@@ -1479,6 +1558,7 @@ function SpaceAgentsPage() {
               agentTypes={agentTypes}
               onGoToMarket={() => setActiveTab("market")}
               onRefresh={handleRefresh}
+              onViewGuide={openGuide}
             />
           )
         ) : (
@@ -1487,10 +1567,7 @@ function SpaceAgentsPage() {
             connectedAgentMap={connectedAgentMap}
             connectedAgentUuidMap={connectedAgentUuidMap}
             disabledAgentMap={disabledAgentMap}
-            onViewGuide={(agent, trigger) => {
-              guideTrigger.current = trigger
-              setModalAgent(agent)
-            }}
+            onViewGuide={openGuide}
             isLoading={agentTypesLoading}
           />
         )}

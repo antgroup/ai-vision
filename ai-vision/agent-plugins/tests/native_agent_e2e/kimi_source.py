@@ -395,8 +395,10 @@ def _signals(report, session, turns, steps):
         expected_output = [{"content": step["output"]["content"], "thinking": step["output"]["thinking"], "tools": []}
             for step in turn["steps"] if step["output"]["content"] or step["output"]["thinking"]]
         _require(_same([_assistant(message) for message in json.loads(attrs["gen_ai.output.messages"])], expected_output), "signal.root_output")
-        failed = turn["end"]["reason"] == "cancelled" or any(tool["result"].get("isError") for step in turn["steps"] for tool in step["tools"])
-        _require(root.get("status", {}).get("code") == (2 if failed else 1), "signal.root_status")
+        # _native already verifies that each turn either completed or was cancelled.
+        # Failed tool calls are verified on their own spans, not on the root.
+        expected_status = 1 if turn["end"]["reason"] == "completed" else 2
+        _require(root.get("status", {}).get("code") == expected_status, "signal.root_status")
     for step in steps:
         begin = step["begin"]; number = int(begin["turnId"])
         root = [s for s in roots if s["attributes"].get("gen_ai.chat.id") == f"{session}-turn-{number+1}"]

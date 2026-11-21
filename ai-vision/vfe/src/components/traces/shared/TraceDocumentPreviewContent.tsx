@@ -13,15 +13,15 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { DialogContent } from "@/components/dialogs/DialogContent"
 import { PrivacyMarkdown } from "@/labs/privacy/PrivacyMarkdown"
 import { PrivacyMarkedText } from "@/labs/privacy/PrivacyMarkedText"
-import { TraceCopyButton, TraceLinkAddress } from "./TraceTextContent"
+import { TraceCopyButton } from "./TraceTextContent"
 import TraceHtmlPreview from "./TraceHtmlPreview"
 import { findTraceDocuments, type TraceDocument } from "./traceDocuments"
 import { findTraceHtmlLinks } from "./traceHtmlLinks"
-import { fetchTraceHtml } from "./traceMediaText"
+import { fetchTraceHtml, TraceHtmlRequestError } from "./traceMediaText"
 import type { TraceHtmlPreviewSelection } from "./traceEnhancedVisibility"
 
 type PreviewEntry = TraceDocument & { remote?: true }
-type RemoteResult = { source: string } | { error: true }
+type RemoteResult = { source: string } | { error: "request" | "response" }
 
 function DocumentDialog({
   entry,
@@ -50,8 +50,12 @@ function DocumentDialog({
       (source) => {
         if (!controller.signal.aborted) setResult({ source })
       },
-      () => {
-        if (!controller.signal.aborted) setResult({ error: true })
+      (error: unknown) => {
+        if (controller.signal.aborted) return
+        setResult({
+          error:
+            error instanceof TraceHtmlRequestError ? "request" : "response",
+        })
       }
     )
     return () => controller.abort()
@@ -141,19 +145,44 @@ function DocumentDialog({
             <div className="flex h-full flex-col items-center justify-center gap-2 p-4 text-center text-sm text-muted-foreground">
               {result && "error" in result ? (
                 <>
-                  <p role="alert">{t("traceMedia.error")}</p>
-                  <TraceLinkAddress address={entry.source} />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setResult(null)
-                      setAttempt((value) => value + 1)
-                    }}
+                  <div role="alert" className="max-w-md space-y-1">
+                    <p className="font-medium text-foreground">
+                      {t("traceDocuments.linkPreviewError")}
+                    </p>
+                    <p className="text-balance">
+                      {t(
+                        result.error === "request"
+                          ? "traceDocuments.linkRequestHint"
+                          : "traceDocuments.linkResponseHint"
+                      )}
+                    </p>
+                  </div>
+                  <div
+                    data-trace-document-link-fallback
+                    className="flex max-w-full flex-col items-center gap-3"
                   >
-                    {t("common.retry")}
-                  </Button>
+                    <span className="max-w-full font-mono text-xs [overflow-wrap:anywhere]">
+                      {entry.source}
+                    </span>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <TraceCopyButton
+                        value={entry.source}
+                        label={t("share.copyLink")}
+                        showLabel
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setResult(null)
+                          setAttempt((value) => value + 1)
+                        }}
+                      >
+                        {t("common.retry")}
+                      </Button>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <p role="status">{t("common.loading")}</p>

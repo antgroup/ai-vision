@@ -3,7 +3,10 @@
     "html": "Preview HTML",
     "markdown": "Preview Markdown",
     "preview": "Preview",
-    "source": "Source"
+    "source": "Source",
+    "linkPreviewError": "This webpage can’t be previewed in Trace",
+    "linkRequestHint": "The site may block cross-origin access, or the link may be unavailable.",
+    "linkResponseHint": "The link did not return HTML that Trace can preview."
   },
   "traceMedia": {
     "load": "Load",
@@ -2644,6 +2647,16 @@
     "pluginDescription": "Install the collection plugin on the machine running the Agent to send task data to the current AI Vision space",
     "builtInGroup": "Agent Framework",
     "thirdPartyGroup": "Agent applications",
+    "connection": {
+      "title": "Connection details",
+      "dialogTitle": "{{name}} · Connection details",
+      "agentUuid": "Agent UUID",
+      "spaceUuid": "Space UUID",
+      "baseUrl": "AI Vision URL",
+      "copyField": "Copy {{field}}",
+      "notAvailable": "Unavailable",
+      "installHint": "To install on another machine, open this application's setup guide in the Agent market."
+    },
     "removeTitle": "Remove {{name}} from the channel?",
     "removeDescription": "After removal, {{name}} will no longer appear in your Agent channel. You can add it back from Agent Market at any time, and historical data will remain available.",
     "removeCollectionHint": "To stop data collection as well, replace install with uninstall in the CLI onboarding command and run it.",
@@ -2786,10 +2799,39 @@
   },
   "labs": {
     "common": {
+      "importConflicts": {
+        "heading": "Import conflicts",
+        "localDescription": "Review matching names before saving.",
+        "checking": "Checking existing names…",
+        "checkFailed": "Existing names could not be checked.",
+        "chooseSource": "Choose source",
+        "skip": "Skip this group",
+        "action": "Import action",
+        "keep": "Keep existing",
+        "replace": "Replace existing",
+        "rename": "Save as",
+        "confirmReplace": "Confirm replacement",
+        "willReplace": "Will replace",
+        "newName": "New name",
+        "confirmName": "Confirm name",
+        "nameConfirmed": "Name confirmed",
+        "checkingName": "Checking name…",
+        "invalidName": "Enter a name of 1–128 characters.",
+        "nameTaken": "This name is already in use.",
+        "nameCheckFailed": "This name could not be checked. Try again.",
+        "nameMatchesAgent": "Use the name that your Agent reports.",
+        "finish": "Done",
+        "savedSoFar_one": "Saved {{count}} configuration so far.",
+        "savedSoFar_other": "Saved {{count}} configurations so far.",
+        "duplicates_one": "Skipped {{count}} identical copy",
+        "duplicates_other": "Skipped {{count}} identical copies"
+      },
       "registrySource": "Source",
       "all": "All",
       "close": "Close",
       "cancel": "Cancel",
+      "importCancelledSaved_one": "Import cancelled. Saved {{count}} item.",
+      "importCancelledSaved_other": "Import cancelled. Saved {{count}} items.",
       "backToTrace": "Back to trace",
       "collapse": "Collapse",
       "expand": "Show guide",
@@ -2955,14 +2997,32 @@
       "import": {
         "open": "Import config",
         "title": "Import MCP config",
-        "desc": "Use the server names from your calls. Importing an existing name replaces its configuration.",
+        "desc": "Use the server names from your calls.",
+        "pasteDesc": "Use the server names from your calls. Saving pasted JSON replaces existing configurations with the same name.",
         "tabs": {
           "search": "Search registry",
           "paste": "Paste JSON"
         },
+        "local": {
+          "choose": "Choose JSON files",
+          "backToPaste": "Return to paste",
+          "reading": "Reading JSON files…",
+          "skipped": "Skipped files or servers",
+          "limit": "Choose up to 100 JSON files containing up to 500 servers, with a total size of 8 MiB or less.",
+          "partial": "Saved {{saved}} servers. Select Save again to retry the {{pending}} remaining servers.",
+          "issue": {
+            "notJson": "Choose a JSON file",
+            "tooLarge": "File exceeds 1 MiB",
+            "unreadable": "Could not read the file",
+            "invalidJson": "Invalid JSON",
+            "noServers": "No usable MCP servers found",
+            "invalidServers": "Some servers have invalid settings",
+            "duplicate": "Duplicate server name in the selected files"
+          }
+        },
         "registry": {
           "directorySummary": "Public directory index · View projects only",
-          "hint": "Import observability configurations, not Agent installations. Search and configuration do not install packages or run tools. Same-name imports overwrite existing configurations.",
+          "hint": "Import observability configurations to link calls by server name. Install MCP servers in the Agent environment.",
           "searchPlaceholder": "Search MCP servers",
           "source": "Source",
           "allSources": "All sources",
@@ -2995,6 +3055,7 @@
         "label": "Config JSON",
         "privacy": "Parsed in your browser. Env vars and headers keep names only, and secret-looking args and URL parts are replaced with ******.",
         "error": {
+          "duplicateServer": "This JSON repeats an MCP server name.",
           "invalidJson": "This is not valid JSON. Check brackets and quotes.",
           "noServers": "No MCP servers found. Include an mcpServers object where each server has a command or url.",
           "saveFailed": "Saving failed. Please try again."
@@ -3292,6 +3353,7 @@
         "callOk": "OK",
         "callError": "Failed",
         "noCalls": "No calls in the window",
+        "noMatchingCalls": "No records match the current filters",
         "viewTrace": "View trace",
         "repository": "Repository",
         "requestedRef": "Requested ref",
@@ -3347,6 +3409,21 @@
         "matched": "observed",
         "unmatched": "unobserved",
         "save": "Save {{count}}",
+        "local": {
+          "files": "Choose files",
+          "folder": "Choose folder",
+          "backToPaste": "Back to paste",
+          "reading": "Reading Skill files…",
+          "empty": "No SKILL.md files found.",
+          "limit": "Select up to 500 Skill files and 16 MiB at a time.",
+          "rejected": "{{path}}: {{reason}}",
+          "invalid": "Invalid Skill format, missing name, or field too long",
+          "duplicate": "Multiple files define this Skill. Select one copy.",
+          "tooLarge": "Skill file is too large",
+          "unreadable": "Could not read file",
+          "saveFailed": "Saved {{saved}}. Saving {{pending}} could not be confirmed. You can retry.",
+          "retry": "Retry remaining ({{count}})"
+        },
         "saveDisabled": "Save",
         "error": {
           "invalidFormat": "Unrecognized format: expected a SKILL.md file (front matter after ---), a JSON manifest, or a simple YAML manifest.",
@@ -3973,13 +4050,13 @@
     "collectorLabel": "Collected user",
     "collectorHint": "Identity from the legacy collection field; it does not represent the standard SDK task user ID.",
     "more": "More filters",
-    "status": "Trace status",
+    "status": "Run status",
     "statusValues": {
       "error": "Failed",
       "ok": "Successful",
       "unset": "Not reported"
     },
-    "statusHint": "Status reported by the root node. A failed child or retry does not change it.",
+    "statusHint": "Filters by the overall run status. Tool errors are shown in the details.",
     "duration": "Duration",
     "minimumDuration": "Minimum duration",
     "durationHint": "Complete Trace: earliest start to latest end. Enter ms, s, or min; minimum 1 ms.",
@@ -4118,6 +4195,16 @@
     "latencyBucketHelp": "Shows latency values returned for time buckets; empty buckets stay unknown. Min and max compare observed bucket values, not individual request quantiles.",
     "overlappingTokenHelp": "Some token fields overlap or omit components. This chart preserves the original trends without adding them into a composition.",
     "tokenCompositionHelp": "Lines retain input (including cache), cached input and output. Bars and pie use uncached input, cached input and output, counting cache once. Incomplete components show trends only."
+  },
+  "dshSpanDetails": {
+    "title": "DSH step context",
+    "session": "DSH session ID",
+    "copySession": "Copy DSH session ID",
+    "turn": "Turn {{number}}",
+    "step": "Step {{number}}",
+    "firstToken": "Time to first token",
+    "generation": "Generation time",
+    "retries": "Retries"
   },
   "traceLabels": {
     "emptyArray": "empty array",
@@ -4657,6 +4744,7 @@
     "revealSelected": "Reveal selected call",
     "title": "Filter spans",
     "errors": "Errors",
+    "hideCompletedTurnToolErrors": "Hide tool failures in completed turns",
     "lowConfidence": "Low confidence",
     "duration": "Duration",
     "tokens": "Model tokens",
@@ -4959,7 +5047,7 @@
       "selectedCatalog": "Selected catalog model",
       "providerPlaceholder": "Provider ID from telemetry",
       "modelPlaceholder": "Model ID from telemetry",
-      "identityHint": "Preserve the original billing identity. API protocol compatibility does not establish equal prices.",
+      "identityHint": "Use the provider and model ID reported by the call. Do not use unknown. Sharing an API protocol does not mean the prices are the same.",
       "effectiveHint": "Required. Choose a past time deliberately for historical usage. Times use your device’s time zone.",
       "saveError": "Could not save the rule. Check the provider, model, rates, and effective time, then retry.",
       "back": "Back to edit",
@@ -5035,6 +5123,7 @@
       "officialEquivalentLabel": "Estimate at official model rates",
       "archivedEquivalentLabel": "Estimate at historical official rates",
       "equivalentLabel": "Subscription usage estimate",
+      "partialEquivalentLabel": "Subscription estimate subtotal",
       "coverageCompact": "{{known}}/{{total}} priced",
       "detailsShort": "Details",
       "overlapCompact": "Not additive",
@@ -5077,11 +5166,8 @@
         "reasons": {
           "officialPrice": "No official rate is available for this model, so the estimate is unavailable.",
           "publisherExchangeRate": "The publisher lists a price in another currency. An exchange rate is needed to estimate the cost.",
-          "price": "A matching effective price is missing, so an estimate is unavailable.",
+          "price": "A token rate is missing, so the full amount cannot be estimated.",
           "usage": "Complete usage is missing, so an estimate is unavailable.",
-          "cache": "Cache usage is missing, so an estimate is unavailable.",
-          "equivalentCache": "Cache usage is missing, so the token-rate reference cannot be estimated.",
-          "reasoning": "Reasoning usage is missing, so the selected prices cannot be applied.",
           "identity": "Provider or model information is missing, so a price cannot be matched.",
           "time": "The call time is missing, so the applicable price is unknown.",
           "rules": "Price rules are invalid or conflicting. Review the price rules.",
@@ -5091,7 +5177,7 @@
           "currency": "The currency of the reported amount is not supported for aggregation.",
           "invalidBilling": "The billing mode is unclear, so costs cannot yet be determined."
         },
-        "partialEquivalentHint": "Includes only calculable subscription usage; some calls are not included."
+        "partialEquivalentHint": "Includes only the subscription usage that could be priced. The full estimate is unknown."
       },
       "subscriptionActualUnknown": "Actual subscription charge unknown",
       "resolvePrice": "Set model prices"
@@ -5108,14 +5194,13 @@
     "reasons": {
       "unavailable": "Insufficient price or usage evidence",
       "provider_unknown": "Provider not reported",
+      "model_unknown": "Model ID not reported",
       "official_model_price_unavailable": "Official base price unavailable",
       "publisher_exchange_rate_unavailable": "Exchange rate for publisher pricing unavailable",
       "price_not_configured": "No matching price configured",
       "pricing_time_missing": "Call timestamp unknown",
       "price_not_effective": "No effective rule at this time",
       "usage_missing": "Usage not fully reported",
-      "cache_usage_missing": "Cache usage unknown",
-      "reasoning_usage_missing": "Reasoning usage unknown",
       "unsupported_pricing": "Unsupported pricing conditions",
       "overlapping_usage_buckets": "Token buckets overlap",
       "price_bucket_missing": "Missing token bucket rate",
@@ -5145,7 +5230,7 @@
       "retainedCompact": "Using saved FX"
     },
     "workspace": {
-      "missingIdentityHint": "The call is missing its provider or model ID. You can enter them to find prices, but rules do not update the original call. Complete the information in your telemetry integration.",
+      "missingIdentityHint": "These calls cannot be priced by a rule because the provider or model ID is missing. You can look up prices, but a new rule will not fill in the missing identity. Fix the telemetry integration to report it.",
       "modelDetailsTitle": "Model cost details",
       "resultTitle": "Cost result",
       "priceOptionsTitle": "Find or configure a price",
@@ -5180,7 +5265,7 @@
         "missingOfficialPrice": "Official base price unavailable",
         "mixed": "Mixed billing",
         "missingPrice": "Needs price",
-        "missingUsage": "Review cause"
+        "missingUsage": "Not calculable"
       },
       "inspect": "View details",
       "browse": "Look up model prices",

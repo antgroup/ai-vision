@@ -171,6 +171,8 @@ test('semantic engine builds CHAT -> LLM -> TOOL span tree', async () => {
     assert.equal(llm.attributes['gen_ai.operation.name'], 'chat');
     assert.equal(llm.attributes['gen_ai.request.model'], 'DeepSeek-V4-Pro-0813');
     assert.equal(llm.attributes['gen_ai.provider.name'], 'deepseek');
+    assert.equal(llm.attributes['gen_ai.response.time_to_first_token'], undefined);
+    assert.equal(llm.attributes['agentic.llm.generation.duration_ms'], undefined);
     assert.equal(llm.attributes['gen_ai.usage.input_tokens'], 115); // input includes cache
     assert.equal(llm.attributes['gen_ai.usage.output_tokens'], 20);
     assert.equal(llm.attributes['gen_ai.usage.cache_read.input_tokens'], 10);
@@ -188,6 +190,217 @@ test('semantic engine builds CHAT -> LLM -> TOOL span tree', async () => {
     assert.equal(tool.attributes['gen_ai.tool.call.id'], 'call-1');
     assert.equal(tool.attributes['agentic.tool.type'], 'builtin');
     assert.equal(tool.attributes['gen_ai.tool.call.arguments'], '{"command":"pwd"}');
+  } finally {
+    await harness.shutdown();
+  }
+});
+
+test('native packed streams locate two model steps and the tool in the first step', async () => {
+  const harness = buildRuntime();
+  try {
+    const engine = createDshSemanticEngine(harness.runtime,
+      parseConfig({ enableTelemetry: true, collectionMode: 'privacy' }));
+    const sess = session([], 0, 'session-native-timing');
+    const start = 1787218900000;
+    const read = { type: 'tool-call', id: 'read-1', name: 'read', arguments: '{"path":"sample.txt"}' };
+    const source = { kind: 'model', provider: 'deepseek', model: 'deepseek-flash' };
+    let sequence = 0;
+    const send = (type, time, data) => engine.handleSessionEvent(sess, event(type, sequence++, start + time, data));
+
+    engine.handleSessionCreated(sess);
+    send('turn/start', 0, { turn: 1 });
+    send('step/start', 0, { turn: 1, step: 1 });
+    send('assistant/message', 46, {
+      turn: 1,
+      step: 1,
+      message: { role: 'assistant', id: 'a1', content: [read], source },
+      stream: [
+        { type: 'chunk', time: start + 42, chunk: { type: 'usage', usage: { inputTokens: 20, outputTokens: 0 } } },
+        { type: 'chunk', time: start + 43, chunk: { type: 'block-start', index: 0, blockType: 'tool-call' } },
+        { type: 'tool-call-chunks', index: 0, time0: start + 44, dt: [], id: read.id, name: read.name, args: [''] },
+        { type: 'tool-call-chunks', index: 0, time0: start + 44, dt: [], id: read.id, args: [read.arguments] },
+      ],
+    });
+    send('tool/call', 47, { turn: 1, step: 1, callId: read.id, name: read.name, arguments: read.arguments });
+    send('tool/result', 56, {
+      turn: 1,
+      step: 1,
+      message: {
+        role: 'tool',
+        content: [{ type: 'tool-result', toolCallId: read.id, content: [{ type: 'text', text: 'sample' }] }],
+        source: { kind: 'tool', callId: read.id },
+      },
+    });
+    send('step/end', 58, { turn: 1, step: 1 });
+    send('step/start', 74, { turn: 1, step: 2 });
+    send('assistant/message', 86, {
+      turn: 1,
+      step: 2,
+      message: { role: 'assistant', id: 'a2', content: [{ type: 'text', text: 'Done.' }], source },
+      stream: [
+        { type: 'text-chunks', index: 0, time0: start + 84, dt: [1], texts: ['', 'synthetic-stream-fragment'] },
+      ],
+    });
+    send('step/end', 86, { turn: 1, step: 2 });
+    send('turn/end', 87, { turn: 1, reason: { kind: 'completed' } });
+
+    const spans = harness.spanExporter.getFinishedSpans();
+    const turn = spans.find(span => span.name === 'Turn 1');
+    const tool = spans.find(span => span.name === 'builtin read');
+    const models = spans.filter(span => span.name === 'chat deepseek-flash');
+    assert.equal(spans.length, 4);
+    assert.equal(models.length, 2);
+    assert.deepEqual(models.map(span => span.attributes['agentic.step.number']), [1, 2]);
+    assert.deepEqual(models.map(span => span.attributes['gen_ai.response.time_to_first_token']), [44, 11]);
+    assert.deepEqual(models.map(span => span.attributes['agentic.llm.generation.duration_ms']), [2, 1]);
+    assert.equal(tool.attributes['agentic.step.number'], 1);
+    assert.equal(tool.attributes['gen_ai.tool.call.id'], read.id);
+    assert.equal(tool.attributes['gen_ai.tool.call.arguments'], '[REDACTED]');
+    for (const span of [...models, tool]) {
+      assert.equal(span.parentSpanContext.spanId, turn.spanContext().spanId);
+      assert.equal(span.attributes['gen_ai.conversation.id'], 'session-native-timing');
+      assert.equal(span.attributes['agentic.turn.number'], 1);
+      assert.equal(JSON.stringify(span.attributes).includes('synthetic-stream-fragment'), false);
+    }
+  } finally {
+    await harness.shutdown();
+  }
+});
+
+test('only started native retries count, with terminal failures and cancelled backoff kept separate', async () => {
+  const harness = buildRuntime();
+  try {
+    const engine = createDshSemanticEngine(harness.runtime, parseConfig({ enableTelemetry: true }));
+    const start = 1787218900000;
+    const step = { turn: 1, step: 1 };
+    const failure = { code: 'RATE_LIMIT', message: 'Synthetic rate limit', status: 429 };
+    const retryId = 'fixture-retry-sequence';
+    const source = { kind: 'model', provider: 'deepseek', model: 'deepseek-flash' };
+
+    for (const scenario of ['completed', 'terminal-error', 'cancelled-backoff']) {
+      const sess = session([], 0, scenario);
+      let sequence = 0;
+      const send = (type, time, data) => engine.handleSessionEvent(sess, event(type, sequence++, start + time, data));
+      engine.handleSessionCreated(sess);
+      send('turn/start', 0, { turn: 1 });
+      send('step/start', 1, step);
+      engine.handleAgentRequestError(sess, { ...step, provider: 'deepseek', failure });
+
+      if (scenario !== 'terminal-error') {
+        send('llm/retry', 10, { ...step, retryId, retry: 1, delayMs: 10, failure });
+      }
+      if (scenario === 'completed') {
+        send('llm/retry-started', 20, { ...step, retryId, retry: 1 });
+        engine.handleAgentRequestError(sess, { ...step, provider: 'deepseek', failure });
+        send('llm/retry', 25, { ...step, retryId, retry: 2, delayMs: 10, failure });
+        send('llm/retry-started', 35, { ...step, retryId, retry: 2 });
+        send('assistant/message', 42, {
+          ...step,
+          message: { role: 'assistant', id: 'recovered', content: [{ type: 'text', text: 'Done.' }], source },
+          stream: [{ type: 'text-chunks', index: 0, time0: start + 40, dt: [], texts: ['Done.'] }],
+        });
+      } else if (scenario === 'terminal-error') {
+        engine.handleAgentError(sess, { ...step, error: failure });
+      }
+
+      send('step/end', 45, step);
+      const reason = scenario === 'completed'
+        ? { kind: 'completed' }
+        : scenario === 'terminal-error'
+          ? { kind: 'error', error: failure }
+          : { kind: 'aborted' };
+      send('turn/end', 46, { turn: 1, reason });
+      engine.handleSessionDisposed(sess);
+    }
+
+    const models = harness.spanExporter.getFinishedSpans()
+      .filter(span => span.attributes['gen_ai.span.kind'] === 'LLM');
+    assert.equal(models.length, 3);
+    const bySession = new Map(models.map(span => [span.attributes['gen_ai.conversation.id'], span.attributes]));
+    assert.equal(bySession.get('completed')['agentic.llm.retry_count'], 2);
+    assert.equal(bySession.get('terminal-error')['agentic.llm.retry_count'], undefined);
+    assert.equal(bySession.get('cancelled-backoff')['agentic.llm.retry_count'], undefined);
+    for (const attrs of bySession.values()) {
+      assert.equal(attrs['gen_ai.response.time_to_first_token'], undefined);
+      assert.equal(attrs['agentic.llm.generation.duration_ms'], undefined);
+    }
+  } finally {
+    await harness.shutdown();
+  }
+});
+
+test('same-millisecond native boundaries retain zero model timings', async () => {
+  const harness = buildRuntime();
+  try {
+    const engine = createDshSemanticEngine(harness.runtime, parseConfig({ enableTelemetry: true }));
+    const events = fixtureEvents();
+    const stepStart = events.find(e => e.type === 'step/start');
+    const assistant = events.find(e => e.type === 'assistant/message');
+    assistant.time = stepStart.time;
+    assistant.data.stream = [{
+      type: 'chunk',
+      time: stepStart.time,
+      chunk: { type: 'reasoning-delta', index: 0, text: 'synthetic' },
+    }];
+    const sess = session(events);
+    engine.handleSessionCreated(sess);
+    for (const entry of events) engine.handleSessionEvent(sess, entry);
+    const model = harness.spanExporter.getFinishedSpans()
+      .find(span => span.attributes['gen_ai.span.kind'] === 'LLM');
+    assert.equal(model.attributes['gen_ai.response.time_to_first_token'], 0);
+    assert.equal(model.attributes['agentic.llm.generation.duration_ms'], 0);
+  } finally {
+    await harness.shutdown();
+  }
+});
+
+test('a durable assistant attempt suppresses split timing after custom recovery', async () => {
+  const harness = buildRuntime();
+  try {
+    const engine = createDshSemanticEngine(harness.runtime, parseConfig({ enableTelemetry: true, collectionMode: 'full' }));
+    const step = { turn: 1, step: 1 };
+
+    for (const mode of ['replay', 'live']) {
+      const events = fixtureEvents();
+      const assistantIndex = events.findIndex(entry => entry.type === 'assistant/message');
+      const assistant = events[assistantIndex];
+      assistant.data.stream = [{
+        type: 'text-chunks', index: 0, time0: assistant.time - 10, dt: [], texts: ['Recovered.'],
+      }];
+      events.splice(assistantIndex, 0, event('assistant/attempt', assistant.seq, assistant.time - 100, {
+        ...step,
+        stream: [{
+          type: 'text-chunks', index: 0, time0: assistant.time - 250, dt: [], texts: ['Uncommitted.'],
+        }],
+      }));
+      for (const [sequence, entry] of events.entries()) entry.seq = sequence;
+
+      const sess = session(events, 0, mode);
+      engine.handleSessionCreated(sess);
+      for (const entry of events) {
+        engine.handleSessionEvent(sess, entry);
+        if (mode === 'live' && entry.type === 'assistant/attempt') {
+          engine.handleAgentRequestError(sess, {
+            ...step,
+            failure: { code: 'TIMEOUT', message: 'Synthetic stream timeout' },
+          });
+        }
+      }
+      engine.handleSessionDisposed(sess);
+    }
+
+    const models = harness.spanExporter.getFinishedSpans()
+      .filter(span => span.attributes['gen_ai.span.kind'] === 'LLM');
+    assert.equal(models.length, 2);
+    assert.deepEqual(models.map(span => span.attributes['agentic.llm.retry.count']), [undefined, 1]);
+    for (const { attributes } of models) {
+      assert.equal(attributes['agentic.step.number'], 1);
+      assert.equal(attributes['gen_ai.usage.output_tokens'], 20);
+      assert.match(attributes['gen_ai.output.messages'], /I will run a command/);
+      assert.equal(attributes['agentic.llm.retry_count'], undefined);
+      assert.equal(attributes['gen_ai.response.time_to_first_token'], undefined);
+      assert.equal(attributes['agentic.llm.generation.duration_ms'], undefined);
+    }
   } finally {
     await harness.shutdown();
   }

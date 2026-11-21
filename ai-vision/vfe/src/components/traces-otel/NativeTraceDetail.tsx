@@ -68,6 +68,7 @@ import {
   createSpanFilters,
   filterSpans,
   filterSpanTree,
+  getCompletedTurnToolErrorIds,
   getSpanFilterOptions,
   getSpanSubtreeIds,
   hasSpanFilters,
@@ -500,12 +501,22 @@ export function NativeTraceDetail({
         : undefined,
     [debouncedSearch, rawSpanSearchMatches]
   )
+  const canonicalRootId = traceDetail?.semantics?.rootObservationId
+  // The fallback root used for display does not establish completion.
+  const completedTurnToolErrorIds = useMemo(
+    () =>
+      filters.hideCompletedTurnToolErrors && canonicalRootId
+        ? getCompletedTurnToolErrorIds(spans, canonicalRootId, tree)
+        : undefined,
+    [canonicalRootId, filters.hideCompletedTurnToolErrors, spans, tree]
+  )
   const matchingSpanIds = useMemo(
     () =>
       filterSpans(spans, filters, {
         searchMatchIds,
         lowConfidenceSpanIds,
         scopeSpanIds,
+        completedTurnToolErrorIds,
         exchangeRates: pricingCurrency.exchangeRates?.rates,
       }),
     [
@@ -514,6 +525,7 @@ export function NativeTraceDetail({
       searchMatchIds,
       lowConfidenceSpanIds,
       scopeSpanIds,
+      completedTurnToolErrorIds,
       pricingCurrency.exchangeRates?.rates,
     ]
   )

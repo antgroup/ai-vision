@@ -1,4 +1,4 @@
-import type { McpDescription, McpServerConfig } from "./types"
+import type { McpConfigSummary, McpDescription, McpServerConfig } from "./types"
 
 function nonemptyText(value: unknown): string | undefined {
   return typeof value === "string" ? value.trim() || undefined : undefined
@@ -6,10 +6,12 @@ function nonemptyText(value: unknown): string | undefined {
 
 export function resolveMcpDescription(
   server: McpDescription & { serverId: string },
-  config?: McpServerConfig
+  config?: McpConfigSummary & Partial<Pick<McpServerConfig, "raw">>
 ): McpDescription {
   const configured =
-    nonemptyText(config?.description) ?? nonemptyText(config?.raw.description)
+    nonemptyText(config?.description) ??
+    nonemptyText(config?.displayDescription) ??
+    nonemptyText(config?.raw?.description)
   if (configured)
     return { description: configured, descriptionSource: "config" }
 

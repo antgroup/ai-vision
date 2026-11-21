@@ -8,6 +8,7 @@ descriptions and references across sessions and devices.
 
 import logging
 import math
+from datetime import timedelta
 
 from django.db import transaction
 from django.utils import timezone
@@ -25,6 +26,12 @@ from ..trace_query.semantics.skill_recognition import (
     _skill_span_info,
 )
 from .common import check_space_access_or_error, error_response, success_response
+from .labs_import_guard import (
+    IMPORT_CONFLICT_MESSAGE,
+    ImportWriteGuard,
+    conflict_matches,
+    managed_config_space,
+)
 from .labs_scan import call_status_stats, collect_span_window, tool_span_outcome
 
 logger = logging.getLogger(__name__)
@@ -127,7 +134,13 @@ def _percentile(values: list[int], percentile: float) -> int | None:
     return ordered[index]
 
 
-def _scan_skill_window(traces: list[dict], agent_product: str, recent_limit: int | None = 200) -> dict:
+def _scan_skill_window(
+    traces: list[dict],
+    agent_product: str,
+    recent_limit: int | None = 200,
+    *,
+    summary: bool = False,
+) -> dict:
     """Aggregate skill calls and containment edges from a native window.
 
     A relation edge links a skill span to the nearest recognized ancestor
@@ -251,21 +264,18 @@ def _scan_skill_window(traces: list[dict], agent_product: str, recent_limit: int
                 "p95Ms": _percentile(durations, 0.95),
                 "lastSeen": calls[0]["timestamp"] if calls else None,
                 "sourceAgents": skill["sourceAgents"],
-                "recentCalls": calls if recent_limit is None else calls[:recent_limit],
             }
         )
+        if not summary:
+            skills[-1]["recentCalls"] = (
+                calls if recent_limit is None else calls[:recent_limit]
+            )
     skills.sort(key=lambda item: -item["calls"])
 
-    relations = [
-        {**edge, "traces": len(edge.pop("traces"))}
-        for edge in edges.values()
-    ]
-    relations.sort(key=lambda item: -item["calls"])
-
-    return {
+    result = {
         "overview": {
             "skillCount": len(skills),
-            "relationCount": len(relations),
+            "relationCount": len(edges),
             "calls": len(all_calls),
             "provenance": {
                 "inferred": sum(call["derived"] for call in all_calls),
@@ -281,8 +291,13 @@ def _scan_skill_window(traces: list[dict], agent_product: str, recent_limit: int
             "scanned": scanned,
         },
         "skills": skills,
-        "relations": relations,
     }
+    if not summary:
+        result["relations"] = sorted(
+            ({**edge, "traces": len(edge["traces"])} for edge in edges.values()),
+            key=lambda item: -item["calls"],
+        )
+    return result
 
 
 def _group_spans_by_trace(spans: list) -> list[dict]:
@@ -325,13 +340,13 @@ def _collect_skill_spans(service, *, space, user, query_params: dict) -> dict:
     )
 
 
-def _serialize_config(config: SkillConfig) -> dict:
+def _serialize_config(config: SkillConfig, *, summary: bool = False) -> dict:
     return {
         "name": config.name,
         "description": config.description,
         "path": config.path,
         "source": config.source,
-        "raw": config.raw,
+        **({} if summary else {"raw": config.raw}),
         "allowedTools": config.allowed_tools,
         "license": config.license,
         "compatibility": config.compatibility,
@@ -381,7 +396,7 @@ def _check_skill_admin(user, space):
 
 
 class SkillConfigListView(APIView):
-    """GET list or PUT upsert static skill configs for a space."""
+    """List, preview conflicts, upsert, or delete static skill configs for a space."""
 
     permission_classes = [IsAuthenticated]
 
@@ -393,20 +408,47 @@ class SkillConfigListView(APIView):
         denied = check_space_access_or_error(request.user, space)
         if denied:
             return denied
-        rows = SkillConfig.objects.filter(
-            space=space, gmt_deleted__isnull=True
-        ).order_by("name")
-        return success_response([_serialize_config(row) for row in rows])
+        view = request.query_params.get("view")
+        rows = SkillConfig.objects.filter(space=space, gmt_deleted__isnull=True)
+        if view == "detail":
+            config = rows.filter(name=request.query_params.get("name")).first()
+            if config is None:
+                return error_response("Config not found", 3104, 404)
+            return success_response(_serialize_config(config))
+        summary = view == "summary"
+        if summary:
+            rows = rows.defer("raw")
+        return success_response(
+            [_serialize_config(row, summary=summary) for row in rows.order_by("name")]
+        )
 
-    def put(self, request, space_id: str):
-        try:
-            space = Space.objects.get(uuid=space_id, status=1, gmt_deleted__isnull=True)
-        except Space.DoesNotExist:
-            return error_response("Space not found", 3001, 404)
-        denied = check_space_access_or_error(request.user, space)
+    def post(self, request, space_id: str):
+        if request.query_params.get("view") != "conflicts":
+            return self.http_method_not_allowed(request)
+        space, denied = managed_config_space(request, space_id, _check_skill_admin)
         if denied:
             return denied
-        denied = _check_skill_admin(request.user, space)
+        names = request.data.get("names") if isinstance(request.data, dict) else None
+        try:
+            matches = conflict_matches(
+                SkillConfig.objects.filter(space=space, gmt_deleted__isnull=True),
+                names,
+                "name",
+                "gmt_modified",
+                MAX_CONFIGS_PER_REQUEST,
+            )
+        except ValueError as exc:
+            return error_response(str(exc), 3101)
+        return success_response(matches)
+
+    def delete(self, request, space_id: str):
+        name = request.query_params.get("name")
+        if name is None:
+            return self.http_method_not_allowed(request)
+        return _delete_config(request, space_id, name)
+
+    def put(self, request, space_id: str):
+        space, denied = managed_config_space(request, space_id, _check_skill_admin)
         if denied:
             return denied
 
@@ -427,24 +469,55 @@ class SkillConfigListView(APIView):
                 return error_response("Invalid skill config payload", 3101)
             sanitized.append(parsed)
 
-        now = timezone.now()
+        guard = None
+        if "overwrites" in request.data:
+            try:
+                guard = ImportWriteGuard(
+                    request.data["overwrites"],
+                    {item["name"] for item in sanitized},
+                    "name",
+                    "gmt_modified",
+                )
+            except ValueError as exc:
+                return error_response(str(exc), 3101)
+
+        return_receipts = request.query_params.get("response") == "receipts"
+        receipts = []
         with transaction.atomic():
             for item in sanitized:
-                SkillConfig.objects.update_or_create(
-                    space=space,
-                    name=item["name"],
-                    defaults={
-                        "description": item["description"],
-                        "path": item["path"],
-                        "source": item["source"],
-                        "raw": item["raw"],
-                        "allowed_tools": item["allowedTools"],
-                        "license": item["license"],
-                        "compatibility": item["compatibility"],
-                        "gmt_deleted": None,
-                        "gmt_modified": now,
-                    },
+                fields = {
+                    "description": item["description"],
+                    "path": item["path"],
+                    "source": item["source"],
+                    "raw": item["raw"],
+                    "allowed_tools": item["allowedTools"],
+                    "license": item["license"],
+                    "compatibility": item["compatibility"],
+                    "gmt_deleted": None,
+                }
+                config, created = SkillConfig.objects.select_for_update().get_or_create(
+                    space=space, name=item["name"], defaults=fields
                 )
+                if guard is not None:
+                    conflict = guard.check(item["name"], config, created)
+                    if conflict is not None:
+                        transaction.set_rollback(True)
+                        return error_response(
+                            IMPORT_CONFLICT_MESSAGE, 3105, 409, conflict
+                        )
+                if not created:
+                    # Use an explicit UPDATE to retain a monotonic version even
+                    # if the application clock stalls or goes backwards.
+                    modified = max(
+                        timezone.now(), config.gmt_modified + timedelta(microseconds=1)
+                    )
+                    SkillConfig.objects.filter(pk=config.pk).update(
+                        **fields, gmt_modified=modified
+                    )
+                if return_receipts:
+                    receipts.append({"requestedName": item["name"], "name": config.name})
+        if return_receipts:
+            return success_response(receipts)
         rows = SkillConfig.objects.filter(
             space=space, gmt_deleted__isnull=True
         ).order_by("name")
@@ -457,25 +530,22 @@ class SkillConfigDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, space_id: str, name: str):
-        try:
-            space = Space.objects.get(uuid=space_id, status=1, gmt_deleted__isnull=True)
-        except Space.DoesNotExist:
-            return error_response("Space not found", 3001, 404)
-        denied = check_space_access_or_error(request.user, space)
-        if denied:
-            return denied
-        denied = _check_skill_admin(request.user, space)
-        if denied:
-            return denied
-        now = timezone.now()
-        updated = SkillConfig.objects.filter(
-            space=space,
-            name=name,
-            gmt_deleted__isnull=True,
-        ).update(gmt_deleted=now)
-        if not updated:
-            return error_response("Config not found", 3104, 404)
-        return success_response(None)
+        return _delete_config(request, space_id, name)
+
+
+def _delete_config(request, space_id: str, name: str):
+    space, denied = managed_config_space(request, space_id, _check_skill_admin)
+    if denied:
+        return denied
+    now = timezone.now()
+    updated = SkillConfig.objects.filter(
+        space=space,
+        name=name,
+        gmt_deleted__isnull=True,
+    ).update(gmt_deleted=now)
+    if not updated:
+        return error_response("Config not found", 3104, 404)
+    return success_response(None)
 
 
 class SkillObservabilityView(APIView):
@@ -544,6 +614,7 @@ class SkillObservabilityView(APIView):
             _group_spans_by_trace(spans),
             agent_product,
             recent_limit=None if history_options else 200,
+            summary=not history_options and request.query_params.get("view") == "summary",
         )
         if history_options:
             page, limit, status, provenance, order = history_options

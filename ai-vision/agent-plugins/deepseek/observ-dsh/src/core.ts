@@ -14,6 +14,7 @@ import type { Logger } from '@opentelemetry/api-logs';
 import type { ObservDshConfig } from './config.js';
 import type { TelemetryRuntime } from './telemetry.js';
 import { log, logError } from './logger.js';
+import { firstOutputTime } from './timing.js';
 import {
   AgenticErrorCategory,
   AntAgentSpanAttributes,
@@ -87,6 +88,7 @@ import type {
   DshContentBlock,
   DshLlmCallConfig,
   DshRequestHeaderData,
+  DshRetryStartedData,
   DshSessionEvent,
   DshSessionHeader,
   DshSessionLike,
@@ -846,7 +848,11 @@ export function createDshSemanticEngine(
         case 'step/start': {
           const data = event.data as { turn: number; step: number };
           const turn = state.turns.get(data.turn) ?? ensureTurnState(state, data.turn, eventTime);
-          ensureStepState(turn, data.step, eventTime);
+          const step = ensureStepState(turn, data.step, eventTime);
+          step.span.setAttribute(AntLlmSpanAttributes.AGENTIC_STEP_NUMBER, data.step);
+          if (Number.isSafeInteger(event.time) && event.time >= 0) {
+            step.nativeStartedAt ??= event.time;
+          }
           break;
         }
 
@@ -855,6 +861,7 @@ export function createDshSemanticEngine(
           const turn = state.turns.get(data.turn);
           const step = turn?.steps.get(data.step);
           if (!step || step.closed) break;
+          step.span.setAttribute(AntLlmSpanAttributes.AGENTIC_STEP_NUMBER, data.step);
           if (step.outputMessages === undefined) {
             // Live sessions may deliver assistant/message after step/end; defer the
             // close so output attributes and usage still land on this span.
@@ -862,6 +869,17 @@ export function createDshSemanticEngine(
             break;
           }
           closeStep(step, eventTime, state);
+          break;
+        }
+
+        case 'llm/retry-started': {
+          const data = event.data as DshRetryStartedData;
+          const step = state.turns.get(data.turn)?.steps.get(data.step);
+          if (!step || step.closed || !data.retryId || !Number.isSafeInteger(data.retry) || data.retry < 1) break;
+          // One retry ID can span multiple attempts. Count only durable starts.
+          const retries = step.nativeRetries ??= new Set();
+          retries.add(JSON.stringify([data.retryId, data.retry]));
+          step.span.setAttribute(AntLlmSpanAttributes.AGENTIC_LLM_STARTED_RETRY_COUNT, retries.size);
           break;
         }
 
@@ -946,11 +964,19 @@ export function createDshSemanticEngine(
           break;
         }
 
+        case 'assistant/attempt': {
+          const data = event.data as { turn: number; step: number };
+          const step = state.turns.get(data.turn)?.steps.get(data.step);
+          if (step && !step.closed) step.hasUncommittedAttempt = true;
+          break;
+        }
+
         case 'assistant/message': {
           const data = event.data as DshAssistantMessageData;
           const turn = state.turns.get(data.turn) ?? ensureTurnState(state, data.turn, eventTime);
           const step = ensureStepState(turn, data.step, eventTime);
           if (step.closed) break;
+          step.span.setAttribute(AntLlmSpanAttributes.AGENTIC_STEP_NUMBER, data.step);
           if (!step.requestConfig && data.message.source.model) {
             updateStepFromConfig(step, {
               provider: data.message.source.provider ?? 'deepseek',
@@ -971,6 +997,19 @@ export function createDshSemanticEngine(
           }
           step.finishReason = deriveFinishReason(data);
           step.interrupted = data.interrupted === true;
+          // A surviving response stream cannot describe timing across failed attempts.
+          if (!step.interrupted && !step.hasUncommittedAttempt && !step.retryCount && !step.nativeRetries?.size
+              && step.nativeStartedAt !== undefined && Array.isArray(data.stream)
+              && Number.isSafeInteger(event.time)) {
+            const first = firstOutputTime(data.stream);
+            if (first !== undefined && Number.isSafeInteger(first)
+                && first >= step.nativeStartedAt && first <= event.time) {
+              step.span.setAttributes({
+                [AntLlmSpanAttributes.GEN_AI_RESPONSE_TIME_TO_FIRST_TOKEN]: first - step.nativeStartedAt,
+                [AntLlmSpanAttributes.AGENTIC_LLM_GENERATION_DURATION_MS]: event.time - first,
+              });
+            }
+          }
           const responseId = replayResponse?.kind === 'pi-ai' && typeof replayResponse.responseId === 'string'
             ? replayResponse.responseId : data.message.id;
           if (responseId) {
@@ -1029,6 +1068,7 @@ export function createDshSemanticEngine(
             agentSpan.setAttribute('user.id', resolveUsername());
             agentSpan.setAttribute(AntAgentSpanAttributes.GEN_AI_CONVERSATION_ID, state.sessionId);
             agentSpan.setAttribute(AntAgentSpanAttributes.AGENTIC_TURN_NUMBER, data.turn);
+            agentSpan.setAttribute(AntToolSpanAttributes.AGENTIC_STEP_NUMBER, data.step);
             agentSpan.setAttribute('gen_ai.chat.id', `dsh:${state.sessionId}:turn:${data.turn}`);
             agentSpan.setAttribute(AntToolSpanAttributes.GEN_AI_TOOL_CALL_ID, data.callId);
             agentSpan.setAttribute('agentic.tool.type', 'subagent');
@@ -1090,6 +1130,7 @@ export function createDshSemanticEngine(
           span.setAttribute(AntToolSpanAttributes.AGENTIC_TOOL_ID, classification['agentic.tool.id']);
           span.setAttribute(AntToolSpanAttributes.GEN_AI_CONVERSATION_ID, state.sessionId);
           span.setAttribute(AntToolSpanAttributes.AGENTIC_TURN_NUMBER, data.turn);
+          span.setAttribute(AntToolSpanAttributes.AGENTIC_STEP_NUMBER, data.step);
           span.setAttribute('gen_ai.chat.id', `dsh:${state.sessionId}:turn:${data.turn}`);
           span.setAttribute(AntToolSpanAttributes.ANT_USERNAME, resolveUsername());
           span.setAttribute('user.id', resolveUsername());

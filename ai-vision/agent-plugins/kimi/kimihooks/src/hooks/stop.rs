@@ -668,6 +668,7 @@ fn find_subagents_dir(wire_jsonl: &Path) -> Option<std::path::PathBuf> {
 /// 二者共用 [`WireParser`] 的事件聚合状态机。
 fn parse_wire_events(body: &str, session_id: &str, cwd: &str) -> Vec<Value> {
     let mut parser = WireParser::new(session_id, cwd);
+    let mut incomplete_turn = false;
     for line in body.lines() {
         let line = line.trim();
         if line.is_empty() {
@@ -675,7 +676,10 @@ fn parse_wire_events(body: &str, session_id: &str, cwd: &str) -> Vec<Value> {
         }
         let v: Value = match serde_json::from_str(line) {
             Ok(v) => v,
-            Err(_) => continue,
+            Err(_) => {
+                incomplete_turn = true;
+                continue;
+            }
         };
         // metadata 行无 message。
         if v.get("type").and_then(|t| t.as_str()) == Some("metadata") {
@@ -683,6 +687,9 @@ fn parse_wire_events(body: &str, session_id: &str, cwd: &str) -> Vec<Value> {
         }
         if let Some((kind, payload)) = super::kimi_code::normalize(&v) {
             if let Some(ms) = v.get("time").and_then(Value::as_f64) {
+                if kind == "TurnBegin" {
+                    incomplete_turn = false;
+                }
                 parser.feed_typed(&kind, &payload, ms / 1000.0);
             }
             continue;
@@ -694,7 +701,16 @@ fn parse_wire_events(body: &str, session_id: &str, cwd: &str) -> Vec<Value> {
         };
         parser.feed(msg, ts);
     }
-    parser.finish()
+    let mut records = parser.finish();
+    if incomplete_turn {
+        if let Some(step) = records.iter_mut().rev()
+            .take_while(|record| record["hook_event_name"] != "TurnBegin")
+            .find(|record| record["hook_event_name"] == "LLMStep" && record["source"] == "kimi-code")
+        {
+            step["_turn_snapshot_incomplete"] = json!(true);
+        }
+    }
+    records
 }
 
 /// wire.jsonl 事件聚合状态机。
@@ -748,6 +764,7 @@ struct LLMStepAccum {
     request_id: String,
     finish_reason: String,
     source: String,
+    code_agent_id: Option<String>,
     model: String,
     provider: String,
     input_messages_json: String,
@@ -758,6 +775,12 @@ struct LLMStepAccum {
     tool_calls: Vec<Value>,
     start_ts: f64,
     end_ts: f64,
+}
+
+fn reported_code_model(payload: &Value) -> Option<&str> {
+    payload["model"].as_str()
+        .map(str::trim)
+        .filter(|model| !model.is_empty() && !model.eq_ignore_ascii_case("unknown"))
 }
 
 impl<'a> WireParser<'a> {
@@ -802,6 +825,7 @@ impl<'a> WireParser<'a> {
                 "_end_ts": end_ts,
                 "_source_timestamp": end_ts,
             });
+            if let Some(id) = s.code_agent_id { record["_code_agent_id"] = json!(id); }
             if !s.model.is_empty() { record["model"] = json!(s.model); }
             if !s.provider.is_empty() { record["_provider"] = json!(s.provider); }
             if let Some(duration) = s.duration_ms { record["_duration_ms"] = json!(duration); }
@@ -827,7 +851,9 @@ impl<'a> WireParser<'a> {
             }
             "CodeRequest" => {
                 if let Some(acc) = self.step.as_mut() {
-                    acc.model = payload["model"].as_str().unwrap_or("").to_string();
+                    if let Some(model) = reported_code_model(payload) {
+                        acc.model = model.to_owned();
+                    }
                     acc.provider = payload["provider"].as_str().unwrap_or("").to_string();
                     acc.start_ts = ts;
                     if let Some((prompt, hash)) = &self.code_system_prompt {
@@ -843,20 +869,35 @@ impl<'a> WireParser<'a> {
                 let mut mapped = serde_json::Map::new();
                 for (source, target) in [("inputOther", "input_other"), ("output", "output"),
                     ("inputCacheRead", "input_cache_read"), ("inputCacheCreation", "input_cache_creation")] {
-                    if let Some(value) = payload.get(source) { mapped.insert(target.into(), value.clone()); }
+                    if let Some(value) = payload["usage"].get(source) { mapped.insert(target.into(), value.clone()); }
                 }
-                // Real 2.1.1 CLI emits the same all-zero usage.record for absent
-                // HTTP usage and explicit zero. The durable wire cannot distinguish
-                // them; preserve unknown instead of claiming provider-reported zero.
-                let ambiguous_zero = ["input_other", "output", "input_cache_read", "input_cache_creation"]
-                    .iter().all(|key| mapped.get(*key).and_then(Value::as_i64) == Some(0));
+                // Kimi Code writes the same fallback for absent HTTP usage and
+                // explicit zero. 2.1.1 includes cache read=0 while 2.6.3 omits it.
+                // Preserve other partial receipts, including their known zeros.
+                let ambiguous_zero = ["input_other", "output", "input_cache_creation"]
+                    .iter().all(|key| mapped.get(*key).and_then(Value::as_i64) == Some(0))
+                    && mapped.get("input_cache_read").map_or(true, |value| value.as_i64() == Some(0));
                 let usage = if ambiguous_zero { Value::Null } else { Value::Object(mapped) };
+                let agent_id = payload["agent_id"].as_str();
+                let model = reported_code_model(payload);
                 if let Some(acc) = self.step.as_mut() {
+                    if acc.source != "kimi-code" || acc.code_agent_id.as_deref() != agent_id {
+                        return;
+                    }
+                    if acc.model.is_empty() {
+                        acc.model = model.unwrap_or("").into();
+                    }
                     acc.end_ts = ts;
                     acc.token_usage = Some(usage);
-                } else if let Some(step) = self.synth.iter_mut().rev().take_while(|r| r["hook_event_name"] != "TurnBegin")
-                    .find(|r| r["hook_event_name"] == "LLMStep" && r["source"] == "kimi-code") {
-                    // Official wire 1.1 fixture records usage immediately after step.end.
+                } else if let Some(step) = self.synth.iter_mut().rev()
+                    .take_while(|r| !matches!(r["hook_event_name"].as_str(), Some("TurnBegin" | "TurnEnd")))
+                    .find(|r| r["hook_event_name"] == "LLMStep")
+                    .filter(|r| r["source"] == "kimi-code" && r.get("_step_end_ts").is_some()
+                        && r["_code_agent_id"].as_str() == agent_id) {
+                    // Wire 1.1 can put the receipt just after step.end.
+                    if step.get("model").is_none() {
+                        if let Some(model) = model { step["model"] = json!(model); }
+                    }
                     step["token_usage"] = usage;
                 }
             }
@@ -877,6 +918,7 @@ impl<'a> WireParser<'a> {
                     "cwd": self.cwd,
                     "user_input": user_input,
                     "user_content": agentic_otel_common::media::content_blocks(&payload["user_input"]),
+                    "source": payload.get("source"),
                     "_synthetic": true,
                     "_source_timestamp": ts,
                 }));
@@ -888,6 +930,7 @@ impl<'a> WireParser<'a> {
                     "session_id": self.session_id,
                     "cwd": self.cwd,
                     "reason": payload.get("reason"),
+                    "source": payload.get("source"),
                     "_synthetic": true,
                     "_source_timestamp": ts,
                 }));
@@ -901,6 +944,7 @@ impl<'a> WireParser<'a> {
                     step_n: n,
                     request_id: payload["request_id"].as_str().unwrap_or("").to_string(),
                     source: payload["source"].as_str().unwrap_or("").to_string(),
+                    code_agent_id: payload["agent_id"].as_str().map(str::to_owned),
                     input_messages_json: if self.code_wire {
                         serde_json::to_string(&std::mem::take(&mut self.code_inputs)).unwrap_or_default()
                     } else { String::new() },
@@ -933,6 +977,12 @@ impl<'a> WireParser<'a> {
                 // 这是 step 的"结束信号"——带回 token_usage + message_id 后立即 flush。
                 // 如果当前没有 pending step（极端 case：StatusUpdate 先于 StepBegin），跳过。
                 if let Some(acc) = self.step.as_mut() {
+                    if acc.source == "kimi-code"
+                        && (acc.request_id.is_empty()
+                            || payload["request_id"].as_str() != Some(acc.request_id.as_str()))
+                    {
+                        return;
+                    }
                     if let Some(mid) = payload.get("message_id").and_then(|v| v.as_str()) {
                         acc.message_id = mid.to_string();
                     }
@@ -1332,7 +1382,95 @@ mod tests {
         let records = synth_to_hook_records(&values);
         let root = kimi_otel::build_root_span(&records, "t", &kimi_otel::ContentLogConfig::default()).unwrap();
         assert_eq!(root.end_time_unix_nano, secs_to_nanos_string(&json!({"_source_timestamp":1791172328.149})));
+        assert_eq!(root.status.code, 1);
         assert_eq!(values.iter().filter(|r| r["hook_event_name"] == "LLMStep").last().unwrap()["_duration_ms"], 4);
+    }
+
+    #[test]
+    fn tool_failure_stays_on_tool_after_the_turn_completes() {
+        let body = include_str!("../../tests/fixtures/kimi-code-2.1.1/native-tool-loop.wire.jsonl");
+        let make_wire = |terminal: Option<&str>, final_step: bool, receipt: bool| {
+            body.lines()
+                .filter_map(|line| {
+                    let mut row: Value = serde_json::from_str(line).unwrap();
+                    if row["event"]["type"] == "tool.result" {
+                        if !receipt {
+                            return None;
+                        }
+                        row["event"]["result"]["isError"] = json!(true);
+                        row["event"]["result"]["message"] = json!("Tool unavailable");
+                    }
+                    if row["event"]["finishReason"] == "end_turn" && !final_step {
+                        return None;
+                    }
+                    if row["type"] == "turn.ended" {
+                        row["reason"] = json!(terminal?);
+                    }
+                    Some(row.to_string())
+                })
+                .collect::<Vec<_>>()
+                .join("\n")
+        };
+        let cfg = kimi_otel::ContentLogConfig {
+            spans_model_outputs: true,
+            ..Default::default()
+        };
+        for (terminal, final_step, receipt, expected) in [
+            (Some("completed"), true, true, 1),
+            (None, true, true, 1), // Ordinary Stop: turn.ended not yet written.
+            (None, false, true, 0), // Partial assistant text is not completion.
+            (None, true, false, 0), // Missing tool receipt.
+            (Some(""), true, true, 0), // Missing native turn outcome.
+            (Some("failed"), false, true, 2),
+            (Some("blocked"), false, true, 2),
+            (Some("cancelled"), false, true, 2),
+        ] {
+            let values = parse_wire_events(&make_wire(terminal, final_step, receipt), "s", "/fixture");
+            let records = synth_to_hook_records(&values);
+            let turn = kimi_otel::build_turn_spans(&records, "t", &cfg, "").unwrap();
+            let root = turn.spans.iter().find(|span| span.span_id == turn.root_span_id).unwrap();
+            assert_eq!(root.status.code, expected, "terminal={terminal:?}, final_step={final_step}, receipt={receipt}");
+            let root_json = serde_json::to_string(root).unwrap();
+            assert!(root_json.contains("KIMI_NATIVE_211_READ_OK"), "keep the recorded output for every turn status");
+            if receipt {
+                let tool = turn.spans.iter().find(|span| span.name == "tool Read").unwrap();
+                assert_eq!(tool.parent_span_id, turn.root_span_id);
+                assert_eq!(tool.status.code, 2);
+                assert_eq!(tool.status.message.as_deref(), Some("Tool unavailable"));
+            }
+        }
+    }
+
+    #[test]
+    fn legacy_turn_end_without_reason_keeps_its_existing_error_classification() {
+        let wire = r#"{"timestamp":1.0,"message":{"type":"TurnBegin","payload":{"user_input":"Read a file"}}}
+{"timestamp":2.0,"message":{"type":"ToolCall","payload":{"id":"call","function":{"name":"Read","arguments":"{}"}}}}
+{"timestamp":3.0,"message":{"type":"ToolResult","payload":{"tool_call_id":"call","return_value":{"is_error":true,"message":"Not found"}}}}
+{"timestamp":4.0,"message":{"type":"TurnEnd","payload":{}}}"#;
+        let records = synth_to_hook_records(&parse_wire_events(wire, "s", "/fixture"));
+        let cfg = kimi_otel::ContentLogConfig::default();
+        let turn = kimi_otel::build_turn_spans(&records, "t", &cfg, "").unwrap();
+        assert_eq!(turn.spans[0].status.code, 2);
+        let tool = turn.spans.iter().find(|span| span.name == "tool Read").unwrap();
+        assert_eq!(tool.status.code, 2);
+    }
+
+    #[test]
+    fn stale_step_end_does_not_mark_an_unfinished_turn_ok() {
+        let wire = r#"{"type":"turn.prompt","input":[],"time":1000}
+{"type":"context.append_loop_event","event":{"type":"step.begin","uuid":"current","step":1},"time":1100}
+{"type":"context.append_loop_event","event":{"type":"content.part","part":{"type":"text","text":"partial"}},"time":1200}
+{"type":"context.append_loop_event","event":{"type":"step.end","uuid":"old","step":1,"finishReason":"end_turn"},"time":1300}"#;
+        let values = parse_wire_events(wire, "s", "/fixture");
+        let root = kimi_otel::build_root_span(&synth_to_hook_records(&values), "t", &kimi_otel::ContentLogConfig::default()).unwrap();
+        assert_eq!(root.status.code, 0);
+
+        let body = include_str!("../../tests/fixtures/kimi-code-2.1.1/native-tool-loop.wire.jsonl");
+        let snapshot = body.lines().filter(|line| !line.contains("\"turn.ended\"")).collect::<Vec<_>>().join("\n");
+        let truncated = format!("{snapshot}\n{{\"type\":\"context.append_loop_event\",\"event\":{{\"type\":\"step.begin\"");
+        let values = parse_wire_events(&truncated, "s", "/fixture");
+        let root = kimi_otel::build_root_span(&synth_to_hook_records(&values), "t", &kimi_otel::ContentLogConfig::default()).unwrap();
+        assert_eq!(root.status.code, 0, "a malformed tail cannot prove the most recent step is final");
     }
 
     #[test]
@@ -1381,8 +1519,16 @@ mod tests {
 
     #[test]
     fn kimi_code_native_unknown_and_zero_have_the_same_ambiguous_usage() {
-        for body in [include_str!("../../tests/fixtures/kimi-code-2.1.1/native-unknown-usage.wire.jsonl"),
-            include_str!("../../tests/fixtures/kimi-code-2.1.1/native-zero-usage.wire.jsonl")] {
+        // Kimi Code 2.6.3 omits inputCacheRead when its usage fallback is written.
+        let code_2_6_3 = r#"{"type":"turn.prompt","agentId":"main","input":[],"time":1000}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.begin","uuid":"u","step":1},"time":1100}
+{"type":"usage.record","agentId":"main","model":"gateway/route/model-a","usageScope":"turn","usage":{"inputOther":0,"output":0,"inputCacheCreation":0},"time":1190}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.end","uuid":"u","step":1,"finishReason":"end_turn"},"time":1200}"#;
+        for body in [
+            include_str!("../../tests/fixtures/kimi-code-2.1.1/native-unknown-usage.wire.jsonl"),
+            include_str!("../../tests/fixtures/kimi-code-2.1.1/native-zero-usage.wire.jsonl"),
+            code_2_6_3,
+        ] {
             let records = synth_to_hook_records(&parse_wire_events(body, "s", "/fixture"));
             let cfg = kimi_otel::ContentLogConfig::default();
             let ctx = kimi_otel::EmissionContext { agent_product: "kimi-cli", agent_type: "kimicli", runtime_name: "kimi-cli", log: &cfg };
@@ -1394,6 +1540,7 @@ mod tests {
                     assert!(!attrs.iter().any(|a| a["key"] == format!("gen_ai.usage.{name}")), "SDK-generated all-zero usage is ambiguous: {value}");
                     assert!(attrs.iter().any(|a| a["key"] == format!("agentic.usage.{name}.missing") && a["value"]["stringValue"] == "true"));
                 }
+                assert!(!attrs.iter().any(|a| a["key"] == "gen_ai.usage.total_tokens"));
             }
             let metrics = kimi_otel::build_session_token_metrics(&records, "s", &ctx);
             assert!(!serde_json::to_string(&metrics).unwrap().contains("agent.token.usage"));
@@ -1423,6 +1570,16 @@ mod tests {
             assert_eq!(step["message_id"], format!("chatcmpl_native_{}", index + 1));
             assert_eq!(step["token_usage"]["input_other"], 16);
             assert_eq!(step["token_usage"]["output"], 4);
+        }
+        let conflicting_receipt = body.lines().map(|line| {
+            let mut record: Value = serde_json::from_str(line).unwrap();
+            if record["type"] == "usage.record" { record["model"] = json!("other/conflicting"); }
+            record.to_string()
+        }).collect::<Vec<_>>().join("\n");
+        for step in parse_wire_events(&conflicting_receipt, "native", "/fixture/work")
+            .into_iter().filter(|r| r["hook_event_name"] == "LLMStep") {
+            assert_eq!(step["model"], "native-e2e-chat");
+            assert_eq!(step["_provider"], "openai");
         }
         assert_eq!(steps[0]["tool_calls"][0]["id"], "call_native_1");
         assert_eq!(steps[0]["tool_calls"][0]["function"]["name"], "Read");
@@ -1526,6 +1683,61 @@ mod tests {
     }
 
     #[test]
+    fn wire_skill_identity_survives_tool_argument_redaction_in_spans_and_logs() {
+        let cfg = kimi_otel::ContentLogConfig::default();
+        let ctx = kimi_otel::EmissionContext {
+            agent_product: "kimi-cli",
+            agent_type: "kimicli",
+            runtime_name: "kimi-cli",
+            log: &cfg,
+        };
+        let native = r#"{"type":"context.append_loop_event","event":{"type":"tool.call","toolCallId":"call-42","name":"Skill","args":{"skill":"update-config"}},"time":1500}
+{"type":"context.append_loop_event","event":{"type":"tool.result","toolCallId":"call-42","result":{"output":"ok","isError":false}},"time":1700}"#;
+        let legacy = r#"{"timestamp":1.5,"message":{"type":"ToolCall","payload":{"id":"call-42","function":{"name":"Skill","arguments":"{\"skill\":\"check-kimi-code-docs\"}"}}}}
+{"timestamp":1.7,"message":{"type":"ToolResult","payload":{"tool_call_id":"call-42","return_value":{"is_error":false,"output":"ok"}}}}"#;
+
+        for (body, tool_type, name, span_name) in [
+            (native.to_owned(), "skill", "update-config", "skill update-config"),
+            (legacy.to_owned(), "skill", "check-kimi-code-docs", "skill check-kimi-code-docs"),
+            (native.replace(r#"{"skill":"update-config"}"#, "{}"), "skill", "unknown", "skill unknown"),
+            (native.replace(r#""update-config""#, r#""  ""#), "skill", "unknown", "skill unknown"),
+            (native.replace(r#""update-config""#, "42"), "skill", "unknown", "skill unknown"),
+            (native.replace(r#""Skill""#, r#""Read""#), "builtin", "Read", "tool Read"),
+        ] {
+            let records = synth_to_hook_records(&parse_wire_events(&body, "s", "/tmp/work"));
+            let turns = kimi_otel::build_all_turns_with_session(&records, "s", &cfg, "").unwrap();
+            let span = turns.turns[0].1.spans.iter().find(|span| span.name == span_name)
+                .unwrap_or_else(|| panic!("missing span {span_name} for {body}"));
+            let span = serde_json::to_value(span).unwrap();
+            let assert_attr = |record: &Value, key: &str, expected: &str| {
+                let value = record["attributes"].as_array().unwrap().iter()
+                    .find(|attr| attr["key"] == key)
+                    .and_then(|attr| attr["value"]["stringValue"].as_str());
+                assert_eq!(value, Some(expected), "{key} for {body}");
+            };
+            assert_attr(&span, "gen_ai.tool.call.arguments", "[REDACTED]");
+
+            let logs = kimi_otel::build_correlated_events(&records, "s", &ctx, &turns, false);
+            assert_eq!(logs.len(), 2);
+            for (log, event_name) in logs.iter().zip(["tool_result", "tool_decision"]) {
+                let log = serde_json::to_value(log).unwrap();
+                assert_eq!(log["traceId"], span["traceId"]);
+                assert_eq!(log["spanId"], span["spanId"]);
+                assert_attr(&log, "event.name", event_name);
+                if event_name == "tool_result" {
+                    assert_attr(&log, "gen_ai.tool.call.arguments", "[REDACTED]");
+                }
+                assert_attr(&log, "agentic.tool.type", tool_type);
+                assert_attr(&log, "agentic.tool.name", name);
+                assert_attr(&log, "gen_ai.tool.call.id", "call-42");
+            }
+            assert_attr(&span, "agentic.tool.type", tool_type);
+            assert_attr(&span, "agentic.tool.name", name);
+            assert_attr(&span, "gen_ai.tool.call.id", "call-42");
+        }
+    }
+
+    #[test]
     fn kimi_code_partial_usage_keeps_known_zero_without_fabricated_input_or_total() {
         let body = r#"{"type":"context.append_loop_event","event":{"type":"step.begin","uuid":"p","step":1},"time":1000}
 {"type":"usage.record","usageScope":"turn","usage":{"output":0},"time":1190}
@@ -1555,10 +1767,55 @@ mod tests {
         let step = records.iter().find(|r| r["hook_event_name"] == "LLMStep")
             .expect("Kimi Code step.end must produce an LLM call");
         assert_eq!(step["output_text"], "hello");
+        assert_eq!(step["model"], "kimi-k2");
         assert_eq!(step["token_usage"]["input_other"], 10);
         assert_eq!(step["token_usage"]["output"], 5);
         assert_eq!(step["_start_ts"], 1779256800.1);
         assert_eq!(step["_end_ts"], 1779256800.3);
+    }
+
+    #[test]
+    fn kimi_code_usage_receipt_identifies_only_its_own_call_without_llm_request() {
+        // 2.6.3 emits one turn-scoped receipt per completed step, before step.end.
+        let body = r#"{"type":"turn.prompt","agentId":"main","input":[],"time":1000}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.begin","uuid":"s1","step":1},"time":1100}
+{"type":"usage.record","agentId":"main","model":" gateway/route/model-a ","usageScope":"turn","usage":{"inputOther":10,"output":5,"inputCacheRead":3,"inputCacheCreation":0},"time":1150}
+{"type":"llm.request","agentId":"main","model":"unknown","kind":"loop","time":1175}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.end","uuid":"s1","finishReason":"end_turn"},"time":1200}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.begin","uuid":"s2","step":2},"time":1300}
+{"type":"usage.record","agentId":"main","model":"other/route/model-b","usageScope":"turn","usage":{"inputOther":20,"output":7},"time":1350}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.end","uuid":"s2","finishReason":"end_turn"},"time":1400}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.begin","uuid":"s3","step":3},"time":1500}
+{"type":"usage.record","agentId":"subagent","model":"foreign/model","usageScope":"turn","usage":{"inputOther":99,"output":99},"time":1550}
+{"type":"context.append_loop_event","agentId":"main","event":{"type":"step.end","uuid":"s3","finishReason":"error"},"time":1600}
+{"type":"turn.ended","agentId":"main","time":1700}"#;
+        let records = synth_to_hook_records(&parse_wire_events(body, "s", "/fixture"));
+        let cfg = kimi_otel::ContentLogConfig::default();
+        let ctx = kimi_otel::EmissionContext { agent_product: "kimi-cli", agent_type: "kimicli", runtime_name: "kimi-cli", log: &cfg };
+        let spans = kimi_otel::build_llm_spans(&records, "t", "p", "s", 1, &cfg, "wrong/configured-model");
+        let logs = kimi_otel::build_api_request_events(&records, "s", &ctx);
+        let attrs = |value: Value| -> std::collections::HashMap<String, Value> {
+            value["attributes"].as_array().unwrap().iter()
+                .map(|a| (a["key"].as_str().unwrap().to_owned(), a["value"].clone())).collect()
+        };
+        assert_eq!(spans.len(), 3);
+        assert_eq!(logs.len(), 3);
+        for (i, (model, provider, input)) in [
+            ("gateway/route/model-a", "gateway", Some(13)),
+            ("other/route/model-b", "other", Some(20)),
+            ("unknown", "unknown", None),
+        ].into_iter().enumerate() {
+            for fields in [attrs(json!(spans[i])), attrs(json!(logs[i]))] {
+                assert_eq!(fields["gen_ai.request.model"]["stringValue"], model);
+                assert_eq!(fields["gen_ai.provider.name"]["stringValue"], provider);
+                assert_eq!(fields["gen_ai.system"]["stringValue"], provider);
+                assert_eq!(fields.get("gen_ai.usage.input_tokens").and_then(|value| value["intValue"].as_i64()), input);
+            }
+        }
+        let metrics = serde_json::to_string(&kimi_otel::build_llm_metrics(&records, "s", &ctx)).unwrap();
+        assert!(metrics.contains("gateway/route/model-a"));
+        assert!(metrics.contains("other/route/model-b"));
+        assert!(!metrics.contains("foreign/model"));
     }
 
     #[test]

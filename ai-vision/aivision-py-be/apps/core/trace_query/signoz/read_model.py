@@ -25,7 +25,7 @@ SEMANTICS_VERSION = 1
 def projection_context(prices=None):
     if prices is None:
         prices = getattr(settings, "AIVISION_MODEL_PRICES", [])
-    data = {"semantics": "native-trace-summary-pricing-v11-media-safe-preview-captions", "prices": prices}
+    data = {"semantics": "native-trace-summary-pricing-v16-incomplete-bucket-coverage", "prices": prices}
     return hashlib.sha256(json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(",", ":")).encode()).hexdigest()
 
 

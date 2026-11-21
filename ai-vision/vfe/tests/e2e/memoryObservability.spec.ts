@@ -166,24 +166,29 @@ async function openMemory(
       ])
   const configWrites: { configs: Record<string, unknown>[] }[] = []
   const configDeletes: string[] = []
-  await page.route("**/labs/mcp/configs/powercontext", (route) => {
-    configDeletes.push(route.request().method())
-    storedConfigs = []
-    return route.fulfill({ json: { code: 0, data: null } })
-  })
-  await page.route("**/labs/mcp/configs", (route) => {
-    if (route.request().method() === "PUT") {
-      const body = route.request().postDataJSON()
-      configWrites.push(body)
-      storedConfigs = body.configs.map((item: Record<string, unknown>) => ({
-        ...item,
-        importedAt: "2026-10-27T10:00:00Z",
-      }))
+  await page.route(
+    (url) => url.pathname.endsWith("/labs/mcp/configs"),
+    (route) => {
+      const request = route.request()
+      const method = request.method()
+      if (method === "DELETE") {
+        const serverId = new URL(request.url()).searchParams.get("serverId")
+        if (serverId !== "powercontext") return route.fallback()
+        configDeletes.push(method)
+        storedConfigs = []
+        return route.fulfill({ json: { code: 0, data: null } })
+      }
+      if (method === "PUT") {
+        const body = request.postDataJSON()
+        configWrites.push(body)
+        storedConfigs = body.configs.map((item: Record<string, unknown>) => ({
+          ...item,
+          importedAt: "2026-10-27T10:00:00Z",
+        }))
+      }
+      return route.fulfill({ json: { code: 0, data: storedConfigs } })
     }
-    return route.fulfill({
-      json: { code: 0, data: storedConfigs },
-    })
-  })
+  )
   let catalogError = options.catalogError
   let syncError = options.syncError
   let synced = !options.unsynced

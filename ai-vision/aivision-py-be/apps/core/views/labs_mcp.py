@@ -15,12 +15,14 @@ import re
 import select
 import subprocess
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import requests
 from django.conf import settings
-from django.db import transaction
+from django.db import connections, transaction
+from django.db.models import Case, CharField, Func, JSONField, TextField, Value, When
+from django.db.models.lookups import Exact
 from django.utils import timezone
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -32,6 +34,12 @@ from ..services.trace_query_service import (
 )
 from ..trace_query.semantics.normalizers import coerce_datetime
 from .common import check_space_access_or_error, error_response, success_response
+from .labs_import_guard import (
+    IMPORT_CONFLICT_MESSAGE,
+    ImportWriteGuard,
+    conflict_matches,
+    managed_config_space,
+)
 from .labs_scan import call_status_stats, collect_span_window, tool_span_outcome
 
 logger = logging.getLogger(__name__)
@@ -190,8 +198,8 @@ def _mcp_call(span: dict, agent_product: str) -> dict | None:
     }
 
 
-def _serialize_config(config: McpServerConfig) -> dict:
-    return {
+def _serialize_config(config: McpServerConfig, *, summary: bool = False) -> dict:
+    result = {
         "serverId": config.server_id,
         "description": config.description,
         "transport": config.transport,
@@ -201,9 +209,12 @@ def _serialize_config(config: McpServerConfig) -> dict:
         "envKeys": config.env_keys,
         "headerKeys": config.header_keys,
         "memory": config.memory_semantics or None,
-        "raw": config.raw,
+        **({} if summary else {"raw": config.raw}),
         "importedAt": config.imported_at.isoformat(),
     }
+    if summary and isinstance(config.raw_description, str):
+        result["displayDescription"] = config.raw_description
+    return result
 
 
 def _sanitize_memory_semantics(value: object) -> dict | None | str:
@@ -778,7 +789,7 @@ def list_mcp_tools(
 
 
 class McpConfigListView(APIView):
-    """GET list or PUT upsert MCP server configs for a space."""
+    """List, preview conflicts, upsert, or delete MCP server configs for a space."""
 
     permission_classes = [IsAuthenticated]
 
@@ -790,20 +801,75 @@ class McpConfigListView(APIView):
         denied = check_space_access_or_error(request.user, space)
         if denied:
             return denied
+        view = request.query_params.get("view")
         rows = McpServerConfig.objects.filter(
             space=space, gmt_deleted__isnull=True
-        ).order_by("server_id")
-        return success_response([_serialize_config(row) for row in rows])
+        ).defer("tools", "tools_synced_at")
+        if view == "detail":
+            config = rows.filter(server_id=request.query_params.get("serverId")).first()
+            if config is None:
+                return error_response("Config not found", 3006, 404)
+            return success_response(_serialize_config(config))
+        summary = view == "summary"
+        if summary:
+            # Preserve legacy display strings without selecting the whole raw column.
+            path = Value("$.description")
+            raw_description = Func(
+                "raw", path, function="JSON_EXTRACT", output_field=JSONField()
+            )
+            if connections[rows.db].vendor == "sqlite":
+                raw_type = Func(
+                    "raw", path, function="JSON_TYPE", output_field=CharField()
+                )
+                string_type = "text"
+            else:
+                raw_type = Func(
+                    raw_description, function="JSON_TYPE", output_field=CharField()
+                )
+                raw_description = Func(
+                    raw_description, function="JSON_UNQUOTE", output_field=TextField()
+                )
+                string_type = "STRING"
+            rows = rows.defer("raw").annotate(
+                raw_description=Case(
+                    When(Exact(raw_type, Value(string_type)), then=raw_description),
+                    output_field=TextField(),
+                )
+            )
+        return success_response(
+            [
+                _serialize_config(row, summary=summary)
+                for row in rows.order_by("server_id")
+            ]
+        )
 
-    def put(self, request, space_id: str):
-        try:
-            space = Space.objects.get(uuid=space_id, status=1, gmt_deleted__isnull=True)
-        except Space.DoesNotExist:
-            return error_response("Space not found", 3001, 404)
-        denied = check_space_access_or_error(request.user, space)
+    def post(self, request, space_id: str):
+        if request.query_params.get("view") != "conflicts":
+            return self.http_method_not_allowed(request)
+        space, denied = managed_config_space(request, space_id, _check_mcp_admin)
         if denied:
             return denied
-        denied = _check_mcp_admin(request.user, space)
+        names = request.data.get("names") if isinstance(request.data, dict) else None
+        try:
+            matches = conflict_matches(
+                McpServerConfig.objects.filter(space=space, gmt_deleted__isnull=True),
+                names,
+                "server_id",
+                "imported_at",
+                MAX_CONFIGS_PER_REQUEST,
+            )
+        except ValueError as exc:
+            return error_response(str(exc), 3005)
+        return success_response(matches)
+
+    def delete(self, request, space_id: str):
+        name = request.query_params.get("serverId")
+        if name is None:
+            return self.http_method_not_allowed(request)
+        return _delete_config(request, space_id, name)
+
+    def put(self, request, space_id: str):
+        space, denied = managed_config_space(request, space_id, _check_mcp_admin)
         if denied:
             return denied
 
@@ -817,7 +883,6 @@ class McpConfigListView(APIView):
                 f"At most {MAX_CONFIGS_PER_REQUEST} configs per request", 3004
             )
 
-        now = timezone.now()
         sanitized = []
         for item in configs:
             parsed = _sanitize_incoming(item)
@@ -825,11 +890,37 @@ class McpConfigListView(APIView):
                 return error_response("Invalid MCP server config payload", 3005)
             sanitized.append(parsed)
 
+        guard = None
+        if "overwrites" in request.data:
+            try:
+                guard = ImportWriteGuard(
+                    request.data["overwrites"],
+                    {item["serverId"] for item in sanitized},
+                    "server_id",
+                    "imported_at",
+                )
+            except ValueError as exc:
+                return error_response(str(exc), 3005)
+
+        return_receipts = request.query_params.get("response") == "receipts"
+        receipts = []
         with transaction.atomic():
             for item in sanitized:
-                config, _ = McpServerConfig.objects.select_for_update().get_or_create(
+                config, created = McpServerConfig.objects.select_for_update().get_or_create(
                     space=space,
                     server_id=item["serverId"],
+                )
+                if guard is not None:
+                    conflict = guard.check(item["serverId"], config, created)
+                    if conflict is not None:
+                        transaction.set_rollback(True)
+                        return error_response(
+                            IMPORT_CONFLICT_MESSAGE, 3007, 409, conflict
+                        )
+                # A later write to the same row must invalidate the earlier
+                # version even if two names resolve to it or the clock stalls.
+                imported_at = max(
+                    timezone.now(), config.imported_at + timedelta(microseconds=1)
                 )
                 defaults = {
                     "description": item["description"],
@@ -841,7 +932,7 @@ class McpConfigListView(APIView):
                     "header_keys": item["headerKeys"],
                     "memory_semantics": item["memory"],
                     "raw": item["raw"],
-                    "imported_at": now,
+                    "imported_at": imported_at,
                     "gmt_deleted": None,
                 }
                 connection_fields = (
@@ -865,6 +956,18 @@ class McpConfigListView(APIView):
                 # An unchanged import must not overwrite a newer sync snapshot
                 # with the values read into this model instance.
                 config.save(update_fields=update_fields)
+                if return_receipts:
+                    # Capture the persisted version before releasing the lock.
+                    config.refresh_from_db(fields=["imported_at"])
+                    receipts.append(
+                        {
+                            "requestedServerId": item["serverId"],
+                            "serverId": config.server_id,
+                            "importedAt": config.imported_at.isoformat(),
+                        }
+                    )
+        if return_receipts:
+            return success_response(receipts)
         rows = McpServerConfig.objects.filter(
             space=space, gmt_deleted__isnull=True
         ).order_by("server_id")
@@ -877,25 +980,22 @@ class McpConfigDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, space_id: str, server_id: str):
-        try:
-            space = Space.objects.get(uuid=space_id, status=1, gmt_deleted__isnull=True)
-        except Space.DoesNotExist:
-            return error_response("Space not found", 3001, 404)
-        denied = check_space_access_or_error(request.user, space)
-        if denied:
-            return denied
-        denied = _check_mcp_admin(request.user, space)
-        if denied:
-            return denied
-        now = timezone.now()
-        updated = McpServerConfig.objects.filter(
-            space=space,
-            server_id=server_id,
-            gmt_deleted__isnull=True,
-        ).update(gmt_deleted=now)
-        if not updated:
-            return error_response("Config not found", 3006, 404)
-        return success_response(None)
+        return _delete_config(request, space_id, server_id)
+
+
+def _delete_config(request, space_id: str, server_id: str):
+    space, denied = managed_config_space(request, space_id, _check_mcp_admin)
+    if denied:
+        return denied
+    now = timezone.now()
+    updated = McpServerConfig.objects.filter(
+        space=space,
+        server_id=server_id,
+        gmt_deleted__isnull=True,
+    ).update(gmt_deleted=now)
+    if not updated:
+        return error_response("Config not found", 3006, 404)
+    return success_response(None)
 
 
 def _serialize_config_tools(config: McpServerConfig) -> dict:
@@ -1063,6 +1163,9 @@ def _serialize_scanned_observations(
     available_traces: int = 0,
     scan_count: int | None = None,
     excluded_server_ids: frozenset[str] = frozenset(),
+    *,
+    summary: bool = False,
+    detail_server: str | None = None,
 ):
     # Match Memory's per-call recognition without swallowing ordinary tools
     # offered by an undeclared server that also has memory calls.
@@ -1070,7 +1173,7 @@ def _serialize_scanned_observations(
 
     memory_server_ids = set(excluded_server_ids)
     aggregate: dict[str, dict] = {}
-    tools_by_server: dict[str, dict[str, dict]] = {}
+    tools_by_server: dict[str, dict[str, dict | None]] = {}
     for scan in scans:
         agent_product = str(scan.get("agent_product") or "")
         for span in scan.get("spans", []):
@@ -1095,6 +1198,10 @@ def _serialize_scanned_observations(
                 and call["agentProduct"] not in server["sourceAgents"]
             ):
                 server["sourceAgents"].append(call["agentProduct"])
+
+            if summary or (detail_server is not None and server_id != detail_server):
+                tools_by_server[server_id].setdefault(call["toolName"], None)
+                continue
 
             tool = tools_by_server[server_id].get(call["toolName"])
             if tool is None:
@@ -1122,11 +1229,19 @@ def _serialize_scanned_observations(
                     tool["lastErrorCall"] = call
 
     all_calls = [call for server in aggregate.values() for call in server["calls"]]
-    for server in aggregate.values():
-        server["stats"] = _serialize_call_stats(server["calls"])
-        server["calls"].sort(key=_mcp_call_sort_key, reverse=True)
-        server["recentCalls"] = server["calls"][:MAX_RECENT_CALLS]
-        del server["calls"]
+    for server_id, server in aggregate.items():
+        calls = server.pop("calls")
+        server["stats"] = _serialize_call_stats(calls)
+        if summary:
+            newest = max(calls, key=_mcp_call_sort_key)
+            server["lastSeen"] = newest["timestamp"]
+            server["calledToolCount"] = len(tools_by_server[server_id])
+            del server["tools"]
+            continue
+        if detail_server is not None and server_id != detail_server:
+            continue
+        calls.sort(key=_mcp_call_sort_key, reverse=True)
+        server["recentCalls"] = calls[:MAX_RECENT_CALLS]
         for tool in server["tools"]:
             tool["stats"] = {
                 "calls": tool["calls"],
@@ -1142,7 +1257,7 @@ def _serialize_scanned_observations(
         server["tools"].sort(key=lambda item: -item["stats"]["calls"])
 
     servers = sorted(aggregate.values(), key=lambda item: item["serverId"])
-    tool_count = sum(len(server["tools"]) for server in servers)
+    tool_count = sum(len(tools) for tools in tools_by_server.values())
     all_stats = _serialize_call_stats(all_calls)
     return {
         "overview": {
@@ -1178,7 +1293,11 @@ def _serialize_scanned_observations(
             "truncated": available_traces
             > (len(scans) if scan_count is None else scan_count),
         },
-        "servers": servers,
+        "servers": (
+            servers
+            if detail_server is None
+            else [server for server in servers if server["serverId"] == detail_server]
+        ),
         "memoryServerIds": sorted(memory_server_ids),
     }
 
@@ -1228,6 +1347,8 @@ def _mcp_spans_observability(
     agent_uuid=None,
     source_system=None,
     excluded_server_ids: frozenset[str] | None = None,
+    summary: bool = False,
+    detail_server: str | None = None,
 ):
     query_params = {"from": from_ts, "to": to_ts, "limit": MAX_MCP_SPAN_PAGE_SIZE}
     if agent_product:
@@ -1296,6 +1417,8 @@ def _mcp_spans_observability(
         available_traces=len(spans),
         scan_count=len(spans),
         excluded_server_ids=excluded_server_ids,
+        summary=summary and detail_server is None,
+        detail_server=detail_server,
     )
 
     result["scope"] = {"from": from_ts, "to": to_ts}
@@ -1357,6 +1480,8 @@ class McpObservabilityView(APIView):
                 from_ts,
                 to_ts,
                 history=history,
+                summary=request.query_params.get("view") == "summary",
+                detail_server=request.query_params.get("detailServer"),
                 agent_uuid=request.query_params.get("agent_uuid"),
                 source_system=request.query_params.get("source_system"),
             )

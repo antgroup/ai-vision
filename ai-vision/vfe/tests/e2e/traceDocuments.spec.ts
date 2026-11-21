@@ -845,9 +845,10 @@ function captureLinkClipboard(page: Page) {
   })
 }
 
-test("HTML link preview handles unsupported responses, redirects, and retry", async ({
+test("HTML link preview explains unreadable and unsupported responses and can retry", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 390, height: 650 })
   const url = "https://trace-links.invalid/report.html"
   const redirect = "https://trace-links.invalid/another.html"
   const requests: string[] = []
@@ -876,6 +877,15 @@ test("HTML link preview handles unsupported responses, redirects, and retry", as
         body: `<html><body>${"x".repeat(512 * 1024)}</body></html>`,
       })
     }
+    if (attempts === 4) {
+      return route.fulfill({
+        headers: {
+          "Access-Control-Allow-Origin": "https://unrelated.invalid",
+          "Content-Type": "text/html",
+        },
+        body: "<html><body><h1>Cross-origin content</h1></body></html>",
+      })
+    }
     return route.fulfill({
       headers: { ...headers, "Content-Type": "text/html" },
       body: "<html><body><h1>Report restored</h1></body></html>",
@@ -889,11 +899,16 @@ test("HTML link preview handles unsupported responses, redirects, and retry", as
   const retry = dialog.getByRole("button", {
     name: uiText("en-US", "common.retry"),
   })
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    await expect(error).toHaveText(uiText("en-US", "traceMedia.error"))
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    const hint =
+      attempt === 2 || attempt === 4 ? "linkRequestHint" : "linkResponseHint"
+    await expect(error).toContainText(
+      uiText("en-US", "traceDocuments.linkPreviewError")
+    )
+    await expect(error).toContainText(uiText("en-US", `traceDocuments.${hint}`))
     await expect(dialog.locator("iframe")).toHaveCount(0)
     expect(requests).toEqual(Array(attempt).fill(url))
-    if (attempt === 1) {
+    if (attempt === 4) {
       const fallback = dialog.locator("[data-trace-document-link-fallback]")
       await expect(fallback.getByText(url, { exact: true })).toBeVisible()
       await expect(fallback.locator("a[href]")).toHaveCount(0)
@@ -904,7 +919,7 @@ test("HTML link preview handles unsupported responses, redirects, and retry", as
       await expect
         .poll(() => page.locator("html").getAttribute("data-fixture-clipboard"))
         .toBe(url)
-      expect(requests).toEqual([url])
+      expect(requests).toEqual(Array(attempt).fill(url))
       expect(page.url()).toBe(pageUrl)
       expect(page.context().pages()).toHaveLength(1)
     }
@@ -915,7 +930,7 @@ test("HTML link preview handles unsupported responses, redirects, and retry", as
       .frameLocator("iframe")
       .getByRole("heading", { name: "Report restored" })
   ).toBeVisible()
-  expect(requests).toEqual(Array(4).fill(url))
+  expect(requests).toEqual(Array(5).fill(url))
 })
 
 test("expanded Markdown keeps one static HTML action and bounds mounted code controls", async ({
@@ -1252,9 +1267,6 @@ test("Trace input and output highlight fenced code with literal copy and no link
   )
   const python = output.locator('[data-trace-code][data-language="python"]')
   await expect(javascript.locator(".tok-keyword").first()).toHaveText("const")
-  await output
-    .getByRole("button", { name: uiText("en-US", "traceProcess.fullOutput") })
-    .click()
   await expect(python.locator(".tok-keyword").first()).toHaveText("def")
   const expand = javascript.getByRole("button", {
     name: uiText("en-US", "spanContent.expandText"),

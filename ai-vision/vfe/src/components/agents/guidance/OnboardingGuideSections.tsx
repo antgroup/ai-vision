@@ -9,6 +9,7 @@ interface Props {
   hasInstallationCommand: boolean
   agentName?: string
   agentProduct?: string
+  readOnly?: boolean
 }
 
 export function OnboardingGuideSections({
@@ -16,6 +17,7 @@ export function OnboardingGuideSections({
   hasInstallationCommand,
   agentName,
   agentProduct,
+  readOnly = false,
 }: Props) {
   const { t, i18n } = useTranslation()
   const docsLanguage = i18n.language.startsWith("zh") ? "zh-CN" : "en"
@@ -74,9 +76,11 @@ export function OnboardingGuideSections({
           <p className="text-xs text-muted-foreground">
             {t("agentAccess.cliInstall.pathHint")}
           </p>
-          <p className="text-sm text-muted-foreground">
-            {t("agentAccess.cliInstall.ready")}
-          </p>
+          {!readOnly && (
+            <p className="text-sm text-muted-foreground">
+              {t("agentAccess.cliInstall.ready")}
+            </p>
+          )}
         </div>
       )}
       {sections

@@ -17,7 +17,9 @@ export function parseMcpDrawerTab(value: string | null): McpDrawerTab {
   return DRAWER_TABS.find((tab) => tab === value) ?? "tools"
 }
 
-export function launchLine(config: McpServerConfig): string {
+export function launchLine(
+  config: Pick<McpServerConfig, "transport" | "command" | "args" | "url">
+): string {
   if (config.transport === "stdio") {
     return [config.command, ...(config.args ?? [])].filter(Boolean).join(" ")
   }

@@ -1,7 +1,7 @@
 """Subscription calls retain usage and reference values without invented charges."""
 from django.test import SimpleTestCase, TestCase, override_settings
 
-from apps.core.trace_query.semantics.usage import aggregate_usage, combine_cost_coverage, normalize_usage
+from apps.core.trace_query.semantics.usage import IndexedModelPrices, aggregate_usage, combine_cost_coverage, normalize_usage
 from apps.core.tests.test_model_pricing_semantics import call, official_price, price, usage
 from apps.core.tests import test_model_pricing as pricing_tests
 
@@ -56,6 +56,32 @@ class SubscriptionSemanticsTests(SimpleTestCase):
         result = usage([subscription()], **{"langfuse.observation.cost_details": {"input": "1", "output": "2"}})["cost"]
         self.assertEqual(result["reportedCost"]["total"], "3")
         self.assertIsNone(result["listPriceEquivalent"]["total"])
+
+    def test_legacy_placeholder_marker_preserves_subscription_billing(self):
+        attrs = {"gen_ai.usage.input_tokens": 100, "gen_ai.usage.output_tokens": 20,
+                 "gen_ai.usage.total_cost": "1.25"}
+        identity = {"provider": "unknown", "model": "Unknown"}
+        rates = [subscription(**identity), price(**identity)]
+        when = "2026-02-01T00:00:00Z"
+        for prices in (rates, IndexedModelPrices(rates)):
+            with self.subTest(indexed=isinstance(prices, IndexedModelPrices)):
+                normalized = normalize_usage(attrs, **identity, prices=prices, observed_at=when)
+                cost = normalized["cost"]
+                self.assertEqual((cost["total"], cost["reason"]), (None, "subscription_billing"))
+                self.assertEqual(cost["reportedCost"]["total"], "1.25")
+                self.assertIsNone(cost["listPriceEquivalent"]["total"])
+                coverage = aggregate_usage([call("legacy", normalized)])["costCoverage"]
+                self.assertEqual((coverage["subscriptionCalls"], coverage["knownSubtotal"]), (1, None))
+
+        unmatched = normalize_usage(attrs, provider="unknown", model="unknown", prices=rates,
+                                    observed_at=when)["cost"]
+        self.assertEqual((unmatched["total"], unmatched["source"]), ("1.25", "reported"))
+        mode = {"aivision.billing.mode": "pay_as_you_go"}
+        explicit = normalize_usage({**attrs, **mode}, **identity, prices=rates, observed_at=when)["cost"]
+        self.assertEqual((explicit["total"], explicit["source"]), ("1.25", "reported"))
+        unreported = normalize_usage({**attrs, **mode, "gen_ai.usage.total_cost": None},
+                                     **identity, prices=rates, observed_at=when)["cost"]
+        self.assertEqual((unreported["total"], unreported["reason"]), (None, "provider_unknown"))
 
     def test_explicit_call_mode_overrides_space_marker_in_both_directions(self):
         self.assertEqual(usage([price(), subscription()], **{"aivision.billing.mode": "pay_as_you_go"})["cost"]["total"], "0.00028")
@@ -154,7 +180,7 @@ class SubscriptionSemanticsTests(SimpleTestCase):
         self.assertIsNone(coverage["listPriceEquivalentSubtotal"])
         self.assertEqual(coverage["listPriceEquivalentCalls"], 1)
 
-    def test_subscription_values_inclusive_input_with_unclassified_cache_usage(self):
+    def test_subscription_values_inclusive_input_and_skips_unpriced_reasoning(self):
         # Replay the shapes of two observed responses; tariff values remain a
         # controlled official catalog fixture, not evidence of an actual plan charge.
         rates = [official_price(provider="zhipuai", model="glm-5.1", input="1.4", output="4.4",
@@ -162,7 +188,7 @@ class SubscriptionSemanticsTests(SimpleTestCase):
         rows = []
         for identifier, raw, expected in (
             ("reasoning", {"prompt_tokens": 58, "completion_tokens": 256, "total_tokens": 314,
-                           "completion_tokens_details": {"reasoning_tokens": 256}}, "0.0012076"),
+                           "completion_tokens_details": {"reasoning_tokens": 256}}, "0.0000812"),
             ("answer", {"prompt_tokens": 52, "completion_tokens": 31, "total_tokens": 83}, "0.0002092"),
         ):
             normalized = normalize_usage({"langfuse.observation.usage_details": raw,
@@ -173,20 +199,25 @@ class SubscriptionSemanticsTests(SimpleTestCase):
             self.assertIsNone(normalized["cacheReadInput"])
             self.assertIsNone(normalized["cacheWriteInput"])
             self.assertIsNone(normalized["cost"]["total"])
-            self.assertEqual(normalized["cost"]["listPriceEquivalent"]["total"], expected)
+            equivalent = normalized["cost"]["listPriceEquivalent"]
+            if identifier == "reasoning":
+                self.assertEqual((equivalent["total"], equivalent["knownSubtotal"], equivalent["reason"]),
+                                 (None, expected, "price_bucket_missing"))
+            else:
+                self.assertEqual(equivalent["total"], expected)
             rows.append(call(identifier, normalized))
         result = aggregate_usage([*rows, rows[0]])
         self.assertEqual(result["total"], 397)
         self.assertIsNone(result["cost"]["total"])
         coverage = result["costCoverage"]
         self.assertEqual(coverage["subscriptionCalls"], 2)
-        self.assertEqual(coverage["listPriceEquivalentCalls"], 2)
+        self.assertEqual(coverage["listPriceEquivalentCalls"], 1)
         self.assertEqual(coverage["unknownReasons"], {"subscription_billing": 2})
         self.assertIsNone(coverage["knownSubtotal"])
-        self.assertEqual(coverage["listPriceEquivalentSubtotal"], "0.0014168")
-        self.assertNotIn("listPriceEquivalentUnknownReasons", coverage)
+        self.assertEqual(coverage["listPriceEquivalentSubtotal"], "0.0002904")
+        self.assertEqual(coverage["listPriceEquivalentUnknownReasons"], {"price_bucket_missing": 1})
         first, second = (aggregate_usage([row])["costCoverage"] for row in rows)
-        self.assertEqual(combine_cost_coverage([first, second])["listPriceEquivalentSubtotal"], "0.0014168")
+        self.assertEqual(combine_cost_coverage([first, second])["listPriceEquivalentSubtotal"], "0.0002904")
 
     def test_subscription_uses_reported_cache_buckets_and_regular_rate_for_remaining_input(self):
         official = official_price(cacheReadInput="0.25", cacheWriteInput="0.5")
@@ -201,8 +232,7 @@ class SubscriptionSemanticsTests(SimpleTestCase):
         paygo = usage([price(cacheReadInput="0.25", cacheWriteInput="0.5")], **{
             **attrs, "aivision.billing.mode": "pay_as_you_go",
         })["cost"]
-        self.assertIsNone(paygo["total"])
-        self.assertEqual(paygo["reason"], "cache_usage_missing")
+        self.assertEqual((paygo["total"], paygo["source"]), ("0.00023625", "estimated"))
 
     def test_equivalent_failure_reasons_only_describe_subscription_estimates(self):
         rows = [call("paygo", usage([])),

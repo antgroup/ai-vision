@@ -128,6 +128,8 @@ async function fixture(page: Page, theme: "light" | "dark") {
         const skills = request.postDataJSON().skills as SkillConfig[]
         skillWrites.push(skills)
         skillConfigs = skills
+        if (url.searchParams.get("response") === "receipts")
+          return ok(skills.map(({ name }) => ({ requestedName: name, name })))
       }
       if (method === "GET" || method === "PUT") return ok(skillConfigs)
     }

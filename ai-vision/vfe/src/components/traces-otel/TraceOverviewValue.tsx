@@ -5,12 +5,13 @@ import { Button } from "@/components/ui/button"
 import { TraceCopyButton } from "@/components/traces/shared/TraceTextContent"
 import { TraceDocumentPreviews } from "@/components/traces/shared/TraceDocumentPreviews"
 import { TraceOverviewExcerpt } from "./TraceOverviewExcerpt"
-import { contentPreview } from "./spanContent"
+import { contentPreview, isStructuredTraceValue } from "./spanContent"
 import { SpanTypedContent } from "./SpanTypedContent"
 import { TraceMediaContent } from "@/components/traces/shared/TraceMedia"
 import { mediaOutputValue } from "@/components/traces/shared/traceMediaOutput"
+import { structuredTracePreview } from "../traces/shared/traceJson"
 
-/** A bounded overview excerpt; the recorded payload stays in its owning view. */
+/** Render the recorded output using the same tree as the source detail. */
 export function TraceOverviewValue({
   value,
   title,
@@ -29,9 +30,9 @@ export function TraceOverviewValue({
     if (restoreFocus.current) disclosure.current?.focus({ preventScroll: true })
     restoreFocus.current = false
   }, [expanded])
-  const text = contentPreview(value, Infinity).text
-  const media = mediaOutputValue(value)
-  const header = (controls: ReactNode = null) => (
+  const structured = isStructuredTraceValue(structuredTracePreview(value))
+  const media = expanded || structured ? null : mediaOutputValue(value)
+  const header = (controls: ReactNode, text: string) => (
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
       <h3 className="text-sm font-medium">{title}</h3>
       <div className="flex flex-wrap items-center gap-1">
@@ -55,7 +56,7 @@ export function TraceOverviewValue({
               {t("traceProcess.viewOutput")}
               <ArrowUpRight className="size-3" />
             </Button>
-          ) : (
+          ) : !structured ? (
             <Button
               ref={disclosure}
               variant="ghost"
@@ -74,7 +75,7 @@ export function TraceOverviewValue({
                   : "traceProcess.fullOutput"
               )}
             </Button>
-          ))}
+          ) : null)}
       </div>
     </div>
   )
@@ -83,24 +84,25 @@ export function TraceOverviewValue({
       className="min-w-0 rounded-lg border p-3"
       data-trace-overview-output
     >
-      {expanded ? (
+      {expanded || structured ? (
         <SpanTypedContent
           value={value}
           treeLayout="outline"
+          paginateTree={structured}
           showCopy={false}
-          renderFrame={(controls, content) => (
+          renderFrame={(controls, content, text) => (
             <>
-              {header(controls)}
+              {header(controls, text)}
               <div id={contentId}>{content}</div>
             </>
           )}
         />
       ) : (
         <>
-          {header()}
+          {header(null, contentPreview(value, Infinity).text)}
           <TraceDocumentPreviews value={value} />
           {media === null ? (
-            <TraceOverviewExcerpt value={value} />
+            <TraceOverviewExcerpt value={value} previewOutput />
           ) : (
             <TraceMediaContent value={media} />
           )}

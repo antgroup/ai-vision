@@ -1,7 +1,7 @@
-//! Kimi Code 2.1.1 durable wire records -> the shared Python Kimi wire engine.
+//! Kimi Code durable wire records -> the shared Python Kimi wire engine.
 //! Source contract: MoonshotAI/kimi-code@f67e6398 (wire 1.1-1.5).
 //! Records use milliseconds, while the shared engine takes seconds.
-use serde_json::{json, Map, Value};
+use serde_json::{json, Value};
 
 pub(super) fn read_stop_snapshot(
     path: &std::path::Path,
@@ -165,32 +165,23 @@ mod snapshot_tests {
 pub(super) fn normalize(record: &Value) -> Option<(String, Value)> {
     let kind = record.get("type")?.as_str()?;
     let pair = match kind {
-        "turn.prompt" => ("TurnBegin", json!({"user_input": record.get("input")})),
-        "turn.ended" => ("TurnEnd", json!({"reason": record.get("reason")})),
+        "turn.prompt" => ("TurnBegin", json!({"user_input": record.get("input"), "source": "kimi-code"})),
+        "turn.ended" => ("TurnEnd", json!({"reason": record.get("reason"), "source": "kimi-code"})),
         "llm.request" if record["kind"] == "loop" => ("CodeRequest", json!({
             "model": record.get("model"), "provider": record.get("provider"), "system_prompt_hash": record.get("systemPromptHash")})),
         "profile.bind" | "config.update" if record["systemPrompt"].is_string() => ("CodeProfile", record["systemPrompt"].clone()),
         "context.append_message" => ("CodeContext", record.get("message")?.clone()),
-        "usage.record" if record["usageScope"] == "turn" => ("CodeUsage", record.get("usage").cloned().unwrap_or(Value::Null)),
+        "usage.record" if record["usageScope"] == "turn" => ("CodeUsage", json!({
+            "agent_id": record.get("agentId"), "model": record.get("model"), "usage": record.get("usage")})),
         "context.append_loop_event" => {
             let event = record.get("event")?;
             match event.get("type")?.as_str()? {
-                "step.begin" => ("StepBegin", json!({"n": event.get("step"), "request_id": event.get("uuid"), "source": "kimi-code"})),
+                "step.begin" => ("StepBegin", json!({"n": event.get("step"), "request_id": event.get("uuid"),
+                    "agent_id": record.get("agentId"), "source": "kimi-code"})),
                 "content.part" => ("ContentPart", event.get("part")?.clone()),
-                "step.end" => {
-                    // Preserve field presence: an interrupted step has no usage object.
-                    let usage = event.get("usage").and_then(Value::as_object).map(|u| {
-                        let mut mapped = Map::new();
-                        for (source, target) in [("inputOther", "input_other"), ("output", "output"),
-                            ("inputCacheRead", "input_cache_read"), ("inputCacheCreation", "input_cache_creation")] {
-                            if let Some(value) = u.get(source) { mapped.insert(target.into(), value.clone()); }
-                        }
-                        Value::Object(mapped)
-                    });
-                    ("StatusUpdate", json!({"token_usage": usage, "message_id": event.get("messageId"),
-                        "finish_reason": event.get("finishReason"), "request_id": event.get("uuid"),
-                        "llm_duration_ms": event["llmFirstTokenLatencyMs"].as_u64().zip(event["llmStreamDurationMs"].as_u64()).map(|(a,b)| a.saturating_add(b))}))
-                }
+                "step.end" => ("StatusUpdate", json!({"message_id": event.get("messageId"), "request_id": event.get("uuid"),
+                    "finish_reason": event.get("finishReason"),
+                    "llm_duration_ms": event["llmFirstTokenLatencyMs"].as_u64().zip(event["llmStreamDurationMs"].as_u64()).map(|(a,b)| a.saturating_add(b))})),
                 "tool.call" => ("ToolCall", json!({"id": event.get("toolCallId"), "step_uuid": event.get("stepUuid"), "function": {
                     "name": event.get("name"), "arguments": serde_json::to_string(&event["args"]).ok()?}})),
                 "tool.result" => {

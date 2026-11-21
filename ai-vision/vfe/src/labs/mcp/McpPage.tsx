@@ -28,16 +28,13 @@ import { McpServerDrawer } from "./McpServerDrawer"
 import {
   getMcpServerDetail,
   deleteMcpConfig,
-  listMcpConfigs,
-  listMcpServers,
+  fetchMcpConfig,
+  fetchMcpServerObservation,
+  listMcpConfigSummaries,
+  listMcpServerSummaries,
 } from "./mcpApi"
 import { parseMcpDrawerTab } from "./mcpDisplay"
-import type {
-  McpHealth,
-  McpServer,
-  McpServerConfig,
-  McpServerDetail,
-} from "./types"
+import type { McpHealth, McpServer, McpConfigSummary } from "./types"
 import { useAgent } from "@/contexts/AgentContext"
 import { useSpace } from "@/contexts/SpaceContext"
 import { useTimeFilter } from "@/contexts/TimeFilterContext"
@@ -112,17 +109,17 @@ export function McpPage() {
     ]
   )
   const canQueryStats = !!spaceId && !!params.agentProduct
-  const statsKey = ["labs", "mcp", "servers", params]
+  const statsKey = ["labs", "mcp", "servers", params, "summary"]
   const stats = useQuery({
     queryKey: statsKey,
-    queryFn: ({ signal }) => listMcpServers(params, signal),
+    queryFn: ({ signal }) => listMcpServerSummaries(params, signal),
     enabled: canQueryStats,
     retry: false,
   })
   const configsQueryKey = ["labs", "mcp", "configs", spaceId]
   const configsQuery = useQuery({
-    queryKey: configsQueryKey,
-    queryFn: ({ signal }) => listMcpConfigs(spaceId, signal),
+    queryKey: [...configsQueryKey, "summary"],
+    queryFn: ({ signal }) => listMcpConfigSummaries(spaceId, signal),
     staleTime: 60_000,
     enabled: !!spaceId,
     retry: false,
@@ -151,16 +148,6 @@ export function McpPage() {
     () => new Map(configs.map((config) => [config.serverId, config])),
     [configs]
   )
-  const observedDetails = useMemo(() => {
-    const details = new Map<string, McpServerDetail>()
-    data?.serverDetails?.forEach((detail, id) =>
-      details.set(id, {
-        ...detail,
-        description: detail.description || configById.get(id)?.description,
-      })
-    )
-    return details
-  }, [data?.serverDetails, configById])
   const observedServers = useMemo(
     () =>
       (data?.servers ?? []).map((server) => ({
@@ -174,6 +161,41 @@ export function McpPage() {
     () => new Set(observedServers.map((server) => server.serverId)),
     [observedServers]
   )
+  const selectedSummary = openServerId
+    ? observedServers.find((server) => server.serverId === openServerId)
+    : undefined
+  const selectedObservations = useQuery({
+    queryKey: ["labs", "mcp", "servers", historyParams, "detail", openServerId],
+    queryFn: ({ signal }) =>
+      fetchMcpServerObservation(historyParams, openServerId!, signal),
+    enabled: canQueryStats && !!selectedSummary,
+    retry: false,
+  })
+  const selectedConfigQuery = useQuery({
+    queryKey: [...configsQueryKey, "detail", openServerId],
+    queryFn: ({ signal }) => fetchMcpConfig(spaceId, openServerId!, signal),
+    enabled: !!spaceId && !!openServerId,
+    staleTime: 60_000,
+    retry: false,
+  })
+  const selectedConfig = selectedConfigQuery.data ?? undefined
+  const selectedConfigSummary = openServerId
+    ? configById.get(openServerId)
+    : undefined
+  const selectedDetail = selectedObservations.data
+  const drawerServer = selectedDetail
+    ? {
+        ...selectedDetail,
+        description:
+          selectedConfig?.description || selectedSummary?.description,
+      }
+    : selectedSummary
+      ? { ...selectedSummary, tools: [], recentCalls: [] }
+      : getMcpServerDetail(
+          selectedConfigQuery.data === undefined
+            ? selectedConfigSummary
+            : selectedConfig
+        )
   const importedServers = useMemo<McpServer[]>(
     () =>
       mcpConfigs
@@ -212,6 +234,18 @@ export function McpPage() {
       : stats.isLoading
         ? "loading"
         : "idle"
+  const drawerConfigStatus = selectedConfigQuery.isPending
+    ? "loading"
+    : selectedConfigQuery.isError
+      ? "error"
+      : "ready"
+  const drawerObservationsStatus = selectedSummary
+    ? selectedObservations.data !== undefined
+      ? "ready"
+      : selectedObservations.isError
+        ? "error"
+        : "loading"
+    : statsStatus
   return (
     <SpaceAgentGuard>
       <div className="flex min-w-0 flex-col gap-4 overflow-hidden px-4 pt-3 pb-6">
@@ -293,13 +327,8 @@ export function McpPage() {
       </div>
       <McpServerDrawer
         serverId={openServerId}
-        detail={
-          openServerId
-            ? (observedDetails.get(openServerId) ??
-              getMcpServerDetail(configById.get(openServerId)))
-            : null
-        }
-        config={openServerId ? configById.get(openServerId) : undefined}
+        detail={drawerServer}
+        config={selectedConfig}
         tab={drawerTab}
         onTabChange={changeTab}
         onClose={() => openServer(null)}
@@ -310,15 +339,26 @@ export function McpPage() {
         readOnly={!canManage}
         queryParams={canQueryStats ? historyParams : undefined}
         scan={data?.scan}
-        observationsStatus={statsStatus}
-        observationsError={stats.error?.message}
-        observationsLoading={stats.isFetching}
-        observationsUpdatedAt={stats.dataUpdatedAt}
-        onRetryObservations={() => void stats.refetch()}
-        configStatus={configStatus}
-        configError={configsQuery.error?.message}
-        configUpdatedAt={configsQuery.dataUpdatedAt}
-        onRetryConfigs={() => void configsQuery.refetch()}
+        observationsStatus={drawerObservationsStatus}
+        observationsError={(selectedObservations.error ?? stats.error)?.message}
+        observationsLoading={
+          stats.isFetching || selectedObservations.isFetching
+        }
+        observationsUpdatedAt={
+          selectedSummary
+            ? selectedObservations.dataUpdatedAt
+            : stats.dataUpdatedAt
+        }
+        onRetryObservations={() =>
+          void (selectedSummary &&
+          (selectedObservations.isError || !stats.isError)
+            ? selectedObservations.refetch()
+            : stats.refetch())
+        }
+        configStatus={drawerConfigStatus}
+        configError={selectedConfigQuery.error?.message}
+        configUpdatedAt={selectedConfigQuery.dataUpdatedAt}
+        onRetryConfigs={() => void selectedConfigQuery.refetch()}
         deleting={
           deleteMutation.isPending &&
           deleteMutation.variables?.spaceId === spaceId &&
@@ -354,7 +394,7 @@ function McpCatalogue({
 }: {
   counts: ReactNode
   servers: McpServer[]
-  configs: Map<string, McpServerConfig>
+  configs: Map<string, McpConfigSummary>
   observedIds: Set<string>
   configStatus: "loading" | "error" | "ready"
   observations?: CatalogueRequest

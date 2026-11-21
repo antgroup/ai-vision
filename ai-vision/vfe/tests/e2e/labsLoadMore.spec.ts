@@ -30,7 +30,7 @@ for (const language of ["en-US", "zh-CN", "ja-JP"]) {
         lastError: "",
       })),
     }))
-    await page.route("**/labs/skill/configs", (route) =>
+    await page.route("**/labs/skill/configs?view=summary", (route) =>
       route.fulfill({ json: { code: 0, data: [] } })
     )
     const historyRequests: { name: string; page: number; limit: number }[] = []

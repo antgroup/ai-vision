@@ -24,6 +24,7 @@ from django.utils.dateparse import parse_datetime
 
 from apps.core.models import Space, Agent
 from apps.core.trace_query.routing import resolve_signoz_runtime_config
+from apps.core.trace_query.semantics.usage import pricing_identity
 from apps.core.trace_query.types import BaseTraceQuery, TraceQueryServiceError
 from apps.core.models.model_pricing import ModelPricingCatalogSnapshot, ModelPricingCatalogState, ModelPricingRule
 from apps.core.services.official_model_pricing import CATALOG_PRICE_PRIORITY
@@ -407,6 +408,10 @@ def create_rule(*, space, user, data):
         raise PricingValidationError('Unknown pricing rule fields')
     provider = _identity(data.get('provider'), 'provider', 128)
     model = _identity(data.get('model'), 'model', 256)
+    if not pricing_identity(provider):
+        raise PricingValidationError('Enter a known billing provider.')
+    if not pricing_identity(model):
+        raise PricingValidationError('Enter a known model ID.')
     kind = data.get('kind')
     if kind not in ('manual', 'alias', 'reference', 'subscription'):
         raise PricingValidationError('Invalid pricing rule kind')
@@ -589,7 +594,7 @@ def native_inventory(*, space, user, params):
     groups = defaultdict(list)
     for observation in selected:
         if observation.get('type') in {'GENERATION', 'EMBEDDING'}:
-            groups[(observation.get('provider'), observation.get('model'))].append(observation)
+            groups[(pricing_identity(observation.get('provider')), pricing_identity(observation.get('model')))].append(observation)
     models = []
     for (provider, model), calls in sorted(groups.items(), key=lambda row: (row[0][0] or '', row[0][1] or '')):
         usage = aggregate_usage(calls, context=observations)

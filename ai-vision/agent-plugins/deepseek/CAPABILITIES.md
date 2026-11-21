@@ -32,7 +32,7 @@
 | C4 finish reason | ✅ | tool-calls / interrupted / stopReason → `gen_ai.response.finish_reasons` |
 | C5 cache tokens | ✅ | `cacheReadTokens` / `cacheWriteTokens` → cache attrs/metrics；字段存在时保留零值，缺失时省略 |
 | C6 reasoning | 🟡 | assistant/message reasoning text 进入模型输出；原生 reasoningTokens 可用时采集。pi adapter 折入 output 后没有独立 reasoning 计数，不推算 |
-| C7 retry / error | 🟡 | `agent/request-error` → retry count + error metrics；`llm/retry` transcript 事件暂未消费 |
+| C7 retry / error | 🟡 | `llm/retry-started` → `agentic.llm.retry_count`；`agent/request-error` → error metrics 和兼容字段 `agentic.llm.retry.count` |
 | D1 conversation messages | ✅ | 原生 system/developer/user/assistant/tool 角色与 tool_calls（opt-in）；单次输入不包含该调用之后的工具结果 |
 | D2 system prompt | ✅ | 0.1 `request/header.header.system` / 0.2 `system/message` → `gen_ai.system_instructions`（opt-in） |
 | D3 tool definitions | ✅ | `request/header.header.tools` → `gen_ai.tool.definitions`（opt-in） |

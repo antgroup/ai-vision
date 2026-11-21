@@ -42,6 +42,8 @@ function fixture(respond: (call: FetchCall) => Response | Promise<Response>) {
       (name: string) => {
         if (name === "@/lib/api") return load("lib/api.ts")
         if (name === "@/lib/timeFilter") return {}
+        if (name === "@/components/labs/shared/localImportBatchCollision")
+          return load("components/labs/shared/localImportBatchCollision.ts")
         // Unrelated space helpers in the shared API are not invoked here.
         if (name === "@/lib/schemas/space") return {}
         throw new Error(`Unexpected API dependency: ${name}`)
@@ -332,4 +334,89 @@ test("Skill history can request unknown outcomes without losing scope or their r
   assert.equal(params.get("fromTimestamp"), "2026-10-29T01:00:00Z")
   assert.equal(params.get("toTimestamp"), "2026-10-29T02:00:00Z")
   assert.deepEqual(result.calls, [call])
+})
+
+test("Skill configuration detail encodes the exact saved name and distinguishes missing definitions", async () => {
+  const name = "../docs/技能"
+  const config = { name, raw: { content: "# Saved definition" } }
+  const controller = new AbortController()
+  const ui = fixture(({ path }) => {
+    const url = new URL(path, "https://fixture.invalid")
+    if (url.searchParams.get("name") === name) return response(200, config)
+    return new Response(JSON.stringify({ code: 3104 }), { status: 404 })
+  })
+  assert.deepEqual(
+    await ui.api.getSkillConfig("team/one", name, controller.signal),
+    config
+  )
+  const url = new URL(ui.calls[0].path, "https://fixture.invalid")
+  assert.equal(url.pathname, configPath)
+  assert.equal(url.searchParams.get("view"), "detail")
+  assert.equal(url.searchParams.get("name"), name)
+  assert.equal(ui.calls[0].options.signal, controller.signal)
+  assert.equal(await ui.api.getSkillConfig("team/one", "missing"), null)
+})
+
+test("Skill conflict lookup preserves requested spelling and backend versions", async () => {
+  const stored = [{ requestedName: "docs", name: "Docs", version: "current" }]
+  const ui = fixture(() => response(200, stored))
+  const controller = new AbortController()
+  assert.deepEqual(
+    await ui.api.checkSkillImportConflicts(
+      "team/one",
+      ["docs", "other"],
+      controller.signal
+    ),
+    stored
+  )
+  assert.equal(ui.calls[0].path, `${configPath}?view=conflicts`)
+  assert.equal(ui.calls[0].options.method, "POST")
+  assert.equal(
+    ui.calls[0].options.body,
+    JSON.stringify({ names: ["docs", "other"] })
+  )
+  assert.equal(ui.calls[0].options.signal, controller.signal)
+})
+
+test("Skill batch sends explicit create-only or overwrite intent separately from legacy writes", async () => {
+  const ui = fixture(() => response(200))
+  await ui.api.saveSkillConfigBatch("team/one", [])
+  await ui.api.saveSkillConfigBatch("team/one", [], [])
+  await ui.api.saveSkillConfigBatch(
+    "team/one",
+    [],
+    [{ name: "docs", version: "current" }]
+  )
+  assert.deepEqual(
+    ui.calls.map(({ path, options }) => [
+      path,
+      options.method,
+      JSON.parse(String(options.body)),
+    ]),
+    [
+      [`${configPath}?response=receipts`, "PUT", { skills: [] }],
+      [
+        `${configPath}?response=receipts`,
+        "PUT",
+        { skills: [], overwrites: [] },
+      ],
+      [
+        `${configPath}?response=receipts`,
+        "PUT",
+        {
+          skills: [],
+          overwrites: [{ name: "docs", version: "current" }],
+        },
+      ],
+    ]
+  )
+})
+
+test("Skill deletion sends the original saved name as a query argument", async () => {
+  const ui = fixture(() => response(200, null))
+  await ui.api.deleteSkillConfig("team/one", "../docs/技能")
+  const url = new URL(ui.calls[0].path, "https://fixture.invalid")
+  assert.equal(url.pathname, configPath)
+  assert.equal(url.searchParams.get("name"), "../docs/技能")
+  assert.equal(ui.calls[0].options.method, "DELETE")
 })

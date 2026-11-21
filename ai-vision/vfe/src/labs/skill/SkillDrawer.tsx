@@ -643,12 +643,14 @@ const CALL_LINK_CLASS =
 
 function RecentCalls({
   calls,
+  emptyMessage,
   currentTraceId,
   onSelectSpan,
   onNavigateToTrace,
   traceHref,
 }: {
   calls: SkillCallRef[]
+  emptyMessage?: string
   currentTraceId?: string
   onSelectSpan?: (spanId: string) => void
   onNavigateToTrace?: (traceId: string, spanId?: string) => void
@@ -658,7 +660,7 @@ function RecentCalls({
   if (!calls.length) {
     return (
       <p className="rounded-[12px] border border-dashed border-[var(--color-border)] px-3 py-6 text-center text-xs leading-5 text-[var(--color-text-description)]">
-        {t("labs.skill.drawer.noCalls")}
+        {emptyMessage ?? t("labs.skill.drawer.noCalls")}
       </p>
     )
   }
@@ -993,7 +995,15 @@ function SkillCallHistory({
               { count: result.spanCount }
             )}
           </p>
-          <RecentCalls calls={result.calls ?? []} {...exits} />
+          <RecentCalls
+            calls={result.calls ?? []}
+            emptyMessage={
+              result.total === 0 && result.unfilteredTotal > 0
+                ? t("labs.skill.drawer.noMatchingCalls")
+                : undefined
+            }
+            {...exits}
+          />
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
             <Button
               size="sm"

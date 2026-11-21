@@ -58,6 +58,11 @@ export interface McpServerConfig {
   memory?: MemoryToolSemantics
 }
 
+export type McpConfigSummary = Omit<McpServerConfig, "raw"> & {
+  /** Legacy description stored in raw for some configurations; display only. */
+  displayDescription?: string
+}
+
 export interface McpServerStats {
   /** Distinct tools seen in spans, not the full list the server offers. */
   calledToolCount: number

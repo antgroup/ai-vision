@@ -15,7 +15,7 @@ from apps.core.tests.helpers import create_test_agent
 from apps.core.models import Agent, ObservationSubjectBinding
 from apps.core.trace_query.metrics_projection import ROW_FIELDS
 from apps.core.trace_query.native_query import NativeTraceWindow
-from apps.core.trace_query.semantics.usage import aggregate_usage
+from apps.core.trace_query.semantics.usage import aggregate_usage, pricing_identity
 from apps.core.trace_query.signoz.provider import SignozTraceProvider
 from apps.core.trace_query.signoz.read_model_projection import build_projection
 
@@ -88,10 +88,11 @@ class PricingInventorySnapshotTests(TestCase):
         models = {row['model']: row for row in data['models']}
         self.assertEqual(models['same']['calls'], 2)
         self.assertEqual(models['same']['costCoverage']['knownSubtotal'], '0.00001')
+        self.assertEqual(models[None]['costCoverage']['unknownReasons'], {'model_unknown': 1})
         self.assertEqual(models['not-priced']['costCoverage']['unknownReasons'], {'price_not_configured': 1})
         for model, row in models.items():
             self.assertEqual(row['costCoverage'], aggregate_usage(
-                [item for item in observations if item['model'] == model], context=observations)['costCoverage'])
+                [item for item in observations if pricing_identity(item['model']) == model], context=observations)['costCoverage'])
         self.get.assert_called_once()
         self.assertTrue(self.get.call_args.args[0].endswith('/read-model/metrics-window'))
         self.assertEqual(self.get.call_args.kwargs['params']['space_id'], str(self.space.uuid))
@@ -122,6 +123,27 @@ class PricingInventorySnapshotTests(TestCase):
         self.assertEqual(result.status_code, 200, result.data)
         self.assertEqual(result.data['data']['costCoverage']['billableCalls'], 1)
         self.get.assert_called_once()
+        self.legacy.assert_not_called()
+
+    def test_cache_usage_without_separate_rate_keeps_native_inventory_estimate(self):
+        pricing.create_rule(space=self.space, user=self.users[0], data={
+            'provider': 'openai', 'model': 'cache-optional', 'kind': 'manual',
+            'effectiveFrom': '2026-01-01T00:00:00Z', 'rates': {'input': '1', 'output': '1'},
+        })
+        detail = self.detail(model='cache-optional')
+        detail['spans'][0]['attributes'].update({
+            'gen_ai.usage.input_tokens': 14250, 'gen_ai.usage.output_tokens': 87,
+            'gen_ai.usage.cache_read.input_tokens': 8960,
+        })
+        result = self.serve(self.payload([detail]))
+        self.assertEqual(result.status_code, 200, result.data)
+        coverage = result.data['data']['models'][0]['costCoverage']
+        self.assertEqual((coverage['knownCostCalls'], coverage['unknownCalls'], coverage['knownSubtotal']),
+                         (0, 1, '0.005377'))
+        self.assertEqual(coverage['unknownReasons'], {'price_bucket_missing': 1})
+        raw = self.serve(self.payload([detail], raw=True))
+        self.assertEqual(raw.status_code, 200, raw.data)
+        self.assertEqual(raw.data['data']['models'][0]['costCoverage'], coverage)
         self.legacy.assert_not_called()
 
     def test_hybrid_inventory_uses_verified_demo_scope_and_retains_ordinary_raw_spans(self):
@@ -266,6 +288,7 @@ class PricingInventorySnapshotTests(TestCase):
             {'listPriceEquivalent': 3},
             {'listPriceEquivalent': {'total': 'not-money'}},
             {'pricingSource': ['invalid']},
+            {'knownSubtotal': 'not-money'},
             {'reason': {'private': 'not a reason'}},
             {'estimateListPrice': 'yes'},
         ):

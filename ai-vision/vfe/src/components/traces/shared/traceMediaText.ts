@@ -2,6 +2,8 @@
 export const TRACE_MEDIA_MAX_BYTES = 16 * 1024 * 1024
 export const TRACE_HTML_PREVIEW_MAX_BYTES = 512 * 1024
 
+export class TraceHtmlRequestError extends Error {}
+
 export async function fetchTraceHtml(
   source: string,
   signal: AbortSignal,
@@ -20,6 +22,11 @@ export async function fetchTraceHtml(
     credentials: "omit",
     redirect,
     referrerPolicy: "no-referrer",
+  }).catch((cause: unknown) => {
+    if (signal.aborted) throw cause
+    throw new TraceHtmlRequestError("Could not read the HTML response", {
+      cause,
+    })
   })
   if (
     response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !==

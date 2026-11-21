@@ -95,6 +95,7 @@ export function nativeUiHarness(boundaries: Record<string, unknown> = {}) {
   modules["./TraceDocumentPreviews"] =
     modules["@/components/traces/shared/TraceDocumentPreviews"]
   const actualModules: Record<string, string> = {
+    "./DshSpanDetails": "components/traces-otel/DshSpanDetails.tsx",
     "@/agents/lib/agent-display": "agents/lib/agent-display.ts",
     "./TraceOverviewExcerpt": "components/traces-otel/TraceOverviewExcerpt.tsx",
     "@/components/traces-otel/TraceOverviewExcerpt":
@@ -207,6 +208,8 @@ export function nativeUiHarness(boundaries: Record<string, unknown> = {}) {
     "@/components/traces/shared/traceCodeTextParts":
       "components/traces/shared/traceCodeTextParts.ts",
     "./traceCodeTextParts": "components/traces/shared/traceCodeTextParts.ts",
+    "../traces/shared/traceCodeTextParts.ts":
+      "components/traces/shared/traceCodeTextParts.ts",
     "./TraceCodeHighlight": "components/traces/shared/TraceCodeHighlight.tsx",
     "./traceCodeHighlighter":
       "components/traces/shared/traceCodeHighlighter.ts",

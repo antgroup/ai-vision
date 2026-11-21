@@ -10,7 +10,7 @@ import { PricingLabel } from "./PricingLabel"
 import { searchPricingCatalog } from "./api"
 import { RateSummary, type RuleDraft } from "./PricingRuleForm"
 import { CostSummary } from "./CostSummary"
-import { pricingFailureReasons } from "./presentation"
+import { knownPricingIdentity, pricingFailureReasons } from "./presentation"
 import type { CostCoverage } from "./types"
 
 export interface ModelIdentity {
@@ -37,16 +37,18 @@ export function PricingModelResolver({
   onReturnFocus: () => void
 }) {
   const { t } = useTranslation()
-  const [provider, setProvider] = useState(identity.provider ?? "")
-  const [model, setModel] = useState(identity.model ?? "")
+  const observedProvider = knownPricingIdentity(identity.provider)
+  const observedModel = knownPricingIdentity(identity.model)
+  const [provider, setProvider] = useState(observedProvider ?? "")
+  const [model, setModel] = useState(observedModel ?? "")
   const [query, setQuery] = useState("")
   const [reference, setReference] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const [filters, setFilters] = useState<
     Parameters<typeof searchPricingCatalog>[1] | null
   >(
-    identity.provider && identity.model
-      ? { provider: identity.provider, model: identity.model }
+    observedProvider && observedModel
+      ? { provider: observedProvider, model: observedModel }
       : null
   )
   const candidates = useQuery({
@@ -54,7 +56,9 @@ export function PricingModelResolver({
     queryFn: () => searchPricingCatalog(spaceId, filters ?? {}),
     enabled: filters !== null,
   })
-  const hasIdentity = Boolean(provider.trim() && model.trim())
+  const hasIdentity = Boolean(
+    knownPricingIdentity(provider) && knownPricingIdentity(model)
+  )
   const search = () => {
     setExpanded(false)
     setFilters({
@@ -116,14 +120,9 @@ export function PricingModelResolver({
                   <p key={code}>
                     {t("modelPricing.cost.reasonCount", {
                       count,
-                      reason: t(
-                        code === "model_unknown"
-                          ? "modelPricing.inventory.missingModel"
-                          : `modelPricing.reasons.${code}`,
-                        {
-                          defaultValue: t("modelPricing.reasons.unavailable"),
-                        }
-                      ),
+                      reason: t(`modelPricing.reasons.${code}`, {
+                        defaultValue: t("modelPricing.reasons.unavailable"),
+                      }),
                     })}
                   </p>
                 ))}
@@ -141,14 +140,9 @@ export function PricingModelResolver({
                   <p key={code}>
                     {t("modelPricing.cost.reasonCount", {
                       count,
-                      reason: t(
-                        code === "model_unknown"
-                          ? "modelPricing.inventory.missingModel"
-                          : `modelPricing.reasons.${code}`,
-                        {
-                          defaultValue: t("modelPricing.reasons.unavailable"),
-                        }
-                      ),
+                      reason: t(`modelPricing.reasons.${code}`, {
+                        defaultValue: t("modelPricing.reasons.unavailable"),
+                      }),
                     })}
                   </p>
                 ))}
@@ -156,7 +150,7 @@ export function PricingModelResolver({
             )}
           </section>
         )}
-        {(!identity.provider || !identity.model) && (
+        {coverage && (!observedProvider || !observedModel) && (
           <p className="text-xs leading-relaxed text-muted-foreground">
             {t("modelPricing.workspace.missingIdentityHint")}
           </p>

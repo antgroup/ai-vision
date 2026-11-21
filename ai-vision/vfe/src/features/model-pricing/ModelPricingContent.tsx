@@ -299,7 +299,7 @@ export default function ModelPricingContent({ spaceId }: { spaceId: string }) {
                       </div>
                       <CompactCurrencySelector />
                     </div>
-                    <div id="pricing-models" className="space-y-4">
+                    <div id="pricing-models" className="@container space-y-4">
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <h2 className="font-semibold">
                           {t("modelPricing.workspace.modelsTitle")}
@@ -339,7 +339,7 @@ export default function ModelPricingContent({ spaceId }: { spaceId: string }) {
                         />
                       ) : (
                         <>
-                          <div className="divide-y md:hidden">
+                          <div className="divide-y @min-[44rem]:hidden">
                             {visibleModels.map((row) => {
                               const state = pricingModelState(row.costCoverage)
                               return (
@@ -408,26 +408,27 @@ export default function ModelPricingContent({ spaceId }: { spaceId: string }) {
                               )
                             })}
                           </div>
-                          <div className="hidden overflow-x-auto md:block">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>
+                          <div className="hidden @min-[44rem]:block">
+                            <Table className="table-fixed">
+                              <TableHeader className="bg-muted/40 [&_th]:h-10 [&_th]:text-xs [&_th]:text-muted-foreground">
+                                <TableRow className="hover:bg-transparent">
+                                  <TableHead scope="col">
                                     {t("modelPricing.model")}
                                   </TableHead>
-                                  <TableHead className="text-right">
+                                  <TableHead scope="col">
                                     {t("modelPricing.inventory.calls")}
                                   </TableHead>
-                                  <TableHead>
+                                  <TableHead scope="col">
                                     {t("modelPricing.workspace.valuation")}
                                   </TableHead>
-                                  <TableHead>
+                                  <TableHead scope="col">
                                     {t("modelPricing.workspace.status")}
                                   </TableHead>
-                                  <TableHead className="text-right">
-                                    <span className="sr-only">
-                                      {t("modelPricing.actions")}
-                                    </span>
+                                  <TableHead
+                                    scope="col"
+                                    className="w-40 pr-10 text-right"
+                                  >
+                                    {t("modelPricing.actions")}
                                   </TableHead>
                                 </TableRow>
                               </TableHeader>
@@ -444,7 +445,7 @@ export default function ModelPricingContent({ spaceId }: { spaceId: string }) {
                                       ])}
                                       data-pricing-model
                                     >
-                                      <TableCell className="max-w-96 min-w-48 py-3 whitespace-normal">
+                                      <TableCell className="whitespace-normal">
                                         <p className="font-medium break-all">
                                           {row.model ||
                                             t(
@@ -458,12 +459,12 @@ export default function ModelPricingContent({ spaceId }: { spaceId: string }) {
                                             )}
                                         </p>
                                       </TableCell>
-                                      <TableCell className="text-right tabular-nums">
+                                      <TableCell className="tabular-nums">
                                         {row.calls.toLocaleString(
                                           i18n.language
                                         )}
                                       </TableCell>
-                                      <TableCell className="min-w-36 tabular-nums">
+                                      <TableCell className="whitespace-normal tabular-nums">
                                         <CostSummary
                                           coverage={row.costCoverage}
                                           compact
@@ -472,7 +473,7 @@ export default function ModelPricingContent({ spaceId }: { spaceId: string }) {
                                       </TableCell>
                                       <TableCell>
                                         <span
-                                          className={`inline-flex items-center gap-1.5 text-xs whitespace-nowrap ${needsAttention(row) ? "text-foreground" : "text-muted-foreground"}`}
+                                          className={`inline-flex items-center gap-1.5 text-xs whitespace-normal ${needsAttention(row) ? "text-foreground" : "text-muted-foreground"}`}
                                         >
                                           {state === "complete" && (
                                             <Check className="size-3.5" />
@@ -486,6 +487,7 @@ export default function ModelPricingContent({ spaceId }: { spaceId: string }) {
                                         <Button
                                           size="sm"
                                           variant="ghost"
+                                          className="px-2"
                                           data-pricing-model-action
                                           onClick={() => openModel(row)}
                                         >

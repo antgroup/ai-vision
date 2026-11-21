@@ -107,7 +107,11 @@ export async function prepare(page: Page, language = "en-US") {
   }, language)
 }
 
-export async function publicTrace(page: Page, detail = trace) {
+export async function publicTrace(
+  page: Page,
+  detail = trace,
+  agentProduct = "Codex"
+) {
   const unexpected: string[] = []
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname
@@ -115,7 +119,11 @@ export async function publicTrace(page: Page, detail = trace) {
       await route.fulfill({
         json: {
           code: 0,
-          data: { trace: detail, space_id: "space-a", agent_product: "Codex" },
+          data: {
+            trace: detail,
+            space_id: "space-a",
+            agent_product: agentProduct,
+          },
         },
       })
     } else {
@@ -231,6 +239,11 @@ export async function mcpPage(
     const method = request.method()
     const ok = (data: unknown) =>
       route.fulfill({ json: { code: 0, message: "success", data } })
+    const isImportCheck =
+      method === "POST" &&
+      new URL(request.url()).searchParams.get("view") === "conflicts" &&
+      /\/labs\/(mcp|skill)\/configs$/.test(path)
+    if (isImportCheck) return ok([])
     if (method !== "GET")
       writes.push({
         method,
@@ -314,7 +327,10 @@ export async function mcpPage(
         meta: { page: 1, limit: 20, totalItems: 0, totalPages: 0 },
       })
     if (path.endsWith("/labs/mcp/observations")) {
-      observations.push(new URL(request.url()))
+      const url = new URL(request.url())
+      observations.push(url)
+      const detailServer = url.searchParams.get("detailServer")
+      const summary = url.searchParams.get("view") === "summary"
       if (traceDetail)
         return ok({
           overview: {
@@ -328,31 +344,43 @@ export async function mcpPage(
             availableTraces: 1,
             truncated: false,
           },
-          servers: [
-            {
-              serverId: "github",
-              sourceAgents: ["Codex"],
-              stats: { calls: 1, errorRate: 1, p50Ms: 2000, p95Ms: 2000 },
-              tools: [
-                {
-                  toolName: "search",
-                  rawName: "mcp__github__search",
-                  stats: { calls: 1, errorRate: 1, p50Ms: 2000, p95Ms: 2000 },
-                },
-              ],
-              recentCalls: [
-                {
-                  traceId: "labs-trace",
-                  spanId: "mcp",
-                  toolName: "search",
-                  status: "error",
-                  durationMs: 2000,
-                  timestamp: time(2400),
-                  agentProduct: "Codex",
-                },
-              ],
-            },
-          ],
+          servers:
+            detailServer && detailServer !== "github"
+              ? []
+              : [
+                  {
+                    serverId: "github",
+                    sourceAgents: ["Codex"],
+                    stats: { calls: 1, errorRate: 1, p50Ms: 2000, p95Ms: 2000 },
+                    ...(summary
+                      ? { calledToolCount: 1, lastSeen: time(2400) }
+                      : {
+                          tools: [
+                            {
+                              toolName: "search",
+                              rawName: "mcp__github__search",
+                              stats: {
+                                calls: 1,
+                                errorRate: 1,
+                                p50Ms: 2000,
+                                p95Ms: 2000,
+                              },
+                            },
+                          ],
+                          recentCalls: [
+                            {
+                              traceId: "labs-trace",
+                              spanId: "mcp",
+                              toolName: "search",
+                              status: "error",
+                              durationMs: 2000,
+                              timestamp: time(2400),
+                              agentProduct: "Codex",
+                            },
+                          ],
+                        }),
+                  },
+                ],
         })
       return ok({
         overview: {
@@ -368,15 +396,45 @@ export async function mcpPage(
         servers: [],
       })
     }
-    if (path.endsWith("/labs/skill/configs")) return ok([])
+    if (path.endsWith("/labs/skill/configs")) {
+      if (new URL(request.url()).searchParams.get("view") === "detail")
+        return route.fulfill({ status: 404, json: { code: 3104 } })
+      return ok([])
+    }
     if (path.endsWith("/labs/mcp/configs")) {
-      if (method === "PUT")
+      if (method === "PUT") {
         configs = request
           .postDataJSON()
           .configs.map((config: Record<string, unknown>) => ({
             ...config,
             importedAt: time(0),
           }))
+        if (new URL(request.url()).searchParams.get("response") === "receipts")
+          return ok(
+            configs.map(({ serverId, importedAt }) => ({
+              requestedServerId: serverId,
+              serverId,
+              importedAt,
+            }))
+          )
+      }
+      const query = new URL(request.url()).searchParams
+      if (query.get("view") === "detail") {
+        const config = configs.find(
+          ({ serverId }) => serverId === query.get("serverId")
+        )
+        return config
+          ? ok(config)
+          : route.fulfill({ status: 404, json: { code: 3006 } })
+      }
+      if (query.get("view") === "summary")
+        return ok(
+          configs.map((config) => {
+            const summary = { ...config }
+            delete summary.raw
+            return summary
+          })
+        )
       return ok(configs)
     }
     if (path.endsWith("/labs/mcp/configs/github/tools")) {

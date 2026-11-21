@@ -1123,6 +1123,17 @@ groups:
         brief: "Turn index within a conversation (0-based)."
         examples: [0, 1, 2]
 
+      - id: agentic.step.number
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Host-supplied step number within a turn (1-based)."
+        note: >
+          DeepSeek Harness model calls, tools, and subagent invocations can share
+          the number of their originating DSH step. Preserve the host number
+          when present; display order is insufficient evidence for this field.
+        examples: [1, 2, 3]
+
       - id: agentic.turn.synthetic
         type: boolean
         stability: experimental
@@ -1358,6 +1369,17 @@ groups:
         requirement_level: recommended
         brief: "LLM request duration in milliseconds, from llm_input to llm_output."
         examples: [1200, 5000, 15000]
+
+      - id: agentic.llm.generation.duration_ms
+        type: int
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Elapsed milliseconds from the first output token to generation completion."
+        note: >
+          Emit only when both timestamps describe the same observed generation.
+          Omit the field when either boundary is missing or the generation
+          timing cannot be distinguished from retries or interruption.
+        examples: [850, 2100]
 
       - id: agentic.llm.ttfb_ms
         type: int

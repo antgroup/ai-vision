@@ -388,6 +388,7 @@ class TraceUsageSemanticsTests(unittest.TestCase):
                 "output": "3",
                 "cacheReadInput": "0.25",
                 "cacheWriteInput": "2",
+                "reasoning": "4",
                 "version": "test",
                 "effectiveFrom": "2026-01-01T00:00:00Z",
             }
@@ -420,10 +421,10 @@ class TraceUsageSemanticsTests(unittest.TestCase):
                 self.assertEqual(
                     (result["input"], result["output"], result["total"]), (9, 13, 22)
                 )
-                self.assertEqual(result["cost"]["total"], "53")
+                self.assertEqual(result["cost"]["total"], "60")
                 self.assertEqual(
                     result["cost"]["details"],
-                    {"input": "4", "output": "39", "cacheWriteInput": "10"},
+                    {"input": "4", "output": "18", "cacheWriteInput": "10", "reasoning": "28"},
                 )
                 self.assertEqual(result["cost"]["source"], "estimated")
                 self.assertIsNone(result["cost"]["reason"])

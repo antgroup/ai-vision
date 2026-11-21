@@ -59,6 +59,7 @@ export function TraceRootIO({
         <SpanTypedContent
           value={value}
           treeLayout="outline"
+          paginateTree={variant === "output"}
           showCopy={false}
           previewLines={4}
           renderFrame={(controls, content) => (

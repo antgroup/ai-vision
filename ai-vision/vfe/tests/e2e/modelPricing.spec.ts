@@ -1037,6 +1037,97 @@ for (const [language, theme, width] of [
     })
   })
 }
+test("missing measured bucket rates keep a known subtotal separate from a complete cost", async ({
+  page,
+}, info) => {
+  const language = "zh-CN"
+  await page.setViewportSize({ width: 390, height: 844 })
+  await pricingPage(page, {
+    language,
+    coverage: {
+      ...initialCoverage,
+      knownCostCalls: 0,
+      catalogCalls: 0,
+      unknownCalls: 2,
+      knownSubtotal: "0.00018",
+      unknownReasons: { price_bucket_missing: 2 },
+    },
+  })
+  const row = page.locator("[data-pricing-model]:visible")
+  await expect(row).toContainText(
+    uiText(language, "modelPricing.workspace.states.missingPrice")
+  )
+  await expect(row.locator("[data-cost-row]")).toContainText(/USD\s*0\.00018/)
+  await row.locator("[data-cost-details-trigger]").click()
+  const details = page.locator("[data-cost-details-body]")
+  await expect(details).toContainText(
+    uiText(language, "modelPricing.cost.popup.partialConclusion")
+  )
+  await expect(details).toContainText(
+    uiText(language, "modelPricing.cost.popup.reasons.price")
+  )
+  await page.screenshot({
+    path: info.outputPath("missing-rate-subtotal.png"),
+    animations: "disabled",
+  })
+})
+
+test("all measured usage unpriced cannot be mistaken for a complete zero cost", async ({
+  page,
+}, info) => {
+  const language = "zh-CN"
+  await pricingPage(page, {
+    language,
+    coverage: {
+      ...initialCoverage,
+      knownCostCalls: 0,
+      catalogCalls: 0,
+      unknownCalls: 2,
+      knownSubtotal: null,
+      unknownReasons: { price_bucket_missing: 2 },
+    },
+  })
+  const row = page.locator("[data-pricing-model]:visible")
+  await expect(row).toContainText(
+    uiText(language, "modelPricing.workspace.states.missingPrice")
+  )
+  await expect(row.locator("[data-cost-row]")).toContainText(
+    uiText(language, "traceLabels.unknown")
+  )
+  await expect(row.locator("[data-cost-row]")).not.toContainText(/USD\s*0/)
+  await page.screenshot({
+    path: info.outputPath("missing-rate-unknown.png"),
+    animations: "disabled",
+  })
+})
+
+test("subscription keeps a partial estimate visible even when no call is fully priced", async ({
+  page,
+}) => {
+  await pricingPage(page, {
+    coverage: {
+      ...initialCoverage,
+      knownCostCalls: 0,
+      catalogCalls: 0,
+      subscriptionCalls: 2,
+      listPriceEquivalentCalls: 0,
+      unknownCalls: 2,
+      knownSubtotal: null,
+      listPriceEquivalentSubtotal: "0.00018",
+      listPriceEquivalentSources: { official_catalog: 2 },
+      unknownReasons: { subscription_billing: 2 },
+      listPriceEquivalentUnknownReasons: { price_bucket_missing: 2 },
+    },
+  })
+  const row = page.locator("[data-pricing-model]:visible")
+  await expect(row.locator("[data-cost-row]")).toContainText(
+    /Partial subscription estimate\s+USD\s*0\.00018/
+  )
+  await expect(row.locator("[data-subscription-equivalent]")).toContainText(
+    uiText("en-US", "modelPricing.cost.subscriptionActualUnknown")
+  )
+})
+
 test("mixed model separates known costs from the official subscription estimate", async ({
   page,
 }) => {
@@ -1542,7 +1633,7 @@ for (const [language, theme, width] of [
         listPriceEquivalentCalls: 1,
         listPriceEquivalentSources: { manual: 1 },
         unknownReasons: { subscription_billing: 2 },
-        listPriceEquivalentUnknownReasons: { cache_usage_missing: 1 },
+        listPriceEquivalentUnknownReasons: { usage_missing: 1 },
       },
     })
     const row = page.locator("[data-pricing-model]:visible").first()
@@ -1570,9 +1661,7 @@ for (const [language, theme, width] of [
     await expect(result).toContainText(/USD\s*0\.00125/)
     await expect(
       result.locator("[data-pricing-equivalent-gaps]")
-    ).toContainText(
-      uiText(language, "modelPricing.reasons.cache_usage_missing")
-    )
+    ).toContainText(uiText(language, "modelPricing.reasons.usage_missing"))
     const resultBounds = await result.boundingBox()
     const searchBounds = await dialog.locator("#catalog-provider").boundingBox()
     expect(resultBounds!.y + resultBounds!.height).toBeLessThan(searchBounds!.y)
@@ -1593,7 +1682,7 @@ for (const [language, theme, width] of [
 for (const missing of ["provider", "model"] as const) {
   test(`null observed ${missing} remains inspectable and requires explicit identity completion`, async ({
     page,
-  }) => {
+  }, info) => {
     const language = missing === "provider" ? "zh-CN" : "en-US"
     await page.setViewportSize({
       width: missing === "provider" ? 390 : 1440,
@@ -1632,6 +1721,41 @@ for (const missing of ["provider", "model"] as const) {
       uiText(language, "modelPricing.workspace.missingIdentityHint")
     )
     expect(fixture.searches).toHaveLength(0)
+    await dialog.locator(`#catalog-${missing}`).fill(" unknown ")
+    await dialog
+      .getByRole("button", {
+        name: uiText(language, "modelPricing.workspace.manualAction"),
+        exact: true,
+      })
+      .click()
+    const invalidForm = page.getByRole("dialog")
+    await invalidForm
+      .locator("#pricing-provider")
+      .fill(missing === "provider" ? " UnKnown " : "openai")
+    await invalidForm
+      .locator("#pricing-model")
+      .fill(missing === "model" ? " UnKnown " : "catalog-model")
+    await invalidForm.locator("#pricing-effective").fill("2026-10-01T00:00")
+    await invalidForm.locator("#rate-input").fill("1")
+    await invalidForm.locator("#rate-output").fill("2")
+    await expect(
+      invalidForm.getByRole("button", {
+        name: uiText(language, "modelPricing.rule.review"),
+        exact: true,
+      })
+    ).toBeDisabled()
+    expect(fixture.writes).toHaveLength(0)
+    await page.screenshot({
+      path: info.outputPath(`pricing-placeholder-${missing}.png`),
+      animations: "disabled",
+    })
+    await invalidForm
+      .getByRole("button", {
+        name: uiText(language, "common.cancel"),
+        exact: true,
+      })
+      .click()
+    await row.locator("[data-pricing-model-action]").click()
     await dialog.locator("#catalog-provider").fill("openai")
     await dialog.locator("#catalog-model").fill("catalog-model")
     await dialog

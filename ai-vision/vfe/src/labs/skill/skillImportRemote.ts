@@ -1,5 +1,7 @@
 import type { RepoSkillEntry } from "./skillApi"
-import { fetchRegistrySkill, saveSkillConfigs } from "./skillApi"
+import type { LocalImportOverwrite } from "@/components/labs/shared/localImportReview"
+import { LocalImportBatchCollision } from "@/components/labs/shared/localImportBatchCollision"
+import { fetchRegistrySkill, saveSkillConfigBatch } from "./skillApi"
 import { parseSkillConfigText } from "./skillConfigImport"
 import type { SkillConfig } from "./types"
 
@@ -97,15 +99,47 @@ export async function installRepoSkills(
     }
     unique.set(config.name, config)
   }
+  const saved = await saveSkillConfigBatches(spaceId, [...unique.values()])
+  saved.savedNames.forEach((name) => savedNames.add(name))
+  return {
+    saved: savedNames.size,
+    savedNames: [...savedNames],
+    skipped,
+    failedEntries,
+    pendingConfigs: saved.pendingConfigs,
+    errors: [...errors, ...saved.errors],
+  }
+}
+
+/** Reuse the configured Space's upsert API and track confirmation per batch. */
+export async function saveSkillConfigBatches(
+  spaceId: string,
+  configs: SkillConfig[],
+  maxBytes?: number,
+  shouldContinue = () => true,
+  overwrites?: readonly LocalImportOverwrite[]
+) {
+  const savedNames: string[] = []
   const pendingConfigs: SkillConfig[] = []
-  const candidates = [...unique.values()]
-  for (let start = 0; start < candidates.length; start += SAVE_BATCH_SIZE) {
-    const batch = candidates.slice(start, start + SAVE_BATCH_SIZE)
+  const errors: string[] = []
+  let batchCollision: LocalImportBatchCollision | undefined
+  const encoder = maxBytes ? new TextEncoder() : undefined
+  const overwriteByName = new Map(overwrites?.map((item) => [item.name, item]))
+  const envelopeBytes = JSON.stringify({
+    skills: [],
+    overwrites: overwrites && [],
+  }).length
+  let batch: SkillConfig[] = []
+  let batchOverwrites: LocalImportOverwrite[] | undefined = overwrites && []
+  let bytes = envelopeBytes
+
+  async function flush() {
+    if (!batch.length) return
     try {
-      const saved = await saveSkillConfigs(spaceId, batch)
-      const confirmed = new Set(saved.map((config) => config.name))
+      const saved = await saveSkillConfigBatch(spaceId, batch, batchOverwrites)
+      const confirmed = new Set(saved.map((receipt) => receipt.requestedName))
       for (const config of batch) {
-        if (confirmed.has(config.name)) savedNames.add(config.name)
+        if (confirmed.has(config.name)) savedNames.push(config.name)
         else pendingConfigs.push(config)
       }
       if (batch.some((config) => !confirmed.has(config.name)))
@@ -113,14 +147,50 @@ export async function installRepoSkills(
     } catch (error) {
       pendingConfigs.push(...batch)
       errors.push(error instanceof Error ? error.message : String(error))
+      if (
+        error instanceof LocalImportBatchCollision &&
+        error.matchesBatch(batch.map(({ name }) => name))
+      )
+        batchCollision = error
     }
+    batch = []
+    batchOverwrites = overwrites && []
+    bytes = envelopeBytes
   }
-  return {
-    saved: savedNames.size,
-    savedNames: [...savedNames],
-    skipped,
-    failedEntries,
-    pendingConfigs,
-    errors,
+
+  for (const [index, config] of configs.entries()) {
+    const overwrite = overwriteByName.get(config.name)
+    const itemBytes = encoder
+      ? encoder.encode(JSON.stringify(config)).length
+      : 0
+    const overwriteBytes =
+      overwrite && encoder
+        ? encoder.encode(JSON.stringify(overwrite)).length
+        : 0
+    const size = itemBytes + overwriteBytes
+    let separators =
+      Number(batch.length > 0) +
+      Number(!!overwrite && !!batchOverwrites?.length)
+    if (
+      batch.length === SAVE_BATCH_SIZE ||
+      (maxBytes && bytes + size + separators > maxBytes)
+    ) {
+      await flush()
+      separators = 0
+    }
+    if (batchCollision || !shouldContinue()) {
+      pendingConfigs.push(...batch, ...configs.slice(index))
+      return { savedNames, pendingConfigs, errors, batchCollision }
+    }
+    if (maxBytes && bytes + size > maxBytes) {
+      pendingConfigs.push(config)
+      errors.push("Skill configuration exceeds the request limit")
+      continue
+    }
+    bytes += size + separators
+    batch.push(config)
+    if (overwrite) batchOverwrites?.push(overwrite)
   }
+  await flush()
+  return { savedNames, pendingConfigs, errors, batchCollision }
 }

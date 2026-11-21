@@ -3,7 +3,10 @@
     "html": "HTML をプレビュー",
     "markdown": "Markdown をプレビュー",
     "preview": "プレビュー",
-    "source": "ソース"
+    "source": "ソース",
+    "linkPreviewError": "このウェブページは Trace でプレビューできません",
+    "linkRequestHint": "サイトがクロスオリジンアクセスを制限しているか、リンクが一時的に利用できない可能性があります。",
+    "linkResponseHint": "プレビューできる HTML が返されませんでした。"
   },
   "traceMedia": {
     "load": "読み込む",
@@ -2618,6 +2621,16 @@
     "pluginDescription": "エージェントが動作するマシンに収集プラグインをインストールすると、タスクのデータが現在の AI Vision スペースに送信されます",
     "builtInGroup": "エージェント開発フレームワーク",
     "thirdPartyGroup": "Agent アプリの接続",
+    "connection": {
+      "title": "接続情報",
+      "dialogTitle": "{{name}} · 接続情報",
+      "agentUuid": "Agent UUID",
+      "spaceUuid": "Space UUID",
+      "baseUrl": "AI Vision URL",
+      "copyField": "{{field}} をコピー",
+      "notAvailable": "取得できません",
+      "installHint": "別のマシンにインストールするには、Agent マーケットでこのアプリの接続ガイドを開いてください。"
+    },
     "removeTitle": "{{name}} をチャンネルから削除しますか？",
     "removeDescription": "削除すると {{name}} はエージェントチャンネルに表示されなくなります。マーケットからいつでも再追加でき、過去のデータには影響しません。",
     "removeCollectionHint": "データ収集も停止する場合は、CLI の接続コマンドの install を uninstall に置き換えて実行してください。",
@@ -2786,10 +2799,39 @@
   },
   "labs": {
     "common": {
+      "importConflicts": {
+        "heading": "インポートの競合",
+        "localDescription": "保存前に同名の設定を確認します。",
+        "checking": "既存の名前を確認中…",
+        "checkFailed": "既存の名前を確認できませんでした。",
+        "chooseSource": "インポート元を選択",
+        "skip": "このグループをスキップ",
+        "action": "インポート操作",
+        "keep": "既存の設定を保持",
+        "replace": "既存の設定を上書き",
+        "rename": "別名で保存",
+        "confirmReplace": "上書きを確認",
+        "willReplace": "上書き予定",
+        "newName": "新しい名前",
+        "confirmName": "名前を確認",
+        "nameConfirmed": "名前を確認済み",
+        "checkingName": "名前を確認中…",
+        "invalidName": "1～128 文字の名前を入力してください。",
+        "nameTaken": "この名前は既に使用されています。",
+        "nameCheckFailed": "名前を確認できませんでした。再試行してください。",
+        "nameMatchesAgent": "Agent が報告する名前を使用してください。",
+        "finish": "完了",
+        "savedSoFar_one": "{{count}} 件を保存しました。",
+        "savedSoFar_other": "{{count}} 件を保存しました。",
+        "duplicates_one": "同じ内容の {{count}} 件をスキップ",
+        "duplicates_other": "同じ内容の {{count}} 件をスキップ"
+      },
       "registrySource": "ソース",
       "all": "すべて",
       "close": "閉じる",
       "cancel": "キャンセル",
+      "importCancelledSaved_one": "インポートを中止しました。{{count}} 件を保存しました。",
+      "importCancelledSaved_other": "インポートを中止しました。{{count}} 件を保存しました。",
       "backToTrace": "トレースに戻る",
       "collapse": "折りたたむ",
       "expand": "ガイドを表示",
@@ -2955,14 +2997,32 @@
       "import": {
         "open": "設定をインポート",
         "title": "MCP 設定をインポート",
-        "desc": "サーバー名は呼び出し記録と一致させてください。同名の設定は上書きされます。",
+        "desc": "サーバー名は呼び出し記録と一致させてください。",
+        "pasteDesc": "サーバー名は呼び出し記録と一致させてください。貼り付けた JSON を保存すると、同名の既存設定が上書きされます。",
         "tabs": {
           "search": "レジストリ検索",
           "paste": "JSON を貼り付け"
         },
+        "local": {
+          "choose": "JSON ファイルを選択",
+          "backToPaste": "貼り付けに戻る",
+          "reading": "JSON ファイルを読み込み中…",
+          "skipped": "スキップしたファイルまたはサーバー",
+          "limit": "一度に選択できるのは JSON ファイル 100 個、サーバー 500 件、合計 8 MiB までです。",
+          "partial": "{{saved}} 件を保存しました。残りの {{pending}} 件を再試行するには、もう一度保存してください。",
+          "issue": {
+            "notJson": "JSON ファイルを選択してください",
+            "tooLarge": "ファイルが 1 MiB を超えています",
+            "unreadable": "ファイルを読み込めませんでした",
+            "invalidJson": "無効な JSON です",
+            "noServers": "有効な MCP サーバーが見つかりません",
+            "invalidServers": "一部のサーバー設定が無効です",
+            "duplicate": "選択したファイル内でサーバー名が重複しています"
+          }
+        },
         "registry": {
           "directorySummary": "公開ディレクトリ索引 · プロジェクトの閲覧のみ",
-          "hint": "可観測性の設定をインポートします。エージェントへのインストールではありません。検索と設定ではパッケージのインストールやツールの実行は行いません。同名のインポートは既存設定を上書きします。",
+          "hint": "可観測性の設定をインポートすると、サーバー名で呼び出し記録を関連付けられます。MCP サーバーはエージェント環境でインストールします。",
           "searchPlaceholder": "MCP サーバーを検索",
           "source": "ソース",
           "allSources": "すべてのソース",
@@ -2995,6 +3055,7 @@
         "label": "設定 JSON",
         "privacy": "ブラウザー内で解析します。環境変数とヘッダーは名前のみ保存し、引数や URL 内の秘密情報とみられる値は ****** に置き換えます。",
         "error": {
+          "duplicateServer": "JSON 内で MCP サーバー名が重複しています。",
           "invalidJson": "有効な JSON ではありません。括弧と引用符を確認してください。",
           "noServers": "MCP サーバーが見つかりません。mcpServers オブジェクトを含め、各サーバーに command または url を指定してください。",
           "saveFailed": "保存できませんでした。しばらくしてから再試行してください。"
@@ -3292,6 +3353,7 @@
         "callOk": "成功",
         "callError": "失敗",
         "noCalls": "期間内の呼び出し記録はありません",
+        "noMatchingCalls": "絞り込み条件に一致する記録はありません",
         "viewTrace": "トレースを表示",
         "repository": "リポジトリ",
         "requestedRef": "取得時の参照",
@@ -3347,6 +3409,21 @@
         "matched": "呼び出しあり",
         "unmatched": "呼び出しなし",
         "save": "{{count}} 件を保存",
+        "local": {
+          "files": "ファイルを選択",
+          "folder": "フォルダーを選択",
+          "backToPaste": "貼り付けに戻る",
+          "reading": "Skill ファイルを読み込み中…",
+          "empty": "SKILL.md が見つかりませんでした。",
+          "limit": "1 回に選択できる Skill ファイルは 500 件、合計 16 MiB までです。",
+          "rejected": "{{path}}：{{reason}}",
+          "invalid": "形式が無効、名前が未指定、または項目が長すぎます",
+          "duplicate": "同名の Skill があります。どれか 1 つを選択してください。",
+          "tooLarge": "Skill ファイルが大きすぎます",
+          "unreadable": "ファイルを読み込めませんでした",
+          "saveFailed": "{{saved}} 件を保存しました。保存を確認できない {{pending}} 件は再試行できます。",
+          "retry": "残り {{count}} 件を再試行"
+        },
         "saveDisabled": "保存",
         "error": {
           "invalidFormat": "認識できない形式です。SKILL.md（--- で始まる front matter）、JSON マニフェスト、簡易 YAML マニフェストのいずれかを指定してください。",
@@ -3973,13 +4050,13 @@
     "collectorLabel": "収集ユーザー",
     "collectorHint": "従来の収集 ID フィールドの値です。標準 SDK のタスクユーザー ID ではありません。",
     "more": "その他のフィルター",
-    "status": "トレースの状態",
+    "status": "実行状態",
     "statusValues": {
       "error": "失敗",
       "ok": "成功",
       "unset": "未報告"
     },
-    "statusHint": "ルートノードが報告した状態です。子ノードの失敗や再試行では変わりません。",
+    "statusHint": "実行全体の状態で絞り込みます。ツールのエラーは詳細で確認できます。",
     "duration": "所要時間",
     "minimumDuration": "最小所要時間",
     "durationHint": "トレース全体の最初の開始から最後の終了まで。ms、s、minを使用でき、最小値は1 msです。",
@@ -4118,6 +4195,16 @@
     "latencyBucketHelp": "バックエンドの時間バケットのレイテンシを表示し、空バケットは不明のままにします。最小・最大は観測されたバケット値の比較で、個々のリクエストの分位数ではありません。",
     "overlappingTokenHelp": "一部のトークン項目は重複するか、構成要素が不足しています。元の推移を保持し、構成比として合計しません。",
     "tokenCompositionHelp": "折れ線は入力（キャッシュを含む）、キャッシュ入力、出力を保持します。棒・円グラフは非キャッシュ入力、キャッシュ入力、出力で構成し、キャッシュを一度だけ数えます。不完全な場合は推移のみ表示します。"
+  },
+  "dshSpanDetails": {
+    "title": "DSH ステップの位置",
+    "session": "DSH セッション ID",
+    "copySession": "DSH セッション ID をコピー",
+    "turn": "ターン {{number}}",
+    "step": "ステップ {{number}}",
+    "firstToken": "最初のトークンまでの時間",
+    "generation": "生成時間",
+    "retries": "再試行回数"
   },
   "traceLabels": {
     "emptyArray": "空の配列",
@@ -4657,6 +4744,7 @@
     "revealSelected": "選択中の呼び出しを表示",
     "title": "Span を絞り込み",
     "errors": "エラー",
+    "hideCompletedTurnToolErrors": "完了した実行のツールエラーを非表示",
     "lowConfidence": "低信頼度",
     "duration": "所要時間",
     "tokens": "モデル Token",
@@ -4959,7 +5047,7 @@
       "selectedCatalog": "選択したカタログモデル",
       "providerPlaceholder": "テレメトリーのプロバイダー ID",
       "modelPlaceholder": "テレメトリーのモデル ID",
-      "identityHint": "元の課金識別情報を保持してください。API プロトコルの互換性は同一料金を意味しません。",
+      "identityHint": "呼び出しで報告されたプロバイダーとモデル ID を入力してください。unknown は使用できません。API プロトコルに互換性があっても料金は同じとは限りません。",
       "effectiveHint": "必須項目です。過去の利用に適用する場合は過去の日時を明示的に選択してください。端末のタイムゾーンを使用します。",
       "saveError": "ルールを保存できません。プロバイダー、モデル、料金、適用開始日時を確認して再試行してください。",
       "back": "編集に戻る",
@@ -5035,6 +5123,7 @@
       "officialEquivalentLabel": "モデルの公式料金で推計",
       "archivedEquivalentLabel": "過去の公式料金で推計",
       "equivalentLabel": "サブスク利用分の推計",
+      "partialEquivalentLabel": "サブスクリプション推計小計",
       "coverageCompact": "{{known}}/{{total}} 件算出",
       "detailsShort": "明細",
       "overlapCompact": "合算不可",
@@ -5077,11 +5166,8 @@
         "reasons": {
           "officialPrice": "このモデルの公式料金がないため、推計できません。",
           "publisherExchangeRate": "提供元の料金が別の通貨で表示されています。費用の推計には為替レートが必要です。",
-          "price": "一致する有効な単価がないため、推計できません。",
+          "price": "適用できるトークン単価が不足しているため、全額を推計できません。",
           "usage": "使用量の情報が不完全なため、推計できません。",
-          "cache": "キャッシュ使用量がないため、推計できません。",
-          "equivalentCache": "キャッシュ使用量がないため、従量単価の参考額を推計できません。",
-          "reasoning": "推論の使用量がないため、選択した単価で推計できません。",
           "identity": "プロバイダーまたはモデルの情報がなく、単価を照合できません。",
           "time": "呼び出し日時がなく、適用する単価を特定できません。",
           "rules": "単価ルールが無効か競合しています。料金ルールを確認してください。",
@@ -5091,7 +5177,7 @@
           "currency": "報告金額の通貨は合算に対応していません。",
           "invalidBilling": "課金方式が不明なため、費用を特定できません。"
         },
-        "partialEquivalentHint": "推計できるサブスクリプション使用量のみを含み、一部の呼び出しは含まれていません。"
+        "partialEquivalentHint": "単価を適用できるサブスクリプション使用量のみを含み、全額は不明です。"
       },
       "subscriptionActualUnknown": "サブスクリプションの実際の請求額は不明です",
       "resolvePrice": "モデル単価を設定"
@@ -5108,14 +5194,13 @@
     "reasons": {
       "unavailable": "料金または使用量の情報が不足",
       "provider_unknown": "プロバイダー未報告",
+      "model_unknown": "モデル ID 未報告",
       "official_model_price_unavailable": "利用できる公式基準単価がありません",
       "publisher_exchange_rate_unavailable": "提供元の料金を換算する為替レートがありません",
       "price_not_configured": "一致する料金が未設定",
       "pricing_time_missing": "呼び出し日時が不明",
       "price_not_effective": "該当日時に有効なルールなし",
       "usage_missing": "使用量の報告が不完全",
-      "cache_usage_missing": "キャッシュ使用量が不明",
-      "reasoning_usage_missing": "推論使用量が不明",
       "unsupported_pricing": "非対応の料金条件",
       "overlapping_usage_buckets": "トークン区分が重複",
       "price_bucket_missing": "トークン区分の料金が不足",
@@ -5145,7 +5230,7 @@
       "retainedCompact": "保存済み為替を使用"
     },
     "workspace": {
-      "missingIdentityHint": "呼び出しにプロバイダーまたはモデル ID が記録されていません。入力して料金を検索できますが、ルールは元の呼び出しを更新しません。連携元で情報を補ってください。",
+      "missingIdentityHint": "プロバイダーまたはモデル ID が記録されていないため、これらの呼び出しの料金をルールで見積もることはできません。料金は検索できますが、新しいルールで不足情報は補われません。収集元で情報を報告するようにしてください。",
       "modelDetailsTitle": "モデル費用の詳細",
       "resultTitle": "費用の結果",
       "priceOptionsTitle": "単価を検索・設定",
@@ -5180,7 +5265,7 @@
         "missingOfficialPrice": "利用できる公式基準単価がありません",
         "mixed": "混合課金",
         "missingPrice": "料金未設定",
-        "missingUsage": "原因を確認"
+        "missingUsage": "算出不可"
       },
       "inspect": "詳細を表示",
       "browse": "モデル料金を検索",
