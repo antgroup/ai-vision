@@ -34,6 +34,8 @@
 
 > Ant Group の可観測性チームと OceanBase が共同で開発しています。
 
+https://github.com/user-attachments/assets/28fa1ce6-93b9-4c69-81e8-7434f3af8380
+
 > [!NOTE]
 > **個人向けの導入** · コマンドを実行できる AI アシスタントに、次の一文を送ってください。
 >

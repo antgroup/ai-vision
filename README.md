@@ -34,6 +34,8 @@ Two runs of the same task both succeeded. Why did one take so much longer? Pull 
 
 > Jointly developed by Ant Group’s observability team and OceanBase.
 
+https://github.com/user-attachments/assets/fc3f71f8-15c5-47b9-8dfe-28a6e2e9d9a6
+
 > [!NOTE]
 > **Personal deployment** · Send this message to an AI assistant that can run terminal commands.
 >
