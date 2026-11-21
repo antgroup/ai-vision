@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> · 简体中文 · <a href="README.zh-TW.md">繁體中文</a> · <a href="README.ja.md">日本語</a>
+  <a href="README.md">English</a> · 简体中文 · <a href="README.ja.md">日本語</a>
 </p>
 
 <p align="center">
@@ -33,6 +33,8 @@
 同一个任务跑了两次，都成功了，为什么这次慢了这么多？筛出两条 Trace（执行轨迹），并排看看哪些调用重试了、哪一步花了更多 Token。改完 Agent，再用规则检查问题有没有复发。
 
 > 由蚂蚁集团可观测团队与 OceanBase 联合研发。
+
+https://github.com/user-attachments/assets/db901439-ad98-46b7-a1a2-7cb1bb9ebc43
 
 > [!NOTE]
 > **个人部署** · 把这句话发给能执行命令的 AI 助手。
