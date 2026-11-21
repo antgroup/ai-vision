@@ -240,6 +240,98 @@ for (const [scenario, target] of quickScenarios) {
   })
 }
 
+test("a busy demo import retries while keeping the selected direct scene", async ({
+  page,
+}) => {
+  const { state, text, errors } = await prepareGuide(page, {
+    guidePending: false,
+    noAgent: true,
+    empty: true,
+    demoPostBusy: true,
+  })
+  await page
+    .getByRole("button", { name: text("demo.headerEntry"), exact: true })
+    .click()
+  const picker = page.getByRole("dialog", { name: text("demo.entry") })
+  const choice = picker.getByRole("radio", {
+    name: text("demo.scenarios.memory.title"),
+    exact: true,
+  })
+  await picker
+    .getByText(text("demo.scenarios.memory.title"), { exact: true })
+    .click()
+  const firstResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname ===
+        `/api/v1/spaces/${guideSpace}/onboarding/demo` &&
+      response.status() === 429
+  )
+  await picker
+    .getByRole("button", { name: text("demo.confirm"), exact: true })
+    .click()
+  await firstResponse
+  await expect(picker.getByRole("status")).toHaveText(text("demo.working"))
+  await expect(choice).toBeChecked()
+  await expect(choice).toBeDisabled()
+  await expect(picker.getByRole("alert")).toHaveCount(0)
+  await expect(page.getByTestId("native-trace-detail")).toHaveAttribute(
+    "data-guide-selected",
+    guideMemorySpanId
+  )
+  await expect(page).toHaveURL(
+    (url) =>
+      url.searchParams.get("traceId") === guideMemoryTraceId &&
+      url.searchParams.get("agent_uuid") === guideAgent &&
+      url.searchParams.get("range") === "24h"
+  )
+  await expect(picker).toHaveCount(0)
+  expect(state.demoPostAttempts).toEqual([
+    { consent: true, language: "zh-CN" },
+    { consent: true, language: "zh-CN" },
+  ])
+  expect(state.demoWrites).toEqual([{ consent: true, language: "zh-CN" }])
+  expect(state.creates ?? 0).toBe(0)
+  expect(state.keyWrites ?? 0).toBe(0)
+  expect(errors).toEqual([])
+})
+
+test("an unavailable demo import waits for manual retry", async ({ page }) => {
+  const { state, text, errors } = await prepareGuide(page, {
+    guidePending: false,
+    noAgent: true,
+    empty: true,
+    demoPostUnavailable: true,
+  })
+  await page
+    .getByRole("button", { name: text("demo.headerEntry"), exact: true })
+    .click()
+  const picker = page.getByRole("dialog", { name: text("demo.entry") })
+  await picker
+    .getByText(text("demo.scenarios.skill.title"), { exact: true })
+    .click()
+  await picker
+    .getByRole("button", { name: text("demo.confirm"), exact: true })
+    .click()
+  await expect(picker.getByRole("alert")).toHaveText(text("demo.failed"))
+  const retry = picker.getByRole("button", {
+    name: text("demo.retry"),
+    exact: true,
+  })
+  await expect(retry).toBeEnabled()
+  expect(state.demoPostAttempts).toHaveLength(1)
+  expect(state.demoWrites).toBeUndefined()
+
+  state.demoPostUnavailable = false
+  await retry.click()
+  await expect(page.getByTestId("native-trace-detail")).toHaveAttribute(
+    "data-guide-selected",
+    "5555555555555555"
+  )
+  expect(state.demoPostAttempts).toHaveLength(2)
+  expect(state.demoWrites).toHaveLength(1)
+  expect(errors).toEqual([])
+})
+
 test("the presenter can switch examples from an open Trace or session", async ({
   page,
 }) => {
@@ -1098,9 +1190,24 @@ test("demo consent, MCP config readback, diagnosis evidence and comparison requi
     .click()
   await expect(card).toContainText(text("steps.enhanced"))
   await mcp.getByRole("row").filter({ hasText: "storage_policy" }).click()
-  await page
-    .locator('[data-trace-process] [data-process-source="3333333333333333"]')
-    .click()
+  const processCall = page.locator(
+    '[data-process-entry][data-process-focused="true"][data-process-kind="tool"]'
+  )
+  await expect(processCall).toBeVisible()
+  await expect(
+    processCall.locator('[data-process-source="3333333333333333"]')
+  ).toBeVisible()
+  await expect(card).toContainText(text("steps.mcpProcess"))
+  const viewMcpCall = card.getByRole("button", {
+    name: text("actions.viewMcpCall"),
+    exact: true,
+  })
+  await expect(viewMcpCall).toBeVisible()
+  await viewMcpCall.click()
+  await expect(page.getByTestId("native-trace-detail")).toHaveAttribute(
+    "data-guide-selected",
+    "3333333333333333"
+  )
   await expect(page.locator('[data-product-guide="mcp-span"]')).toBeVisible()
   await card.getByRole("button", { name: text("actions.importConfig") }).click()
   await page.locator('[data-product-guide="mcp-config-open"]').click()
@@ -1352,9 +1459,25 @@ test("the guide can skip an unreadable MCP configuration and continue to diagnos
     .getByRole("row")
     .filter({ hasText: "storage_policy" })
     .click()
-  await page
-    .locator('[data-trace-process] [data-process-source="3333333333333333"]')
-    .click()
+  const processCall = page.locator(
+    '[data-process-entry][data-process-focused="true"][data-process-kind="tool"]'
+  )
+  await expect(processCall).toBeVisible()
+  await expect(
+    processCall.locator('[data-process-source="3333333333333333"]')
+  ).toBeVisible()
+  await expect(card).toContainText(text("steps.mcpProcess"))
+  const viewMcpCall = card.getByRole("button", {
+    name: text("actions.viewMcpCall"),
+    exact: true,
+  })
+  await expect(viewMcpCall).toBeVisible()
+  await viewMcpCall.click()
+  await expect(page.getByTestId("native-trace-detail")).toHaveAttribute(
+    "data-guide-selected",
+    "3333333333333333"
+  )
+  await expect(page.locator('[data-product-guide="mcp-span"]')).toBeVisible()
   await card
     .getByRole("button", { name: text("actions.importConfig"), exact: true })
     .click()
