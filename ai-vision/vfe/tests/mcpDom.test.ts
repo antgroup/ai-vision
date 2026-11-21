@@ -1277,7 +1277,7 @@ test("registry search retries, paginates exact IDs and hands a masked configurat
       })
     )
     assert.equal(ui.document.querySelector("textarea"), null)
-    await ui.click(button(ui.document, "labs.mcp.import.registry.search"))
+    await ui.click(button(ui.document, "labs.mcp.import.registry.browse"))
     assert.ok(ui.document.querySelector('[role="alert"]'))
     await ui.click(button(ui.document, "labs.mcp.import.registry.retry"))
     await ui.click(button(ui.document, "labs.mcp.import.registry.loadMore"))
@@ -1366,7 +1366,7 @@ async function registryImportFixture(
     Dialog: McpConfigImportDialog,
     async preview(token: string) {
       await ui.render(createElement(McpConfigImportDialog, props))
-      await ui.click(button(ui.document, "labs.mcp.import.registry.search"))
+      await ui.click(button(ui.document, "labs.mcp.import.registry.browse"))
       await ui.click(button(ui.document, "labs.mcp.import.registry.configure"))
       if (withSecret)
         await ui.input(
@@ -1594,7 +1594,7 @@ test("directory discovery paginates project links without license UI or configur
         onPreview: () => assert.fail("directory must not import"),
       })
     )
-    await ui.click(button(ui.document, "labs.mcp.import.registry.search"))
+    await ui.click(button(ui.document, "labs.mcp.import.registry.browse"))
     const region = ui.document.querySelector(
       'section[aria-label="mcpservers.org"]'
     )!

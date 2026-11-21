@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useId, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useState,
+  type ComponentProps,
+} from "react"
 import { useTranslation } from "react-i18next"
 import { ChevronDown, CircleHelp, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -459,6 +465,57 @@ function ThresholdField({
   )
 }
 
+function ThresholdFilter({
+  displayValue,
+  ...field
+}: ComponentProps<typeof ThresholdField> & { displayValue?: string }) {
+  const { t } = useTranslation()
+  const active = displayValue !== undefined
+  return (
+    <div className={active ? traceToolbarActiveClassName : "inline-flex"}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-label={field.label}
+            className={cn(
+              traceToolbarControlClassName,
+              active && traceToolbarSplitTriggerClassName
+            )}
+          >
+            {field.label}
+            {active && (
+              <span className="max-w-40 truncate" title={displayValue}>
+                ≥ {displayValue}
+              </span>
+            )}
+            <ChevronDown className="size-3" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-80 max-w-[calc(100vw-2rem)]"
+          align="start"
+          collisionPadding={8}
+        >
+          <ThresholdField {...field} />
+        </PopoverContent>
+      </Popover>
+      {active && (
+        <button
+          type="button"
+          aria-label={t("traceFilters.clear", { label: field.label })}
+          className={traceToolbarRemoveClassName}
+          onClick={() => field.onChange(undefined)}
+        >
+          <X className="size-3" />
+        </button>
+      )}
+    </div>
+  )
+}
+
 function StatusFilter({
   value,
   onChange,
@@ -585,13 +642,14 @@ export function TraceListFilters({
     else delete next.thresholdInputs
     onFilterChange(next)
   }
-  const showTokens = tokenMetrics || sessionMetrics
+  const showTraceTokens = tokenMetrics && !sessionMetrics
   const tokens = filters.minTotalTokens
-  const tokenChipValue =
+  const tokenValue =
     filters.thresholdInputs?.minTotalTokens ??
     (tokens === undefined ? undefined : formatSpanThreshold(tokens, "tokens"))
-  const showMore =
-    nativeMetrics || showTokens || enabledDims.some((dim) => dim !== "scene")
+  const duration = filters.minDurationMs
+  const showRunFilters = nativeMetrics || sessionMetrics
+  const showMore = showRunFilters || enabledDims.some((dim) => dim !== "scene")
   const usernameLabel = t(
     usernameSemantics === "collector"
       ? "traceFilters.collectorLabel"
@@ -607,84 +665,42 @@ export function TraceListFilters({
     filters.username
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-2">
-      {(nativeMetrics || sessionMetrics) && (
-        <>
-          <StatusFilter
-            session={sessionMetrics}
-            value={filters.status}
-            onChange={(status) => onFilterChange({ ...filters, status })}
-          />
-          <div
-            className={
-              filters.minDurationMs !== undefined
-                ? traceToolbarActiveClassName
-                : "inline-flex"
-            }
-          >
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  aria-label={t(
-                    sessionMetrics
-                      ? "sessionFilters.duration"
-                      : "traceFilters.duration"
-                  )}
-                  className={cn(
-                    traceToolbarControlClassName,
-                    filters.minDurationMs !== undefined &&
-                      traceToolbarSplitTriggerClassName
-                  )}
-                >
-                  {t(
-                    sessionMetrics
-                      ? "sessionFilters.duration"
-                      : "traceFilters.duration"
-                  )}
-                  {filters.minDurationMs !== undefined &&
-                    ` ≥ ${filters.thresholdInputs?.minDurationMs ?? formatSpanThreshold(filters.minDurationMs, "duration")}`}
-                  <ChevronDown className="size-3" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-80" align="start">
-                <ThresholdField
-                  label={t(
-                    sessionMetrics
-                      ? "sessionFilters.duration"
-                      : "traceFilters.duration"
-                  )}
-                  hintKey={
-                    sessionMetrics ? "sessionFilters.durationHint" : undefined
-                  }
-                  value={filters.minDurationMs}
-                  restoredInput={filters.thresholdInputs?.minDurationMs}
-                  kind="duration"
-                  onChange={(minDurationMs) =>
-                    changeThreshold("minDurationMs", minDurationMs)
-                  }
-                />
-              </PopoverContent>
-            </Popover>
-            {filters.minDurationMs !== undefined && (
-              <button
-                type="button"
-                aria-label={t("traceFilters.clear", {
-                  label: t(
-                    sessionMetrics
-                      ? "sessionFilters.duration"
-                      : "traceFilters.duration"
-                  ),
-                })}
-                className={traceToolbarRemoveClassName}
-                onClick={() => changeThreshold("minDurationMs", undefined)}
-              >
-                <X className="size-3" />
-              </button>
-            )}
-          </div>
-        </>
+      {showRunFilters && (
+        <StatusFilter
+          session={sessionMetrics}
+          value={filters.status}
+          onChange={(status) => onFilterChange({ ...filters, status })}
+        />
+      )}
+      {showTraceTokens && (
+        <ThresholdFilter
+          label={t("sessionFilters.tokens")}
+          inputLabel={t("traceFilters.minimumTokens")}
+          hintKey="traceFilters.tokensHint"
+          value={tokens}
+          restoredInput={filters.thresholdInputs?.minTotalTokens}
+          displayValue={tokenValue}
+          kind="tokens"
+          onChange={(value) => changeThreshold("minTotalTokens", value)}
+        />
+      )}
+      {showRunFilters && (
+        <ThresholdFilter
+          label={t(
+            sessionMetrics ? "sessionFilters.duration" : "traceFilters.duration"
+          )}
+          hintKey={sessionMetrics ? "sessionFilters.durationHint" : undefined}
+          value={duration}
+          restoredInput={filters.thresholdInputs?.minDurationMs}
+          displayValue={
+            duration === undefined
+              ? undefined
+              : (filters.thresholdInputs?.minDurationMs ??
+                formatSpanThreshold(duration, "duration"))
+          }
+          kind="duration"
+          onChange={(value) => changeThreshold("minDurationMs", value)}
+        />
       )}
       {showMore && (
         <Popover>
@@ -702,22 +718,11 @@ export function TraceListFilters({
           <PopoverContent
             className={cn(
               "w-80 max-w-[calc(100vw-2rem)]",
-              showTokens &&
+              (tokenMetrics || sessionMetrics) &&
                 "max-h-[min(70vh,640px)] overflow-y-auto [scrollbar-gutter:stable]"
             )}
             align="start"
           >
-            {tokenMetrics && !sessionMetrics && (
-              <ThresholdField
-                label={t("sessionFilters.tokens")}
-                inputLabel={t("traceFilters.minimumTokens")}
-                hintKey="traceFilters.tokensHint"
-                value={filters.minTotalTokens}
-                restoredInput={filters.thresholdInputs?.minTotalTokens}
-                kind="tokens"
-                onChange={(value) => changeThreshold("minTotalTokens", value)}
-              />
-            )}
             {sessionMetrics && (
               <div className="mb-3 space-y-4 border-b border-border pb-3">
                 <ThresholdField
@@ -836,10 +841,10 @@ export function TraceListFilters({
           onClear={() => changeThreshold("minTraceCount", undefined)}
         />
       )}
-      {showTokens && tokenChipValue !== undefined && (
+      {sessionMetrics && tokenValue !== undefined && (
         <FilterChip
           label={t("sessionFilters.tokens")}
-          value={`≥ ${tokenChipValue}`}
+          value={`≥ ${tokenValue}`}
           onClear={() => changeThreshold("minTotalTokens", undefined)}
         />
       )}

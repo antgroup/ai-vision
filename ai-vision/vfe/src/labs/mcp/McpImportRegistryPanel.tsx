@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { importDialogStyles } from "../../components/labs/shared/importDialogStyles"
+import { ImportLookupStatus } from "../../components/labs/shared/ImportLookupStatus"
 import { ImportRegistrySearch } from "../../components/labs/shared/ImportRegistrySearch"
 import {
   getMcpRegistryDetail,
@@ -254,6 +255,22 @@ function RegistrySearch({
     )
   }
 
+  const sourceResults = visibleSources.flatMap((source) => {
+    const state = sources[source.id]
+    return state && (state.servers.length || state.cursor || state.error)
+      ? [{ ...source, state }]
+      : []
+  })
+  const searching = visibleSources.some(({ id }) => {
+    const state = sources[id]
+    return state?.loading && !state.loaded
+  })
+  const allLoaded = visibleSources.every(({ id }) => sources[id]?.loaded)
+  const searchStatus = searching
+    ? tr("searching")
+    : sourceResults.length
+      ? null
+      : tr(allLoaded ? "empty" : "start")
   return (
     <div className={importDialogStyles.panel}>
       <div
@@ -269,7 +286,7 @@ function RegistrySearch({
           sources={[{ id: "all", label: tr("allSources") }, ...SOURCES]}
           sourceLabel={t("labs.common.registrySource")}
           onSourceChange={setSourceFilter}
-          searchLabel={tr("search")}
+          searchLabel={tr(keyword.trim() ? "search" : "browse")}
           onSearch={() =>
             void loadSources(
               visibleSources.map((source) => source.id),
@@ -277,25 +294,28 @@ function RegistrySearch({
             )
           }
         />
-        <p className="text-xs leading-5 text-[var(--color-text-description)]">
-          {tr("hint")}
-        </p>
       </div>
-      <div className={`${importDialogStyles.results} space-y-5`}>
-        {visibleSources.map((source) => {
-          const state = sources[source.id]
-          return (
+      <div className={importDialogStyles.results}>
+        <div className="space-y-5">
+          {sourceResults.map(({ id, label, state }) => (
             <section
-              key={source.id}
+              key={id}
               className="space-y-3"
-              aria-label={source.label}
-              aria-busy={state?.loading ?? false}
+              aria-label={label}
+              aria-busy={state.loading}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-sm leading-[22px] font-medium text-[var(--color-text-primary)]">
-                  {source.label}
-                </h3>
-                {state?.loaded ? (
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <h3 className="text-sm leading-[22px] font-medium text-[var(--color-text-primary)]">
+                    {label}
+                  </h3>
+                  {id === "mcpservers" && state.servers.length > 0 ? (
+                    <span className="text-xs leading-5 text-[var(--color-text-description)]">
+                      {tr("directorySummary")}
+                    </span>
+                  ) : null}
+                </div>
+                {state.servers.length > 0 ? (
                   <span className="text-xs leading-5 text-[var(--color-text-description)]">
                     {t("labs.mcp.import.registry.loadedCount", {
                       count: state.servers.length,
@@ -303,21 +323,7 @@ function RegistrySearch({
                   </span>
                 ) : null}
               </div>
-              {source.id === "mcpservers" ? (
-                <p className="text-xs leading-5 text-[var(--color-text-description)]">
-                  {tr("directorySummary")}
-                </p>
-              ) : null}
-              {state?.loading ? (
-                <p
-                  role="status"
-                  className="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]"
-                >
-                  <Loader2 aria-hidden="true" className="size-4 animate-spin" />
-                  {tr("loading")}
-                </p>
-              ) : null}
-              {state?.error ? (
+              {state.error ? (
                 <div
                   role="alert"
                   className="space-y-2 rounded-[12px] border border-[var(--color-border)] p-3 text-xs text-[var(--color-error)]"
@@ -327,74 +333,83 @@ function RegistrySearch({
                     variant="outline"
                     className={importDialogStyles.button}
                     disabled={state.loading}
-                    onClick={() => void loadSources([source.id], false)}
+                    onClick={() => void loadSources([id], false)}
                   >
                     {tr("retry")}
                   </Button>
                 </div>
               ) : null}
-              {state?.loaded && !state.servers.length && !state.loading ? (
-                <p
-                  role="status"
-                  className="py-6 text-center text-sm leading-[22px] text-[var(--color-text-description)]"
-                >
-                  {tr("empty")}
-                </p>
-              ) : null}
-              <div className={importDialogStyles.cardGrid}>
-                {state?.servers.map((server) => (
-                  <article key={server.id} className={importDialogStyles.card}>
-                    <div className={importDialogStyles.cardBody}>
-                      <h4
-                        title={server.name}
-                        className="line-clamp-2 text-sm leading-[22px] font-medium [overflow-wrap:anywhere] text-[var(--color-text-primary)]"
-                      >
-                        {server.name}
-                      </h4>
-                      {source.id === "official" && server.id !== server.name ? (
+              {state.servers.length > 0 ? (
+                <div className={importDialogStyles.cardGrid}>
+                  {state.servers.map((server) => (
+                    <article
+                      key={server.id}
+                      className={importDialogStyles.card}
+                    >
+                      <div className={importDialogStyles.cardBody}>
+                        <h4
+                          title={server.name}
+                          className="line-clamp-2 text-sm leading-[22px] font-medium [overflow-wrap:anywhere] text-[var(--color-text-primary)]"
+                        >
+                          {server.name}
+                        </h4>
+                        {id === "official" && server.id !== server.name ? (
+                          <p
+                            title={server.id}
+                            className="truncate font-mono text-xs leading-5 text-[var(--color-text-description)]"
+                          >
+                            {server.id}
+                          </p>
+                        ) : null}
                         <p
-                          title={server.id}
-                          className="truncate font-mono text-xs leading-5 text-[var(--color-text-description)]"
+                          title={server.description}
+                          className="line-clamp-3 text-xs leading-5 [overflow-wrap:anywhere] text-[var(--color-text-secondary)]"
                         >
-                          {server.id}
+                          {server.description}
                         </p>
-                      ) : null}
-                      <p
-                        title={server.description}
-                        className="line-clamp-3 text-xs leading-5 [overflow-wrap:anywhere] text-[var(--color-text-secondary)]"
-                      >
-                        {server.description}
-                      </p>
-                    </div>
-                    <div className={importDialogStyles.cardFooter}>
-                      <RegistryLink url={server.url} stretch />
-                      {source.id === "official" ? (
-                        <Button
-                          className={`${importDialogStyles.compactAction} flex-1`}
-                          data-product-guide="mcp-registry-select"
-                          size="sm"
-                          onClick={() => void openDetail(source.id, server)}
-                        >
-                          {tr("configure")}
-                        </Button>
-                      ) : null}
-                    </div>
-                  </article>
-                ))}
-              </div>
-              {state?.cursor && !state.error ? (
+                      </div>
+                      <div className={importDialogStyles.cardFooter}>
+                        <RegistryLink url={server.url} stretch />
+                        {id === "official" ? (
+                          <Button
+                            className={`${importDialogStyles.compactAction} flex-1`}
+                            data-product-guide="mcp-registry-select"
+                            size="sm"
+                            onClick={() => void openDetail(id, server)}
+                          >
+                            {tr("configure")}
+                          </Button>
+                        ) : null}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
+              {state.cursor && !state.error ? (
                 <Button
                   variant="outline"
                   className={importDialogStyles.button}
                   disabled={state.loading}
-                  onClick={() => void loadSources([source.id], false)}
+                  aria-busy={state.loading}
+                  onClick={() => void loadSources([id], false)}
                 >
+                  {state.loading ? (
+                    <Loader2
+                      aria-hidden="true"
+                      className="size-4 motion-safe:animate-spin"
+                    />
+                  ) : null}
                   {tr("loadMore")}
                 </Button>
               ) : null}
             </section>
-          )
-        })}
+          ))}
+        </div>
+        <ImportLookupStatus
+          message={searchStatus}
+          busy={searching}
+          className={sourceResults.length ? "mt-3" : undefined}
+        />
       </div>
     </div>
   )

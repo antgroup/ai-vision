@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 
 import { importDialogStyles } from "../../components/labs/shared/importDialogStyles"
+import { ImportLookupStatus } from "../../components/labs/shared/ImportLookupStatus"
 import { resolveSkillRepo } from "./skillApi"
 import type { RepoSkillEntry } from "./skillApi"
 import { installRepoSkills, skillResolveErrorKey } from "./skillImportRemote"
@@ -191,11 +192,19 @@ export function SkillImportLinkPanel({
           </p>
         ) : null}
 
-        {resolveQuery.data && entries.length === 0 ? (
-          <p className="py-6 text-center text-sm leading-[22px] text-[var(--color-text-description)]">
-            {t("labs.skill.import.link.empty")}
-          </p>
-        ) : null}
+        <ImportLookupStatus
+          icon={Link2}
+          message={
+            !seed
+              ? t("labs.skill.import.link.hint")
+              : !resolveQuery.isFetching &&
+                  !resolveQuery.isError &&
+                  resolveQuery.data &&
+                  !entries.length
+                ? t("labs.skill.import.link.empty")
+                : null
+          }
+        />
 
         {entries.length ? (
           <div className="flex flex-col gap-3">
