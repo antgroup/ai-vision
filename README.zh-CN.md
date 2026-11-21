@@ -34,8 +34,6 @@
 
 > 由蚂蚁集团可观测团队与 OceanBase 联合研发。
 
-**观看产品演示 · 4:41**
-
 https://github.com/user-attachments/assets/afceb310-cd5f-4712-8904-5cde5f740f77
 
 > [!NOTE]
