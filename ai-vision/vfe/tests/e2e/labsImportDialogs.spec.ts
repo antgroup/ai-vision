@@ -31,6 +31,8 @@ const repoEntries: RepoSkillEntry[] = [
     description: "Synthetic repository skill for import interaction checks",
   },
 ]
+const emptySkillQuery = "no-matching-skill"
+const emptyRepoUrl = "https://github.com/fixture/no-skills"
 
 function dialog(page: Page, kind: "mcp" | "skill") {
   return page.getByRole("dialog", { name: importText(kind, "title") })
@@ -134,24 +136,27 @@ async function fixture(page: Page, theme: "light" | "dark") {
       if (method === "GET" || method === "PUT") return ok(skillConfigs)
     }
     if (url.pathname.endsWith("/registry/search") && method === "GET") {
-      skillRegistryRequests.push({ query: url.searchParams.get("q") ?? "" })
+      const query = url.searchParams.get("q") ?? ""
+      const skills = query === emptySkillQuery ? [] : skillResults
+      skillRegistryRequests.push({ query })
       return ok({
-        query: url.searchParams.get("q"),
+        query,
         searchType: "fixture",
-        count: skillResults.length,
-        skills: skillResults,
+        count: skills.length,
+        skills,
       })
     }
     if (url.pathname.endsWith("/registry/resolve") && method === "POST") {
+      const body = request.postDataJSON()
       repositoryRequests.push({
         path: "resolve",
-        body: request.postDataJSON(),
+        body,
       })
       return ok({
         source: "fixture/skills",
         branch: "feature/review",
         subdir: "skills",
-        skills: repoEntries,
+        skills: body?.url === emptyRepoUrl ? [] : repoEntries,
       })
     }
     if (url.pathname.endsWith("/registry/fetch") && method === "POST") {
@@ -200,6 +205,16 @@ async function selectSearch(page: Page, kind: "mcp" | "skill") {
       exact: true,
     })
   ).toBeVisible()
+  if (kind === "mcp") {
+    await expect(
+      modal.getByRole("heading", {
+        name: "Fixture mcpservers project 1",
+        exact: true,
+      })
+    ).toBeVisible()
+  }
+  await expect(searchButton).toBeEnabled()
+  await page.mouse.move(0, 0)
   const source = modal.getByRole("combobox", {
     name: tr("labs.common.registrySource"),
     exact: true,
@@ -450,11 +465,11 @@ for (const viewport of [
         { source: "official", query: "fixture" },
         { source: "mcpservers", query: "fixture" },
       ])
-      for (const [source, label, otherLabel] of [
+      const providers = [
         ["official", "Official MCP Registry", "mcpservers.org"],
         ["mcpservers", "mcpservers.org", "Official MCP Registry"],
-      ]) {
-        const before = mcpFixture.mcpRegistryRequests.length
+      ] as const
+      for (const [source, label, otherLabel] of providers) {
         await mcp.source.selectOption(source)
         await expect(
           mcp.modal.getByRole("region", { name: label, exact: true })
@@ -462,7 +477,11 @@ for (const viewport of [
         await expect(
           mcp.modal.getByRole("region", { name: otherLabel, exact: true })
         ).toHaveCount(0)
-        expect(mcpFixture.mcpRegistryRequests).toHaveLength(before)
+      }
+      expect(mcpFixture.mcpRegistryRequests).toHaveLength(2)
+      for (const [source] of providers) {
+        const before = mcpFixture.mcpRegistryRequests.length
+        await mcp.source.selectOption(source)
         await mcp.search.fill(`${source} fixture`)
         await mcp.searchButton.click()
         await expect(
@@ -559,6 +578,8 @@ for (const viewport of [
         )
       )
       await skillField.fill(manualSkill)
+      await page.mouse.move(0, 0)
+      await skillsPage.mouse.move(0, 0)
       await expect(
         mcp.modal.getByRole("heading", {
           name: countText("mcp", "preview", 1),
@@ -599,6 +620,127 @@ for (const viewport of [
       await skillsPage.close()
     })
   }
+}
+
+for (const viewport of [
+  { name: "desktop", width: 1280, height: 720 },
+  { name: "narrow", width: 390, height: 844 },
+]) {
+  test(`synthetic Skill remote import empty states on ${viewport.name}`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(viewport)
+    const backend = await fixture(page, "light")
+    await page.goto("/labs/skill?spaceId=space-a&agent=Codex")
+    const modal = await openImport(page, "skill")
+    const switchTo = (key: string) =>
+      modal
+        .getByRole("tab", {
+          name: importText("skill", `tab.${key}`),
+          exact: true,
+        })
+        .click()
+    const capture = async (state: string) => {
+      await page.mouse.move(0, 0)
+      await page.screenshot({
+        path: testInfo.outputPath(`skill-import-${viewport.name}-${state}.png`),
+        animations: "disabled",
+      })
+    }
+    const expectCompact = async () => {
+      const { height, width } = await box(modal)
+      expect(width).toBeCloseTo(Math.min(1024, viewport.width - 32), 0)
+      expect(height).toBeLessThan(viewport.height / 2)
+      await expect(
+        footer(modal).getByRole("button", {
+          name: tr("labs.common.cancel"),
+          exact: true,
+        })
+      ).toBeInViewport({ ratio: 1 })
+    }
+    const status = (key: string) =>
+      modal.getByRole("status").filter({ hasText: importText("skill", key) })
+
+    await switchTo("registry")
+    const search = modal.getByPlaceholder(
+      importText("skill", "registry.searchPlaceholder")
+    )
+    const searchButton = modal.getByRole("button", {
+      name: importText("skill", "registry.searchButton"),
+      exact: true,
+    })
+    const minChars = modal.getByText(importText("skill", "registry.minChars"), {
+      exact: true,
+    })
+    await expect(minChars).toBeVisible()
+    await expect(searchButton).toBeDisabled()
+    await expectCompact()
+    await capture("skills-sh-default")
+    await search.fill(" f ")
+    await search.press("Enter")
+    await expect(search).toHaveAttribute("aria-invalid", "true")
+    await expect(minChars).toHaveCount(1)
+    expect(backend.skillRegistryRequests).toEqual([])
+
+    let finishSearch = () => {}
+    const searchResponse = new Promise<void>((resume) => {
+      finishSearch = resume
+    })
+    await page.route("**/labs/skill/registry/search?*", async (route) => {
+      if (
+        new URL(route.request().url()).searchParams.get("q") === emptySkillQuery
+      )
+        await searchResponse
+      await route.fallback()
+    })
+    try {
+      await search.fill(emptySkillQuery)
+      await searchButton.click()
+      await expect(status("registry.searching")).toBeVisible()
+      await expect(status("registry.empty")).toHaveCount(0)
+    } finally {
+      finishSearch()
+    }
+    await expect(status("registry.empty")).toBeVisible()
+    await expect(status("registry.searching")).toHaveCount(0)
+    await expect(minChars).toHaveCount(0)
+    await expectCompact()
+    await capture("skills-sh-empty")
+
+    await switchTo("link")
+    const link = modal.getByPlaceholder(importText("skill", "link.placeholder"))
+    const resolve = modal.getByRole("button", {
+      name: importText("skill", "link.resolve"),
+      exact: true,
+    })
+    const hint = modal.getByText(importText("skill", "link.hint"), {
+      exact: true,
+    })
+    await expect(hint).toBeVisible()
+    await expect(resolve).toBeDisabled()
+    await expectCompact()
+    await capture("github-default")
+    expect(backend.repositoryRequests).toEqual([])
+
+    await link.fill(emptyRepoUrl)
+    await resolve.click()
+    await expect(status("link.empty")).toBeVisible()
+    await expect(hint).toHaveCount(0)
+    await expect(
+      modal.getByRole("button", {
+        name: countText("skill", "link.install", 0),
+        exact: true,
+      })
+    ).toHaveCount(0)
+    await expectCompact()
+    await capture("github-empty")
+    expect(backend.skillRegistryRequests).toEqual([{ query: emptySkillQuery }])
+    expect(backend.repositoryRequests).toEqual([
+      { path: "resolve", body: { url: emptyRepoUrl } },
+    ])
+    expect(backend.skillWrites).toEqual([])
+    expect([...backend.unexpected, ...backend.unexpectedImports]).toEqual([])
+  })
 }
 
 test("synthetic Skills file and link imports retain editing, selection gates and repository provenance", async ({

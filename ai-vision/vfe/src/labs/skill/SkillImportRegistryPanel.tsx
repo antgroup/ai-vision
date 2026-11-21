@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui/button"
 
 import { importDialogStyles } from "../../components/labs/shared/importDialogStyles"
+import { ImportLookupStatus } from "../../components/labs/shared/ImportLookupStatus"
 import { ImportRegistrySearch } from "../../components/labs/shared/ImportRegistrySearch"
 import { resolveSkillRepo, searchSkillRegistry } from "./skillApi"
 import type { RegistrySkill } from "./skillApi"
@@ -119,12 +120,6 @@ export function SkillImportRegistryPanel({
           busy={searching}
           invalid={tooShort}
         />
-
-        {tooShort ? (
-          <p className="text-xs leading-5 text-[var(--color-text-description)]">
-            {t("labs.skill.import.registry.minChars")}
-          </p>
-        ) : null}
       </div>
 
       <div className={importDialogStyles.results}>
@@ -137,11 +132,19 @@ export function SkillImportRegistryPanel({
           </p>
         ) : null}
 
-        {skills && skills.length === 0 && !searchError ? (
-          <p className="py-6 text-center text-sm leading-[22px] text-[var(--color-text-description)]">
-            {t("labs.skill.import.registry.empty")}
-          </p>
-        ) : null}
+        <ImportLookupStatus
+          message={
+            searching
+              ? t("labs.skill.import.registry.searching")
+              : tooShort || (!skills && !searchError)
+                ? t("labs.skill.import.registry.minChars")
+                : skills?.length === 0 && !searchError
+                  ? t("labs.skill.import.registry.empty")
+                  : null
+          }
+          busy={searching}
+          className={shown.length ? "mb-3" : undefined}
+        />
 
         <div className={importDialogStyles.cardGrid}>
           {shown.map((skill) => {

@@ -140,38 +140,90 @@ for (const [language, width] of [
     await page.goto(`/trace?${query}`)
     await expect(row("no-usage")).toBeVisible()
 
+    const tokens = page.getByRole("button", {
+      name: label("sessionFilters.tokens"),
+      exact: true,
+    })
+    const duration = page.getByRole("button", {
+      name: label("traceFilters.duration"),
+      exact: true,
+    })
+    await expect(tokens).toBeVisible()
+    await expect(duration).toBeVisible()
+    await expect(tokens.or(duration).first()).toHaveAccessibleName(
+      label("sessionFilters.tokens")
+    )
     const more = page.getByRole("button", {
       name: label("traceFilters.more"),
       exact: true,
     })
-    await more.click()
+    const traceId = page.getByRole("textbox", {
+      name: label("traceSearch.types.traceId"),
+      exact: true,
+    })
+    const mobileSort = page.getByRole("combobox", {
+      name: label("traceFilters.sort"),
+    })
+    await expect(traceId).toBeInViewport({ ratio: 1 })
+    const position = await traceId.evaluate((field) => {
+      const header = field.closest('[data-slot="card-header"]')!
+      const search = field.getBoundingClientRect()
+      const toolbar = header.getBoundingClientRect()
+      const { paddingLeft, paddingRight } = getComputedStyle(header)
+      return {
+        searchLeft: search.left,
+        searchRight: search.right,
+        searchTop: search.top,
+        toolbarLeft: toolbar.left + parseFloat(paddingLeft),
+        toolbarRight: toolbar.right - parseFloat(paddingRight),
+      }
+    })
+    expect(position.searchRight).toBeCloseTo(position.toolbarRight, 0)
+    if (width === 390) {
+      await expect(mobileSort).toBeVisible()
+      const sortBounds = (await mobileSort.boundingBox())!
+      expect(position.searchTop).toBeGreaterThan(
+        sortBounds.y + sortBounds.height
+      )
+      expect(position.searchLeft).toBeCloseTo(position.toolbarLeft, 0)
+    } else {
+      const moreBounds = (await more.boundingBox())!
+      expect(position.searchLeft).toBeGreaterThan(
+        moreBounds.x + moreBounds.width
+      )
+      expect(position.searchTop).toBeCloseTo(moreBounds.y, 0)
+    }
     const input = page.getByRole("textbox", {
       name: label("traceFilters.minimumTokens"),
     })
+    await more.click()
+    await expect(more).toHaveAttribute("aria-expanded", "true")
+    await expect(input).toHaveCount(0)
+    await more.click()
+
+    await tokens.click()
     await input.fill("1K")
     await input.press("Enter")
     await expect(page).toHaveURL(/min_total_tokens=1000/)
     await expect(row("new-moderate")).toBeVisible()
-    if ((await more.getAttribute("aria-expanded")) === "true")
-      await more.click()
-    await expect(more).toHaveAttribute("aria-expanded", "false")
-    await more.click()
+    await expect(tokens).toContainText("≥ 1K")
+    if ((await tokens.getAttribute("aria-expanded")) === "true")
+      await tokens.click()
+    await expect(tokens).toHaveAttribute("aria-expanded", "false")
+    await tokens.click()
     await expect(input).toHaveValue("1K")
-    await expect(input).toBeVisible()
+    await expect(input).toBeInViewport({ ratio: 1 })
     await page.screenshot({
       path: testInfo.outputPath("token-threshold.png"),
       animations: "disabled",
     })
-    await more.click()
+    await tokens.click()
 
     const sort = (field: string) =>
       page.getByRole("button", {
         name: label(`traceFilters.sortBy${field}`),
         exact: true,
       })
-    const mobileSort = page.getByRole("combobox", {
-      name: label("traceFilters.sort"),
-    })
     if (width === 390) await mobileSort.selectOption("total_tokens.desc")
     else await sort("Tokens").click()
     await expect(row("old-heavy")).toBeVisible()
@@ -251,7 +303,7 @@ for (const [language, width] of [
 
     tokenFilterOverCapacity = true
     const previousRequestCount = requests.length
-    await more.click()
+    await tokens.click()
     await input.fill("2K")
     await input.press("Enter")
     const capacityMessage = {
