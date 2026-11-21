@@ -1,0 +1,43 @@
+ai-vision/vfe/src/components/labs/shared/ImportLookupStatus.tsx
+  s_e9b64f95b6f8f0::t_6817e1be7a6b84 1-30
+ai-vision/vfe/src/components/labs/shared/importDialogStyles.ts
+  s_e9b64f95b6f8f0::t_17534883b2b381 9
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_e9b64f95b6f8f0::t_e236095434a3f3 3024-3025,3030-3032,3034,3037,3375,3390-3391,3393
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_e9b64f95b6f8f0::t_59008a431d1a05 3024-3025,3030-3032,3034,3037,3375,3390-3391,3393
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_e9b64f95b6f8f0::t_a65ed3794a56a6 3024-3025,3030-3032,3034,3037,3372,3387-3388,3390
+ai-vision/vfe/src/labs/mcp/McpConfigImportDialog.tsx
+  s_e9b64f95b6f8f0::t_0ca7b09a0ac31d 378-382,400-404
+ai-vision/vfe/src/labs/mcp/McpImportRegistryPanel.tsx
+  s_e9b64f95b6f8f0::t_b865a34b15a49f 8,258-273,289,298-300,302,304-305,308-318,326,336,342-363,365-366,368,370-388,393-394,396-401,406-412
+ai-vision/vfe/src/labs/skill/SkillConfigImportDialog.tsx
+  s_e9b64f95b6f8f0::t_5ca51e2eb75b05 225-229
+ai-vision/vfe/src/labs/skill/SkillImportLinkPanel.tsx
+  s_e9b64f95b6f8f0::t_d4e834965cfa64 11,195-207
+ai-vision/vfe/src/labs/skill/SkillImportRegistryPanel.tsx
+  s_e9b64f95b6f8f0::t_6983f2f6322d7d 9,135-147
+ai-vision/vfe/tests/e2e/labsImportDialogs.spec.ts
+  s_e9b64f95b6f8f0::t_ad7526dbcd5f62 34-35,139-141,143,145-146,150,153,159,208-217,468,471-472,480-484,581-582,625-745
+ai-vision/vfe/tests/e2e/mcpRegistryImport.spec.ts
+  s_e9b64f95b6f8f0::t_38e3491db01fc6 4,83-93,117,120-121,136-140,160-162,167,191-197,255-416,658-660
+ai-vision/vfe/tests/mcpDom.test.ts
+  s_e9b64f95b6f8f0::t_1d071c67c1bbf8 1280,1369,1597
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f74cd4b5df028089a3608b6d0863914c79fe3385",
+  "prompts": {},
+  "sessions": {
+    "s_e9b64f95b6f8f0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ce77-82ff-7431-a6e8-b8aa6de748b7",
+        "model": "gpt-6.2-astra"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
