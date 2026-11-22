@@ -6,6 +6,7 @@ const ghost = `${control} text-[var(--color-text-secondary)] hover:bg-[var(--col
 
 export const importDialogStyles = {
   dialog: "flex flex-col gap-4 overflow-hidden rounded-[12px] shadow-none",
+  fitWorkspace: "max-h-[min(52rem,calc(100dvh-2rem))]",
   header:
     "-mx-6 -mt-6 shrink-0 gap-1 rounded-t-[11px] border-b border-[var(--color-border-labs)] bg-[var(--color-bg-labs)] px-6 py-4 pr-12",
   title:

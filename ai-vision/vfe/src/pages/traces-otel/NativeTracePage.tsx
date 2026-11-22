@@ -1332,30 +1332,6 @@ export default function NativeTracePage({
                     }}
                     enabledDims={["env", "username", "tags"]}
                   />
-                  <TraceSearchBar
-                    ref={traceSearchBarRef}
-                    contentSearchEnabled
-                    fuzzySearchEnabled={false}
-                    traceIdValue={traceIdDraft}
-                    onTraceIdChange={setTraceIdDraft}
-                    onTraceIdSubmit={submitTraceIdSearch}
-                    onTraceIdClear={() => {
-                      setTraceIdDraft("")
-                      if (traceSearch.type === "traceId") {
-                        setTraceSearch({ type: "traceId", keyword: "" })
-                      }
-                      setPage(1)
-                    }}
-                    activeContentSearch={
-                      traceSearch.type === "input" ||
-                      traceSearch.type === "output"
-                        ? traceSearch
-                        : null
-                    }
-                    onContentSubmit={submitContentSearch}
-                    onContentCancel={cancelContentSearch}
-                    onContentClear={clearContentSearch}
-                  />
                   <select
                     aria-label={t("traceFilters.sort")}
                     className="h-8 max-w-full rounded-md border border-input bg-background px-2 text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none md:hidden"
@@ -1387,6 +1363,31 @@ export default function NativeTracePage({
                       ))
                     )}
                   </select>
+                  <TraceSearchBar
+                    ref={traceSearchBarRef}
+                    idSearchClassName="ml-auto w-full min-w-0 md:w-[280px]"
+                    contentSearchEnabled
+                    fuzzySearchEnabled={false}
+                    traceIdValue={traceIdDraft}
+                    onTraceIdChange={setTraceIdDraft}
+                    onTraceIdSubmit={submitTraceIdSearch}
+                    onTraceIdClear={() => {
+                      setTraceIdDraft("")
+                      if (traceSearch.type === "traceId") {
+                        setTraceSearch({ type: "traceId", keyword: "" })
+                      }
+                      setPage(1)
+                    }}
+                    activeContentSearch={
+                      traceSearch.type === "input" ||
+                      traceSearch.type === "output"
+                        ? traceSearch
+                        : null
+                    }
+                    onContentSubmit={submitContentSearch}
+                    onContentCancel={cancelContentSearch}
+                    onContentClear={clearContentSearch}
+                  />
                 </>
               )}
               {view === "session" && (

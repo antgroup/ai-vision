@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test"
 import type {
   McpRegistryDetail,
+  McpRegistrySearchResult,
   McpRegistryServer,
 } from "../../src/labs/mcp/mcpApi"
 import { mcpPage, prepare, uiText } from "./traceLabs.fixtures"
@@ -79,6 +80,17 @@ class RegistryImport {
   get dialog() {
     return this.page.getByRole("dialog", { name: this.tr("title") })
   }
+  get input() {
+    return this.dialog.getByRole("textbox", {
+      name: this.tr("registry.searchPlaceholder"),
+    })
+  }
+  get source() {
+    return this.dialog.getByRole("combobox", {
+      name: uiText(this.language, "labs.common.registrySource"),
+      exact: true,
+    })
+  }
   button(key: string) {
     return this.dialog.getByRole("button", {
       name: this.tr(`registry.${key}`),
@@ -102,13 +114,11 @@ class RegistryImport {
       })
     ).toHaveAttribute("aria-selected", "true")
     for (const source of sources)
-      await expect(this.region(source.label)).toBeVisible()
+      await expect(this.region(source.label)).toHaveCount(0)
   }
   async search(keyword = "fixture") {
-    await this.dialog
-      .getByRole("textbox", { name: this.tr("registry.searchPlaceholder") })
-      .fill(keyword)
-    await this.button("search").click()
+    await this.input.fill(keyword)
+    await this.button(keyword.trim() ? "search" : "browse").click()
   }
   async configure(label: string) {
     await this.region(label)
@@ -123,9 +133,11 @@ async function registryFixture(
     failDirectoryOnce?: boolean
     unsupported?: boolean
     detail?: McpRegistryDetail
-    results?: Partial<
-      Record<(typeof sources)[number]["id"], McpRegistryServer[]>
-    >
+    search?: (
+      source: (typeof sources)[number]["id"],
+      query: string,
+      cursor: string
+    ) => McpRegistrySearchResult | Promise<McpRegistrySearchResult>
     language?: "en-US" | "zh-CN"
     theme?: "light" | "dark"
   } = {}
@@ -145,12 +157,14 @@ async function registryFixture(
     const request = route.request()
     const url = new URL(request.url())
     requests.push(url)
-    const source = url.searchParams.get("source") ?? ""
+    const source = sources.find(
+      (entry) => entry.id === url.searchParams.get("source")
+    )?.id
     const isSearch = url.pathname.endsWith("/search")
     const isDetail = url.pathname.endsWith("/detail")
     if (
       request.method() !== "GET" ||
-      !sources.some((entry) => entry.id === source) ||
+      !source ||
       (!isSearch && !isDetail) ||
       (isDetail && source !== "official") ||
       (isDetail && url.searchParams.get("id") !== server(source).id)
@@ -174,10 +188,13 @@ async function registryFixture(
     }
     const data = isSearch
       ? {
-          servers: options.results?.[
-            source as (typeof sources)[number]["id"]
-          ] ?? [server(source)],
-          nextCursor: null,
+          ...(options.search
+            ? await options.search(
+                source,
+                url.searchParams.get("q") ?? "",
+                url.searchParams.get("cursor") ?? ""
+              )
+            : { servers: [server(source)], nextCursor: null }),
           ...(source === "mcpservers" ? { attribution } : {}),
         }
       : options.unsupported
@@ -234,6 +251,168 @@ async function expectReachableControl(control: Locator) {
   for (const clearance of Object.values(bounds))
     expect(clearance).toBeGreaterThanOrEqual(-1)
 }
+
+for (const viewport of [
+  { name: "desktop", width: 1280, height: 720 },
+  { name: "narrow", width: 390, height: 844 },
+]) {
+  test(`fixture registry search states on ${viewport.name}`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize(viewport)
+    const sample = {
+      official: {
+        ...server("official"),
+        name: "Fetch",
+        id: "io.modelcontextprotocol/server-fetch",
+        description: "抓取网页内容，转换成便于阅读的文本。",
+      },
+      directory: {
+        ...server("mcpservers"),
+        name: "Web Fetch",
+        description: "通过 URL 获取网页内容。",
+      },
+    }
+    const fixture = await registryFixture(page, {
+      language: "zh-CN",
+      theme: "light",
+      search: (source, query) => {
+        const entry = source === "official" ? sample.official : sample.directory
+        const matched = query === "fetch" || (!query && source === "official")
+        return { servers: matched ? [entry] : [], nextCursor: null }
+      },
+    })
+    const { ui } = fixture
+    const start = ui.dialog.getByText(ui.tr("registry.start"), { exact: true })
+    const pending = ui.dialog.getByText(ui.tr("registry.searching"), {
+      exact: true,
+    })
+    const empty = ui.dialog
+      .getByRole("status")
+      .filter({ hasText: ui.tr("registry.empty") })
+    const official = ui.region(sources[0].label)
+    const directory = ui.region(sources[1].label)
+    const capture = (state: string) =>
+      page.screenshot({
+        path: testInfo.outputPath(`mcp-search-${viewport.name}-${state}.png`),
+        animations: "disabled",
+      })
+
+    await ui.open()
+    await expect(start).toBeVisible()
+    await expect(empty).toHaveCount(0)
+    await expect(ui.source.locator("option")).toHaveText([
+      ui.tr("registry.allSources"),
+      ...sources.map((source) => source.label),
+    ])
+    await expectReachableControl(ui.input)
+    await expectReachableControl(ui.source)
+    await expectReachableControl(ui.button("browse"))
+    expect((await ui.dialog.boundingBox())!.height).toBeLessThan(
+      viewport.height - 100
+    )
+    expect(fixture.requests).toEqual([])
+    await capture("default")
+
+    await ui.search("  ")
+    await expect(official.getByRole("heading", { name: "Fetch" })).toBeVisible()
+    await expect(pending).toHaveCount(0)
+    await expect(directory).toHaveCount(0)
+    await expect(empty).toHaveCount(0)
+    await expect(start).toHaveCount(0)
+    expect(fixture.requests.map((url) => url.searchParams.get("q"))).toEqual([
+      "",
+      "",
+    ])
+
+    await ui.search("no-matching-service")
+    await expect(empty).toHaveCount(1)
+    await expect(empty).toBeVisible()
+    await expect(official).toHaveCount(0)
+    await expect(directory).toHaveCount(0)
+    await capture("empty")
+
+    await ui.search("fetch")
+    await expect(official.getByRole("heading", { name: "Fetch" })).toBeVisible()
+    await expect(
+      directory.getByRole("heading", { name: "Web Fetch" })
+    ).toBeVisible()
+    await expect(empty).toHaveCount(0)
+    await capture("results")
+
+    await ui.source.selectOption("official")
+    await ui.search("fetch")
+    await expect(official.getByRole("heading", { name: "Fetch" })).toBeVisible()
+    expect(fixture.requests.at(-1)?.searchParams.get("source")).toBe("official")
+    const searches = fixture.requests.length
+    await ui.source.selectOption("mcpservers")
+    await expect(start).toBeVisible()
+    await expect(empty).toHaveCount(0)
+    await expect(official).toHaveCount(0)
+    await expect(directory).toHaveCount(0)
+    expect(fixture.requests).toHaveLength(searches)
+    expect(fixture.writes).toEqual([])
+    expect(fixture.unexpected).toEqual([])
+    expect(fixture.registryUnexpected).toEqual([])
+  })
+}
+
+test("fixture registry search waits for pending providers and retains cursor-only pages", async ({
+  page,
+}) => {
+  let finishDirectory = () => {}
+  const directoryResponse = new Promise<void>((resolve) => {
+    finishDirectory = resolve
+  })
+  const fixture = await registryFixture(page, {
+    search: async (source, _query, cursor) => {
+      if (source === "mcpservers") {
+        await directoryResponse
+        return { servers: [], nextCursor: null }
+      }
+      return cursor
+        ? { servers: [server(source)], nextCursor: null }
+        : { servers: [], nextCursor: "page-2" }
+    },
+  })
+  const { ui } = fixture
+  const official = ui.region(sources[0].label)
+  const empty = ui.dialog.getByText(text("registry.empty"), { exact: true })
+  const pending = ui.dialog.getByText(text("registry.searching"), {
+    exact: true,
+  })
+  await ui.open()
+  try {
+    await ui.search()
+    await expect(pending).toBeVisible()
+    await expect(ui.button("loadMore")).toBeVisible()
+    await expect(official.locator("article")).toHaveCount(0)
+    await expect(empty).toHaveCount(0)
+  } finally {
+    finishDirectory()
+  }
+  await expect(pending).toHaveCount(0)
+  await expect(ui.region(sources[1].label)).toHaveCount(0)
+  await expect(empty).toHaveCount(0)
+  await official
+    .getByRole("button", { name: text("registry.loadMore") })
+    .click()
+  await expect(
+    official.getByRole("heading", { name: server("official").name })
+  ).toBeVisible()
+  expect(
+    fixture.requests
+      .map((url) => [
+        url.searchParams.get("source"),
+        url.searchParams.get("cursor"),
+      ])
+      .sort()
+  ).toEqual([
+    ["mcpservers", ""],
+    ["official", ""],
+    ["official", "page-2"],
+  ])
+})
 
 for (const source of sources.filter((entry) => entry.id === "official")) {
   test(`fixture ${source.id}: required secret, masked preview, editable ID and save-only persistence`, async ({
@@ -476,7 +655,9 @@ test("fixture discovery layout: wide dialog, fixed controls and scrollable resul
       })),
     ])
   )
-  const fixture = await registryFixture(page, { results })
+  const fixture = await registryFixture(page, {
+    search: (source) => ({ servers: results[source], nextCursor: null }),
+  })
   const { ui } = fixture
   await ui.open()
   await expect
