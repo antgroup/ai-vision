@@ -179,8 +179,6 @@ class OnboardingDemoView(APIView):
             requests.RequestException,
         ) as exc:
             logger.warning("Onboarding sample setup failed (%s)", type(exc).__name__)
-            if isinstance(exc, TraceQueryServiceError) and exc.code == 3037:
-                return error_response("DEMO_BUSY", 3037, status=429)
             return error_response("DEMO_UNAVAILABLE", 5001, status=503)
 
         request.op_log = {

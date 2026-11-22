@@ -19,9 +19,6 @@ export type FixtureState = {
   guideUpdates?: unknown[]
   guideUpdateError?: boolean
   demoWrites?: unknown[]
-  demoPostAttempts?: unknown[]
-  demoPostBusy?: boolean
-  demoPostUnavailable?: boolean
   demoTraceReads?: number
   demoReadThrottled?: boolean
   comparisonTraceReads?: number
@@ -414,17 +411,6 @@ export function guideFixture(
     path === `/api/v1/spaces/${guideSpace}/onboarding/demo` &&
     method === "POST"
   ) {
-    ;(state.demoPostAttempts ??= []).push(body)
-    if (state.demoPostBusy && state.demoPostAttempts.length === 1)
-      return {
-        status: 429,
-        body: { code: 3037, message: "Trace query is busy; retry shortly" },
-      }
-    if (state.demoPostUnavailable)
-      return {
-        status: 503,
-        body: { code: 5001, message: "Fixture sample is unavailable" },
-      }
     ;(state.demoWrites ??= []).push(body)
     state.noAgent = false
     state.empty = false

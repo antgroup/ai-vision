@@ -66,8 +66,6 @@ import {
 } from "@/components/ui/popover"
 import { useAgent } from "@/contexts/AgentContext"
 import { useSpace } from "@/contexts/SpaceContext"
-import { useTimeFilter } from "@/contexts/TimeFilterContext"
-import { getPresetTimeWindow } from "@/lib/timeFilter"
 import { listMcpConfigs } from "@/labs/mcp/mcpApi"
 import { listSkillConfigs } from "@/labs/skill/skillApi"
 import {
@@ -1495,7 +1493,6 @@ interface TraceDetailArgs {
   to: string
   agentProduct: string
   agentUuid: string | null
-  refreshTick: number
 }
 
 function useTraceDetail({
@@ -1505,7 +1502,6 @@ function useTraceDetail({
   to,
   agentProduct,
   agentUuid,
-  refreshTick,
 }: TraceDetailArgs) {
   return useQuery({
     queryKey: [
@@ -1517,7 +1513,6 @@ function useTraceDetail({
       to,
       agentProduct,
       agentUuid,
-      refreshTick,
     ],
     queryFn: async () => {
       const resp = await fetchNativeTraceDetail(spaceId, traceId, {
@@ -1544,18 +1539,8 @@ export function TraceComparePage() {
   const traceA = searchParams.get("a") ?? ""
   const traceB = searchParams.get("b") ?? ""
   const showMcpInitially = searchParams.get("showMcp") === "1"
-  const { timeRange, isCustom, fromTimestamp, toTimestamp, queryRefreshTick } =
-    useTimeFilter()
-  const criteria = useMemo(
-    () => ({
-      window: isCustom
-        ? { from: fromTimestamp, to: toTimestamp }
-        : getPresetTimeWindow(timeRange),
-      refreshTick: queryRefreshTick,
-    }),
-    [timeRange, isCustom, fromTimestamp, toTimestamp, queryRefreshTick]
-  )
-  const { from, to } = criteria.window
+  const from = searchParams.get("from") ?? ""
+  const to = searchParams.get("to") ?? ""
 
   const { currentSpace } = useSpace()
   const { currentAgent } = useAgent()
@@ -1570,7 +1555,6 @@ export function TraceComparePage() {
     to,
     agentProduct,
     agentUuid,
-    refreshTick: criteria.refreshTick,
   })
   const queryB = useTraceDetail({
     spaceId,
@@ -1579,7 +1563,6 @@ export function TraceComparePage() {
     to,
     agentProduct,
     agentUuid,
-    refreshTick: criteria.refreshTick,
   })
   // Wait for initial declarations before seeding the pair's visibility default.
   // A failed registry still allows verified result-shape recognition; cached

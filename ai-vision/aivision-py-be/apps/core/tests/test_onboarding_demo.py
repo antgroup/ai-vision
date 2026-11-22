@@ -22,7 +22,6 @@ from apps.core.tests.helpers import (
     create_test_agent,
     create_test_space_member,
 )
-from apps.core.trace_query.types import TraceQueryServiceError
 
 
 class DemoConsentTests(SimpleTestCase):
@@ -438,90 +437,6 @@ class OnboardingDemoTests(TestCase):
         self.assertEqual(
             send.call_args_list[0].kwargs["data"], send.call_args.kwargs["data"]
         )
-
-    @patch("apps.core.views.onboarding_demo.get_default_trace_query_service")
-    @patch("apps.core.views.langfuse_ingest.requests.post")
-    @patch("apps.core.views.onboarding_demo.remote")
-    def test_busy_settled_replay_preserves_demo_and_can_retry(
-        self, remote, send, query
-    ):
-        remote.side_effect = self._builtin_response
-        send.return_value = Mock(status_code=200, content=b"")
-        receipt = self._confirm().data["data"]
-        agent = Agent.objects.get(uuid=receipt["agent_uuid"])
-        saved_metadata = agent.metadata
-        agent.status = 0
-        agent.save(update_fields=["status"])
-        read = query.return_value.get_trace_detail
-        read.side_effect = TraceQueryServiceError(
-            "Private upstream capacity detail", 3037
-        )
-        later = timezone.now() + timedelta(minutes=1)
-
-        with patch("django.utils.timezone.now", return_value=later):
-            busy = self._confirm()
-
-        self.assertEqual(busy.status_code, 429)
-        self.assertEqual(
-            busy.data, {"code": 3037, "message": "DEMO_BUSY", "data": None}
-        )
-        agent.refresh_from_db()
-        self.assertEqual(agent.status, 0)
-        self.assertEqual(agent.metadata, saved_metadata)
-        self.assertEqual(Agent.objects.filter(space=self.space).count(), 1)
-        self.assertEqual(send.call_count, 1)
-
-        targets = {
-            receipt["trace_id"]: receipt["span_count"],
-            receipt["comparison_trace_id"]: receipt["comparison_span_count"],
-            **{
-                scene["trace_id"]: scene["span_count"]
-                for scene in receipt["scenarios"].values()
-            },
-        }
-        for turn in receipt["scenarios"]["session"]["turns"]:
-            targets[turn["trace_id"]] = turn["span_count"]
-
-        def complete(*, trace_id, **kwargs):
-            return {"meta": {"complete": True, "expectedSpanCount": targets[trace_id]}}
-
-        read.side_effect = complete
-        with patch("django.utils.timezone.now", return_value=later):
-            retried = self._confirm()
-
-        self.assertEqual(retried.status_code, 200)
-        self.assertEqual(retried.data["data"], receipt)
-        agent.refresh_from_db()
-        self.assertEqual(agent.status, 1)
-        self.assertEqual(agent.metadata, saved_metadata)
-        self.assertEqual(send.call_count, 1)
-
-    @patch("apps.core.views.onboarding_demo.get_default_trace_query_service")
-    @patch("apps.core.views.langfuse_ingest.requests.post")
-    @patch("apps.core.views.onboarding_demo.remote")
-    def test_other_settled_trace_errors_remain_unavailable(self, remote, send, query):
-        remote.side_effect = self._builtin_response
-        send.return_value = Mock(status_code=200, content=b"")
-        receipt = self._confirm().data["data"]
-        read = query.return_value.get_trace_detail
-        later = timezone.now() + timedelta(minutes=1)
-
-        for code in (3019, 3035, 3036):
-            with self.subTest(code=code):
-                read.side_effect = TraceQueryServiceError(
-                    "Private upstream detail", code
-                )
-                with patch("django.utils.timezone.now", return_value=later):
-                    response = self._confirm()
-
-                self.assertEqual(response.status_code, 503)
-                self.assertEqual(
-                    response.data,
-                    {"code": 5001, "message": "DEMO_UNAVAILABLE", "data": None},
-                )
-
-        self.assertEqual(send.call_count, 1)
-        self.assertEqual(Agent.objects.filter(uuid=receipt["agent_uuid"]).count(), 1)
 
     @patch("apps.core.views.onboarding_demo.get_default_trace_query_service")
     @patch("apps.core.views.langfuse_ingest.requests.post")

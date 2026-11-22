@@ -967,7 +967,6 @@ export function NativeTraceDetail({
               spaceId={spaceId}
               onNavigateToSession={onNavigateToSession}
               onSelectSpan={(spanId) => openProcess({ spanId })}
-              onViewSkillCall={selectVisibleSpan}
               onViewMessage={(source, message) =>
                 openProcess(
                   {
@@ -991,10 +990,6 @@ export function NativeTraceDetail({
           <div
             key={`${spaceId}/${sourceSystem}/${traceId}/process`}
             data-trace-panel="process"
-            data-guide-mcp-spans={spans
-              .filter((span) => resolveMcpSpanInfo(span.attributes ?? {}))
-              .map((span) => span.span_id)
-              .join(" ")}
             className={cn(
               "min-h-0 flex-1 overflow-auto p-4",
               tab !== "process" && "hidden"
@@ -1797,7 +1792,6 @@ function TracePreview({
   spaceId,
   onNavigateToSession,
   onSelectSpan,
-  onViewSkillCall,
   onViewMessage,
   onViewOutput,
   onViewProcess,
@@ -1817,7 +1811,6 @@ function TracePreview({
   spaceId: string
   onNavigateToSession?: (sessionId: string, focusTraceId?: string) => void
   onSelectSpan?: (spanId: string) => void
-  onViewSkillCall: (spanId: string) => void
   onViewMessage?: (source: UserInputSource, message: UserInputMessage) => void
   onViewOutput?: (value: unknown, sourceSpanId: string) => void
   onViewProcess?: () => void
@@ -2002,7 +1995,7 @@ function TracePreview({
         <SkillTraceSummary
           spans={spans}
           spaceId={spaceId}
-          onSelectSpan={onViewSkillCall}
+          onSelectSpan={onSelectSpan}
           overviewLinks={labsEnabled}
         />
       </TraceEnhancedContent>

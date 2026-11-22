@@ -375,8 +375,11 @@ function McpConfigImportForm({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent
         size={compact ? "detail" : "workspace"}
-        fillHeight={!compact}
-        className={importDialogStyles.dialog}
+        fillHeight={!compact && tab !== "search"}
+        className={cn(
+          importDialogStyles.dialog,
+          tab === "search" && importDialogStyles.fitWorkspace
+        )}
         data-product-guide="mcp-import"
         data-guide-state={parsed ? "ready" : "empty"}
         data-guide-mode={tab}
@@ -394,9 +397,11 @@ function McpConfigImportForm({
             {t(
               localImport
                 ? "labs.common.importConflicts.localDescription"
-                : feature === "mcp" && tab === "paste" && !registryPreview
-                  ? "labs.mcp.import.pasteDesc"
-                  : `labs.${feature}.import.desc`
+                : tab === "search"
+                  ? "labs.mcp.import.registry.hint"
+                  : feature === "mcp" && !registryPreview
+                    ? "labs.mcp.import.pasteDesc"
+                    : `labs.${feature}.import.desc`
             )}
           </DialogDescription>
         </DialogHeader>

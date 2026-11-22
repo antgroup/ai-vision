@@ -391,8 +391,6 @@ function GuideSession({
         "data-guide-trace",
         "data-guide-content-mode",
         "data-guide-diagnosis-source",
-        "data-guide-mcp-spans",
-        "data-process-focused",
         "data-state",
       ],
     })
@@ -443,18 +441,6 @@ function GuideSession({
   const ruleSucceeded =
     ruleSelected && diagnosis?.dataset.guideState === "succeeded"
   const targetDetail = !demo || detail?.dataset.guideTrace === demo.traceId
-  const processCall =
-    active && demo && targetDetail
-      ? visible(
-          '[data-trace-panel="process"] [data-process-focused="true"] button[data-process-source]'
-        )
-      : null
-  const mcpProcessCall = processCall
-    ?.closest<HTMLElement>("[data-guide-mcp-spans]")
-    ?.dataset.guideMcpSpans?.split(" ")
-    .includes(processCall.dataset.processSource ?? "")
-    ? processCall
-    : null
   const demoInRawMode = !!demo && detail?.dataset.guideContentMode === "raw"
   const demoEvidence =
     demo?.evidenceSpanId &&
@@ -696,11 +682,6 @@ function GuideSession({
     message = "enhancedMode"
     target = visible('[data-product-guide="trace-mode-enhanced"]')
   }
-  if (step === "enhanced" && !demoInRawMode && mcpProcessCall) {
-    message = "mcpProcess"
-    target = mcpProcessCall
-    action = "viewMcpCall"
-  }
   if (
     ["enhanced", "enhancedCall", "call", "inspect", "check"].includes(step) &&
     !detail
@@ -878,7 +859,6 @@ function GuideSession({
       navigate(guideRoute("/access", location.search))
     }
     if (action === "check") move("check")
-    if (action === "viewMcpCall") mcpProcessCall?.click()
     if (action === "importConfig") move("mcpConfig")
     if (action === "backToCall") {
       visible('[data-product-guide="mcp-config-close"]')?.click()
@@ -1109,6 +1089,8 @@ function Spotlight({
   const [rect, setRect] = useState<DOMRect | null>(null)
   const card = useRef<HTMLDivElement>(null)
   const layer = useRef<HTMLDivElement>(null)
+  const importDialog =
+    parent.dataset.productGuide === "mcp-import" ? parent : null
   useEffect(() => {
     card.current?.focus({ preventScroll: true })
   }, [message, parent])
@@ -1168,6 +1150,7 @@ function Spotlight({
     }
     const resize = new ResizeObserver(refresh)
     resize.observe(target)
+    if (importDialog && importDialog !== target) resize.observe(importDialog)
     // Sidebar width animates on a sibling. The content inset resizes even
     // when a target only moves or its row wraps at a container breakpoint.
     const inset = target.closest('[data-slot="sidebar-inset"]')
@@ -1181,7 +1164,7 @@ function Spotlight({
       document.removeEventListener("animationstart", motion, true)
       document.removeEventListener("transitionrun", motion, true)
     }
-  }, [target, revision])
+  }, [importDialog, target, revision])
   useEffect(() => {
     if (!target) return
     const box = target.getBoundingClientRect()
@@ -1233,17 +1216,38 @@ function Spotlight({
   let left = Math.max(12, innerWidth - width - 16)
   let top = bottom
   if (focus && focus.right > focus.left && focus.bottom > focus.top) {
-    left = Math.max(12, Math.min(innerWidth - width - 12, focus.right - width))
-    if (innerHeight - focus.bottom >= height + 22) {
-      top = focus.bottom + 12
-    } else if (focus.top >= height + 22) {
-      top = focus.top - height - 12
-    } else if (focus.left >= width + 24) {
-      left = focus.left - width - 12
-      top = Math.max(12, Math.min(bottom, focus.top))
-    } else if (innerWidth - focus.right >= width + 24) {
-      left = focus.right + 12
-      top = Math.max(12, Math.min(bottom, focus.top))
+    // Highlight the current control, but leave the import dialog's other
+    // controls reachable by placing the card outside it whenever there is room.
+    const dialogBounds = importDialog && visibleTargetRect(importDialog)
+    const placement =
+      dialogBounds &&
+      (innerHeight - dialogBounds.bottom >= height + 22 ||
+        dialogBounds.top >= height + 22 ||
+        dialogBounds.left >= width + 24 ||
+        innerWidth - dialogBounds.right >= width + 24)
+        ? dialogBounds
+        : focus
+    // A tall import dialog may fill the viewport. In that case prefer the
+    // space above the highlight, keeping its footer buttons reachable.
+    const preferAbove = !!importDialog && placement === focus
+    const fitsAbove = placement.top >= height + 22
+    left = Math.max(
+      12,
+      Math.min(innerWidth - width - 12, placement.right - width)
+    )
+    if (
+      innerHeight - placement.bottom >= height + 22 &&
+      (!preferAbove || !fitsAbove)
+    ) {
+      top = placement.bottom + 12
+    } else if (fitsAbove) {
+      top = placement.top - height - 12
+    } else if (placement.left >= width + 24) {
+      left = placement.left - width - 12
+      top = Math.max(12, Math.min(bottom, placement.top))
+    } else if (innerWidth - placement.right >= width + 24) {
+      left = placement.right + 12
+      top = Math.max(12, Math.min(bottom, placement.top))
     } else {
       const overlap = (y: number) =>
         Math.max(0, Math.min(y + height, focus.bottom) - Math.max(y, focus.top))

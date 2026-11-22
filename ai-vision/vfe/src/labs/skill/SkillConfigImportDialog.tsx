@@ -222,8 +222,11 @@ function SkillConfigImportForm({
     <Dialog open={open} onOpenChange={close}>
       <DialogContent
         size={localFileView ? "detail" : "workspace"}
-        fillHeight={!localFileView}
-        className={importDialogStyles.dialog}
+        fillHeight={!localFileView && mode === "file"}
+        className={cn(
+          importDialogStyles.dialog,
+          mode !== "file" && importDialogStyles.fitWorkspace
+        )}
       >
         <DialogHeader className={importDialogStyles.header}>
           <DialogTitle className={importDialogStyles.title}>

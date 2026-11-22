@@ -85,6 +85,7 @@ function TraceSearchInfinityLoader() {
 
 interface TraceSearchBarProps {
   idKind?: "trace" | "session"
+  idSearchClassName?: string
   traceIdValue: string
   onTraceIdChange: (value: string) => void
   onTraceIdSubmit: () => void
@@ -113,6 +114,7 @@ export const TraceSearchBar = forwardRef<
 >(function TraceSearchBar(
   {
     idKind = "trace",
+    idSearchClassName,
     traceIdValue,
     onTraceIdChange,
     onTraceIdSubmit,
@@ -345,7 +347,12 @@ export const TraceSearchBar = forwardRef<
         </div>
       ) : null}
 
-      <div className="relative w-[280px] min-w-[220px] shrink-0">
+      <div
+        className={cn(
+          "relative w-[280px] min-w-[220px] shrink-0",
+          idSearchClassName
+        )}
+      >
         <button
           type="button"
           className="absolute top-1/2 left-2.5 z-10 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
