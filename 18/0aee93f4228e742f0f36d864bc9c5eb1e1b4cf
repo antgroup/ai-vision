@@ -1,0 +1,57 @@
+ai-vision/vfe/src/components/product-guide/DemoConsentDialog.tsx
+  s_82be5084f06fc7::t_ad179fa27e5633 75-76,86-90,93-94,209-219
+  s_82be5084f06fc7::t_ee72720adc630e 73,79,83-84,109,147
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_82be5084f06fc7::t_ee72720adc630e 69-70,1498,1508,1520,1547-1558,1573,1582
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_82be5084f06fc7::t_ee72720adc630e 970,994-997,1800,1820,2005
+ai-vision/vfe/src/components/product-guide/ProductGuide.tsx
+  s_82be5084f06fc7::t_f46dac51b9fb16 1237-1249,1273-1275,1280,1292-1293
+  s_82be5084f06fc7::t_ee72720adc630e 394-395,446-457,699-703,881
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_82be5084f06fc7::t_ee72720adc630e 6114,6180
+ai-vision/vfe/tests/e2e/skillTrace.spec.ts
+  s_82be5084f06fc7::t_c1926ac277d552 38-40,52-53,55,58,66-73,79-122
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_82be5084f06fc7::t_ee72720adc630e 6117,6183
+ai-vision/vfe/tests/e2e-platform/onboardingDemo.spec.ts
+  s_82be5084f06fc7::t_ee72720adc630e 170-178,203-212,311-317,361-363
+ai-vision/vfe/tests/e2e/traceCompareLinkage.spec.ts
+  s_82be5084f06fc7::t_c1926ac277d552 125-241
+ai-vision/aivision-py-be/apps/core/views/onboarding_demo.py
+  s_82be5084f06fc7::t_ee72720adc630e 182-183
+ai-vision/aivision-py-be/apps/core/tests/test_onboarding_demo.py
+  s_82be5084f06fc7::t_c1926ac277d552 25,442-524
+  s_82be5084f06fc7::t_d7a2691d3a8dda 525
+ai-vision/vfe/tests/e2e/productGuide.fixtures.ts
+  s_82be5084f06fc7::t_c1926ac277d552 22-24,417-427
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  s_82be5084f06fc7::t_c1926ac277d552 243-334,1193-1210,1462-1480
+ai-vision/vfe/src/components/diagnose/diagnoser/RawTraceVariablePicker.tsx
+  s_82be5084f06fc7::t_44a6a7384fbf97 1387-1388,1662,1664,2051,2057,2062,2064
+  s_82be5084f06fc7::t_bd24abb1e2b677 1384-1386
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_82be5084f06fc7::t_ee72720adc630e 6117,6183
+ai-vision/vfe/tests/llmDiagnoserSpec.test.ts
+  s_82be5084f06fc7::t_bd24abb1e2b677 693-702,711-712,715-716,732-734,760-764,851-855,860-865,1200,1204,1208-1211
+  s_82be5084f06fc7::t_b01614a3c5bcd7 1223
+  s_82be5084f06fc7::t_1f4871d8b19980 956-961,1201-1203
+  s_82be5084f06fc7::t_fb85e69fc8153b 687,692,703-710,713-714,717-719,766,836,840,842-850,856,858,866-868,938-940,953-954,1194-1199,1205-1207,1212-1222
+  s_82be5084f06fc7::t_78974dd7a60f51 1224-1228
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "180aee93f4228e742f0f36d864bc9c5eb1e1b4cf",
+  "prompts": {},
+  "sessions": {
+    "s_82be5084f06fc7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a201c6-414d-76c2-8c5c-41946c65fc01",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
