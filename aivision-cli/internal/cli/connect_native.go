@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows || (amd64 && windows_codex_connect && !native_distribution)
 
 package cli
 
@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -117,6 +118,9 @@ func unpackNativeConnect(body []byte) (string, func(), error) {
 }
 
 func nativeConnectExecutable(filename string) bool {
+	if runtime.GOOS == "windows" {
+		return false
+	}
 	f, err := os.Open(filename)
 	if err != nil {
 		return false
@@ -143,7 +147,17 @@ func connectCommand(ctx context.Context, installer, python string, args ...strin
 	if err != nil {
 		return nil, err
 	}
-	return exec.CommandContext(ctx, interpreter, append([]string{installer}, args...)...), nil
+	return sourcePythonCommand(ctx, interpreter, append([]string{installer}, args...)...), nil
+}
+
+func sourcePythonCommand(ctx context.Context, interpreter string, args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, interpreter, args...)
+	if runtime.GOOS == "windows" {
+		// Python install-manager launch aliases can install a runtime by default.
+		// Onboarding only uses Python that is already present on the host.
+		cmd.Env = append(cmd.Environ(), "PYTHON_MANAGER_AUTOMATIC_INSTALL=false")
+	}
+	return cmd
 }
 
 func connectPreflightError(installer string, err error) error {

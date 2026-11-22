@@ -57,19 +57,6 @@ export function OnboardingGuideSections({
                     },
                   },
                 },
-                Windows: {
-                  modes: {
-                    cli: {
-                      label: "PowerShell",
-                      steps: [
-                        {
-                          title: t("agentAccess.cliInstall.checkWindows"),
-                          command: "Get-Command aiv\naiv --version",
-                        },
-                      ],
-                    },
-                  },
-                },
               },
             }}
           />

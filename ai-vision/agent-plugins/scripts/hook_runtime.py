@@ -191,14 +191,22 @@ def pin_session_mode(config, env, session_id):
     """Keep hook subprocesses and their workers on the session's initial mode."""
     if not session_id:
         return
-    import fcntl
     directory = Path(config['config_dir']) / 'aivision' / config['agent'] / 'session-modes'
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     digest = hashlib.sha256(session_id.encode()).hexdigest()
     path = directory / (digest + '.json')
     descriptor = os.open(directory / (digest + '.lock'), os.O_CREAT | os.O_RDWR, 0o600)
-    with os.fdopen(descriptor, 'w') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+    with os.fdopen(descriptor, 'r+b') as lock:
+        if os.name == 'nt':
+            import msvcrt
+
+            # Lock one byte from offset zero, including on a new empty file.
+            # Windows releases the byte-range lock when the file is closed.
+            msvcrt.locking(lock.fileno(), msvcrt.LK_LOCK, 1)
+        else:
+            import fcntl
+
+            fcntl.flock(lock, fcntl.LOCK_EX)
         if path.exists():
             mode = json.loads(path.read_text())['collection_mode']
             if mode not in ('full', 'privacy'):
@@ -333,6 +341,8 @@ def recover_latest_detached_worker(
     cannot tell which marker this hook owns, and guessing (newest marker) could
     resume an unrelated session, so we skip instead.
     """
+    if os.name == "nt":
+        return
     session_key = session_state_key(current_session_id or "")
     if not session_key:
         return

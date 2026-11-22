@@ -232,19 +232,16 @@ class ThirdPartyOnboardingTests(SpaceKeyTestCase):
                 for section in guide["sections"]
                 if section["type"] == "setup_steps"
             )
-            self.assertEqual(set(steps["platforms"]), {"macOS/Linux", "Windows"})
-            for platform_name, platform in steps["platforms"].items():
-                command = platform["modes"]["cli"]["steps"][0]["command"]
-                # aiv is a single cross-platform binary, so both platforms
-                # share the same command; it replaces the old curl|bash flow.
-                self.assertIn(f"aiv connect {guide['plugin_key']}", command)
-                self.assertIn("--base-url '{baseUrl}'", command)
-                self.assertIn("--space-id '{spaceId}'", command)
-                self.assertIn("--agent-uuid '{agentUuid}'", command)
-                self.assertIn("--installation-token '{installationToken}'", command)
-                self.assertNotIn("install.sh", command)
-                self.assertNotIn("Invoke-WebRequest", command)
-                self.assertNotIn("SpaceKey", str(guide))
+            self.assertEqual(set(steps["platforms"]), {"macOS/Linux"})
+            command = steps["platforms"]["macOS/Linux"]["modes"]["cli"]["steps"][0]["command"]
+            self.assertIn(f"aiv connect {guide['plugin_key']}", command)
+            self.assertIn("--base-url '{baseUrl}'", command)
+            self.assertIn("--space-id '{spaceId}'", command)
+            self.assertIn("--agent-uuid '{agentUuid}'", command)
+            self.assertIn("--installation-token '{installationToken}'", command)
+            self.assertNotIn("install.sh", command)
+            self.assertNotIn("Invoke-WebRequest", command)
+            self.assertNotIn("SpaceKey", str(guide))
             self.assertEqual(kind.category, "CUSTOM")
             self.assertIn(kind.display_scope, {"ALL", "HIDDEN"})
         for route in previous_routes:

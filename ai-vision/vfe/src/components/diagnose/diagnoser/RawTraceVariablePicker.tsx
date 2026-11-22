@@ -1381,9 +1381,11 @@ export function RawTraceVariablePicker({
       : []
   }, [sample, samples])
   const [activeTraceId, setActiveTraceId] = useState("")
-  const activeSample =
-    traceSamples.find((item) => item.trace_id === activeTraceId) ??
-    traceSamples[0]
+  const activeSample = activeTraceId
+    ? traceSamples.find((item) => item.trace_id === activeTraceId)
+    : traceSamples[0]
+  const loadingSelectedSample = !activeSample && traceLoading
+  const selectedSampleError = activeSample ? null : traceLoadError
   const raw = asRecord(activeSample?.test_input)
   const spans = useMemo(
     () =>
@@ -1657,9 +1659,9 @@ export function RawTraceVariablePicker({
                   onRequest={requestTrace}
                   popoverClassName="w-80 max-w-[calc(100vw-2rem)]"
                 />
-                {traceLoadError ? (
+                {selectedSampleError ? (
                   <p className="text-xs text-[var(--color-error)]">
-                    {traceLoadError}
+                    {selectedSampleError}
                   </p>
                 ) : null}
               </div>
@@ -2046,20 +2048,20 @@ export function RawTraceVariablePicker({
           ) : (
             <div className="col-span-full flex min-h-0 items-center justify-center px-6 py-12">
               <div className="flex max-w-md flex-col items-center gap-3 text-center">
-                {traceLoading ? (
+                {loadingSelectedSample ? (
                   <Loader2 className="size-5 animate-spin text-muted-foreground" />
                 ) : null}
                 <div className="space-y-1">
                   <p className="text-sm font-medium">
                     {t(
-                      traceLoading
+                      loadingSelectedSample
                         ? "rawTracePicker.loading"
                         : "rawTracePicker.noSpans"
                     )}
                   </p>
-                  {!traceLoading ? (
+                  {!loadingSelectedSample ? (
                     <p className="text-xs leading-5 text-muted-foreground">
-                      {traceLoadError || t("rawTracePicker.noSpansHelp")}
+                      {selectedSampleError || t("rawTracePicker.noSpansHelp")}
                     </p>
                   ) : null}
                 </div>

@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import subprocess
 import tempfile
 import unittest
 from types import SimpleNamespace
@@ -29,7 +30,8 @@ class StatusTests(unittest.TestCase):
             (managed / 'installation.json').write_text(json.dumps({'agent': 'codex', 'installed_path': str(binary), 'version': 'test',
                                                                  'sha256': hashlib.sha256(binary.read_bytes()).hexdigest()}))
             (root / 'config.toml').write_text('[features]\nhooks = true\n')
-            command = shlex.join(['python', str(managed / 'hook_runtime.py'), '--config', str(managed / 'ingest.json'), '--binary', str(binary)])
+            command_pieces = ['python', str(managed / 'hook_runtime.py'), '--config', str(managed / 'ingest.json'), '--binary', str(binary)]
+            command = subprocess.list2cmdline(command_pieces) if os.name == 'nt' else shlex.join(command_pieces)
             hooks = config.merge_hooks({}, command, 'cdxhooks', ['UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop', 'SessionEnd'])
             (root / 'hooks.json').write_text(json.dumps(hooks))
             args = SimpleNamespace(agent='codex', config_dir=str(root), base_url='https://vision.test', space_id='space', agent_uuid='uuid')
