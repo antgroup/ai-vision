@@ -684,10 +684,39 @@ async function llmTrialDOM() {
   const shells = new Proxy({}, { get: () => wrap })
   const rawHarness = nativeUiHarness({
     react: React,
+    "@/lib/clipboard": { writeClipboardText: async () => {} },
     "@/lib/utils": {
       cn: (...values: unknown[]) => values.filter(Boolean).join(" "),
     },
     "lucide-react": new Proxy({}, { get: () => blank }),
+    "@/components/ui/dialog": {
+      DialogDescription: wrap,
+      DialogHeader: wrap,
+      DialogTitle: wrap,
+      Dialog: ({
+        open,
+        children,
+      }: {
+        open: boolean
+        children: React.ReactNode
+      }) =>
+        open ? React.createElement("div", { role: "dialog" }, children) : null,
+    },
+    "@/components/dialogs/DialogContent": { DialogContent: wrap },
+    "@/components/ui/button": {
+      Button: ({ onClick, children }: React.ComponentProps<"button">) =>
+        React.createElement("button", { type: "button", onClick }, children),
+    },
+    "@/components/ui/input": {
+      Input: (props: React.ComponentProps<"input">) =>
+        React.createElement("input", props),
+    },
+    "@/components/ui/textarea": {
+      Textarea: (props: React.ComponentProps<"textarea">) =>
+        React.createElement("textarea", props),
+    },
+    "@/components/ui/select": shells,
+    "@/components/ui/tabs": shells,
     "@/components/ui/input-group": {
       InputGroup: wrap,
       InputGroupAddon: wrap,
@@ -700,9 +729,9 @@ async function llmTrialDOM() {
     "@/components/ui/command": shells,
     "@/components/ui/tooltip": shells,
   })
-  const { TraceIdInput } = rawHarness.load<Record<string, unknown>>(
-    "components/diagnose/diagnoser/RawTraceVariablePicker.tsx"
-  )
+  const { RawTraceVariablePicker, TraceIdInput } = rawHarness.load<
+    Record<string, unknown>
+  >("components/diagnose/diagnoser/RawTraceVariablePicker.tsx")
   const props: Record<string, unknown> = {
     open: true,
     inline: true,
@@ -728,8 +757,13 @@ async function llmTrialDOM() {
   }
   let samples = ["trace-A", "trace-B"].map((trace_id) => ({
     trace_id,
-    test_input: { trace_id, runtime_type: "codex", spans: [] },
+    test_input: {
+      trace_id,
+      runtime_type: "codex",
+      spans: [{ name: `${trace_id}-root`, input: `${trace_id}-input` }],
+    },
   }))
+  let requestedTraceFailure: Error | null = null
   const harness = nativeUiHarness({
     react: React,
     "@tanstack/react-query": {
@@ -799,20 +833,39 @@ async function llmTrialDOM() {
       LazyCodeMirrorEditor: ({
         value,
         onChange,
+        onBrowseTraceVariables,
       }: {
         value: string
         onChange: (value: string) => void
+        onBrowseTraceVariables: () => void
       }) =>
-        React.createElement("textarea", {
-          "aria-label": "Prompt",
-          value,
-          onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) =>
-            onChange(event.target.value),
-        }),
+        React.createElement(
+          React.Fragment,
+          null,
+          React.createElement("textarea", {
+            "aria-label": "Prompt",
+            value,
+            onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) =>
+              onChange(event.target.value),
+          }),
+          React.createElement("button", {
+            type: "button",
+            "aria-label": "Browse Trace",
+            onClick: onBrowseTraceVariables,
+          })
+        ),
     },
-    "./RawTraceVariablePicker": { RawTraceVariablePicker: blank, TraceIdInput },
+    "./RawTraceVariablePicker": { RawTraceVariablePicker, TraceIdInput },
     "./useDiagnoserReferenceTraces": {
-      useDiagnoserReferenceTraceSample: () => ({ data: { samples } }),
+      useDiagnoserReferenceTraceSample: (
+        _space: string,
+        _agent: string,
+        _enabled: boolean,
+        traceId?: string
+      ) =>
+        traceId && requestedTraceFailure
+          ? { isError: true, error: requestedTraceFailure }
+          : { data: { samples } },
     },
     "lucide-react": new Proxy({}, { get: () => blank }),
     sonner: { toast: { error: (message: string) => errors.push(message) } },
@@ -882,6 +935,9 @@ async function llmTrialDOM() {
     props,
     calls,
     errors,
+    failRequestedTrace: () => {
+      requestedTraceFailure = new Error("REQUESTED TRACE UNAVAILABLE")
+    },
     render,
     button,
     change,
@@ -894,17 +950,15 @@ async function llmTrialDOM() {
       )
     },
     run: () => React.act(async () => button().click()),
-    trace: async (value: string) => {
-      await change('input[role="combobox"]', value)
+    trace: async (value: string, selector = 'input[role="combobox"]') => {
+      await change(selector, value)
       await React.act(async () =>
-        dom.window.document
-          .querySelector('input[role="combobox"]')!
-          .dispatchEvent(
-            new dom.window.KeyboardEvent("keydown", {
-              key: "Enter",
-              bubbles: true,
-            })
-          )
+        dom.window.document.querySelector(selector)!.dispatchEvent(
+          new dom.window.KeyboardEvent("keydown", {
+            key: "Enter",
+            bubbles: true,
+          })
+        )
       )
     },
     finish: (index: number, summary: string, failed = false) =>
@@ -1132,6 +1186,41 @@ test("an unloaded requested LLM Trial Trace never falls back to a recent Trace",
     await page.run()
     assert.equal(page.calls.length, 1)
     assert.equal(page.calls[0].payload.test_input.trace_id, "trace-B")
+  } finally {
+    await page.close()
+  }
+})
+
+test("the LLM field picker hides unrelated fields while another Trace is unavailable", async () => {
+  const page = await llmTrialDOM()
+  const document = page.dom.window.document
+  const picker = () => document.querySelector('[role="dialog"]')!
+  const selector = '[role="dialog"] input[role="combobox"]'
+  try {
+    await React.act(async () =>
+      document
+        .querySelector<HTMLButtonElement>('button[aria-label="Browse Trace"]')!
+        .click()
+    )
+    assert.match(picker().textContent!, /trace-A-input/)
+
+    await page.trace("trace-not-loaded", selector)
+    assert.equal(
+      document.querySelector<HTMLInputElement>(selector)!.value,
+      "trace-not-loaded"
+    )
+    assert.doesNotMatch(picker().textContent!, /trace-A-input/)
+    assert.equal(picker().querySelector("textarea"), null)
+
+    page.failRequestedTrace()
+    await page.render()
+    assert.match(picker().textContent!, /REQUESTED TRACE UNAVAILABLE/)
+    assert.doesNotMatch(picker().textContent!, /trace-A-input/)
+
+    await page.trace("trace-B", selector)
+    assert.match(picker().textContent!, /trace-B-input/)
+    assert.doesNotMatch(picker().textContent!, /trace-A-input/)
+    assert.doesNotMatch(picker().textContent!, /REQUESTED TRACE UNAVAILABLE/)
   } finally {
     await page.close()
   }

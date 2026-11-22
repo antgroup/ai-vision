@@ -70,26 +70,28 @@ function isTraceAnchor(
   )
 }
 
-async function waitForDemoRead(
+async function waitForDemoReady<T>(
   signal: AbortSignal,
-  isReadable: () => Promise<boolean>
+  check: () => Promise<T>,
+  stage: "read" | "import" = "read"
 ) {
   // Ingest acceptance precedes visibility in the trace index.
+  // Dashboard reads can also occupy query capacity during preparation.
   for (let attempt = 0; attempt < 45; attempt++) {
     if (signal.aborted) throw new Error("Demo preparation was aborted")
     try {
-      if (await isReadable()) return
+      const result = await check()
+      if (result) return result
     } catch (error) {
-      if (
-        !(
-          error instanceof ApiBusinessError &&
-          (error.statusCode === 404 ||
+      if (!(error instanceof ApiBusinessError)) throw error
+      const retryable =
+        stage === "import"
+          ? error.statusCode === 429 && error.code === 3037
+          : error.statusCode === 404 ||
             error.statusCode === 429 ||
             error.code === 3019 ||
-            error.code === 3035)
-        )
-      )
-        throw error
+            error.code === 3035
+      if (!retryable) throw error
     }
     await new Promise<void>((resolve) => {
       window.setTimeout(resolve, 1000)
@@ -104,7 +106,7 @@ function readDemoTrace(
   anchor: DemoTraceAnchor & { span_id?: string },
   signal: AbortSignal
 ) {
-  return waitForDemoRead(signal, async () => {
+  return waitForDemoReady(signal, async () => {
     const { data } = throwOnApiError(
       await fetchNativeTraceDetail(spaceId, anchor.trace_id, {
         agentProduct: demo.agent_product,
@@ -142,7 +144,7 @@ function readDemoSession(
   signal: AbortSignal
 ) {
   const { session_id: sessionId } = demo.scenarios.session
-  return waitForDemoRead(signal, async () => {
+  return waitForDemoReady(signal, async () => {
     const { data } = throwOnApiError(
       await fetchNativeSessionList(
         spaceId,
@@ -204,12 +206,17 @@ export function DemoConsentDialog({
     const timeout = window.setTimeout(() => controller.abort(), 60_000)
     setStatus("working")
     try {
-      const { data } = throwOnApiError(
-        await api.post<{ code: number; data?: DemoReceipt }>(
-          `/spaces/${encodeURIComponent(spaceId)}/onboarding/demo`,
-          { consent: true, language: getCurrentLocale() },
-          { signal: controller.signal }
-        )
+      const { data } = await waitForDemoReady(
+        controller.signal,
+        async () =>
+          throwOnApiError(
+            await api.post<{ code: number; data?: DemoReceipt }>(
+              `/spaces/${encodeURIComponent(spaceId)}/onboarding/demo`,
+              { consent: true, language: getCurrentLocale() },
+              { signal: controller.signal }
+            )
+          ),
+        "import"
       )
       if (
         !data?.agent_uuid ||
