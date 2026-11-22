@@ -2679,10 +2679,9 @@
     "removeFromChannel": "チャンネルから削除",
     "cliInstall": {
       "title": "先に aiv CLI をインストールして確認",
-      "description": "エージェントが動作するマシンに aiv CLI をインストールしてください。AI Vision サービスをデプロイしても、そのマシンにクライアントがインストールされるわけではありません。",
+      "description": "Agent が動作する macOS または Linux ホストに aiv CLI と収集プラグインをインストールします。Windows 版 CLI では既存環境のデータを照会できます。",
       "guide": "aiv CLI のインストールガイドを開く",
       "check": "インストール後、接続コマンドを実行するのと同じターミナルでパスとバージョンを確認してください",
-      "checkWindows": "現在のリリースパッケージは macOS / Linux 向けです。Windows では、互換性のある CLI の導入方法をデプロイ環境の管理者に確認してから、PowerShell でパスとバージョンを確認してください。",
       "pathHint": "macOS / Linux の既定のインストール先は ~/.local/bin です。確認コマンドの export は現在のターミナルでのみ有効です。~/.zshrc（zsh）または使用中の Bash の起動ファイルに追加し、新しいターミナルで確認してください。別のインストール先を指定した場合は、インストーラーが出力する export コマンドを使用してください。",
       "ready": "aiv のパスとバージョンが表示されたら、下のインストールコマンドを生成して実行してください。command not found: aiv と表示される場合は、先に CLI をインストールするか PATH を修正してください。"
     },

@@ -395,15 +395,23 @@ test("issuing a plugin command preserves both CLI preparation and the original c
   }
 })
 
-test("Windows users receive a PowerShell CLI check and the English installation guide", async () => {
+test("a Windows browser shows supported Agent host commands even with a legacy guide", async () => {
   const ui = await fixture("en-US", "Windows")
   try {
     await ui.render(false)
+    assert.equal(ui.element.textContent?.includes(connectCommand), false)
+    await ui.render(true)
+    const platforms = [...ui.element.querySelectorAll('[role="tab"]')].map(
+      (tab) => tab.textContent?.trim()
+    )
+    assert.deepEqual(platforms, ["macOS/Linux", "macOS/Linux"])
+    assert.match(ui.element.textContent || "", /Windows.*query an existing/)
     const commands = [...ui.element.querySelectorAll("code")].map(
       (code) => code.textContent
     )
-    assert.ok(commands.includes(windowsCheck))
-    assert.equal(commands.includes(unixCheck), false)
+    assert.ok(commands.includes(unixCheck))
+    assert.ok(commands.includes(connectCommand))
+    assert.equal(commands.includes(windowsCheck), false)
     assert.ok(
       ui.element.querySelector(
         'a[href="https://aivision.mintlify.site/en/guides/install-cli"]'
