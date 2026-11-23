@@ -1,0 +1,115 @@
+name: Intel macOS Docker
+
+on:
+  workflow_dispatch:
+    inputs:
+      public_platform_images:
+        description: JSON from public_registry.py source-fixtures for the matching release manifest
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: intel-macos-docker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  inputs:
+    name: Validate pinned platform fixtures
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Require the public source-fixture projection
+        env:
+          PUBLIC_PLATFORM_IMAGES: ${{ inputs.public_platform_images }}
+        run: |
+          PYTHONPATH=scripts/ci python3 - <<'PY'
+          import json
+          import os
+
+          from product_registry import product_image_repositories
+          from public_registry import SOURCE_SIGNOZ_FIXTURE
+          from release_plan import require_digest
+
+          packages = product_image_repositories()
+          repositories = {
+              'oceanbase': 'oceanbase/oceanbase-ce',
+              'gateway': packages['antcollector-gw'],
+              'backend': packages['aivision-be'],
+              'agentlens': packages['agentlens'],
+              'frontend': packages['aivision-fe'],
+          }
+          try:
+              images = json.loads(os.environ['PUBLIC_PLATFORM_IMAGES'])
+              if not isinstance(images, dict) or set(images) != {*repositories, 'signoz'}:
+                  raise ValueError
+              for role, repository in repositories.items():
+                  if require_digest(images[role]).split('@', 1)[0] != repository:
+                      raise ValueError
+              if images['signoz'] != SOURCE_SIGNOZ_FIXTURE:
+                  raise ValueError
+          except ValueError:
+              raise SystemExit('Input must be the six pinned public source fixtures from the matching release manifest.') from None
+          PY
+
+  framework:
+    needs: inputs
+    uses: ./.github/workflows/framework-e2e.yml
+    with:
+      tier: release
+      intel_docker: true
+      database: true
+      platform: true
+      public_platform_images: ${{ inputs.public_platform_images }}
+
+  diagnostics:
+    needs: inputs
+    uses: ./.github/workflows/diagnostics-e2e.yml
+    with:
+      tier: release
+      intel_docker: true
+      database: true
+      platform: true
+      public_platform_images: ${{ inputs.public_platform_images }}
+
+  native:
+    needs: inputs
+    uses: ./.github/workflows/native-agent-e2e.yml
+    with:
+      tier: release
+      intel_docker: true
+      units: false
+      source: false
+      platform: true
+      public_platform_images: ${{ inputs.public_platform_images }}
+
+  result:
+    name: Intel macOS Docker checks passed
+    if: always()
+    needs: [inputs, framework, diagnostics, native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require successful input and all three suites
+        env:
+          RESULTS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          results = json.loads(os.environ['RESULTS_JSON'])
+          failures = []
+          for job in ('inputs', 'framework', 'diagnostics', 'native'):
+              result = results.get(job, {}).get('result', 'missing')
+              if result != 'success':
+                  failures.append(f'{job}: required check {result}')
+          if failures:
+              raise SystemExit('\n'.join(failures))
+          PY

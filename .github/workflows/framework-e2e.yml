@@ -35,6 +35,10 @@ on:
         description: Owned platform ingestion and read-back
         type: boolean
         default: false
+      intel_docker:
+        description: Select Intel macOS runners for the Docker jobs
+        type: boolean
+        default: false
       browser_only:
         description: When platform is selected, run SDK/browser acceptance without the separate Docker SDK suite
         type: boolean
@@ -372,8 +376,8 @@ jobs:
       max-parallel: 3
       matrix:
         os: >-
-          ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","ubuntu-24.04-arm","macos-15-intel"]'
-          || inputs.tier == 'daily' && '["ubuntu-24.04","ubuntu-24.04-arm"]'
+          ${{ fromJSON(inputs.intel_docker && '["macos-15-intel"]'
+          || (inputs.tier == 'release' || inputs.tier == 'daily') && '["ubuntu-24.04","ubuntu-24.04-arm"]'
           || '["ubuntu-24.04"]') }}
         backend: [oceanbase, seekdb]
     runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
@@ -434,7 +438,7 @@ jobs:
   browser-platform:
     name: SDK to platform to browser (fake)
     needs: [frontend, frontend-browser]
-    if: always() && !cancelled() && inputs.platform && (!inputs.frontend || (needs.frontend.result == 'success' && needs.frontend-browser.result == 'success')) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: always() && !cancelled() && inputs.platform && !inputs.intel_docker && (!inputs.frontend || (needs.frontend.result == 'success' && needs.frontend-browser.result == 'success')) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ${{ github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || 'ubuntu-24.04' }}
     timeout-minutes: 90
     permissions:
@@ -598,7 +602,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15-intel"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.intel_docker && '["macos-15-intel"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
     timeout-minutes: 90
     permissions:
@@ -688,7 +692,7 @@ jobs:
           TIER: ${{ inputs.tier }}
           SDK_COVERAGE: ${{ inputs.sdk_coverage }}
           SELECTED_JSON: >-
-            {"frontend": ${{ inputs.frontend }}, "frontend-browser": ${{ inputs.frontend }}, "backend-contracts": ${{ inputs.backend }}, "cli": ${{ inputs.cli }}, "contracts": ${{ inputs.contracts }}, "js-contracts": ${{ inputs.contracts }}, "docker-database": ${{ inputs.database }}, "browser-platform": ${{ inputs.platform }}, "docker-platform": ${{ inputs.platform && !inputs.browser_only }}}
+            {"frontend": ${{ inputs.frontend }}, "frontend-browser": ${{ inputs.frontend }}, "backend-contracts": ${{ inputs.backend }}, "cli": ${{ inputs.cli }}, "contracts": ${{ inputs.contracts }}, "js-contracts": ${{ inputs.contracts }}, "docker-database": ${{ inputs.database }}, "browser-platform": ${{ inputs.platform && !inputs.intel_docker }}, "docker-platform": ${{ inputs.platform && !inputs.browser_only }}}
           RESULTS_JSON: ${{ toJSON(needs) }}
         run: |
           python3 - <<'PYRESULT'

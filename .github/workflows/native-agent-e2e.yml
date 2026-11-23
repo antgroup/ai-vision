@@ -27,6 +27,10 @@ on:
         description: Owned native platform fake49
         type: boolean
         default: false
+      intel_docker:
+        description: Use an Intel macOS host for the Linux Docker platform tests
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       tier:
@@ -269,7 +273,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15-intel"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.intel_docker && '["macos-15-intel"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
     timeout-minutes: 90
     permissions:

@@ -14,7 +14,7 @@ native 编译由[可选候选工作流](../../../.github/workflows/native-candid
 | 手动 `dev`，默认 `publish=false` | 当前默认分支；`VERSION-dev.YYYYMMDD.RUN_NUMBER[.ATTEMPT]` | 冻结的开发候选版，不发布 Release 或产品 alias |
 | 手动试用 alias | 所选已推送分支；独立的非版本号 alias 和所选候选渠道 | 仅生成候选制品；发布会在写入版本标签之前被拒绝 |
 | 合格 Daily／Dev 的推进发布 | 仍对应当前默认分支 head 的准确成功候选 run／attempt | 用原始冻结制品发布带版本号的预发布和滚动入口 |
-| 手动 `release_preview=true` | 所选分支及准确的 `VERSION` | 运行完整正式发布矩阵并冻结制品，关闭发布 |
+| 手动 `release_preview=true` | 所选分支及准确的 `VERSION` | 执行正式发布验收并冻结制品，关闭发布 |
 | 推送 `v*` tag | 与 `VERSION` 一致，且提交在默认分支历史中 | 通过受保护审批后的正式 Release 或 RC 预发布 |
 
 显式 `publish=true` 的手动 Daily/Dev 运行仍可在相同源码／制品门禁通过后发布。独立推进流程用于先审阅候选、再发布，不会重新构建。
@@ -76,8 +76,33 @@ SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运�
 
 在待发布分支运行镜像工作流，设置 `release_preview=true` 和 `publish=false`，
 保留 Daily 日期、修订和通道的默认值。工作流按准确 `VERSION`、固定的 SigNoz
-依赖和完整正式发布矩阵验收。核对冻结回执后合入 `main`，在对应提交推送匹配
+依赖和正式发布矩阵验收。核对冻结回执后合入 `main`，在对应提交推送匹配
 版本的标签。标签运行验收该次构建，通过后在 `release` 环境等待审批。
+
+## 验收 Intel macOS Docker
+
+正式发布必选双架构 Linux 数据库、Linux 平台和制品部署 smoke，以及现有的 macOS
+和 Windows 可移植检查。Intel Mac 上依赖 Docker 的数据库、框架 SDK、诊断和原生
+Agent 测试由独立手动工作流 [Intel macOS Docker](../../../.github/workflows/intel-macos-docker.yml)
+验收。通过后可为对应候选记录这些源码检查的结果。制品部署验收覆盖 Linux amd64。
+
+待工作流进入默认分支后，从候选源码检出目录执行。将 `SOURCE_REF` 设为指向 manifest
+中 `source_sha` 的分支或标签，将 `MANIFEST` 设为已核验的候选 `release-manifest.json`。
+用与正式 CI 相同的命令生成源码测试镜像 JSON，其中包含按摘要固定的 SigNoz 精度 fixture。
+
+```bash
+SOURCE_REF=...
+MANIFEST=release-manifest.json
+test "$(git rev-parse "${SOURCE_REF}^{commit}")" = "$(jq -er '.source_sha' "$MANIFEST")" &&
+  public_platform_images=$(python3 scripts/ci/public_registry.py source-fixtures --manifest "$MANIFEST") &&
+  gh workflow run intel-macos-docker.yml -R antgroup/ai-vision \
+    --ref "$SOURCE_REF" -f public_platform_images="$public_platform_images"
+```
+
+核对 Actions 运行的提交 SHA 与 manifest 一致，并把结果与候选回执一同留存。这个
+Intel 工作流不发布镜像或 Release。OceanBase 在 Intel macOS 15 的 VZ、QEMU
+以及 macOS 26 的 QEMU 对照运行中均在 600 秒后仍返回 MySQL 8001。独立门禁通过前，
+Intel macOS Docker 仍待验收。详见 [CI 证据](../../../scripts/ci/README.md#test-tiers)。
 
 ## 验收 All-in-One 个人版
 

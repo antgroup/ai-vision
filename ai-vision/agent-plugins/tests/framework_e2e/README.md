@@ -108,11 +108,11 @@ SDK／浏览器任务通过，其中 Langfuse 5.0.2 完整执行 22 例。两种
 | --- | --- | --- |
 | frontend | Linux / macOS / Windows | 当前前端全量 lint、回归、类型检查和生产构建 |
 | backend-contracts | Linux / macOS / Windows | 原生查询、会话、v1 与用量语义单测；不初始化数据库 |
-| cli | Linux / macOS | Go 单元测试与 Unix 安装器测试；现有 CLI 发行平台不包含 Windows |
+| cli | Linux / macOS | Go 单元测试与 Unix 安装器测试。Windows x64 CLI 由发布制品流程独立验收 |
 | contracts | 三系统 × Langfuse SDK3 / SDK4 / SDK5 | 业务、oracle、onboarding 与生命周期单测；SDK3/4 各44项、SDK5仅 Langfuse 22项实际导出到本地 OTLP 接收器 |
 | js-contracts | 三系统 × JS 5.14 / 6.0，Node 22 | 严格 TypeScript、四入口双模式、protobuf/gzip、metadata、IO/usage、stream/cancel 与 flush/shutdown |
-| docker-database | Linux / macOS Intel Colima × OceanBase / seekdb | 临时数据库启动、SQL 事务读回；当前 Django 全量单测使用同一数据库引擎 |
-| docker-platform | Linux / macOS Intel Colima | 完整矩阵在临时六服务平台验证 SDK3／SDK4 各 44 例和 SDK5 22 例的采集与 API 对账。显式 Daily 冒烟集在 Linux 验证 SDK4／Relay 共 20 例 |
+| docker-database | 发布使用 Linux x64 和 ARM64 × OceanBase / seekdb | 临时数据库启动、SQL 事务读回；当前 Django 全量单测使用同一数据库引擎 |
+| docker-platform | 发布使用 Linux x64 | 完整矩阵在临时六服务平台验证 SDK3／SDK4 各 44 例和 SDK5 22 例的采集与 API 对账。显式 Daily 冒烟集在 Linux 验证 SDK4／Relay 共 20 例 |
 | browser-platform | Linux | 独立临时平台；Python5 fake 22 cases、JS5/6 本地 provider fixture 各33 traces；当前源码页面与实际 API 闭环 |
 | browser-platform-nvidia | Linux，手动显式启用 | 独立临时平台；Python5 3请求、JS5/6 各2请求；NVIDIA 原始 usage、SDK、API 和实际页面对账 |
 
@@ -122,9 +122,11 @@ JS 的确定性 OpenAI 兼容 HTTP fixture 单独标注，不称为 LangChain Py
 `platform_query_verified` 还要求 OTLP 接收、OceanBase 持久化以及当前后端 API 数据一致。
 两种证明保留各自边界，不能用 collector 通过替代完整平台通过。
 
-Windows 暂不运行 Docker。macOS Docker 使用 `macos-15-intel` 和 Colima，分配
-3 CPU、10 GiB 内存、30 GiB 磁盘，使用本轮独立配置目录与 `nofile=65536`。
-Linux 默认使用标准 `ubuntu-24.04`；可用
+Intel macOS Docker 由 [独立手动流程](../../../../.github/workflows/intel-macos-docker.yml)
+运行，涵盖两种数据库与完整 Docker SDK 对账。该流程使用 `macos-15-intel` 和 Colima，
+分配 3 CPU、10 GiB 内存、30 GiB 磁盘，并使用本轮独立配置目录与 `nofile=65536`。
+Intel macOS Docker 尚未完成验收，详见 [DB-003](../../../../KNOWN_ISSUES.md#db-003intel-macos-托管-runner-上的-oceanbase-引导超时)。
+Linux x64 默认使用标准 `ubuntu-24.04`；可用
 repository variable `AIVISION_E2E_DOCKER_LINUX_RUNNER` 选择已有 runner。
 CI 记录可用资源，执行结果及容器 OOM 状态决定验收，不因预设预算直接跳过测试，
 也不会自动创建收费 runner。Docker SDK 套件顺序执行，每次只运行一个用例 worker。

@@ -346,8 +346,9 @@ class WorkflowGateTests(unittest.TestCase):
             declarations = triggers(document)["workflow_call"]["inputs"]
             inputs = {key: (True if declaration["type"] == "boolean" else declaration.get("default", ""))
                       for key, declaration in declarations.items() if key != "tier"}
-            if "browser_only" in inputs:
-                inputs["browser_only"] = False
+            for opt_in in ("browser_only", "intel_docker"):
+                if opt_in in inputs:
+                    inputs[opt_in] = False
             inputs["tier"] = "pr"
             gate = document["jobs"]["result"]
             step = gate["steps"][0]
@@ -450,7 +451,8 @@ class WorkflowGateTests(unittest.TestCase):
                                      needs={**needs, job: {"result": "skipped"}})
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(job, result.stderr)
-        for override in ({"tier": "release"}, {"browser_only": True}, {"sdk_coverage": "unknown"}):
+        for override in ({"tier": "release"}, {"browser_only": True}, {"intel_docker": True},
+                         {"sdk_coverage": "unknown"}):
             with self.subTest(override=override):
                 result, _ = run_step(gate["steps"][0], inputs={**inputs, **override}, needs=needs)
                 self.assertNotEqual(result.returncode, 0)
@@ -686,8 +688,9 @@ class CallerContractTests(unittest.TestCase):
                 self.assertEqual(inputs.pop("tier"), tier)
                 self.assertEqual(inputs.pop("public_platform_images"), "")
                 self.assertNotIn("public_platform_images", triggers(called)["workflow_dispatch"]["inputs"])
-                if "browser_only" in inputs:
-                    self.assertIs(inputs.pop("browser_only"), False)
+                for opt_in in ("browser_only", "intel_docker"):
+                    if opt_in in inputs:
+                        self.assertIs(inputs.pop(opt_in), False)
                 if "sdk_coverage" in inputs:
                     self.assertEqual(inputs.pop("sdk_coverage"), "full")
                     self.assertEqual(declarations["sdk_coverage"]["type"], "string")
@@ -794,29 +797,143 @@ class CallerContractTests(unittest.TestCase):
                         self.assertEqual(matrix, {"shard": [1, 2, 3, 4]})
                         self.assertEqual(definition["strategy"]["max-parallel"], 2)
                         continue
+                    if job in {"docker-platform", "docker-database", "owned-database", "owned-platform-quick"}:
+                        # Docker runner routing is tested separately from source platform coverage.
+                        continue
                     match = re.fullmatch(
                         r"\$\{\{ fromJSON\(inputs\.tier == 'release' && '([^']+)'"
-                        r"(?: \|\| inputs\.tier == 'daily' && '([^']+)')? \|\| '([^']+)'\) \}\}",
+                        r" \|\| '([^']+)'\) \}\}",
                         matrix["os"],
                     )
                     self.assertIsNotNone(match, (family, job))
-                    release, daily, default = match.groups()
-                    platforms = json.loads({"release": release, "daily": daily or default, "pr": default}[tier])
+                    release, default = match.groups()
+                    platforms = json.loads(release if tier == "release" else default)
                     with self.subTest(tier=tier, family=family, job=job):
                         self.assertIn("ubuntu-24.04", platforms)
                         if tier == "release":
                             self.assertTrue(any(platform.startswith("macos-") for platform in platforms))
-                            if job in {"docker-database", "owned-database"}:
-                                self.assertEqual(platforms, ["ubuntu-24.04", "ubuntu-24.04-arm", "macos-15-intel"])
                             if job in {"frontend", "backend-contracts", "contracts", "js-contracts", "portable-contracts", "native-source"}:
                                 self.assertIn("windows-2025", platforms)
                         else:
-                            expected = ["ubuntu-24.04"]
-                            if tier == "daily" and job in {"docker-database", "owned-database"}:
-                                expected.append("ubuntu-24.04-arm")
-                            self.assertEqual(platforms, expected)
-                        if "backend" in matrix:
-                            self.assertEqual(set(matrix["backend"]), {"oceanbase", "seekdb"})
+                            self.assertEqual(platforms, ["ubuntu-24.04"])
+
+    def test_intel_docker_is_opt_in_and_reuses_strict_selected_gates(self):
+        ci = workflow("ci.yml")
+        families = {
+            "framework": {"docker-database", "docker-platform"},
+            "diagnostics": {"owned-database", "owned-platform-quick"},
+            "native": {"docker-platform"},
+        }
+        for family, required in families.items():
+            caller = ci["jobs"][family]
+            self.assertNotIn("intel_docker", caller["with"])
+            called = workflow(Path(caller["uses"]).name)
+            declarations = triggers(called)["workflow_call"]["inputs"]
+            self.assertEqual(declarations["intel_docker"]["type"], "boolean")
+            self.assertIs(declarations["intel_docker"]["default"], False)
+            self.assertNotIn("intel_docker", triggers(called)["workflow_dispatch"]["inputs"])
+            jobs = called["jobs"]
+            for job in required:
+                with self.subTest(family=family, job=job):
+                    matrix = jobs[job]["strategy"]["matrix"]
+                    match = re.fullmatch(
+                        r"\$\{\{ fromJSON\(inputs\.intel_docker && '([^']+)'"
+                        r"(?: \|\| \(inputs\.tier == 'release' \|\| inputs\.tier == 'daily'\) && '([^']+)')?"
+                        r" \|\| '([^']+)'\) \}\}",
+                        matrix["os"],
+                    )
+                    self.assertIsNotNone(match, matrix["os"])
+                    intel, linux_extended, linux_default = match.groups()
+                    self.assertEqual(json.loads(intel), ["macos-15-intel"])
+                    self.assertEqual(json.loads(linux_default), ["ubuntu-24.04"])
+                    if job.endswith("-database"):
+                        self.assertEqual(json.loads(linux_extended), ["ubuntu-24.04", "ubuntu-24.04-arm"])
+                        self.assertEqual(matrix["backend"], ["oceanbase", "seekdb"])
+                    else:
+                        self.assertIsNone(linux_extended)
+            if family == "framework":
+                self.assertIn("inputs.platform && !inputs.intel_docker", jobs["browser-platform"]["if"])
+            gate = jobs["result"]
+            step = gate["steps"][0]
+            inputs = {key: definition["default"] for key, definition in declarations.items() if key != "tier"}
+            inputs.update(tier="release", intel_docker=True, platform=True)
+            if family != "native":
+                inputs["database"] = True
+            selected = json.loads(render(step["env"]["SELECTED_JSON"], inputs=inputs))
+            self.assertEqual({job for job, value in selected.items() if value}, required)
+            needs = {job: {"result": "success" if job in required else "skipped"} for job in gate["needs"]}
+            result, _ = run_step(step, inputs=inputs, needs=needs)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for job in required:
+                with self.subTest(family=family, job=job):
+                    result, _ = run_step(step, inputs=inputs, needs={**needs, job: {"result": "skipped"}})
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(job, result.stderr)
+
+    def test_intel_docker_wrapper_is_manual_read_only_and_requires_all_suites(self):
+        document = workflow("intel-macos-docker.yml")
+        self.assertEqual(set(triggers(document)), {"workflow_dispatch"})
+        declarations = triggers(document)["workflow_dispatch"]["inputs"]
+        self.assertEqual(set(declarations), {"public_platform_images"})
+        self.assertEqual(declarations["public_platform_images"]["type"], "string")
+        self.assertIs(declarations["public_platform_images"]["required"], True)
+        self.assertEqual(document["permissions"], {"contents": "read", "packages": "read"})
+        jobs = document["jobs"]
+        families = {
+            "framework": ("framework-e2e.yml", {"database": True}),
+            "diagnostics": ("diagnostics-e2e.yml", {"database": True}),
+            "native": ("native-agent-e2e.yml", {"units": False, "source": False}),
+        }
+        self.assertEqual(set(jobs), {"inputs", "result", *families})
+        for family, (filename, selectors) in families.items():
+            with self.subTest(family=family):
+                self.assertEqual(jobs[family]["needs"], "inputs")
+                self.assertEqual(jobs[family]["uses"], f"./.github/workflows/{filename}")
+                self.assertEqual(jobs[family]["with"], {
+                    "tier": "release", "intel_docker": True, "platform": True,
+                    "public_platform_images": "${{ inputs.public_platform_images }}", **selectors,
+                })
+        for job in jobs.values():
+            self.assertNotIn("permissions", job)
+            self.assertFalse(job.get("continue-on-error", False))
+            self.assertNotIn("secrets", job)
+        gate = jobs["result"]
+        self.assertEqual(gate["if"], "always()")
+        self.assertEqual(set(gate["needs"]), {"inputs", *families})
+        good = {job: {"result": "success"} for job in gate["needs"]}
+        step = gate["steps"][0]
+        result, _ = run_step(step, needs=good)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for job in gate["needs"]:
+            for status in ("failure", "skipped", "cancelled", None):
+                with self.subTest(job=job, status=status):
+                    needs = {**good, job: {"result": status}}
+                    if status is None:
+                        needs.pop(job)
+                    result, _ = run_step(step, needs=needs)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(job, result.stderr)
+
+    def test_intel_docker_wrapper_requires_the_public_source_fixture_projection(self):
+        from public_registry import PUBLIC_REPOSITORY, product_image_repositories, source_fixtures
+
+        step = workflow("intel-macos-docker.yml")["jobs"]["inputs"]["steps"][-1]
+        digest = "@sha256:" + "a" * 64
+        fixtures = source_fixtures({
+            "source_repository": PUBLIC_REPOSITORY,
+            "images": {role: repo + digest for role, repo in product_image_repositories().items()},
+            "databases": {"oceanbase": "oceanbase/oceanbase-ce" + digest},
+        })
+        result, _ = run_step(step, inputs={"public_platform_images": json.dumps(fixtures)})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for invalid in ("", "[]", json.dumps({}),
+                        json.dumps({**fixtures, "gateway": fixtures["gateway"].split("@")[0] + ":latest"}),
+                        json.dumps({**fixtures, "gateway": "example.invalid/fixture" + digest}),
+                        json.dumps({**fixtures, "signoz": fixtures["backend"]})):
+            with self.subTest(invalid=invalid):
+                result, _ = run_step(step, inputs={"public_platform_images": invalid})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("six pinned public source fixtures", result.stderr)
 
     def test_database_architecture_reaches_helpers_and_keeps_release_image_pins(self):
         from release_assets import DATABASES
