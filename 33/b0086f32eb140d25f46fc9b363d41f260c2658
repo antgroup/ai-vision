@@ -1,0 +1,64 @@
+.github/workflows/release-images.yml
+  s_7ddb4c6ac82aba::t_42457c6951fc78 27-30,32,85,95,114-117,137-140,143-157,159,482,489,503,554,615,628,637,645,728,731-732,737,739,743,748,753,758,764,770,776,782,790,800,803,835,838,841
+scripts/ci/release_publish.py
+  s_7ddb4c6ac82aba::t_66f156e4bce606 13,250-258,262-293,430,432-442,525-526,535-537,609,612-613,632-635,654-667,680
+scripts/ci/release_plan.py
+  s_7ddb4c6ac82aba::t_999c78929a0127 18-24,28,30,32-33,57-61,63-64,66,69,100-101,104,250,254-257
+deploy/all-in-one/test_daily.py
+  s_7ddb4c6ac82aba::t_7deedf98b5efe9 70,94
+  s_7ddb4c6ac82aba::t_afb50c7ba3e63d 7,9,30-46
+deploy/all-in-one/install-all-in-one.py
+  s_7ddb4c6ac82aba::t_08df2769122ed1 28-34,89,114-117,119,126,193,284-289,291-292
+scripts/ci/release_assets.py
+  s_7ddb4c6ac82aba::t_999c78929a0127 15,75,77-84,102,164-165
+docs/deployment/zh-CN/dev-image-release.md
+  s_7ddb4c6ac82aba::t_fb45e3033b3fb9 17,32,50,52,70-76,79-81
+scripts/ci/test_workflow_contracts.py
+  s_7ddb4c6ac82aba::t_85b232b4333943 191,265
+  s_7ddb4c6ac82aba::t_09e20c1bf15e0a 173-190,192-194,196-198
+  s_7ddb4c6ac82aba::t_5ff751ca8fe063 195
+docs/deployment/en/dev-image-release.md
+  s_7ddb4c6ac82aba::t_db38ff1167780f 17,32,50,52,70-78,81-84
+scripts/ci/test_release.py
+  s_7ddb4c6ac82aba::t_585fc2c1122572 121-122,987-989
+  s_7ddb4c6ac82aba::t_2032e620b7c6e0 33,482-492,523,562-565,571-578
+  s_7ddb4c6ac82aba::t_7129efe198fac0 444-448,810-814,822-826,917-918
+  s_7ddb4c6ac82aba::t_095d193aa22c84 21,123-146,980-986,990-1021
+  s_7ddb4c6ac82aba::t_3ca576da985da5 52,56,383-389,391,394-395,464-481,493-522,524-561,566-570
+  s_7ddb4c6ac82aba::t_113634a03d7dc4 579,1022
+deploy/all-in-one/test_personal_smoke.py
+  s_7ddb4c6ac82aba::t_7bd4bb8ef2b4a1 6,24-27,98-125,136-149
+  s_7ddb4c6ac82aba::t_46698b61bdad15 40,126-135
+  s_7ddb4c6ac82aba::t_6b4229b525610e 90-97,150
+deploy/all-in-one/daily.py
+  s_7ddb4c6ac82aba::t_79acf266d4293f 81,117,128,168,181
+  s_7ddb4c6ac82aba::t_9a8c8244934a77 1,21,25,54-63,65
+deploy/config/release-dependencies.json
+  s_7ddb4c6ac82aba::t_85b232b4333943 1-8
+deploy/all-in-one/smoke.py
+  s_7ddb4c6ac82aba::t_d92404e179481a 27,94
+deploy/all-in-one/README.md
+  s_7ddb4c6ac82aba::t_d25bf9ca100771 5,7-9,13-15,23-25,28,30,32,41,50
+deploy/all-in-one/build.py
+  s_7ddb4c6ac82aba::t_ad44d1b7986480 2,335,378,380,437,486,530
+deploy/all-in-one/build_candidate.py
+  s_7ddb4c6ac82aba::t_1d8ef7bd325afd 71
+scripts/ci/test_release_personal.py
+  s_7ddb4c6ac82aba::t_a0eb73837a9d9b 105,107
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "33b0086f32eb140d25f46fc9b363d41f260c2658",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
