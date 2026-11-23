@@ -940,9 +940,13 @@ class OwnedBuilderContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             state_path, calls_path = root / 'docker-state.json', root / 'docker-calls.jsonl'
+            calls_path.touch()
             state_path.write_text(json.dumps({'selected': 'user-selected',
                 'builders': {'user-selected': 'existing-user-cache'},
-                'images': {'user-image': 'existing-user-image'}, 'containers': {}, 'buildx_installed': not macos}))
+                'images': {'user-image': 'existing-user-image'},
+                'containers': {'user-container': 'user-image'}, 'volumes': ['user-volume'],
+                'buildx_installed': not macos}))
+            (root / 'python').symlink_to(sys.executable)
             docker = root / 'docker'
             docker.write_text('#!' + sys.executable + '\n' + '''
 import json, os, pathlib, sys
@@ -955,10 +959,24 @@ def save(): state_path.write_text(json.dumps(state))
 if args[0] == 'buildx' and not state['buildx_installed']: raise SystemExit(127)
 if args[:2] == ['buildx', 'version']:
     print('buildx fixture')
+elif args[:2] == ['buildx', 'ls']:
+    assert args[2:] == ['--format', '{{.Name}}']
+    print(*state['builders'], sep=chr(10))
+elif args[:2] == ['container', 'ls']:
+    assert args[2:] == ['--all', '--format', '{{.Names}}']
+    print(*state['containers'], sep=chr(10))
+elif args[:2] == ['volume', 'ls']:
+    assert args[2:] == ['--format', '{{.Name}}']
+    print(*state['volumes'], sep=chr(10))
 elif args[:2] == ['buildx', 'create']:
-    if os.environ['CREATE_FAILURE'] == '1': raise SystemExit(29)
     name = args[args.index('--name') + 1]
+    assert '--node' not in args and '--append' not in args
     assert name not in state['builders']
+    if os.environ['CREATE_FAILURE'] == '1':
+        # Simulate another job claiming the name after the read-only precheck.
+        state['builders'][name] = 'concurrent-user-cache'
+        save()
+        raise SystemExit(29)
     state['builders'][name] = 'owned-cache'
     if '--use' in args: state['selected'] = name
     save()
@@ -966,6 +984,12 @@ elif args[:2] == ['buildx', 'build']:
     builder = args[args.index('--builder') + 1]
     assert state['builders'][builder] == 'owned-cache'
     image = args[args.index('-t') + 1]
+    container = 'buildx_buildkit_' + builder + '0'
+    volume = container + '_state'
+    state['containers'][container] = 'owned-builder-container'
+    if volume not in state['volumes']:
+        state['volumes'].append(volume)
+    save()
     if os.environ['FAIL_BUILD'] and os.environ['FAIL_BUILD'] in image: raise SystemExit(23)
     if '--load' in args:
         state['images'][image] = 'loaded-' + image
@@ -975,6 +999,9 @@ elif args[:2] == ['buildx', 'rm']:
     assert name != 'user-selected' and state['builders'][name] == 'owned-cache'
     if os.environ['CLEANUP_FAILURE'] == '1': raise SystemExit(17)
     del state['builders'][name]
+    container = 'buildx_buildkit_' + name + '0'
+    del state['containers'][container]
+    state['volumes'].remove(container + '_state')
     save()
 elif args[0] == 'create':
     assert args[-1] in state['images']
@@ -1029,7 +1056,8 @@ path.write_text(json.dumps(state))
         self.assertEqual(state['images']['user-image'], 'existing-user-image')
         self.assertEqual(set(state['images']), {'user-image', 'aivision-diagnostics-codex:ci',
                                                'aivision-diagnostics-docker-cli:local'})
-        self.assertEqual(state['containers'], {})
+        self.assertEqual(state['containers'], {'user-container': 'user-image'})
+        self.assertEqual(state['volumes'], ['user-volume'])
         create = next(args for args in calls if args[:2] == ['buildx', 'create'])
         name = create[create.index('--name') + 1]
         self.assertTrue(name.startswith('aiv-diagnostics-123-2-'))
@@ -1058,20 +1086,26 @@ path.write_text(json.dumps(state))
                 self.assertEqual(state['selected'], 'user-selected')
 
     def test_cleanup_failure_blocks_success_without_masking_an_earlier_build_failure(self):
-        for fail_build, expected in (('', 17), ('codex', 23)):
+        for fail_build, expected in (('', 1), ('codex', 23)):
             with self.subTest(fail_build=fail_build):
                 completed, calls, state = self.execute_build(fail_build=fail_build, cleanup_failure=True)
                 self.assertEqual(completed.returncode, expected, completed.stderr)
-                self.assertIn('Failed to remove the job-owned Buildx builder', completed.stderr)
+                self.assertIn('Could not remove job-owned Buildx resources', completed.stderr)
                 self.assertEqual(state['selected'], 'user-selected')
                 self.assertFalse(any(args[:2] == ['image', 'inspect'] for args in calls))
 
     def test_failed_create_never_removes_or_changes_an_existing_builder(self):
         completed, calls, state = self.execute_build(create_failure=True)
         self.assertEqual(completed.returncode, 29, completed.stderr)
-        self.assertFalse(any(args[:2] == ['buildx', 'rm'] for args in calls))
-        self.assertEqual(state['builders'], {'user-selected': 'existing-user-cache'})
+        self.assertFalse(any(args[0] == 'rm' or args[1:2] == ['rm'] for args in calls))
+        create = next(args for args in calls if args[:2] == ['buildx', 'create'])
+        name = create[create.index('--name') + 1]
+        self.assertEqual(state['builders'], {
+            'user-selected': 'existing-user-cache', name: 'concurrent-user-cache',
+        })
         self.assertEqual(state['selected'], 'user-selected')
+        self.assertEqual(state['containers'], {'user-container': 'user-image'})
+        self.assertEqual(state['volumes'], ['user-volume'])
 
     def test_macos_installs_the_plugin_before_running_the_owned_builder_shell(self):
         completed, calls, state = self.execute_build(macos=True)

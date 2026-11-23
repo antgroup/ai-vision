@@ -253,23 +253,26 @@ jobs:
           docker buildx version
           builder="aiv-diagnostics-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${RANDOM}-${RANDOM}"
           python scripts/ci/buildx_cleanup.py verify-absent "$builder"
+          builder_created=false
           container=
           cleanup() {
-            code=$?
+            local code=$1
             trap - EXIT
             if [ -n "$container" ] && ! docker rm --force "$container" >/dev/null; then
               echo '::error::Failed to remove the job-owned export container' >&2
               if [ "$code" -eq 0 ]; then code=1; fi
             fi
-            if ! python scripts/ci/buildx_cleanup.py clean "$builder"; then
+            if [ "$builder_created" = true ] && ! python scripts/ci/buildx_cleanup.py clean "$builder"; then
               if [ "$code" -eq 0 ]; then code=1; fi
             fi
-            exit "$code"
+            return "$code"
           }
-          trap cleanup EXIT
-          docker buildx create --name "$builder" --node "${builder}0" --driver docker-container \
+          trap 'cleanup "$?"' EXIT
+          # Without a node override, Buildx refuses to change an existing builder.
+          docker buildx create --name "$builder" --driver docker-container \
             --driver-opt network=host \
             --buildkitd-flags '--allow-insecure-entitlement network.host' >/dev/null
+          builder_created=true
           docker buildx build --builder "$builder" --load --network=host --allow network.host \
             -f ai-vision/agent-plugins/tests/diagnostics_e2e/fixtures/Codex.Dockerfile \
             -t aivision-diagnostics-codex:ci .
@@ -282,6 +285,7 @@ jobs:
             -f ai-vision/agent-plugins/tests/diagnostics_e2e/fixtures/PlatformCLI.Dockerfile \
             -t aivision-diagnostics-docker-cli:local \
             ai-vision/agent-plugins/tests/diagnostics_e2e/fixtures
+          cleanup 0
           docker image inspect aivision-diagnostics-codex:ci aivision-diagnostics-docker-cli:local >/dev/null
       - name: Run actual owned fake34 and scoped Quick Rule API
         shell: bash
