@@ -1,4 +1,4 @@
-# AI Vision website
+# Ant AI Vision website
 
 The approved product website is maintained as static HTML, CSS, and JavaScript in `docs/`. It supports Simplified Chinese, English, Japanese, and light/dark/system themes. No build step or third-party runtime is required.
 
@@ -14,7 +14,7 @@ Open http://127.0.0.1:4321/.
 
 ## Documentation links
 
-The navigation Docs link and Docker/Kubernetes guide links follow the selected language. Mintlify publishes user documentation and illustrations from the separate `ai-vision-docs` repository.
+The navigation, deployment, integration, and feature guide links follow the selected language. Mintlify publishes user documentation and illustrations from the separate `ai-vision-docs` repository.
 
 The website is configured to use the published documentation:
 
@@ -22,7 +22,7 @@ The website is configured to use the published documentation:
 <meta name="aivision-docs-base-url" content="https://aivision.mintlify.site">
 ```
 
-Routes are `/{language}/quickstart`, `/{language}/deployment/docker` and `/{language}/deployment/kubernetes`, with `zh-CN`, `en` and `ja` available for every route. Static HTML links also point to the live documentation before JavaScript runs.
+The main entry points are `/{language}/introduction`, `/{language}/deployment/all-in-one`, `/{language}/deployment/docker`, and `/{language}/deployment/kubernetes`, with `zh-CN`, `en`, and `ja` available for each route. Static HTML links use the published Simplified Chinese routes before JavaScript runs.
 
 The configured URL takes precedence in local previews as well. To preview documentation changes locally, run Mintlify from the separate documentation checkout and temporarily set the base to `http://localhost:3333`. An empty value uses that local preview on localhost or loopback, and falls back to `https://aivision.mintlify.site` on a published site. A base URL with a subpath is supported.
 

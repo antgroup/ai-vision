@@ -150,6 +150,7 @@ html[data-theme="dark"] .mini-breakdown i:nth-child(2) {background: #8c65b6}
 html[data-theme="dark"] .mini-breakdown i:nth-child(3) {background: #5b496e}
 html[data-theme="dark"] .trace-hint {color: #b6a5ca}
 html[data-theme="dark"] .trace-extension button {color: #cfb9e9}
+html[data-theme="dark"] .trace-extension a {color: #cfb9e9}
 html[data-theme="dark"] .trace-extension button span {color: #aa94bb}
 html[data-theme="dark"] .replay-button,
 html[data-theme="dark"] .motion-toggle {background: #24202f; color: #d2b8e7; border-color: #5c466c}
