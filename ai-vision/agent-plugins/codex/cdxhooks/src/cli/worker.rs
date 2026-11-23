@@ -5803,13 +5803,20 @@ mod tests {
     fn spawn_status_sequence_sink(
         statuses: Vec<u16>,
     ) -> (String, std::thread::JoinHandle<Vec<serde_json::Value>>) {
+        spawn_status_sequence_sink_with_timeout(statuses, Duration::from_secs(5))
+    }
+
+    fn spawn_status_sequence_sink_with_timeout(
+        statuses: Vec<u16>,
+        accept_timeout: Duration,
+    ) -> (String, std::thread::JoinHandle<Vec<serde_json::Value>>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();
         listener.set_nonblocking(true).unwrap();
         let handle = std::thread::spawn(move || {
             let mut bodies = Vec::with_capacity(statuses.len());
             for status in statuses {
-                let deadline = std::time::Instant::now() + Duration::from_secs(5);
+                let deadline = std::time::Instant::now() + accept_timeout;
                 let mut stream = loop {
                     match listener.accept() {
                         Ok((stream, _)) => break stream,
@@ -5915,8 +5922,18 @@ mod tests {
             "parent-session",
         )
         .remove(0);
-        let body = subagent_recovery_test_body(&["child0000000001", "child0000000002"], 4_193_600);
-        let (host, sink) = spawn_status_sequence_sink(vec![200, 500]);
+        // Each span fits on its own and the two ASCII payloads alone exceed
+        // the serialized request target, so they must be delivered separately.
+        let span_payload_len = REALTIME_TARGET_SERIALIZED_BODY_BYTES / 2 + 1;
+        let body = subagent_recovery_test_body(
+            &["child0000000001", "child0000000002"],
+            span_payload_len,
+        );
+        // The request window needs to include chunk planning and checkpoint I/O
+        // in addition to the client's HTTP timeout.
+        let accept_timeout =
+            Duration::from_millis(DEFAULT_HTTP_TIMEOUT_MS) + Duration::from_secs(5);
+        let (host, sink) = spawn_status_sequence_sink_with_timeout(vec![200, 500], accept_timeout);
         let config = LangfuseConfig {
             public_key: None,
             secret_key: None,
@@ -5924,7 +5941,7 @@ mod tests {
             headers: None,
         };
 
-        let first = deliver_subagent_delta_chunks(
+        let first_error = deliver_subagent_delta_chunks(
             &config,
             &logger,
             RetryPolicy::AtLeastOnce,
@@ -5934,13 +5951,15 @@ mod tests {
             &record,
             &body,
             &[],
-        );
-        assert!(
-            first.is_err(),
-            "second chunk failure must surface for retry"
+        )
+        .expect_err("second chunk failure must surface for retry");
+        assert_eq!(
+            first_error,
+            crate::common::otel::OtelPostError::HttpStatus(500).to_string()
         );
         let first_bodies = sink.join().unwrap();
         assert_eq!(first_bodies.len(), 2);
+        assert!(first_bodies.iter().all(|body| count_export_spans(body) == 1));
         let failed_state = load_state(&state_file);
         assert_eq!(
             crate::hooks::langfuse::subagent_progress::pending_recovery_count(
@@ -5962,7 +5981,7 @@ mod tests {
 
         let mut remaining = body.clone();
         suppress_accounted(&mut remaining, &record);
-        let (host, sink) = spawn_status_sink(200);
+        let (host, sink) = spawn_status_sequence_sink_with_timeout(vec![200], accept_timeout);
         let config = LangfuseConfig {
             public_key: None,
             secret_key: None,
@@ -5983,6 +6002,10 @@ mod tests {
         .unwrap();
         let second_bodies = sink.join().unwrap();
         assert_eq!(second_bodies.len(), 1);
+        assert!(
+            second_bodies[0] == first_bodies[1],
+            "recovery must resend only the rejected span"
+        );
         let completed_state = load_state(&state_file);
         assert_eq!(
             crate::hooks::langfuse::subagent_progress::pending_recovery_count(
