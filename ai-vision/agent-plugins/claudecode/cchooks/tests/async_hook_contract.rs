@@ -2140,10 +2140,14 @@ fn pretooluse_parent_latency_stays_under_fifty_milliseconds() {
             "tool_name": "Read",
             "tool_use_id": format!("toolu_parent_latency_{index}"),
             "tool_input": {"file_path": "Cargo.toml"}
-        });
+        })
+        .to_string();
         let started = Instant::now();
-        let output =
-            run_cchooks_with_env(dir.path(), payload, [("CCHOOKS_DEBUG", "true".to_string())]);
+        let output = run_cchooks_with_wire_payload(
+            dir.path(),
+            payload.as_bytes(),
+            [("CCHOOKS_DEBUG", "true".to_string())],
+        );
         let elapsed = started.elapsed();
         assert!(
             output.status.success(),

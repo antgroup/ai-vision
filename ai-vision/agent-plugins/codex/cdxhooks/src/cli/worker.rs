@@ -6184,6 +6184,7 @@ mod tests {
             include_str!("../../tests/fixtures/codex_collab_tool_call_same_turn_child.jsonl"),
         )
         .unwrap();
+        let _fixture_polling = crate::hooks::langfuse::langfuse_handler::child_fixture_polling(None);
         run_subagent_recovery_with_context(
             "parent-collab",
             &record,
@@ -6372,6 +6373,7 @@ secret_key = "sk-local"
         );
 
         let _cwd = CurrentDirGuard::enter(&cwd);
+        let _fixture_polling = crate::hooks::langfuse::langfuse_handler::child_fixture_polling(None);
         run_subagent_recovery("parent-collab", &record).unwrap();
 
         assert_eq!(sink.join().unwrap().len(), 1);
