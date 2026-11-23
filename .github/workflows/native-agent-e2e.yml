@@ -107,6 +107,8 @@ jobs:
       - name: Codex production common-edition contracts
         id: codex-contracts
         if: steps.unit-scope.outputs.codex == 'true'
+        # Collect the independent runtime evidence before requiring both statuses.
+        continue-on-error: ${{ inputs.source && inputs.tier == 'release' }}
         env:
           # These contracts share process environment and measure hook latency.
           RUST_TEST_THREADS: '1'
@@ -118,9 +120,11 @@ jobs:
           cargo build --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common --bins --jobs 2
           cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2
       - name: Claude production common-edition contracts
+        id: claude-contracts
         if: >-
           !cancelled() && steps.unit-scope.outputs.claudecode == 'true' &&
           (success() || (inputs.source && steps.codex-contracts.outcome == 'failure'))
+        continue-on-error: ${{ inputs.source && inputs.tier == 'release' }}
         env:
           RUST_TEST_THREADS: '1'
           NATIVE_SOURCE: ${{ inputs.source }}
@@ -218,6 +222,17 @@ jobs:
             ${{ runner.temp }}/hermes-compression/report.json
           if-no-files-found: error
           retention-days: 7
+      - name: Require both release Rust contract suites
+        if: >-
+          !cancelled() && inputs.source && inputs.tier == 'release'
+        env:
+          CODEX_CONTRACTS: ${{ steps.codex-contracts.outcome }}
+          CLAUDE_CONTRACTS: ${{ steps.claude-contracts.outcome }}
+        run: |
+          if [[ "$CODEX_CONTRACTS" != success || "$CLAUDE_CONTRACTS" != success ]]; then
+            echo "::error::Release Rust contract results: Codex=$CODEX_CONTRACTS Claude=$CLAUDE_CONTRACTS"
+            exit 1
+          fi
 
   native-semantics:
     if: inputs.source

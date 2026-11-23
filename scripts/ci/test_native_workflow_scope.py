@@ -71,6 +71,8 @@ def render(value, inputs, needs, temporary):
             return inputs['tier']
         if expression == 'runner.temp':
             return temporary
+        if expression in ('steps.codex-contracts.outcome', 'steps.claude-contracts.outcome'):
+            return 'success'
         if expression.startswith('inputs.'):
             if expression == 'inputs.unit_scope':
                 return inputs.get('unit_scope', 'all')
@@ -252,16 +254,45 @@ class NativeWorkflowScopeTests(unittest.TestCase):
 
     def test_failed_codex_source_does_not_hide_claude_failure_evidence(self):
         steps = workflow()['jobs']['native-source']['steps']
-        codex = next(step for step in steps if step.get('id') == 'codex-contracts')
-        claude = next(step for step in steps if step.get('name') == 'Claude production common-edition contracts')
-        for step in (codex, claude):
-            self.assertFalse(step.get('continue-on-error', False))
+        claude = next(step for step in steps if step.get('id') == 'claude-contracts')
         for source, cancelled, outcome in itertools.product((False, True), (False, True), ('failure', 'skipped')):
             values = {'inputs.source': source, 'steps.unit-scope.outputs.claudecode': 'true',
                       'steps.codex-contracts.outcome': outcome}
             with self.subTest(source=source, cancelled=cancelled, outcome=outcome):
                 self.assertEqual(evaluate_condition(claude['if'], values, cancelled=cancelled, success=False),
                                  source and not cancelled and outcome == 'failure')
+
+    def test_release_runtime_evidence_precedes_fail_closed_rust_gate(self):
+        job = workflow()['jobs']['native-source']
+        rust_steps = [step for step in job['steps']
+                      if step.get('id') in ('codex-contracts', 'claude-contracts')]
+        self.assertEqual(len(rust_steps), 2)
+        gate = next(step for step in job['steps'] if step.get('name') == 'Require both release Rust contract suites')
+        for tier, source in itertools.product(('pr', 'daily', 'release'), (False, True)):
+            values = {'inputs.source': source, 'inputs.tier': tier}
+            keep_running = source and tier == 'release'
+            with self.subTest(tier=tier, source=source):
+                for step in rust_steps:
+                    expression = EXPRESSIONS.fullmatch(step['continue-on-error'])[1]
+                    self.assertEqual(evaluate_condition(expression, values), keep_running)
+                self.assertEqual(evaluate_condition(gate['if'], values), keep_running)
+                self.assertFalse(evaluate_condition(gate['if'], values, cancelled=True))
+
+        steps, _ = source_commands(dict(tier='release', units=False, source=True, platform=False))
+        self.assertLess(steps.index('Preserve sanitized source evidence'), steps.index(gate['name']))
+        self.assertEqual(gate['env'], {
+            'CODEX_CONTRACTS': '${{ steps.codex-contracts.outcome }}',
+            'CLAUDE_CONTRACTS': '${{ steps.claude-contracts.outcome }}',
+        })
+        statuses = ('success', 'failure', 'cancelled', 'skipped', '')
+        for codex, claude in itertools.product(statuses, repeat=2):
+            with self.subTest(codex=codex, claude=claude):
+                result = subprocess.run(
+                    ['bash', '-e', '-c', gate['run']],
+                    env=dict(os.environ, CODEX_CONTRACTS=codex, CLAUDE_CONTRACTS=claude),
+                    capture_output=True, text=True, check=False, timeout=10,
+                )
+                self.assertEqual(result.returncode == 0, codex == claude == 'success')
 
     def test_source_retains_all_hook_integration_targets(self):
         for units in (False, True):
