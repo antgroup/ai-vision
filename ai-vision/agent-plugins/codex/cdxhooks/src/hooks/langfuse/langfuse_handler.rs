@@ -4971,8 +4971,12 @@ mod tests {
             file.flush().unwrap();
         });
 
-        let (host, sink) = spawn_http_sink(vec![200, 200]);
+        let (host, sink) = spawn_http_sink_with_deadline(
+            vec![200, 200],
+            Duration::from_millis(STOP_TERMINAL_POLL_MAX_MS),
+        );
         let context = test_context(&dir, host);
+        let stop_budget = context.stop_budget.unwrap().total_budget();
         let started = Instant::now();
         let mut payload = stop_payload(&transcript_path);
         payload["target_turn_id"] = serde_json::json!("turn-2");
@@ -4983,9 +4987,21 @@ mod tests {
         writer.join().unwrap();
 
         assert_single_turn_bodies(&sink.join().unwrap(), &["Turn 1", "Turn 2"]);
+        let log = std::fs::read_to_string(dir.path().join("test.log")).unwrap();
         assert!(
-            elapsed >= Duration::from_millis(2_500) && elapsed < Duration::from_secs(5),
-            "terminal polling should return early, elapsed={elapsed:?}"
+            log.contains("Transcript terminal not visible; poll="),
+            "Stop should poll while the target turn is still open"
+        );
+        assert!(
+            log.lines().any(|line| {
+                line.contains("Transcript terminal poll finished after")
+                    && line.ends_with("target_terminal_seen=true")
+            }),
+            "Stop should observe the target terminal marker during polling"
+        );
+        assert!(
+            elapsed < stop_budget,
+            "Stop should finish before exhausting its budget, elapsed={elapsed:?}"
         );
         let state = load_state(&context.state_file);
         let transcript_len = std::fs::metadata(&transcript_path).unwrap().len() as i64;
