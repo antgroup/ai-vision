@@ -85,7 +85,7 @@ In the built-in demo, both runs finish the task. In one run, a storage policy lo
 | [Memory](https://aivision.mintlify.site/en/guides/memory-observability) | See what was retrieved and where it came from. When the data is available, check whether it made it into the model input. |
 | [Decisions](https://aivision.mintlify.site/en/guides/decision-traces) | Review routing or approval options and their outcomes. Look for follow-up steps linked by an explicit ID or inferred from nearby records. |
 
-**Open the inputs and deliverables.** Check the image the model received or the report the agent produced. Traces can preview [captured images, audio, video, and PDFs](https://aivision.mintlify.site/en/guides/multimedia), plus [Markdown and static HTML](https://aivision.mintlify.site/en/guides/trace-document-preview). See the [Python multimedia instrumentation example (Simplified Chinese)](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain).
+**Open the inputs and deliverables.** Check the image the model received or the report the agent produced. Traces can preview [captured images, audio, video, and PDFs](https://aivision.mintlify.site/en/guides/multimedia), plus [recognized Markdown and static HTML](https://aivision.mintlify.site/en/guides/trace-document-preview). See the [Python multimedia instrumentation example (Simplified Chinese)](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain).
 
 What you can inspect depends on the integration and the data it reports. The dedicated MCP, Skill, memory, and decision views are in beta.
 

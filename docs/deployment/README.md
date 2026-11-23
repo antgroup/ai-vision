@@ -13,6 +13,7 @@ Deployment leaves `aiv` in a permanent installation directory and verifies it in
 | 安装 CLI / Install the CLI | [安装](https://aivision.mintlify.site/zh-CN/guides/install-cli) | [Install](https://aivision.mintlify.site/en/guides/install-cli) | [インストール](https://aivision.mintlify.site/ja/guides/install-cli) |
 | 个人部署 / Personal All-in-One | [部署](https://aivision.mintlify.site/zh-CN/deployment/all-in-one) | [Deploy](https://aivision.mintlify.site/en/deployment/all-in-one) | [デプロイ](https://aivision.mintlify.site/ja/deployment/all-in-one) |
 | Docker | [部署](https://aivision.mintlify.site/zh-CN/deployment/docker) | [Deploy](https://aivision.mintlify.site/en/deployment/docker) | [デプロイ](https://aivision.mintlify.site/ja/deployment/docker) |
+| Docker Compose | [部署](https://aivision.mintlify.site/zh-CN/deployment/compose) | [Deploy](https://aivision.mintlify.site/en/deployment/compose) | [デプロイ](https://aivision.mintlify.site/ja/deployment/compose) |
 | Kubernetes | [部署](https://aivision.mintlify.site/zh-CN/deployment/kubernetes) | [Deploy](https://aivision.mintlify.site/en/deployment/kubernetes) | [デプロイ](https://aivision.mintlify.site/ja/deployment/kubernetes) |
 
 产品定义与验收入口统一在根 [deploy/](../../deploy/README.md)。CLI 的旧内嵌路径和本目录旧变量示例是生成兼容副本；维护时修改权威源并运行 `make assets`。默认 Docker 保持 Go 运行时；Compose 与 Kubernetes 可选。当前源码提供 `aiv ... --target compose`，通过 Go 调用原生 Compose，无额外宿主 Python 控制层。发布版是否包含该入口须按实际版本确认。
