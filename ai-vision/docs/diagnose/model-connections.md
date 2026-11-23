@@ -227,8 +227,8 @@ Report live provider checks separately with the tested service chain, provider,
 scenario, observed result, and unverified scope. Distinguish model discovery
 from inference, and backend checks from browser-to-provider checks. Only claim
 an end-to-end scenario passed when the complete service chain was exercised.
-Changes to the user tutorial belong in the separate `ai-vision-docs` repository;
-this document records the implementation contract and its evidence limits.
+The separate `ai-vision-docs` repository maintains the [model connections user guide](https://aivision.mintlify.site/en/guides/model-connections).
+This document records the implementation contract and its evidence limits.
 
 
 ## Shared integration entry and compatibility

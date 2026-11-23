@@ -41,8 +41,8 @@
 
 **連接你的 Agent**
 
-- **自己開發的應用程式**可以沿用相容的追蹤設定，或參考 LangGraph、OpenAI Agents SDK 和 Go / Eino 的[整合範例](https://aivision.mintlify.site/zh-CN/integrations/frameworks)加入追蹤。
-- **現成的應用程式**如 Codex、Claude Code、OpenClaw，安裝[對應的外掛程式](https://aivision.mintlify.site/zh-CN/integrations/plugins)後，就能查看日常任務的執行過程。
+- **自己開發的應用程式**可以沿用相容的追蹤設定，或參考 LangGraph、Deep Agents 和 Go / Eino 的[整合範例](https://aivision.mintlify.site/zh-CN/integrations/frameworks)加入追蹤。
+- **現成的應用程式**如 Codex、Claude Code、OpenClaw，安裝[對應的外掛程式](https://aivision.mintlify.site/zh-CN/integrations/agents)後，就能查看日常任務的執行過程。
 
 <a id="capabilities"></a>
 
@@ -60,7 +60,7 @@ Trace 越積越多，怎麼找到昨天那次慢得不尋常的任務，再查�
 
 - **從清單找 Trace。** 依 Agent、時間和耗時篩出慢任務，也能依狀態、節點數或 Token 總量篩選，按用量排序。知道 Trace ID 就能直接查找，部分資料來源也支援搜尋已擷取的輸入與輸出。
 - **從 Session 找回合。** 回看多輪對話，開啟出問題那一輪的 Trace。
-- **在長 Trace 裡縮小範圍。** 只看某個子 Agent 的分支，篩出失敗的工具呼叫或輸入 Token 偏高的模型呼叫。呼叫樹會保留通往符合條件之步驟的上層路徑，常用條件也能儲存。詳見[軌跡排查指南](https://aivision.mintlify.site/zh-CN/guides/trace-analysis)。
+- **在長 Trace 裡縮小範圍。** 只看某個子 Agent 的分支，篩出失敗的工具呼叫或輸入 Token 偏高的模型呼叫。呼叫樹會保留通往符合條件之步驟的上層路徑，常用條件也能儲存。詳見[軌跡排查指南](https://aivision.mintlify.site/zh-CN/guides/traces#在长-trace-中组合筛选调用)。
 
 **Token 用量和費用也變了？** 從儀表板一路查到個別呼叫，看看重試次數、上下文長度或快取命中有沒有變化。費用明細會列出價格來源與計價範圍。設定[模型價格](https://aivision.mintlify.site/zh-CN/guides/model-pricing)後，可依價格生效時間重新估算既有紀錄，無需重跑 Agent。模型計價目前為 Beta。
 
@@ -85,7 +85,7 @@ Trace 越積越多，怎麼找到昨天那次慢得不尋常的任務，再查�
 | [記憶](https://aivision.mintlify.site/zh-CN/guides/memory-observability) | 查看取用了哪些記憶及其來源，有對應資料時，可核對內容是否進入模型輸入。 |
 | [決策](https://aivision.mintlify.site/zh-CN/guides/decision-traces) | 查看模型路由或審核的選項與結果。後續步驟可能透過明確識別碼連結，也可能由前後紀錄推斷。 |
 
-**直接查看輸入和成果。** 想核對模型收到的圖片，或看看 Agent 產生的報告，可以在 Trace 裡預覽已擷取的圖片、音訊、影片、PDF，以及可辨識的 Markdown 和靜態 HTML。擷取設定詳見 [Python 多媒體整合範例](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain)。
+**直接查看輸入和成果。** 想核對模型收到的圖片，或看看 Agent 產生的報告，可以在 Trace 裡預覽[已擷取的圖片、音訊、影片和 PDF](https://aivision.mintlify.site/zh-CN/guides/multimedia)，以及[可辨識的 Markdown 和靜態 HTML](https://aivision.mintlify.site/zh-CN/guides/trace-document-preview)。擷取設定詳見 [Python 多媒體整合範例（簡中）](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain)。
 
 能看到的細節取決於整合方式和實際回報的資料。MCP、Skill、記憶的專屬頁面和決策檢視目前為 Beta。
 
@@ -95,9 +95,9 @@ Trace 越積越多，怎麼找到昨天那次慢得不尋常的任務，再查�
 
 查到一次工具失敗或重試後，怎麼知道這類問題是不是常常發生？
 
-1. **先試跑規則，再排程。** 用幾筆 Trace [試跑內建規則](https://aivision.mintlify.site/zh-CN/guides/diagnosis)，例如檢查工具失敗、重複呼叫，或修改程式碼後是否執行驗證。選好規則後，在團隊空間設定[定期診斷](https://aivision.mintlify.site/zh-CN/guides/continuous-diagnosis)。
-2. **回到軌跡核對異常。** 在品質儀表板查看各批診斷的變化，從異常案例（BadCase）回到有原始紀錄的步驟。比對實際成果，再確認問題、標記誤報，或註記為無法判定。
-3. **改完再驗證。** 重跑同類任務，用同一套診斷設定檢查新的 Trace。
+1. **先試跑規則，再排程。** 用幾筆 Trace [試跑內建規則](https://aivision.mintlify.site/zh-CN/guides/use-diagnosers#builtin-diagnoser-overview)，例如檢查工具失敗、重複呼叫，或[修改程式碼後是否執行驗證](https://aivision.mintlify.site/zh-CN/guides/use-diagnosers#builtin-verification-case)。選好規則後，在團隊空間設定[定期診斷](https://aivision.mintlify.site/zh-CN/guides/continuous-diagnosis#3-把验证过的检查设为定时任务)。
+2. **[回到軌跡核對異常。](https://aivision.mintlify.site/zh-CN/guides/quality#复核一条-badcase)** 在品質儀表板查看各批診斷的變化，從異常案例（BadCase）回到有原始紀錄的步驟。比對實際成果，再確認問題、標記誤報，或註記為無法判定。
+3. **改完再驗證。** 重跑同類任務，[用同一套診斷設定檢查新的 Trace](https://aivision.mintlify.site/zh-CN/guides/continuous-diagnosis#2-用新-trace-验证应用修复)。
 
 驗收標準明確時，可以在選用的 OpenShell 沙箱執行[增強型 Python 規則](https://aivision.mintlify.site/zh-CN/guides/sandbox)，例如用 `pytest` 驗證 Trace 裡的程式碼，或依參考明細表重新計算。要判斷回答是否切題、解釋是否有根據，也可以使用 LLM 診斷。
 
@@ -135,13 +135,13 @@ AI Vision 目前著重從實際執行紀錄找問題，改完再用同類任務�
 <a id="personal-deployment"></a>
 
 - **個人部署。** 推薦 [All-in-One](https://aivision.mintlify.site/zh-CN/deployment/all-in-one)，在 Linux x86-64 或 ARM64 上用單一 Docker 容器執行平台和內嵌的 seekdb。線上安裝需要 [AI Vision Skills 儲存庫的讀取權限](skills/README.md)，也可使用已獲授權的離線安裝套件。
-- <a id="team-deployment"></a>**團隊部署。** 建議分開部署各服務並使用 OceanBase CE，透過空間、成員與角色共享觀測和診斷結果。可用 [Docker](https://aivision.mintlify.site/zh-CN/deployment/docker) 部署，或在既有的 Kubernetes 叢集使用 [OB Operator](https://aivision.mintlify.site/zh-CN/deployment/kubernetes)。
+- <a id="team-deployment"></a>**團隊部署。** 建議分開部署各服務並使用 OceanBase CE，透過空間、成員與角色共享觀測和診斷結果。可用 [Docker](https://aivision.mintlify.site/zh-CN/deployment/docker) 部署，或用 CLI [部署到既有的 Kubernetes 叢集](https://aivision.mintlify.site/zh-CN/deployment/kubernetes)，由 OB Operator 管理 OceanBase CE。
 - <a id="deploy-with-skills"></a>**使用 Skill 或 CLI。** `aivision-deploy` 可部署服務與檢查狀態，`aivision-quickstart` 可在既有環境試用資料擷取與診斷。也可以直接用 CLI [部署](https://aivision.mintlify.site/zh-CN/deployment/overview)或[查詢 Trace](https://aivision.mintlify.site/zh-CN/guides/cli)。
 
 > [!TIP]
-> **先試內建範例。** 部署後登入，在個人空間開啟 **演示示例**，選擇「完整引导」並建立範例資料。無需設定模型，就能試用 Trace 比對和規則診斷。在團隊空間使用範例需要對應的 Agent 整合和診斷權限。此處介面名稱以簡中版為例。
+> **[先試內建範例。](https://aivision.mintlify.site/zh-CN/try-sample#import-sample)** 部署後登入，在個人空間開啟 **演示示例**，選擇「完整引导」並建立範例資料。無需設定模型，就能試用 Trace 比對和規則診斷。在團隊空間匯入範例，需要管理 Agent、核發擷取權杖和執行診斷的權限。此處介面名稱以簡中版為例。
 
-**查看實際任務的 Trace。** 開啟 **Agent 接入**，依精靈為[自行開發的 Agent](https://aivision.mintlify.site/zh-CN/integrations/frameworks)設定 SDK 或執行環境。如果使用現成的應用程式，在執行該程式的機器上安裝[對應外掛](https://aivision.mintlify.site/zh-CN/integrations/plugins)後重新啟動。使用 Codex 時，還需要在 `/hooks` 確認並信任 AI Vision 的 hooks，再開新工作階段。跑一項會呼叫模型和工具的任務後，到 **Agent 轨迹** 開啟新的 Trace，核對工具呼叫的參數與狀態。
+**查看實際任務的 Trace。** 開啟 **Agent 接入**，依精靈為[自行開發的 Agent](https://aivision.mintlify.site/zh-CN/integrations/frameworks)設定 SDK 或執行環境。如果使用現成的應用程式，在執行該程式的機器上安裝[對應外掛](https://aivision.mintlify.site/zh-CN/integrations/agents)後重新啟動。使用 Codex 時，還需要在 `/hooks` 確認並信任 AI Vision 的 hooks，再開新工作階段。跑一項會呼叫模型和工具的任務後，到 **Agent 轨迹** 開啟新的 Trace，核對工具呼叫的參數與狀態。
 
 支援的外掛提供 [Privacy 資料擷取模式](https://aivision.mintlify.site/zh-CN/guides/privacy)，可在本機過濾提示詞、回答與工具的輸入輸出，同時保留呼叫結構與用量。
 

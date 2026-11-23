@@ -1,8 +1,8 @@
 # 部署入口与维护资料 / Deployment and maintenance
 
-用户安装、手动部署和验收步骤统一在 [AI Vision 文档站](https://aivision.mintlify.site/zh-CN/introduction)维护。按站点步骤操作 `aiv` 即可完成部署。
+先在[部署概览](https://aivision.mintlify.site/zh-CN/deployment/overview)选择部署方式，再按下表对应的指南安装和验收。
 
-Follow the [AI Vision documentation site](https://aivision.mintlify.site/en/introduction) to install `aiv`, deploy the product, and verify the result.
+Start with the [deployment overview](https://aivision.mintlify.site/en/deployment/overview) to choose a deployment method, then follow the corresponding guide below to install and verify it.
 
 部署完成时，`aiv` 应保留在固定安装目录并能在新终端直接执行。后续维护继续使用 CLI；保留原 target、namespace、workdir、blueprint、配置文件与 Compose file/env 参数。旧安装器仅打印 PATH 提示时，按 [持久 PATH 步骤](../../aivision-cli/README.md#make-aiv-available-in-new-terminals)补齐并验证，不需要额外的 `manage` 包装脚本。
 
@@ -11,6 +11,7 @@ Deployment leaves `aiv` in a permanent installation directory and verifies it in
 | 用户指南 / User guide | 简体中文 | English | 日本語 |
 |---|---|---|---|
 | 安装 CLI / Install the CLI | [安装](https://aivision.mintlify.site/zh-CN/guides/install-cli) | [Install](https://aivision.mintlify.site/en/guides/install-cli) | [インストール](https://aivision.mintlify.site/ja/guides/install-cli) |
+| 个人部署 / Personal All-in-One | [部署](https://aivision.mintlify.site/zh-CN/deployment/all-in-one) | [Deploy](https://aivision.mintlify.site/en/deployment/all-in-one) | [デプロイ](https://aivision.mintlify.site/ja/deployment/all-in-one) |
 | Docker | [部署](https://aivision.mintlify.site/zh-CN/deployment/docker) | [Deploy](https://aivision.mintlify.site/en/deployment/docker) | [デプロイ](https://aivision.mintlify.site/ja/deployment/docker) |
 | Kubernetes | [部署](https://aivision.mintlify.site/zh-CN/deployment/kubernetes) | [Deploy](https://aivision.mintlify.site/en/deployment/kubernetes) | [デプロイ](https://aivision.mintlify.site/ja/deployment/kubernetes) |
 
