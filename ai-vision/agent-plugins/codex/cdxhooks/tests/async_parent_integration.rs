@@ -1039,14 +1039,21 @@ fn pretool_parent_timing_p95_stays_below_50_ms() {
         .collect::<Vec<_>>();
     assert_eq!(queued_tool_ids, tool_ids);
 
-    let samples = parent_total_samples_ms(&root.path().join("logs"), "PreToolUse");
-    assert_eq!(samples.len(), 22);
+    let phase_samples = parent_phase_samples_ms(&root.path().join("logs"), "PreToolUse");
+    assert_eq!(phase_samples.len(), 22);
     // Cold process launch is covered separately. This p95 measures the normal
     // same-session append path after two warm-up hooks.
-    let mut samples = samples.into_iter().skip(2).collect::<Vec<_>>();
+    let mut samples = phase_samples[2..]
+        .iter()
+        .map(|phases| phases["total"].as_u64().expect("parent total milliseconds"))
+        .collect::<Vec<_>>();
     samples.sort_unstable();
     let p95 = samples[(samples.len() * 95).div_ceil(100) - 1];
-    assert!(p95 < 50, "PreToolUse parent p95 took {p95}ms");
+    assert!(
+        p95 < 50,
+        "PreToolUse parent p95 took {p95}ms; ordered phase samples (ms)={:?}",
+        &phase_samples[2..]
+    );
 }
 
 #[test]
@@ -1682,7 +1689,9 @@ fn production_parent_worker_quarantines_poison_and_keeps_later_turn_live() {
 }
 
 fn parent_total_ms(root: &Path, event: &str) -> Option<u64> {
-    parent_total_samples_ms(root, event).into_iter().next()
+    parent_phase_samples_ms(root, event)
+        .iter()
+        .find_map(|phases| phases["total"].as_u64())
 }
 
 fn phase_event_count(root: &Path, component: &str, event: &str) -> usize {
@@ -1712,15 +1721,15 @@ fn worker_process_ids(root: &Path) -> std::collections::BTreeSet<u32> {
         .collect()
 }
 
-fn parent_total_samples_ms(root: &Path, event: &str) -> Vec<u64> {
+fn parent_phase_samples_ms(root: &Path, event: &str) -> Vec<Value> {
     walk_text(root)
         .lines()
         .filter_map(|line| {
-            let record: Value = serde_json::from_str(line).ok()?;
+            let mut record: Value = serde_json::from_str(line).ok()?;
             (record["kind"] == "cdxhooks.phase_timing"
                 && record["component"] == "parent"
                 && record["event"] == event)
-                .then(|| record["elapsed_ms"]["total"].as_u64())?
+                .then(|| record["elapsed_ms"].take())
         })
         .collect()
 }
