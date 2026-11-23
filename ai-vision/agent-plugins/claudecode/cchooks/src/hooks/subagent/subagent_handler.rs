@@ -1110,8 +1110,10 @@ fn scan_transcript_for_agent_background(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::common::otel::derive_subagent_conversation_id;
+    use crate::common::otel::{consume_test_http_request, derive_subagent_conversation_id};
     use serde_json::json;
+    use std::sync::mpsc::{self, RecvTimeoutError};
+    use std::thread::JoinHandle;
 
     fn failing_http_endpoint(requests: usize) -> String {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind test server");
@@ -1119,8 +1121,7 @@ mod tests {
         std::thread::spawn(move || {
             for _ in 0..requests {
                 let (mut stream, _) = listener.accept().expect("accept request");
-                let mut request = [0_u8; 8192];
-                let _ = std::io::Read::read(&mut stream, &mut request);
+                consume_test_http_request(&mut stream);
                 let response =
                     b"HTTP/1.1 500 Test Failure\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
                 let _ = std::io::Write::write_all(&mut stream, response);
@@ -1129,35 +1130,36 @@ mod tests {
         format!("http://{address}/v1/traces")
     }
 
-    fn counting_success_endpoint() -> (String, std::sync::mpsc::Receiver<usize>) {
+    fn counting_success_endpoint() -> (String, mpsc::Sender<()>, JoinHandle<usize>) {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").expect("bind test server");
         listener
             .set_nonblocking(true)
             .expect("set nonblocking test server");
         let address = listener.local_addr().expect("test server address");
-        let (sender, receiver) = std::sync::mpsc::channel();
-        std::thread::spawn(move || {
-            let deadline = std::time::Instant::now() + std::time::Duration::from_millis(250);
+        let (finished, client_finished) = mpsc::channel();
+        let server = std::thread::spawn(move || {
             let mut requests = 0;
-            while std::time::Instant::now() < deadline {
+            loop {
                 match listener.accept() {
                     Ok((mut stream, _)) => {
-                        let mut request = [0_u8; 8192];
-                        let _ = std::io::Read::read(&mut stream, &mut request);
+                        consume_test_http_request(&mut stream);
                         let response =
                             b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
                         let _ = std::io::Write::write_all(&mut stream, response);
                         requests += 1;
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        std::thread::sleep(std::time::Duration::from_millis(5));
+                        match client_finished.recv_timeout(std::time::Duration::from_millis(5)) {
+                            Ok(()) | Err(RecvTimeoutError::Disconnected) => break,
+                            Err(RecvTimeoutError::Timeout) => {}
+                        }
                     }
-                    Err(_) => break,
+                    Err(error) => panic!("accept test request: {error}"),
                 }
             }
-            let _ = sender.send(requests);
+            requests
         });
-        (format!("http://{address}/v1/traces"), receiver)
+        (format!("http://{address}/v1/traces"), finished, server)
     }
 
     fn test_context(dir: &tempfile::TempDir, endpoint: String) -> CommonContext {
@@ -1439,7 +1441,7 @@ mod tests {
             timing: TimingData::default(),
             vcs_info: None,
         };
-        let (endpoint, request_count) = counting_success_endpoint();
+        let (endpoint, finished, server) = counting_success_endpoint();
         let context = test_context(&dir, endpoint);
 
         let result = SubagentHandler::new().build_and_upload_async_turn(
@@ -1447,14 +1449,14 @@ mod tests {
             &upload,
             &context,
         );
+        finished.send(()).expect("notify fixture of client completion");
+        let request_count = server.join().expect("request count");
 
         assert!(result.error.is_none());
         assert!(result.progress.complete);
+        assert_eq!(result.progress.accepted_turn_ids.len(), 2);
         assert_eq!(
-            request_count
-                .recv_timeout(std::time::Duration::from_secs(1))
-                .expect("request count"),
-            1,
+            request_count, 1,
             "under-limit subagent turns should share one bounded HTTP chunk"
         );
     }
