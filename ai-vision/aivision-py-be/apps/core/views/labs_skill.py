@@ -28,6 +28,8 @@ from ..trace_query.semantics.skill_recognition import (
 from .common import check_space_access_or_error, error_response, success_response
 from .labs_import_guard import (
     IMPORT_CONFLICT_MESSAGE,
+    INVALID_OVERWRITE_MESSAGE,
+    ImportPayloadError,
     ImportWriteGuard,
     conflict_matches,
     managed_config_space,
@@ -437,8 +439,10 @@ class SkillConfigListView(APIView):
                 "gmt_modified",
                 MAX_CONFIGS_PER_REQUEST,
             )
-        except ValueError as exc:
-            return error_response(str(exc), 3101)
+        except ImportPayloadError as exc:
+            return error_response(exc.public_message, 3101)
+        except ValueError:
+            return error_response("Failed to check configuration names", 3101)
         return success_response(matches)
 
     def delete(self, request, space_id: str):
@@ -478,8 +482,10 @@ class SkillConfigListView(APIView):
                     "name",
                     "gmt_modified",
                 )
-            except ValueError as exc:
-                return error_response(str(exc), 3101)
+            except ImportPayloadError as exc:
+                return error_response(exc.public_message, 3101)
+            except ValueError:
+                return error_response(INVALID_OVERWRITE_MESSAGE, 3101)
 
         return_receipts = request.query_params.get("response") == "receipts"
         receipts = []

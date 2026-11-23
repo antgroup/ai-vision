@@ -7,16 +7,25 @@ from .common import check_space_access_or_error, error_response
 
 
 IMPORT_CONFLICT_MESSAGE = "The configuration name or version changed. Review the import again."
+INVALID_OVERWRITE_MESSAGE = "Invalid overwrite confirmation"
+
+
+class ImportPayloadError(ValueError):
+    """Expected import validation failure with an authored public message."""
+
+    def __init__(self, public_message: str) -> None:
+        super().__init__(public_message)
+        self.public_message = public_message
 
 
 class ImportWriteGuard:
     def __init__(self, overwrites, names, name_field, version_field):
         if not isinstance(overwrites, list) or len(overwrites) > len(names):
-            raise ValueError("overwrites must be a list of submitted names and versions")
+            raise ImportPayloadError("overwrites must be a list of submitted names and versions")
         self.approvals = {}
         for item in overwrites:
             if not isinstance(item, dict):
-                raise ValueError("Invalid overwrite confirmation")
+                raise ImportPayloadError(INVALID_OVERWRITE_MESSAGE)
             name = item.get("name")
             version = item.get("version")
             if (
@@ -27,7 +36,7 @@ class ImportWriteGuard:
                 or not version
                 or len(version) > 64
             ):
-                raise ValueError("Invalid overwrite confirmation")
+                raise ImportPayloadError(INVALID_OVERWRITE_MESSAGE)
             self.approvals[name] = version
         self.name_field = name_field
         self.version_field = version_field
@@ -73,7 +82,7 @@ def conflict_matches(queryset, names, name_field, version_field, limit):
             for name in names
         )
     ):
-        raise ValueError(f"names must contain 1 to {limit} valid configuration names")
+        raise ImportPayloadError(f"names must contain 1 to {limit} valid configuration names")
 
     # Keep the submitted spelling with each database match. Each branch uses
     # the name column's own collation, including OceanBase's case folding.

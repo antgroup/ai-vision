@@ -370,26 +370,25 @@ fn main() {
                 let profile_name = args.profile.as_deref();
                 match config.resolve_profile(profile_name) {
                     Ok(resolved) => {
-                        eprintln!(
-                            "kimihooks-replay: using config {} (profile={}, host={})",
-                            config_path.display(),
-                            profile_name.unwrap_or("default"),
-                            resolved.host,
-                        );
+                        eprintln!("kimihooks-replay: using report configuration");
                         let mut cfg = edition_cfg.clone();
                         cfg.traces_endpoint = Some(resolve_traces_url(&resolved.host));
                         cfg.public_key = Some(resolved.public_key);
                         cfg.secret_key = Some(resolved.secret_key);
                         cfg
                     }
-                    Err(e) => {
-                        eprintln!("kimihooks-replay: config profile error: {}", e);
+                    Err(_) => {
+                        eprintln!(
+                            "kimihooks-replay: could not resolve the report profile. Check --profile and its credential settings."
+                        );
                         edition_cfg
                     }
                 }
             }
-            Err(e) => {
-                eprintln!("kimihooks-replay: config load error: {}", e);
+            Err(_) => {
+                eprintln!(
+                    "kimihooks-replay: could not load report configuration. Check --config, file permissions, and TOML syntax."
+                );
                 edition_cfg
             }
         }
