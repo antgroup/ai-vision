@@ -1,3 +1,4 @@
+import contextlib
 import importlib.machinery
 import importlib.util
 import hashlib
@@ -150,7 +151,18 @@ class InstallerTests(unittest.TestCase):
                 args = SimpleNamespace(agent_uuid=agent_uuid, agent='codex', base_url=base, config_dir=temp,
                     dry_run=False, space_key=None if browser else credential, space_key_file=None, space_id='space',
                     installation_token='aiv-install-test-ticket' if browser else None)
-                with patch.object(installer, 'request_bytes', side_effect=request), patch.object(installer.shutil, 'which', return_value='/bin/codex'), patch.object(installer, 'run', return_value='hooks enabled true'), patch('builtins.print'), patch.object(installer.getpass, 'getpass') as prompt:
+                runtime_probe = (
+                    patch.object(installer, 'check_binary_runtime')
+                    if os.name == 'nt' else contextlib.nullcontext()
+                )
+                with (
+                    patch.object(installer, 'request_bytes', side_effect=request),
+                    patch.object(installer.shutil, 'which', return_value='/bin/codex'),
+                    patch.object(installer, 'run', return_value='hooks enabled true'),
+                    patch('builtins.print'),
+                    patch.object(installer.getpass, 'getpass') as prompt,
+                    runtime_probe,
+                ):
                     was_failure = fail
                     if not fail:
                         with patch.object(installer, 'check_binary_runtime', side_effect=installer.ConnectError('GLIBC_2.34 unavailable')):
@@ -172,7 +184,8 @@ class InstallerTests(unittest.TestCase):
                         if browser:
                             recovery = root/'aivision/codex/pending-installation.json'
                             self.assertEqual(json.loads(recovery.read_text())['agent_credential'], credential)
-                            self.assertEqual(recovery.stat().st_mode & 0o777, 0o600)
+                            if os.name != 'nt':
+                                self.assertEqual(recovery.stat().st_mode & 0o777, 0o600)
                         fail = False
                     installer.install(args)
                     installer.install(args)
