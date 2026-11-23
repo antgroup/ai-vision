@@ -1351,8 +1351,8 @@ fn worker_handoff_uses_session_queue_instead_of_per_event_stdin() {
     let file_lock_source = include_str!("../src/common/file_lock.rs");
     let dirs_source = include_str!("../src/common/dirs.rs");
     let spawn_start = worker_source
-        .find("pub fn spawn_detached_raw")
-        .expect("raw worker handoff");
+        .find("pub fn spawn_detached_parsed")
+        .expect("parsed worker handoff");
     let spawn_end = worker_source[spawn_start..]
         .find("pub fn write_stop_intent")
         .map(|offset| spawn_start + offset)
@@ -2171,6 +2171,16 @@ fn pretooluse_parent_latency_stays_under_fifty_milliseconds() {
     assert_eq!(stdin_times.len(), 22, "one stdin sample per invocation");
     assert_eq!(queue_times.len(), 22, "one queue sample per invocation");
     assert_eq!(internal_times.len(), 22, "one total sample per invocation");
+    assert_eq!(
+        contents
+            .lines()
+            .filter(|line| {
+                line.contains(" [PreToolUse] ") && line.contains("worker queue handoff accepted:")
+            })
+            .count(),
+        22,
+        "each invocation must enqueue its unique tool event"
+    );
 
     // Exclude two cold-start/security-inspection warmups from the hook p95.
     let mut internal_samples = internal_times[2..].to_vec();
@@ -2249,10 +2259,14 @@ fn large_posttool_payload_handoff_stays_below_parent_budget() {
     );
     // The parent total covers stdin read, parsing and durable handoff. Keep
     // process launch and exit wall time as diagnostics for hosted-runner stalls.
-    let parent = parent_total_from_log(&log, "PostToolUse");
+    let parent = parent_phase_samples_from_log(&contents, "PostToolUse", "total")
+        .pop()
+        .expect("parent total timing log");
+    let stdin = parent_phase_samples_from_log(&contents, "PostToolUse", "stdin");
+    let queue = parent_phase_samples_from_log(&contents, "PostToolUse", "queue");
     eprintln!("large PostToolUse parent={parent:?} wall={wall:?}");
     assert!(
         parent < Duration::from_millis(100),
-        "large payload handoff exceeded parent budget: parent={parent:?} wall={wall:?}"
+        "large payload handoff exceeded parent budget: parent={parent:?} wall={wall:?} stdin={stdin:?} queue={queue:?}"
     );
 }

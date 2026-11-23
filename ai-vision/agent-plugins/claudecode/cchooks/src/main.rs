@@ -328,7 +328,7 @@ fn run_parent_hook() {
             }
         }
     } else {
-        worker::spawn_detached_raw(&raw_payload, &logger);
+        worker::spawn_detached_parsed(&payload, raw_payload.len(), &logger);
     }
     common::otel::log_parent_phase(&logger, "queue", queue_started.elapsed().as_millis());
     if matches!(event, HookEvent::SessionEnd) && structured_output {

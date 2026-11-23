@@ -446,8 +446,8 @@ pub fn spawn_detached_with_stop_snapshot_and_receipt(
     transcript_ingest_receipt: Option<String>,
     logger: &Logger,
 ) -> bool {
-    let payload_bytes = match serde_json::to_vec(payload) {
-        Ok(bytes) => bytes,
+    let original_bytes = match serde_json::to_vec(payload) {
+        Ok(bytes) => bytes.len(),
         Err(error) => {
             logger.warn(&format!(
                 "worker spawn skipped: payload serialization failed: {error}"
@@ -455,8 +455,9 @@ pub fn spawn_detached_with_stop_snapshot_and_receipt(
             return false;
         }
     };
-    spawn_detached_raw_with_stop_snapshot_and_receipt(
-        &payload_bytes,
+    spawn_detached_checked(
+        payload,
+        original_bytes,
         turn_seed,
         transcript_end_offset,
         transcript_ingest_receipt,
@@ -464,46 +465,23 @@ pub fn spawn_detached_with_stop_snapshot_and_receipt(
     )
 }
 
-#[allow(dead_code)]
-pub fn spawn_detached_raw(payload_bytes: &[u8], logger: &Logger) {
-    spawn_detached_raw_with_turn_seed(payload_bytes, None, logger);
+pub fn spawn_detached_parsed(payload: &Value, original_bytes: usize, logger: &Logger) {
+    let _ = spawn_detached_checked(payload, original_bytes, None, None, None, logger);
 }
 
-pub fn spawn_detached_raw_with_turn_seed(
-    payload_bytes: &[u8],
-    turn_seed: Option<TurnSeed>,
-    logger: &Logger,
-) {
-    spawn_detached_raw_with_stop_snapshot(payload_bytes, turn_seed, None, logger);
-}
-
-pub fn spawn_detached_raw_with_stop_snapshot(
-    payload_bytes: &[u8],
-    turn_seed: Option<TurnSeed>,
-    transcript_end_offset: Option<u64>,
-    logger: &Logger,
-) {
-    let _ = spawn_detached_raw_with_stop_snapshot_and_receipt(
-        payload_bytes,
-        turn_seed,
-        transcript_end_offset,
-        None,
-        logger,
-    );
-}
-
-fn spawn_detached_raw_with_stop_snapshot_and_receipt(
-    payload_bytes: &[u8],
+fn spawn_detached_checked(
+    payload: &Value,
+    original_bytes: usize,
     turn_seed: Option<TurnSeed>,
     transcript_end_offset: Option<u64>,
     transcript_ingest_receipt: Option<String>,
     logger: &Logger,
 ) -> bool {
-    if payload_bytes.is_empty() {
+    if original_bytes == 0 {
         logger.warn("worker spawn skipped: empty payload envelope");
         return false;
     }
-    if payload_bytes.len() > MAX_WORKER_ENVELOPE_BYTES {
+    if original_bytes > MAX_WORKER_ENVELOPE_BYTES {
         logger.warn(&format!(
             "worker spawn skipped: payload envelope exceeds {} bytes",
             MAX_WORKER_ENVELOPE_BYTES
@@ -511,20 +489,11 @@ fn spawn_detached_raw_with_stop_snapshot_and_receipt(
         return false;
     }
 
-    let payload: Value = match serde_json::from_slice(payload_bytes) {
-        Ok(value) => value,
-        Err(error) => {
-            logger.warn(&format!(
-                "worker enqueue skipped: invalid payload JSON: {error}"
-            ));
-            return false;
-        }
-    };
-    let session_id = extract_session_id(&payload);
+    let session_id = extract_session_id(payload);
     match enqueue_and_wake_with_stop_snapshot(
         &session_id,
-        &payload,
-        payload_bytes.len(),
+        payload,
+        original_bytes,
         turn_seed,
         transcript_end_offset,
         transcript_ingest_receipt,
@@ -532,15 +501,15 @@ fn spawn_detached_raw_with_stop_snapshot_and_receipt(
     ) {
         Ok(EnqueueOutcome::Spawned) => logger.debug(&format!(
             "worker queue handoff accepted: consumer=spawned envelope_bytes={}",
-            payload_bytes.len()
+            original_bytes
         )),
         Ok(EnqueueOutcome::Appended) => logger.debug(&format!(
             "worker queue handoff accepted: consumer=existing envelope_bytes={}",
-            payload_bytes.len()
+            original_bytes
         )),
         Ok(EnqueueOutcome::Coalesced) => logger.debug(&format!(
             "worker queue handoff coalesced: envelope_bytes={}",
-            payload_bytes.len()
+            original_bytes
         )),
         Err(error) => {
             logger.warn(&format!("worker enqueue failed open: {error}"));

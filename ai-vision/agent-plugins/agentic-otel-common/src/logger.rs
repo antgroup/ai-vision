@@ -14,11 +14,8 @@ const LOG_BACKUP_COUNT: u32 = 10;
 ///
 /// `Logger` is `Clone` and may be shared across the concurrent send threads
 /// spawned during the hook's deferred-flush phase. Without serialization, two
-/// threads can (a) interleave the multiple `write()` syscalls of a single
-/// `writeln!`, garbling lines, or (b) both pass the rotation size check and
-/// race the backup renames, losing the active log. Holding this lock across the
-/// whole rotation-and-write critical section prevents both. Logging is
-/// low-volume and off the hot compute path, so global serialization is cheap.
+/// threads can both pass the rotation size check and race the backup renames.
+/// Holding this lock across rotation and append prevents that within a process.
 static LOG_LOCK: Mutex<()> = Mutex::new(());
 
 #[derive(Clone)]
@@ -94,7 +91,12 @@ impl Logger {
             return;
         };
 
-        let _ = writeln!(file, "{}", line);
+        // Parent and worker processes can share a file. Append the record and
+        // its delimiter in one buffer so regular writes keep the line intact.
+        let mut record = String::with_capacity(line.len() + 1);
+        record.push_str(line);
+        record.push('\n');
+        let _ = file.write_all(record.as_bytes());
     }
 
     pub fn debug(&self, message: &str) {
