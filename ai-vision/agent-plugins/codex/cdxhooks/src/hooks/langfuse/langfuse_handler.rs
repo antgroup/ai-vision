@@ -60,6 +60,37 @@ const STOP_TERMINAL_POLL_INTERVAL_MS: u64 = 500;
 const STOP_RECOVERY_TRANSCRIPT_SCAN_MAX_BYTES: usize = 256 * 1024;
 
 #[cfg(test)]
+struct ChildFixturePolling {
+    publish_on_retry: Option<Box<dyn FnOnce()>>,
+}
+
+#[cfg(test)]
+thread_local! {
+    static CHILD_FIXTURE_POLLING: std::cell::RefCell<Option<ChildFixturePolling>> = const {
+        std::cell::RefCell::new(None)
+    };
+}
+
+#[cfg(test)]
+pub(crate) struct ChildFixturePollingGuard(Option<ChildFixturePolling>);
+
+#[cfg(test)]
+impl Drop for ChildFixturePollingGuard {
+    fn drop(&mut self) {
+        let _ = CHILD_FIXTURE_POLLING.with(|polling| polling.replace(self.0.take()));
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn child_fixture_polling(
+    publish_on_retry: Option<Box<dyn FnOnce()>>,
+) -> ChildFixturePollingGuard {
+    let previous = CHILD_FIXTURE_POLLING
+        .with(|polling| polling.replace(Some(ChildFixturePolling { publish_on_retry })));
+    ChildFixturePollingGuard(previous)
+}
+
+#[cfg(test)]
 static TEST_TURN_SUCCESS_CHECKPOINT_FAILURES: std::sync::OnceLock<
     std::sync::Mutex<std::collections::HashSet<String>>,
 > = std::sync::OnceLock::new();
@@ -2938,6 +2969,15 @@ pub(crate) fn merge_child_sessions_into_body(
         if remaining <= retry_delay {
             return ChildMergeOutcome::BudgetExhausted;
         }
+        #[cfg(test)]
+        if let Some(publish) = CHILD_FIXTURE_POLLING.with(|polling| {
+            polling
+                .borrow_mut()
+                .as_mut()
+                .and_then(|fixture| fixture.publish_on_retry.take())
+        }) {
+            publish();
+        }
         std::thread::sleep(retry_delay);
     }
 
@@ -3031,6 +3071,16 @@ fn wait_for_file_stable_with_budget(
     if remaining < minimum_stability_window {
         return Err(());
     }
+    // Keep the real stability samples and Stop budget. Give fixture tests
+    // more time for their polling threads to be scheduled by hosted runners.
+    #[cfg(test)]
+    let max_wait_ms = CHILD_FIXTURE_POLLING.with(|polling| {
+        if polling.borrow().is_some() {
+            max_wait_ms.max(1_500)
+        } else {
+            max_wait_ms
+        }
+    });
     let capped_wait = std::cmp::min(remaining, std::time::Duration::from_millis(max_wait_ms));
     let capped_wait_ms = capped_wait.as_millis().min(u64::MAX as u128) as u64;
     let stable = wait_for_file_stable(path, poll_interval_ms, capped_wait_ms);
@@ -5317,6 +5367,7 @@ mod tests {
 
     #[test]
     fn test_direct_stop_merges_accounted_realtime_spawn_then_checkpoints_idempotently() {
+        let _fixture_polling = child_fixture_polling(None);
         let dir = tempfile::tempdir().unwrap();
         let transcript_path = dir.path().join("rollout-parent-v2.jsonl");
         let child_path = dir.path().join("rollout-child-v2.jsonl");
@@ -7219,6 +7270,7 @@ mod tests {
 
     #[test]
     fn test_parent_correlation_ignores_trailing_pending_turn() {
+        let _fixture_polling = child_fixture_polling(None);
         let dir = tempfile::tempdir().unwrap();
         let parent_path = dir.path().join("parent.jsonl");
         let child_path = dir.path().join("child.jsonl");
@@ -7422,12 +7474,10 @@ mod tests {
             serde_json::json!({"timestamp":"2026-07-10T00:00:00.500Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"parent-turn","last_agent_message":"done"}}),
         ];
         let parent_turn = build_turns(&parent_messages).remove(0);
-        let writer_dir = child_dir.clone();
-        let writer = std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(80));
-            std::fs::create_dir_all(&writer_dir).unwrap();
+        let _fixture_polling = child_fixture_polling(Some(Box::new(move || {
+            std::fs::create_dir_all(&child_dir).unwrap();
             std::fs::write(
-                writer_dir.join("child.jsonl"),
+                child_dir.join("child.jsonl"),
                 r#"{"timestamp":"2026-07-10T00:00:00Z","type":"session_meta","payload":{"id":"late-child","parent_thread_id":"parent","source":{"subagent":{"thread_spawn":{"parent_thread_id":"parent"}}}}}
 {"timestamp":"2026-07-10T00:00:01Z","type":"event_msg","payload":{"type":"task_started","turn_id":"child-turn"}}
 {"timestamp":"2026-07-10T00:00:02Z","type":"event_msg","payload":{"type":"agent_message","phase":"final_answer","message":"done"}}
@@ -7435,7 +7485,7 @@ mod tests {
 "#,
             )
             .unwrap();
-        });
+        })));
         let mut body = build_otel_export_request_for_turn(
             &parent_turn,
             1,
@@ -7463,7 +7513,14 @@ mod tests {
         let ChildMergeOutcome::Completed(result) = result else {
             panic!("ample test budget must complete child merge");
         };
-        writer.join().unwrap();
+        let log = std::fs::read_to_string(dir.path().join("retry.log")).unwrap();
+        let (_, retries) = log
+            .split_once("Child transcript discovery attempt=0: requested=1 found=0")
+            .expect("the first scan must miss the late child fixture");
+        assert!(retries.lines().any(|line| {
+            line.contains("Child transcript discovery attempt=")
+                && line.contains("requested=1 found=1 exact=0")
+        }));
 
         assert_eq!(result.merged_sync_ids, vec!["late-child"]);
         assert!(result.deferred_sync_ids.is_empty());

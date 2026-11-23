@@ -6246,6 +6246,7 @@ mod tests {
     #[test]
     fn public_subagent_recovery_uses_original_env_context_after_reload() {
         let _guard = crate::test_sync::env_lock();
+        let _fixture_polling = crate::hooks::langfuse::langfuse_handler::child_fixture_polling(None);
         let dir = tempfile::tempdir().unwrap();
         let state_dir = dir.path().join("state");
         let spool_dir = dir.path().join("spool");
@@ -6301,12 +6302,13 @@ mod tests {
         );
         std::env::set_var("ANT_GRAY", "false");
         std::env::set_var("CDXHOOKS_RETRY_POLICY", "at_least_once");
-        run_subagent_recovery("parent-collab", &reloaded).unwrap();
+        let completed = run_subagent_recovery("parent-collab", &reloaded).unwrap();
         std::env::remove_var("CDXHOOKS_LANGFUSE_BASE_URL");
         std::env::remove_var("CDXHOOKS_OTEL_EXPORTER_OTLP_TRACES_ENDPOINT");
         std::env::remove_var("ANT_GRAY");
         std::env::remove_var("CDXHOOKS_RETRY_POLICY");
 
+        assert!(completed, "reloaded subagent delivery must complete");
         assert_eq!(sink.join().unwrap().len(), 1);
     }
 
