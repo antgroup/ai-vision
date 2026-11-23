@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/aivision-logo-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/aivision-logo-light.svg">
-    <img src="docs/assets/aivision-logo-light.svg" width="320" alt="AI Vision">
+    <img src="docs/assets/aivision-logo-light.svg" width="320" alt="Ant AI Vision">
   </picture>
 </p>
 
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  AI Vision is an open-source, self-hosted platform for agent observability and diagnostics.
+  Ant AI Vision is an open-source, self-hosted platform for agent observability and diagnostics.
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 </p>
 
 <p align="center">
-  English · <a href="README.zh-CN.md">简体中文</a> · <a href="README.zh-TW.md">繁體中文</a> · <a href="README.ja.md">日本語</a>
+  English · <a href="README.zh-CN.md">简体中文</a> · <a href="README.ja.md">日本語</a>
 </p>
 
 <p align="center">
@@ -34,10 +34,12 @@ Two runs of the same task both succeeded. Why did one take so much longer? Pull 
 
 > Jointly developed by Ant Group’s observability team and OceanBase.
 
+https://github.com/user-attachments/assets/d1976037-ac4b-42ba-aa10-238df307e871
+
 > [!NOTE]
 > **Personal deployment** · Send this message to an AI assistant that can run terminal commands.
 >
-> Use the `aivision-deploy` skill from `ob-labs/ai-vision-skills` to deploy AI Vision All-in-One locally and verify that it’s running.
+> Use the `aivision-deploy` skill from `ob-labs/ai-vision-skills` to deploy Ant AI Vision All-in-One locally and verify that it’s running.
 
 **Connect your agent**
 
@@ -104,7 +106,7 @@ For checks with clear acceptance criteria, run [enhanced Python rules](https://a
 <details>
 <summary>What data do diagnostics need?</summary>
 
-AI Vision can run diagnostics on traces it has received and stored, including new traces sent through the Langfuse SDK. An external Langfuse source is read-only for this workflow. Checks may return an undetermined result when required data is missing.
+Ant AI Vision can run diagnostics on traces it has received and stored, including new traces sent through the Langfuse SDK. An external Langfuse source is read-only for this workflow. Checks may return an undetermined result when required data is missing.
 
 </details>
 
@@ -112,11 +114,11 @@ AI Vision can run diagnostics on traces it has received and stored, including ne
 
 ## ⚖️ How does it compare with Langfuse?
 
-AI Vision focuses on investigating real runs and checking fixes on similar tasks.
+Ant AI Vision focuses on investigating real runs and checking fixes on similar tasks.
 
-- **Work out why an agent took an extra step.** Both support MCP and Skill tracing. AI Vision’s [behavior views](#understand) put tool responses, memory retrieval, and routing choices in the context of a run and let you compare what changed.
-- **Start with a small self-hosted setup.** The official Langfuse Docker Compose setup runs multiple services. AI Vision All-in-One runs the platform and embedded seekdb in one container. The optimized image archive measured about 200 MiB compressed. You can try the built-in demo without configuring a model.
-- **Run the same acceptance checks repeatedly.** Both support deterministic code checks, which can save LLM judge calls. Langfuse’s standard evaluator environment provides language standard libraries. AI Vision’s [optional sandbox](https://aivision.mintlify.site/en/guides/sandbox) includes dependencies such as `pytest`, so you can check deliverables with your existing tests and reference files.
+- **Work out why an agent took an extra step.** Both support MCP and Skill tracing. Ant AI Vision’s [behavior views](#understand) put tool responses, memory retrieval, and routing choices in the context of a run and let you compare what changed.
+- **Start with a small self-hosted setup.** The official Langfuse Docker Compose setup runs multiple services. Ant AI Vision All-in-One runs the platform and embedded seekdb in one container. The optimized image archive measured about 200 MiB compressed. You can try the built-in demo without configuring a model.
+- **Run the same acceptance checks repeatedly.** Both support deterministic code checks, which can save LLM judge calls. Langfuse’s standard evaluator environment provides language standard libraries. Ant AI Vision’s [optional sandbox](https://aivision.mintlify.site/en/guides/sandbox) includes dependencies such as `pytest`, so you can check deliverables with your existing tests and reference files.
 
 **Where Langfuse goes further.** Langfuse has more complete support for versioning prompts and skills and for running and comparing experiments on a shared dataset.
 
@@ -125,7 +127,7 @@ AI Vision focuses on investigating real runs and checking fixes on similar tasks
 
 <a id="langfuse-integration"></a>
 
-**Already instrumented with Langfuse?** Reuse a supported SDK and send new traces to AI Vision. See the [integration guide](https://aivision.mintlify.site/en/integrations/langfuse) for supported versions, collection settings, and query coverage. Plan any historical data migration separately.
+**Already instrumented with Langfuse?** Reuse a supported SDK and send new traces to Ant AI Vision. See the [integration guide](https://aivision.mintlify.site/en/integrations/langfuse) for supported versions, collection settings, and query coverage. Plan any historical data migration separately.
 
 <a id="self-hosting"></a>
 <a id="quick-start"></a>
@@ -134,14 +136,14 @@ AI Vision focuses on investigating real runs and checking fixes on similar tasks
 
 <a id="personal-deployment"></a>
 
-- **Personal deployment.** Use [All-in-One](https://aivision.mintlify.site/en/deployment/all-in-one) to run AI Vision and embedded seekdb in one Docker container on Linux x86-64 or ARM64. Online installation requires [read access to the AI Vision Skills repository](skills/README.md). An authorized offline bundle also works.
+- **Personal deployment.** Use [All-in-One](https://aivision.mintlify.site/en/deployment/all-in-one) to run Ant AI Vision and embedded seekdb in one Docker container on Linux x86-64 or ARM64. Online installation requires [read access to the Skills repository](skills/README.md). An authorized offline bundle also works.
 - <a id="team-deployment"></a>**Team deployment.** Run the services separately with OceanBase CE and use spaces, members, and roles to share observability and diagnostics. Deploy with [Docker](https://aivision.mintlify.site/en/deployment/docker) or follow the [Kubernetes CLI guide](https://aivision.mintlify.site/en/deployment/kubernetes) on an existing cluster with OB Operator managing OceanBase CE.
 - <a id="deploy-with-skills"></a>**Use a skill or the CLI.** Use `aivision-deploy` to deploy and check the service, or `aivision-quickstart` to try collection and diagnostics on a running instance. You can also use the CLI to [deploy](https://aivision.mintlify.site/en/deployment/overview) or [query traces](https://aivision.mintlify.site/en/guides/cli).
 
 > [!TIP]
 > **[Start with the demo.](https://aivision.mintlify.site/en/try-sample#import-sample)** After you sign in, open **Demo examples** in your personal space, choose **Full walkthrough**, and create the demo data. Try trace comparison and rule checks without configuring a model. In a team space, you’ll need permission to manage Agents, issue ingest tokens, and run diagnoses.
 
-**Send a real trace.** Use **Agent Access** to configure an SDK or runtime for [an agent you built](https://aivision.mintlify.site/en/integrations/frameworks). For an existing app, install its [plugin](https://aivision.mintlify.site/en/integrations/agents) on the machine where it runs and restart the app. In Codex, review and trust the AI Vision hooks in `/hooks`, then start a new session. Run a task that calls a model and a tool, then open the new trace in **Agent traces** and check the tool call’s arguments and status.
+**Send a real trace.** Use **Agent Access** to configure an SDK or runtime for [an agent you built](https://aivision.mintlify.site/en/integrations/frameworks). For an existing app, install its [plugin](https://aivision.mintlify.site/en/integrations/agents) on the machine where it runs and restart the app. In Codex, review and trust the Ant AI Vision hooks in `/hooks`, then start a new session. Run a task that calls a model and a tool, then open the new trace in **Agent traces** and check the tool call’s arguments and status.
 
 Supported plugins offer a [Privacy collection mode](https://aivision.mintlify.site/en/guides/privacy) that filters prompts, responses, and tool inputs and outputs on the agent’s machine while retaining call structure and usage.
 

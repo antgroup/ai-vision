@@ -1,6 +1,6 @@
 # README illustrations
 
-The root README is in [English](../../../README.md), with [Simplified Chinese](../../../README.zh-CN.md), [Traditional Chinese](../../../README.zh-TW.md), and [Japanese](../../../README.ja.md) editions. This directory keeps earlier README illustrations and onboarding screenshots in English, Simplified Chinese, and Japanese.
+The root README is in [English](../../../README.md), with [Simplified Chinese](../../../README.zh-CN.md) and [Japanese](../../../README.ja.md) editions. This directory keeps earlier README illustrations and onboarding screenshots in English, Simplified Chinese, and Japanese.
 
 | Asset | Subject |
 | --- | --- |
