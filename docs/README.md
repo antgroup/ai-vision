@@ -28,7 +28,7 @@ This page helps agents and developers working in the monorepo find implementatio
 
 ## User Documentation
 
-Complete instructions for installation, onboarding, manual deployment, diagnosis, and troubleshooting are on the [AI Vision documentation site](https://aivision.mintlify.site/zh-CN/introduction). Common entry points: [connect your first Agent](https://aivision.mintlify.site/zh-CN/web-quickstart), [Docker](https://aivision.mintlify.site/zh-CN/deployment/docker), [Kubernetes](https://aivision.mintlify.site/zh-CN/deployment/kubernetes), and [diagnosis and quality analysis](https://aivision.mintlify.site/zh-CN/guides/diagnosis).
+The Ant AI Vision documentation is available in [English](https://aivision.mintlify.site/en/introduction), [简体中文](https://aivision.mintlify.site/zh-CN/introduction), and [日本語](https://aivision.mintlify.site/ja/introduction). To get started, [choose a deployment method](https://aivision.mintlify.site/en/deployment/overview) or jump to [Docker](https://aivision.mintlify.site/en/deployment/docker) or [Kubernetes](https://aivision.mintlify.site/en/deployment/kubernetes). Then [try the built-in example](https://aivision.mintlify.site/en/try-sample), or [connect your first Agent](https://aivision.mintlify.site/en/web-quickstart). For diagnostics, [run your first rule](https://aivision.mintlify.site/en/guides/diagnosis) and [review the quality results](https://aivision.mintlify.site/en/guides/quality).
 
 ## Maintenance Boundaries
 
