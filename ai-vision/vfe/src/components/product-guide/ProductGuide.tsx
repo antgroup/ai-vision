@@ -391,6 +391,8 @@ function GuideSession({
         "data-guide-trace",
         "data-guide-content-mode",
         "data-guide-diagnosis-source",
+        "data-guide-mcp-spans",
+        "data-process-focused",
         "data-state",
       ],
     })
@@ -441,6 +443,18 @@ function GuideSession({
   const ruleSucceeded =
     ruleSelected && diagnosis?.dataset.guideState === "succeeded"
   const targetDetail = !demo || detail?.dataset.guideTrace === demo.traceId
+  const processCall =
+    active && demo && targetDetail
+      ? visible(
+          '[data-trace-panel="process"] [data-process-focused="true"] button[data-process-source]'
+        )
+      : null
+  const mcpProcessCall = processCall
+    ?.closest<HTMLElement>("[data-guide-mcp-spans]")
+    ?.dataset.guideMcpSpans?.split(" ")
+    .includes(processCall.dataset.processSource ?? "")
+    ? processCall
+    : null
   const demoInRawMode = !!demo && detail?.dataset.guideContentMode === "raw"
   const demoEvidence =
     demo?.evidenceSpanId &&
@@ -682,6 +696,11 @@ function GuideSession({
     message = "enhancedMode"
     target = visible('[data-product-guide="trace-mode-enhanced"]')
   }
+  if (step === "enhanced" && !demoInRawMode && mcpProcessCall) {
+    message = "mcpProcess"
+    target = mcpProcessCall
+    action = "viewMcpCall"
+  }
   if (
     ["enhanced", "enhancedCall", "call", "inspect", "check"].includes(step) &&
     !detail
@@ -859,6 +878,7 @@ function GuideSession({
       navigate(guideRoute("/access", location.search))
     }
     if (action === "check") move("check")
+    if (action === "viewMcpCall") mcpProcessCall?.click()
     if (action === "importConfig") move("mcpConfig")
     if (action === "backToCall") {
       visible('[data-product-guide="mcp-config-close"]')?.click()
@@ -1262,11 +1282,14 @@ function Spotlight({
     const modeSwitch = target
       ?.closest('[data-testid="native-trace-detail"]')
       ?.querySelector<HTMLElement>('[data-testid="trace-content-modes"]')
+    const importFooter = importDialog?.querySelector<HTMLElement>(
+      '[data-slot="dialog-footer"]'
+    )
     const adjacent =
       callRow instanceof HTMLElement &&
       callRow.matches('[data-product-guide="compare-failed-call"]')
         ? callRow
-        : modeSwitch
+        : (importFooter ?? modeSwitch)
     const controls = adjacent && visibleTargetRect(adjacent)
     if (
       controls &&
@@ -1278,7 +1301,8 @@ function Spotlight({
       controls.bottom > top
     ) {
       const above = controls.top - height - 12
-      if (above >= 12 && above + height + 12 <= focus.top) top = above
+      if (above >= 12 && (importFooter || above + height + 12 <= focus.top))
+        top = above
     }
   }
   return createPortal(

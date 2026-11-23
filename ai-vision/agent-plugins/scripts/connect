@@ -138,7 +138,7 @@ def install_authorization(args, base, managed):
         ticket_hash = hashlib.sha256(ticket.encode()).hexdigest()
         for path in (managed / 'ingest.json', managed / 'pending-installation.json'):
             try:
-                saved = json.loads(path.read_text())
+                saved = json.loads(path.read_text(encoding='utf-8'))
             except (OSError, ValueError):
                 continue
             if (saved.get('installation_token_hash') == ticket_hash
@@ -304,7 +304,8 @@ def check_binary_runtime(binary):
             raise ConnectError(f'{binary.name} requires {", ".join(required)}; this host has {current}. '
                                'Use a compatible plugin build or a supported host; update the deployment artifacts and rerun aiv connect')
         raise ConnectError(f'{binary.name} runtime check failed (exit {result.returncode}); check architecture and runtime libraries')
-    if not result.stdout.strip().startswith(binary.name + ' '):
+    names = (binary.name, binary.stem) if binary.suffix.lower() == '.exe' else (binary.name,)
+    if not result.stdout.strip().startswith(tuple(name + ' ' for name in names)):
         raise ConnectError(f'{binary.name} did not report its version; update the deployment plugin artifacts')
 
 
@@ -463,7 +464,7 @@ def register_native(args, plugin, root, installed, managed, support, token, tx, 
                 if not feature:
                     raise ConnectError("This Codex version does not expose native hooks; update Codex before installing")
                 path = root / "config.toml"
-                tx.write(path, config.enable_feature(path.read_text() if path.exists() else "", feature))
+                tx.write(path, config.enable_feature(path.read_text(encoding='utf-8') if path.exists() else "", feature))
             path = root / ("hooks.json" if agent == "codex" else "settings.json")
             events = ["UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop", "SessionEnd"]
             tx.json(path, config.merge_hooks(config.read_object(path), command, plugin["binary"], events))
@@ -649,7 +650,7 @@ def install(args):
                         for legacy in [managed / 'hook_runtime.py', managed / 'hook_runtime.py.aivision-backup', *list((managed / '__pycache__').glob('hook_runtime.*.pyc'))]:
                             tx.remove(legacy)
                     else:
-                        tx.write(managed / 'hook_runtime.py', (support / 'hook_runtime.py').read_text(), private=True)
+                        tx.write(managed / 'hook_runtime.py', (support / 'hook_runtime.py').read_text(encoding='utf-8'), private=True)
                 register_native(args, plugin, root, installed, managed, support, token, tx, config, runtime=native_runtime)
                 registration_files = {}
                 if agent == 'dsh':
@@ -691,7 +692,7 @@ def install(args):
 
 
 def read_json(path):
-    value = json.loads(path.read_text())
+    value = json.loads(path.read_text(encoding='utf-8'))
     if not isinstance(value, dict):
         raise ValueError('Expected JSON object')
     return value
@@ -714,10 +715,18 @@ def native_registered(agent, root, installed, managed, args, installation):
     import tomllib
     native_runtime = installation.get('runtime_path') if installation.get('runtime_format') == 'native-tar-v1' else None
     def is_hook(command):
-        if native_runtime and os.name == 'nt':
-            # Match the managed command emitted by register_native. POSIX shlex
-            # consumes unquoted Windows path backslashes as escape characters.
-            expected = [native_runtime, '--hook-runtime', '--config', str(managed / 'ingest.json'), '--binary', str(installed)]
+        if os.name == 'nt':
+            # Match register_native's Windows quoting. Preserve backslashes in
+            # the source launcher's first argument, even if the current CLI
+            # selected a different Python to read this installation's status.
+            if native_runtime:
+                launcher = [native_runtime, '--hook-runtime']
+            else:
+                executable = re.match(r'^(?:"([^"]+)"|([^" \t]+)) ', command)
+                if executable is None:
+                    return False
+                launcher = [executable[1] or executable[2], str(managed / 'hook_runtime.py')]
+            expected = [*launcher, '--config', str(managed / 'ingest.json'), '--binary', str(installed)]
             return command == subprocess.list2cmdline(expected)
         parts = shlex.split(command)
         if native_runtime:
@@ -737,7 +746,7 @@ def native_registered(agent, root, installed, managed, args, installation):
             events = ('Stop', 'StopFailure', 'Interrupt') if kimi_code_host(installation.get('host_version', '')) else ('Stop', 'StopFailure')
             return all(any(h.get('event') == event and is_hook(h.get('command', '')) for h in hooks) for event in events)
         if agent == 'codex':
-            features = tomllib.loads((root / 'config.toml').read_text()).get('features', {})
+            features = tomllib.loads((root / 'config.toml').read_text(encoding='utf-8')).get('features', {})
             if not (features.get('hooks') is True or features.get('codex_hooks') is True):
                 return False
         doc = read_json(root / ('hooks.json' if agent == 'codex' else 'settings.json'))

@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build !windows || (amd64 && windows_codex_connect && !native_distribution)
 
 package cli
 
@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -78,12 +79,27 @@ After connecting, restart the host Agent, trust hooks if required, and run a rea
 task before checking data. For Codex, use /hooks to review and trust the hooks.
 `
 
+func agentHelp() string {
+	if runtime.GOOS == "windows" {
+		return `Check the Windows Codex source installation, credentials, and recent traces.
+
+Usage:
+  aiv agent status codex [--profile NAME] [--config-dir DIR]
+                         [--python PATH] [--format text|json]
+
+Requires the experimental Windows x64 Codex CLI and its source-development deployment.
+A trace lookup uses the current space and an authorized query SpaceKey.
+`
+	}
+	return agentUsage
+}
+
 func cmdAgent(args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("%s", strings.TrimSpace(agentUsage))
+		return fmt.Errorf("%s", strings.TrimSpace(agentHelp()))
 	}
 	if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
-		fmt.Print(agentUsage)
+		fmt.Print(agentHelp())
 		return nil
 	}
 	if args[0] != "status" {
@@ -95,7 +111,7 @@ func cmdAgent(args []string) error {
 		plugin, rest = rest[0], rest[1:]
 	}
 	fs := flag.NewFlagSet("agent status", flag.ContinueOnError)
-	fs.Usage = func() { fmt.Fprint(fs.Output(), agentUsage) }
+	fs.Usage = func() { fmt.Fprint(fs.Output(), agentHelp()) }
 	profile := fs.String("profile", os.Getenv(config.EnvProfile), "profile")
 	directory := fs.String("config-dir", "", "native config directory (default: most recent connection or host default)")
 	python := fs.String("python", "", "Python 3.11+ interpreter")
@@ -116,6 +132,9 @@ func cmdAgent(args []string) error {
 	}
 	if canonical := pluginAliases[plugin]; canonical != "" {
 		plugin = canonical
+	}
+	if runtime.GOOS == "windows" && plugin != "codex" {
+		return fmt.Errorf("experimental Windows source onboarding supports only Codex; use aiv agent status codex")
 	}
 	cfg, err := config.Load()
 	if err != nil {

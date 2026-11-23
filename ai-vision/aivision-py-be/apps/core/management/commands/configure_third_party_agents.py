@@ -28,10 +28,8 @@ def installation_guide(plugin):
     ]
     if not plugin.get("binary"):
         requirements.append({"label": "Node.js", "value": "已安装"})
-    # One cross-platform command: aiv is a single binary and wraps the
-    # server's onboarding installer (the same script the previous curl|bash
-    # fetched), so macOS/Linux and Windows share it. The {placeholders} are
-    # interpolated client-side with the freshly minted installation token.
+    # The native Windows client does not support agent installation. The
+    # browser fills in the macOS/Linux command's placeholders after authorization.
     # --base-url is anchored to the SAME origin the onboarding catalog serves
     # its plugin downloads from (public_base_url): the installer enforces a
     # same-origin check on the artifact URL, so the browser origin (the vite
@@ -46,10 +44,6 @@ def installation_guide(plugin):
         + f" --base-url '{base_arg}' --space-id '{{spaceId}}' "
         "--agent-uuid '{agentUuid}' --installation-token '{installationToken}'"
     )
-    commands = {
-        "macOS/Linux": connect_command,
-        "Windows": connect_command,
-    }
     restart = f"重启 {plugin['name']}"
     if plugin["key"] == "codex":
         restart += "，输入 /hooks 检查并信任新增的 AI Vision hooks"
@@ -62,20 +56,19 @@ def installation_guide(plugin):
                 "type": "setup_steps",
                 "title": "在 Agent 所在机器安装",
                 "platforms": {
-                    platform: {
+                    "macOS/Linux": {
                         "modes": {
                             "cli": {
                                 "label": "原生安装",
                                 "steps": [
                                     {
                                         "title": "复制并执行安装命令，授权和上报配置将自动完成",
-                                        "command": command,
+                                        "command": connect_command,
                                     }
                                 ],
                             }
                         }
                     }
-                    for platform, command in commands.items()
                 },
             },
             {

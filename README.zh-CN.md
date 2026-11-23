@@ -43,8 +43,8 @@ https://github.com/user-attachments/assets/6759491d-092c-467d-bcb9-0171353051d1
 
 **接入你的 Agent**
 
-- **自建应用**可以沿用受支持的埋点，或参考 LangGraph、OpenAI Agents SDK 和 Go / Eino 的[接入示例](https://aivision.mintlify.site/zh-CN/integrations/frameworks)添加埋点。
-- **现成应用**如 Codex、Claude Code、OpenClaw，可以安装[对应插件](https://aivision.mintlify.site/zh-CN/integrations/plugins)，查看日常运行。
+- **自建应用**可以沿用受支持的埋点，或参考 LangGraph、Deep Agents 和 Go / Eino 的[接入示例](https://aivision.mintlify.site/zh-CN/integrations/frameworks)添加埋点。
+- **现成应用**如 Codex、Claude Code、OpenClaw，可以安装[对应插件](https://aivision.mintlify.site/zh-CN/integrations/agents)，查看日常运行。
 
 <a id="capabilities"></a>
 
@@ -62,7 +62,7 @@ Trace 越积越多，怎么找到昨天那次慢任务，再定位到拖慢它�
 
 - **从列表找 Trace。** 按 Agent、时间和耗时筛出慢任务，也可以按状态、节点数或总 Token 筛选，按用量排序。知道 Trace ID 可以直接查找，部分数据源还支持搜索已采集的输入输出。
 - **从 Session 找回合。** 回看多轮交互，打开出问题那一轮的 Trace。
-- **在长 Trace 里缩小范围。** 只看某个子 Agent 的分支，筛出失败的工具调用或输入 Token 偏高的模型调用。调用树会保留命中步骤的父级路径，常用条件也能保存。参见[轨迹排查指南](https://aivision.mintlify.site/zh-CN/guides/trace-analysis)。
+- **在长 Trace 里缩小范围。** 只看某个子 Agent 的分支，筛出失败的工具调用或输入 Token 偏高的模型调用。调用树会保留命中步骤的父级路径，常用条件也能保存。参见[轨迹排查指南](https://aivision.mintlify.site/zh-CN/guides/traces#在长-trace-中组合筛选调用)。
 
 **Token 和费用也变了？** 从看板追到具体调用，看看重试、上下文长度或缓存命中有没有变化。费用详情会列出价格来源和覆盖范围。配置[模型价格](https://aivision.mintlify.site/zh-CN/guides/model-pricing)后，可按生效时间重估已有运行，无需重跑 Agent。模型计价目前为 Beta。
 
@@ -87,7 +87,7 @@ Trace 越积越多，怎么找到昨天那次慢任务，再定位到拖慢它�
 | [记忆](https://aivision.mintlify.site/zh-CN/guides/memory-observability) | 查看记忆召回及来源，有对应数据时核对召回内容是否进入模型输入。 |
 | [决策](https://aivision.mintlify.site/zh-CN/guides/decision-traces) | 查看模型路由或审批的选项与结果，后续步骤可能通过明确标识关联，也可能根据相邻记录推断。 |
 
-**直接看输入和交付。** 想核对模型收到的图片或 Agent 生成的报告，可以在 Trace 里预览已采集的图片、音视频、PDF，以及可识别的 Markdown 和静态 HTML。采集配置参见 [Python 多媒体接入示例](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain)。
+**直接看输入和交付。** 想核对模型收到的图片或 Agent 生成的报告，可以在 Trace 里预览[已采集的图片、音视频和 PDF](https://aivision.mintlify.site/zh-CN/guides/multimedia)，以及[可识别的 Markdown 和静态 HTML](https://aivision.mintlify.site/zh-CN/guides/trace-document-preview)。采集配置参见 [Python 多媒体接入示例](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain)。
 
 可见细节取决于接入方式和上报内容。独立的 MCP、Skill、记忆观测页面和决策视图目前为 Beta。
 
@@ -97,9 +97,9 @@ Trace 越积越多，怎么找到昨天那次慢任务，再定位到拖慢它�
 
 查到一次工具失败或重试后，怎么知道这类问题有没有反复出现？
 
-1. **把检查跑起来。** 拿几条 Trace [试跑内置规则](https://aivision.mintlify.site/zh-CN/guides/diagnosis)，例如查工具失败、重复调用，或改完代码后有没有运行验证。选好规则后，在团队空间设置[定时诊断](https://aivision.mintlify.site/zh-CN/guides/continuous-diagnosis)。
-2. **回到轨迹核对异常。** 在质量看板按批次看变化，从异常案例（Badcase）回到有来源记录的步骤，结合实际交付确认问题、标记误报或记下无法判断。
-3. **改完再验证。** 用同一套诊断配置检查同类任务的新 Trace，看看问题还会不会出现。
+1. **把检查跑起来。** 拿几条 Trace [试跑内置规则](https://aivision.mintlify.site/zh-CN/guides/use-diagnosers#builtin-diagnoser-overview)，例如查工具失败、重复调用，或[改完代码后有没有运行验证](https://aivision.mintlify.site/zh-CN/guides/use-diagnosers#builtin-verification-case)。选好规则后，在团队空间设置[定时诊断](https://aivision.mintlify.site/zh-CN/guides/continuous-diagnosis#3-把验证过的检查设为定时任务)。
+2. **[回到轨迹核对异常。](https://aivision.mintlify.site/zh-CN/guides/quality#复核一条-badcase)** 在质量看板按批次看变化，从异常案例（Badcase）回到有来源记录的步骤，结合实际交付确认问题、标记误报或记下无法判断。
+3. **改完再验证。** [用同一套诊断配置检查同类任务的新 Trace](https://aivision.mintlify.site/zh-CN/guides/continuous-diagnosis#2-用新-trace-验证应用修复)，看看问题还会不会出现。
 
 有明确验收标准时，可以用可选的 OpenShell 沙箱运行[增强 Python 规则](https://aivision.mintlify.site/zh-CN/guides/sandbox)，例如用 `pytest` 检查 Trace 中的代码，或用参考明细表重算结果。回答是否切题、解释是否有依据，可以交给 LLM 诊断。
 
@@ -137,13 +137,13 @@ Ant AI Vision 目前更侧重从实际运行里排查问题，改完再用同类
 <a id="personal-deployment"></a>
 
 - **个人部署。** 推荐 [All-in-One](https://aivision.mintlify.site/zh-CN/deployment/all-in-one)，在 Linux x86-64 或 ARM64 上用单个 Docker 容器运行平台和内置 seekdb。在线安装需要 [Skills 仓库读取权限](skills/README.md)，也可以使用已获准的离线制品。
-- <a id="team-deployment"></a>**团队 / 共享部署。** 推荐分服务部署并使用 OceanBase CE，通过空间、成员和角色共享观测与诊断。可以使用 [Docker](https://aivision.mintlify.site/zh-CN/deployment/docker)，或在已有 Kubernetes 集群中通过 [OB Operator 部署](https://aivision.mintlify.site/zh-CN/deployment/kubernetes)。
+- <a id="team-deployment"></a>**团队 / 共享部署。** 推荐分服务部署并使用 OceanBase CE，通过空间、成员和角色共享观测与诊断。可以使用 [Docker](https://aivision.mintlify.site/zh-CN/deployment/docker)，或用 CLI [部署到已有 Kubernetes 集群](https://aivision.mintlify.site/zh-CN/deployment/kubernetes)，由 OB Operator 管理 OceanBase CE。
 - <a id="deploy-with-skills"></a>**用 Skill 或 CLI 操作。** `aivision-deploy` 用于部署和检查状态，`aivision-quickstart` 用于在已有实例上体验采集与诊断。也可以直接使用 CLI [部署](https://aivision.mintlify.site/zh-CN/deployment/overview)或[查询轨迹](https://aivision.mintlify.site/zh-CN/guides/cli)。
 
 > [!TIP]
-> **先用示例看看。** 部署并登录后，在个人空间打开 **演示示例**，选择「完整引导」并创建示例数据。无需配置模型，就能体验 Trace 对比和规则诊断。团队空间使用该入口需要相应的 Agent 接入和诊断权限。
+> **[先用示例看看。](https://aivision.mintlify.site/zh-CN/try-sample#import-sample)** 部署并登录后，在个人空间打开 **演示示例**，选择「完整引导」并创建示例数据。无需配置模型，就能体验 Trace 对比和规则诊断。在团队空间导入示例需要管理 Agent、签发采集令牌和运行诊断的权限。
 
-**接入真实运行。** 进入 **Agent 接入**，按向导为[自建 Agent](https://aivision.mintlify.site/zh-CN/integrations/frameworks) 配置 SDK 或运行时，或在现成应用所在机器安装[对应插件](https://aivision.mintlify.site/zh-CN/integrations/plugins)并重启。Codex 还需要在 `/hooks` 中检查并信任 Ant AI Vision hooks，再开启新会话。完成一次带模型和工具调用的任务后，在 **Agent 轨迹** 中打开新 Trace，核对工具调用的参数和状态。
+**接入真实运行。** 进入 **Agent 接入**，按向导为[自建 Agent](https://aivision.mintlify.site/zh-CN/integrations/frameworks) 配置 SDK 或运行时，或在现成应用所在机器安装[对应插件](https://aivision.mintlify.site/zh-CN/integrations/agents)并重启。Codex 还需要在 `/hooks` 中检查并信任 Ant AI Vision hooks，再开启新会话。完成一次带模型和工具调用的任务后，在 **Agent 轨迹** 中打开新 Trace，核对工具调用的参数和状态。
 
 受支持的应用插件提供 [Privacy 采集模式](https://aivision.mintlify.site/zh-CN/guides/privacy)，在本机过滤提示词、回答和工具输入输出等内容，同时保留调用结构与用量。
 

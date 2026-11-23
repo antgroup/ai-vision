@@ -56,10 +56,8 @@ export function localizeGuideSections(
   agentName?: string,
   agentProduct?: string
 ): GuideSection[] {
-  if (
-    !BUILTIN_PLUGIN_KEYS.has(guide.plugin_key ?? "") &&
-    !(!guide.plugin_key && agentProduct === "Hermes")
-  ) {
+  const builtinPlugin = BUILTIN_PLUGIN_KEYS.has(guide.plugin_key ?? "")
+  if (!builtinPlugin && !(!guide.plugin_key && agentProduct === "Hermes")) {
     return guide.sections
   }
 
@@ -97,12 +95,25 @@ export function localizeGuideSections(
           title: translate(section.title),
           steps: section.steps.map(translate),
         }
-      case "setup_steps":
+      case "setup_steps": {
+        // Saved catalog guides can still contain the old Windows installer tab.
+        const platforms = Object.entries(section.platforms).filter(
+          ([platform, { modes }]) => {
+            if (!builtinPlugin || platform !== "Windows") return true
+
+            const steps = modes.cli?.steps
+            const legacyConnectTab =
+              Object.keys(modes).length === 1 &&
+              steps?.length === 1 &&
+              steps[0].command.startsWith(`aiv connect ${guide.plugin_key} `)
+            return !legacyConnectTab
+          }
+        )
         return {
           ...section,
           title: translate(section.title),
           platforms: Object.fromEntries(
-            Object.entries(section.platforms).map(([platform, config]) => [
+            platforms.map(([platform, config]) => [
               platform,
               {
                 ...config,
@@ -123,6 +134,7 @@ export function localizeGuideSections(
             ])
           ),
         }
+      }
       default:
         return section
     }

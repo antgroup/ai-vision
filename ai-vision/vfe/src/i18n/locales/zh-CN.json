@@ -2637,10 +2637,9 @@
     },
     "cliInstall": {
       "title": "先安装并检查 aiv CLI",
-      "description": "请在运行 Agent 的机器上安装 aiv CLI。部署好 AI Vision 服务，并不代表这台机器已安装客户端。",
+      "description": "请在实际运行 Agent 的 macOS 或 Linux 主机上安装 aiv CLI 和采集插件。Windows 版 CLI 可查询已有平台。",
       "guide": "打开 aiv CLI 安装指南",
       "check": "安装后，在将要执行接入命令的同一个终端中检查路径与版本",
-      "checkWindows": "当前发布包仅提供 macOS / Linux；Windows 请先向部署方确认兼容的 CLI 安装方式，再在 PowerShell 中检查路径与版本",
       "pathHint": "macOS / Linux 默认安装到 ~/.local/bin。检查命令中的 export 只对当前终端生效；请将它加入 ~/.zshrc（zsh）或实际使用的 Bash 启动文件，再打开新终端验证。自定义安装目录请使用安装器输出的 export 命令。",
       "ready": "确认看到 aiv 的路径和版本后，再生成并执行下方安装命令。若提示 command not found: aiv，请先完成 CLI 安装或修正 PATH。"
     },
@@ -6111,6 +6110,7 @@
       "demoResult": "点击「{{sourceAction}}」，回到规则发现的失败调用。",
       "enhanced": "MCP 增强视图汇总了服务、工具和失败次数。打开一条调用，查看具体证据。",
       "enhancedCall": "在 MCP 增强视图中查看这次调用的参数、结果和状态。",
+      "mcpProcess": "过程视图已定位到这次 MCP 调用。点击「查看调用」，打开原始调用的参数、结果和状态。",
       "demoEvidenceMissing": "规则结果缺少失败调用的定位信息，请重试诊断。",
       "evidence": "这里是诊断指向的失败调用。接下来对比一次正常运行和一次重试运行，看看它们的执行差异。",
       "sectionUnavailable": "当前区域没有可读数据，继续查看其他区域或具体轨迹。",
@@ -6176,6 +6176,7 @@
       "verify": "验证上报",
       "viewDashboard": "查看数据看板",
       "importConfig": "体验配置导入",
+      "viewMcpCall": "查看调用",
       "continueToDiagnosis": "直接查看规则诊断",
       "backToCall": "返回调用",
       "viewComparison": "对比两次运行",

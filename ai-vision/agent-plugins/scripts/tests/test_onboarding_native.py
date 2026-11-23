@@ -103,6 +103,30 @@ class NativeBundleTests(unittest.TestCase):
                     self.assertFalse(installer.native_registered('codex', host_root, hook, managed, args, receipt))
 
 
+    def test_windows_source_registration_checks_exact_hook_arguments(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            host_root = Path(temporary).resolve() / r"Agent home\profile"
+            managed = host_root / 'aivision/codex'
+            managed.mkdir(parents=True)
+            hook = managed / 'cdxhooks.exe'
+            hook.write_bytes(b'windows test artifact')
+            hook.chmod(0o755)
+            (managed / 'hook_runtime.py').touch()
+            args = SimpleNamespace(config_dir=str(host_root))
+            plugin = {'key': 'codex', 'binary': 'cdxhooks', 'host': 'codex'}
+            windows_os = SimpleNamespace(name='nt', environ=os.environ, access=os.access, X_OK=os.X_OK)
+            with patch.object(installer, 'os', windows_os), patch.object(installer, 'run', return_value='hooks enabled true'):
+                with patch.object(installer.sys, 'executable', r'C:\Tools\Python 3.12\python.exe'):
+                    with config.ConfigTransaction() as transaction:
+                        installer.register_native(args, plugin, host_root, hook, managed, host_root, {}, transaction, config)
+                self.assertTrue(installer.native_registered('codex', host_root, hook, managed, args, {}))
+                hooks_path = host_root / 'hooks.json'
+                doc = json.loads(hooks_path.read_text(encoding='utf-8'))
+                doc['hooks']['Stop'][0]['hooks'][0]['command'] += ' --unexpected'
+                hooks_path.write_text(json.dumps(doc), encoding='utf-8')
+                self.assertFalse(installer.native_registered('codex', host_root, hook, managed, args, {}))
+
+
 class NativeTransactionTests(unittest.TestCase):
     def test_source_cleanup_never_removes_a_symlink_target(self):
         with tempfile.TemporaryDirectory() as temporary:

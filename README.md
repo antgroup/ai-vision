@@ -43,8 +43,8 @@ https://github.com/user-attachments/assets/d1976037-ac4b-42ba-aa10-238df307e871
 
 **Connect your agent**
 
-- **Building your own?** Reuse supported instrumentation or follow the [integration examples](https://aivision.mintlify.site/en/integrations/frameworks) for LangGraph, the OpenAI Agents SDK, or Go with Eino.
-- **Using an existing app?** Install the [collection plugin](https://aivision.mintlify.site/en/integrations/plugins) for an app such as Codex, Claude Code, or OpenClaw to see what happens during everyday tasks.
+- **Building your own?** Reuse supported instrumentation or follow the [integration examples](https://aivision.mintlify.site/en/integrations/frameworks) for LangGraph, Deep Agents, or Go with Eino.
+- **Using an existing app?** Install the [collection plugin](https://aivision.mintlify.site/en/integrations/agents) for an app such as Codex, Claude Code, or OpenClaw to see what happens during everyday tasks.
 
 <a id="capabilities"></a>
 
@@ -62,7 +62,7 @@ When traces pile up, how do you find yesterday’s slow run and work out which c
 
 - **Start with the trace list.** Filter by agent, time, duration, status, step count, or total tokens, and sort by usage. Look up a trace by ID or search captured inputs and outputs where the data source supports it.
 - **Find the right turn in a session.** Skim the conversation and open the trace for the turn you want to investigate.
-- **Narrow down a long trace.** Focus on a subagent’s branch, failed tool calls, or model calls with high input token counts. The call tree keeps the matching steps’ parent paths visible, and you can save filters you use often. See the [trace investigation guide](https://aivision.mintlify.site/en/guides/trace-analysis).
+- **Narrow down a long trace.** Focus on a subagent’s branch, failed tool calls, or model calls with high input token counts. The call tree keeps the matching steps’ parent paths visible, and you can save filters you use often. See the [trace investigation guide](https://aivision.mintlify.site/en/guides/traces#combine-filters-in-a-long-trace).
 
 **Did token usage and cost change, too?** Start at the dashboard and drill down to individual calls to check for retries, longer context, or changes in cache hits. Cost details show where prices came from and which usage they cover. With [model pricing](https://aivision.mintlify.site/en/guides/model-pricing) (beta), you can recalculate estimates for past runs using the prices in effect at the time, without rerunning the agent.
 
@@ -87,7 +87,7 @@ In the built-in demo, both runs finish the task. In one run, a storage policy lo
 | [Memory](https://aivision.mintlify.site/en/guides/memory-observability) | See what was retrieved and where it came from. When the data is available, check whether it made it into the model input. |
 | [Decisions](https://aivision.mintlify.site/en/guides/decision-traces) | Review routing or approval options and their outcomes. Look for follow-up steps linked by an explicit ID or inferred from nearby records. |
 
-**Open the inputs and deliverables.** Check the image the model received or the report the agent produced. Traces can preview captured images, audio, video, and PDFs, plus recognizable Markdown and static HTML. See the [Python multimedia instrumentation example](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain).
+**Open the inputs and deliverables.** Check the image the model received or the report the agent produced. Traces can preview [captured images, audio, video, and PDFs](https://aivision.mintlify.site/en/guides/multimedia), plus [recognized Markdown and static HTML](https://aivision.mintlify.site/en/guides/trace-document-preview). See the [Python multimedia instrumentation example (Simplified Chinese)](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain).
 
 What you can inspect depends on the integration and the data it reports. The dedicated MCP, Skill, memory, and decision views are in beta.
 
@@ -97,9 +97,9 @@ What you can inspect depends on the integration and the data it reports. The ded
 
 You found a failed tool call or a retry. How do you tell if it keeps happening?
 
-1. **Try a rule, then schedule it.** [Run built-in checks](https://aivision.mintlify.site/en/guides/diagnosis) on a few traces to spot failed tool calls, repeated calls, or code changes that skipped verification. When the rule fits, set up [scheduled diagnostics](https://aivision.mintlify.site/en/guides/continuous-diagnosis) in a team space.
-2. **Review the evidence.** Use the **Quality Board** to track changes across batches. Open a BadCase and follow it back to the recorded step. Check the actual deliverable before confirming the issue, marking a false positive, or leaving it undetermined.
-3. **Test the fix.** Run similar tasks again and apply the same checks to the new traces.
+1. **Try a rule, then schedule it.** [Run built-in checks](https://aivision.mintlify.site/en/guides/use-diagnosers#builtin-diagnoser-overview) on a few traces to spot failed tool calls, repeated calls, or [code changes that skipped verification](https://aivision.mintlify.site/en/guides/use-diagnosers#builtin-verification-case). When the rule fits, set up [scheduled diagnostics](https://aivision.mintlify.site/en/guides/continuous-diagnosis#3-schedule-checks-that-you-have-already-validated) in a team space.
+2. **[Review the evidence.](https://aivision.mintlify.site/en/guides/quality#review-one-badcase)** Use the **Quality Board** to track changes across batches. Open a BadCase and follow it back to the recorded step. Check the actual deliverable before confirming the issue, marking a false positive, or leaving it undetermined.
+3. **Test the fix.** [Run similar tasks again](https://aivision.mintlify.site/en/guides/continuous-diagnosis#2-verify-an-application-fix-with-a-new-trace) and apply the same checks to the new traces.
 
 For checks with clear acceptance criteria, run [enhanced Python rules](https://aivision.mintlify.site/en/guides/sandbox) in the optional OpenShell sandbox. Use `pytest` to check code captured in a trace, or recompute a result from a reference table. Use LLM-based diagnostics when you need to judge whether an answer is relevant or its explanation is supported.
 
@@ -137,13 +137,13 @@ Ant AI Vision focuses on investigating real runs and checking fixes on similar t
 <a id="personal-deployment"></a>
 
 - **Personal deployment.** Use [All-in-One](https://aivision.mintlify.site/en/deployment/all-in-one) to run Ant AI Vision and embedded seekdb in one Docker container on Linux x86-64 or ARM64. Online installation requires [read access to the Skills repository](skills/README.md). An authorized offline bundle also works.
-- <a id="team-deployment"></a>**Team deployment.** Run the services separately with OceanBase CE and use spaces, members, and roles to share observability and diagnostics. Deploy with [Docker](https://aivision.mintlify.site/en/deployment/docker) or use [OB Operator](https://aivision.mintlify.site/en/deployment/kubernetes) on an existing Kubernetes cluster.
+- <a id="team-deployment"></a>**Team deployment.** Run the services separately with OceanBase CE and use spaces, members, and roles to share observability and diagnostics. Deploy with [Docker](https://aivision.mintlify.site/en/deployment/docker) or follow the [Kubernetes CLI guide](https://aivision.mintlify.site/en/deployment/kubernetes) on an existing cluster with OB Operator managing OceanBase CE.
 - <a id="deploy-with-skills"></a>**Use a skill or the CLI.** Use `aivision-deploy` to deploy and check the service, or `aivision-quickstart` to try collection and diagnostics on a running instance. You can also use the CLI to [deploy](https://aivision.mintlify.site/en/deployment/overview) or [query traces](https://aivision.mintlify.site/en/guides/cli).
 
 > [!TIP]
-> **Start with the demo.** After you sign in, open **Demo examples** in your personal space, choose **Full walkthrough**, and create the demo data. Try trace comparison and rule checks without configuring a model. In a team space, you’ll need the relevant integration and diagnostics permissions.
+> **[Start with the demo.](https://aivision.mintlify.site/en/try-sample#import-sample)** After you sign in, open **Demo examples** in your personal space, choose **Full walkthrough**, and create the demo data. Try trace comparison and rule checks without configuring a model. In a team space, you’ll need permission to manage Agents, issue ingest tokens, and run diagnoses.
 
-**Send a real trace.** Use **Agent Access** to configure an SDK or runtime for [an agent you built](https://aivision.mintlify.site/en/integrations/frameworks). For an existing app, install its [plugin](https://aivision.mintlify.site/en/integrations/plugins) on the machine where it runs and restart the app. In Codex, review and trust the Ant AI Vision hooks in `/hooks`, then start a new session. Run a task that calls a model and a tool, then open the new trace in **Agent traces** and check the tool call’s arguments and status.
+**Send a real trace.** Use **Agent Access** to configure an SDK or runtime for [an agent you built](https://aivision.mintlify.site/en/integrations/frameworks). For an existing app, install its [plugin](https://aivision.mintlify.site/en/integrations/agents) on the machine where it runs and restart the app. In Codex, review and trust the Ant AI Vision hooks in `/hooks`, then start a new session. Run a task that calls a model and a tool, then open the new trace in **Agent traces** and check the tool call’s arguments and status.
 
 Supported plugins offer a [Privacy collection mode](https://aivision.mintlify.site/en/guides/privacy) that filters prompts, responses, and tool inputs and outputs on the agent’s machine while retaining call structure and usage.
 

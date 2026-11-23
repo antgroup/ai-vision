@@ -43,8 +43,8 @@ https://github.com/user-attachments/assets/d1ceb5ea-fc3b-4ed9-98df-8270cc219db4
 
 **使っているエージェントをつなぐ**
 
-- **自作のエージェント**では、対応する既存の計装をそのまま使うか、LangGraph、OpenAI Agents SDK、Go / Eino の[接続例](https://aivision.mintlify.site/ja/integrations/frameworks)を参考に計装を追加できます。
-- **Codex、Claude Code、OpenClaw などのアプリ**は、[対応プラグイン](https://aivision.mintlify.site/ja/integrations/plugins)を入れると、普段のタスクの実行内容を追えます。
+- **自作のエージェント**では、対応する既存の計装をそのまま使うか、LangGraph、Deep Agents、Go / Eino の[接続例](https://aivision.mintlify.site/ja/integrations/frameworks)を参考に計装を追加できます。
+- **Codex、Claude Code、OpenClaw などのアプリ**は、[対応プラグイン](https://aivision.mintlify.site/ja/integrations/agents)を入れると、普段のタスクの実行内容を追えます。
 
 <a id="capabilities"></a>
 
@@ -62,7 +62,7 @@ https://github.com/user-attachments/assets/d1ceb5ea-fc3b-4ed9-98df-8270cc219db4
 
 - **一覧から探す。** エージェント、日時、所要時間、ステータス、ステップ数、総トークン数で絞り込み、使用量で並べ替えられます。トレース ID で直接探せるほか、データソースによっては収集済みの入出力も検索できます。
 - **セッションから探す。** 複数ターンのやり取りを振り返り、気になるターンのトレースを開きます。
-- **長いトレースの中で絞り込む。** サブエージェントの分岐に注目し、失敗したツール呼び出しや入力トークンの多いモデル呼び出しを抽出できます。該当ステップまでの親階層は呼び出しツリーに残り、よく使う条件も保存できます。[トレース調査ガイド](https://aivision.mintlify.site/ja/guides/trace-analysis)に操作例があります。
+- **長いトレースの中で絞り込む。** サブエージェントの分岐に注目し、失敗したツール呼び出しや入力トークンの多いモデル呼び出しを抽出できます。該当ステップまでの親階層は呼び出しツリーに残り、よく使う条件も保存できます。[トレース調査ガイド](https://aivision.mintlify.site/ja/guides/traces#長い-trace-で条件を組み合わせる)に操作例があります。
 
 **トークン使用量や費用も変わったら。** ダッシュボードから個々の呼び出しまでたどって、再試行、コンテキストの長さ、キャッシュヒットの変化を確認できます。費用の詳細には、適用した単価と集計対象が表示されます。[モデル単価](https://aivision.mintlify.site/ja/guides/model-pricing)を設定すると、適用開始時点に応じて、過去の実行をやり直さずに再見積もりできます。モデル料金の計算はベータ機能です。
 
@@ -87,7 +87,7 @@ https://github.com/user-attachments/assets/d1ceb5ea-fc3b-4ed9-98df-8270cc219db4
 | [メモリ](https://aivision.mintlify.site/ja/guides/memory-observability) | 何をどこから取り出したかを確認し、記録があれば、その内容がモデルへの入力に含まれていたかもたどれます。 |
 | [判断](https://aivision.mintlify.site/ja/guides/decision-traces) | モデルの振り分けや承認時の選択肢と結果を確認できます。後続のステップは、識別子で関連付けられたものと、前後の記録から推定したものがあります。 |
 
-**入力や成果物もその場で確認。** モデルに渡した画像やエージェントが作ったレポートを、トレースを開いたまま確認できます。収集済みの画像、音声、動画、PDF のほか、形式を認識できる Markdown や静的 HTML を表示できます。[Python でのマルチメディア収集例](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain)も参照できます。
+**入力や成果物もその場で確認。** モデルに渡した画像やエージェントが作ったレポートを、トレースを開いたまま確認できます。[収集済みの画像、音声、動画、PDF](https://aivision.mintlify.site/ja/guides/multimedia)のほか、[形式を認識できる Markdown や静的 HTML](https://aivision.mintlify.site/ja/guides/trace-document-preview)を表示できます。[Python でのマルチメディア収集例（簡体字中国語）](ai-vision/agent-plugins/langfuse/README.md#python-多媒体-tracelangchain)も参照できます。
 
 表示できる内容は接続方式と収集データによって異なります。MCP、Skill、メモリの専用ページと判断ビューはベータ機能です。
 
@@ -97,9 +97,9 @@ https://github.com/user-attachments/assets/d1ceb5ea-fc3b-4ed9-98df-8270cc219db4
 
 ツールが失敗し、再試行されていた。この手の問題が繰り返し起きているかを確かめたいときは、診断を使えます。
 
-1. **ルールを試して定期実行する。** いくつかのトレースで[組み込みルール](https://aivision.mintlify.site/ja/guides/diagnosis)を試し、ツールの失敗や呼び出しの繰り返し、コード変更後の検証漏れを調べます。使うルールを選んだら、チームスペースで[定期診断](https://aivision.mintlify.site/ja/guides/continuous-diagnosis)を設定します。
-2. **問題の根拠をたどる。** 品質ダッシュボードで診断バッチごとの変化を見て、検出されたケース（BadCase）から該当するステップに戻ります。実際の成果物と照らし合わせ、問題を確定するか、誤検出または判定不能として記録します。
-3. **修正後にもう一度確かめる。** 同じ種類のタスクを実行し、新しいトレースを同じ診断設定で確認します。
+1. **ルールを試して定期実行する。** いくつかのトレースで[組み込みルール](https://aivision.mintlify.site/ja/guides/use-diagnosers#builtin-diagnoser-overview)を試し、ツールの失敗や呼び出しの繰り返し、[コード変更後の検証漏れ](https://aivision.mintlify.site/ja/guides/use-diagnosers#builtin-verification-case)を調べます。使うルールを選んだら、チームスペースで[定期診断](https://aivision.mintlify.site/ja/guides/continuous-diagnosis#3-検証済みのチェックを定期タスクにする)を設定します。
+2. **[問題の根拠をたどる。](https://aivision.mintlify.site/ja/guides/quality#badcase-を-1-件確認する)** 品質ダッシュボードで診断バッチごとの変化を見て、検出されたケース（BadCase）から該当するステップに戻ります。実際の成果物と照らし合わせ、問題を確定するか、誤検出または判定不能として記録します。
+3. **修正後にもう一度確かめる。** 同じ種類のタスクを実行し、[新しいトレースを同じ診断設定で確認](https://aivision.mintlify.site/ja/guides/continuous-diagnosis#2-新しい-trace-でアプリケーションの修正を検証する)します。
 
 合格条件を明文化できるなら、オプションの OpenShell サンドボックスで[拡張 Python ルール](https://aivision.mintlify.site/ja/guides/sandbox)を実行できます。たとえば、収集したコードを `pytest` で検証したり、参照用の明細表から結果を再計算したりできます。回答が問いに沿っているか、説明に根拠があるかは、LLM による診断で確認できます。
 
@@ -137,13 +137,13 @@ Ant AI Vision は、実際の実行から問題を調べ、修正後に似たタ
 <a id="personal-deployment"></a>
 
 - **個人で使う。** [All-in-One](https://aivision.mintlify.site/ja/deployment/all-in-one) なら、Linux x86-64 または ARM64 で、Ant AI Vision と組み込みの seekdb を 1 つの Docker コンテナで実行できます。オンライン導入には [Skills リポジトリの読み取り権限](skills/README.md)が必要です。利用許可を得たオフライン配布物も使えます。
-- <a id="team-deployment"></a>**チームで使う。** OceanBase CE と組み合わせてサービスを分けて運用します。スペースのメンバーとロールを使って、観測・診断結果を共有できます。[Docker](https://aivision.mintlify.site/ja/deployment/docker) で導入するか、既存の Kubernetes クラスターで [OB Operator](https://aivision.mintlify.site/ja/deployment/kubernetes) を使います。
+- <a id="team-deployment"></a>**チームで使う。** OceanBase CE と組み合わせてサービスを分けて運用します。スペースのメンバーとロールを使って、観測・診断結果を共有できます。[Docker](https://aivision.mintlify.site/ja/deployment/docker) で導入するか、既存のクラスターに [Kubernetes 用の CLI 手順](https://aivision.mintlify.site/ja/deployment/kubernetes)でデプロイできます。Kubernetes では OB Operator が OceanBase CE を管理します。
 - <a id="deploy-with-skills"></a>**スキルや CLI で操作する。** `aivision-deploy` は導入と動作確認、`aivision-quickstart` は起動済みの環境で収集と診断を試すためのスキルです。CLI からも[導入](https://aivision.mintlify.site/ja/deployment/overview)や[トレースの検索](https://aivision.mintlify.site/ja/guides/cli)ができます。
 
 > [!TIP]
-> **まずはデモから。** ログイン後、個人スペースで **デモサンプル** を開き、「一連の操作を体験」を選んでサンプルデータを作成します。モデルを設定せずに、トレースの比較とルール診断を試せます。チームスペースでは、エージェント接続と診断の権限が必要です。
+> **[まずはデモから。](https://aivision.mintlify.site/ja/try-sample#import-sample)** ログイン後、個人スペースで **デモサンプル** を開き、「一連の操作を体験」を選んでサンプルデータを作成します。モデルを設定せずに、トレースの比較とルール診断を試せます。チームスペースでは、エージェントの管理、取り込みトークンの発行、診断の実行権限が必要です。
 
-**実際のタスクをトレースする。** **エージェント接続** から、[自作エージェント](https://aivision.mintlify.site/ja/integrations/frameworks)の SDK やランタイムを設定します。既存のアプリなら、実行環境に[プラグイン](https://aivision.mintlify.site/ja/integrations/plugins)を入れてアプリを再起動します。Codex ではさらに `/hooks` で Ant AI Vision のフックを確認して信頼し、新しいセッションを開きます。モデルとツールを使うタスクを実行したら、**エージェントのトレース** から新しいトレースを開き、ツール呼び出しの引数とステータスを確認します。
+**実際のタスクをトレースする。** **エージェント接続** から、[自作エージェント](https://aivision.mintlify.site/ja/integrations/frameworks)の SDK やランタイムを設定します。既存のアプリなら、実行環境に[プラグイン](https://aivision.mintlify.site/ja/integrations/agents)を入れてアプリを再起動します。Codex ではさらに `/hooks` で Ant AI Vision のフックを確認して信頼し、新しいセッションを開きます。モデルとツールを使うタスクを実行したら、**エージェントのトレース** から新しいトレースを開き、ツール呼び出しの引数とステータスを確認します。
 
 対応プラグインの [Privacy 収集モード](https://aivision.mintlify.site/ja/guides/privacy)では、プロンプト、回答、ツールの入出力などを実行環境で除外しつつ、呼び出し構造と使用量は収集できます。
 

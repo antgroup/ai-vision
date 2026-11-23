@@ -23,7 +23,7 @@ Codex、Claude Code 等 Agent 应用推荐对应的 AI Vision 专用采集插件
 
 后续 LangSmith SDK 接入应复用这个目录契约。当前**尚未实现 LangSmith SDK 兼容**，因此不添加可点击入口。新增采集方式还需实现并验证认证与项目映射、实际传输协议、Span 语义转换、Trace 查询、SDK 生命周期及完整示例，再登记目录和路由。支持一个 SDK 的上报路径，不等于兼容该观测平台的全部管理、评测或查询 API。
 
-用户教程维护于独立文档站的[自建 Agent 接入](https://aivision.mintlify.site/zh-CN/integrations/frameworks)。目录或示例变更后，更新部署中的接入目录；仅更新前端不会自动刷新数据库保存的 guide。
+用户教程分别见[现成 Agent 应用接入](https://aivision.mintlify.site/zh-CN/integrations/agents)与[自建 Agent 接入](https://aivision.mintlify.site/zh-CN/integrations/frameworks)。目录或示例变更后，更新部署中的接入目录；仅更新前端不会自动刷新数据库保存的 guide。
 
 ## 七类安装方式
 

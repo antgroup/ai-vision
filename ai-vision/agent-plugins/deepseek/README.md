@@ -180,5 +180,6 @@ host references resolve only through the mounted official attachment provider;
 size and SHA-256 must match. Privacy mode reads no attachment bytes. Missing
 provider mappings, invalid content and oversized files emit bounded errors.
 Local paths alone are never opened. Input, assistant output and tool results
-share the same adapter. See [cross-Agent evidence](../../docs/validation/trace-media-2026-11-13/AGENT-MEDIA.md)
-for actual runtime checks versus fixture coverage.
+share the same adapter. See [cross-Agent evidence](../../../docs/testing/multimedia-review-20261117.md#earlier-real-provider-and-data-plane-evidence)
+for actual runtime checks versus fixture coverage. For user steps and permissions,
+see the [media preview guide](https://aivision.mintlify.site/en/guides/multimedia).

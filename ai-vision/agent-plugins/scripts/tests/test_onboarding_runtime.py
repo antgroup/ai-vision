@@ -23,6 +23,13 @@ class BinaryRuntimeTests(unittest.TestCase):
             with executable_fixture(binary, source):
                 installer.check_binary_runtime(binary)
 
+    def test_windows_hook_probe_accepts_the_executable_name_without_suffix(self):
+        result = SimpleNamespace(returncode=0, stdout='cdxhooks test\n', stderr='')
+        with patch.object(installer.subprocess, 'run', return_value=result):
+            installer.check_binary_runtime(Path('cdxhooks.exe'))
+            with self.assertRaisesRegex(installer.ConnectError, 'did not report its version'):
+                installer.check_binary_runtime(Path('other.exe'))
+
     @unittest.skipIf(os.name == 'nt', 'POSIX shell fixture interpreter path')
     def test_version_probe_with_a_spaced_python_interpreter_path(self):
         with tempfile.TemporaryDirectory() as temp:
