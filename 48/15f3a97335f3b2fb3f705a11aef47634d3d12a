@@ -1,0 +1,97 @@
+ai-vision/agent-plugins/tests/native_agent_e2e/test_kimi_source.py
+  s_0ba4aa59e34a4f::t_e2c751e2e4118b 48,192-200
+  s_7ddb4c6ac82aba::t_7b1fe72d2f345e 201
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_0ba4aa59e34a4f::t_3942f6f83d4da1 501-508
+  s_0ba4aa59e34a4f::t_6a530617049f51 71,500,515,524
+ai-vision/vfe/src/components/traces-otel/spanFilters.ts
+  s_0ba4aa59e34a4f::t_3942f6f83d4da1 63,76,87-90,92-94
+  s_0ba4aa59e34a4f::t_a0875e8561a460 69
+  s_0ba4aa59e34a4f::t_2a695bfd1598de 18,48,59-62,64-68,70-75,77-86,91,95-102,131,142-146
+ai-vision/agent-plugins/kimi/kimihooks/src/hooks/stop.rs
+  s_0ba4aa59e34a4f::t_12b387a13a9f2d 1420-1424,1426,1428-1429
+  s_0ba4aa59e34a4f::t_637b7f20845922 896,1419,1427
+  s_0ba4aa59e34a4f::t_31d3e368d95405 1359,1363-1418,1425,1430-1440,1448
+  s_0ba4aa59e34a4f::t_c385b2a0c74e56 671,679-682,690-692,704-713,1441-1447
+  s_0ba4aa59e34a4f::t_23086e01bf6134 908,954-959
+  s_80270f50a78a8e::t_ce21d245671994 1449
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_0ba4aa59e34a4f::t_0160d74e0e11e0 4042,4048
+  s_0ba4aa59e34a4f::t_2a695bfd1598de 4736
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_0ba4aa59e34a4f::t_0160d74e0e11e0 4042,4048
+  s_0ba4aa59e34a4f::t_3942f6f83d4da1 4736
+ai-vision/vfe/src/components/traces-otel/spanFilterPresets.ts
+  s_0ba4aa59e34a4f::t_2a695bfd1598de 52-57,87,105,176-177,204-206
+ai-vision/vfe/src/components/traces-otel/SpanFilterBar.tsx
+  s_0ba4aa59e34a4f::t_2a695bfd1598de 162-167,486-500
+  s_0ba4aa59e34a4f::t_84b53121c37521 501
+ai-vision/agent-plugins/kimi/kimihooks/src/hooks/kimi_code.rs
+  s_0ba4aa59e34a4f::t_23086e01bf6134 169
+  s_0ba4aa59e34a4f::t_637b7f20845922 168
+ai-vision/agent-plugins/kimi/kimihooks/src/common/otel.rs
+  s_0ba4aa59e34a4f::t_23086e01bf6134 11,2159-2160,2192,2198-2203,2205-2207,2315-2316,2318-2320,2322
+  s_0ba4aa59e34a4f::t_637b7f20845922 2161-2162,2175,2204,2302,2311-2314
+  s_0ba4aa59e34a4f::t_12b387a13a9f2d 2303
+  s_0ba4aa59e34a4f::t_0ccaef7d575a79 2304-2310,2317,2323
+  s_0ba4aa59e34a4f::t_c385b2a0c74e56 2321
+ai-vision/vfe/tests/spanFilters.test.ts
+  s_0ba4aa59e34a4f::t_a0875e8561a460 54-58,60-67,69-73,90-94,96-98,109-116,118-125
+  s_0ba4aa59e34a4f::t_1700b8b24d919b 19,51-53,59,68,74-89,95,99-108,117,126
+  s_a1353b39288e5f::t_b8ed259756a773 127
+ai-vision/vfe/tests/spanFilterPresets.test.ts
+  s_0ba4aa59e34a4f::t_1700b8b24d919b 39-53
+ai-vision/agent-plugins/tests/native_agent_e2e/kimi_source.py
+  s_0ba4aa59e34a4f::t_64e362de26216c 398-401
+ai-vision/agent-plugins/kimi/README.md
+  s_0ba4aa59e34a4f::t_637b7f20845922 22
+  s_0ba4aa59e34a4f::t_cae81dd73d3f47 23
+ai-vision/vfe/tests/e2e/traceSpanNavigation.spec.ts
+  s_0ba4aa59e34a4f::t_d735d566798abc 29-68,76-86
+  s_0ba4aa59e34a4f::t_0da012bc251544 69-75
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_0ba4aa59e34a4f::t_0160d74e0e11e0 4039,4045
+  s_0ba4aa59e34a4f::t_2a695bfd1598de 4733
+ai-vision/vfe/tests/traceListFiltersDom.test.ts
+  s_0ba4aa59e34a4f::t_cb3d264b23fd14 251,339,390
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4815f3a97335f3b2fb3f705a11aef47634d3d12a",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_80270f50a78a8e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f19d-1985-7b22-82e9-068aafc03da7",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_a1353b39288e5f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a17d99-1a38-7db1-b987-f76008bc03b1",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

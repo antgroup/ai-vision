@@ -1,0 +1,157 @@
+ai-vision/agent-plugins/tests/framework_e2e/README.md
+  s_c2b7d026684222::t_dd5a9632e3868a 250
+CONTRIBUTING.md
+  s_c2b7d026684222::t_1864b819836c3c 36
+ai-vision/scripts/README.md
+  s_c2b7d026684222::t_a2db0b0045556e 3-6,8,10-12,60,65,67-68,85
+website/README.md
+  s_c2b7d026684222::t_6bed117e2760be 17
+ai-vision/agent-plugins/METHODOLOGY.md
+  s_c2b7d026684222::t_814d1b8ac5092d 15,123,127-128,182-184,220,253,468,536,577,641,662,709,735
+ai-vision/CLAUDE.md
+  s_c2b7d026684222::t_c77fa6b3178b29 13,72,75
+  s_c2b7d026684222::t_e13212df9f0617 39,113
+docs/deployment/zh-CN/docker.md
+  s_c2b7d026684222::t_65806005e9454d 5,29
+docs/deployment/README.md
+  s_c2b7d026684222::t_65806005e9454d 3,5
+ai-vision/agent-plugins/claudecode/cchooks/README.md
+  s_c2b7d026684222::t_dd5a9632e3868a 27-28,30-31,33-34,37-38,188,191,194-195,198,202,215
+README.md
+  s_c2b7d026684222::t_2306d4eca9de78 112
+  s_c2b7d026684222::t_dd14a18e64d3e6 116,197,201-204,216
+  s_c2b7d026684222::t_f1b63be3d1c19f 31
+deploy/native-packaging/delivery-2026-10-28-amd64-revision2.md
+  s_c2b7d026684222::t_60c58861f6d51c 18-19
+ai-vision/agent-plugins/openclaw/observ-openclaw/package.json
+  s_c2b7d026684222::t_dd5a9632e3868a 79-83
+ai-vision/agent-plugins/codex/cdxhooks/README.md
+  s_c2b7d026684222::t_e4428c6a7b3aca 24,37,49-50,154,180,216,226,238
+ai-vision/agent-plugins/codex/cdxhooks-ant-setup.md
+  s_c2b7d026684222::t_e4428c6a7b3aca 3,8,13,18-19,22-23,46,57,79,103,107
+ai-vision/vfe/package.json
+  s_c2b7d026684222::t_e13212df9f0617 118-122
+ai-vision/agent-plugins/claudecode/cchooks/CLAUDE.md
+  s_c2b7d026684222::t_fc1112cb044237 69,72,88,90
+  s_c2b7d026684222::t_dd5a9632e3868a 101
+  s_c2b7d026684222::t_cfbab9b2319c1b 11-12,17,20
+ai-vision/vfe/AGENTS.md
+  s_c2b7d026684222::t_c77fa6b3178b29 71,84
+  s_c2b7d026684222::t_7cfe5f859e0f88 82,93
+ai-vision/docs/diagnose/validation/model-connections-integration-2026-10-23.md
+  s_c2b7d026684222::t_c77fa6b3178b29 71
+ai-vision/aivision-py-be/AGENTS.md
+  s_c2b7d026684222::t_c77fa6b3178b29 24,40-41
+deploy/blueprints/aivision-source.yaml
+  s_c2b7d026684222::t_ef0eb5afd44186 13,567-568
+website/public/index.html
+  s_c2b7d026684222::t_7cce303af83c9a 88,93
+README.en.md
+  s_c2b7d026684222::t_f1b63be3d1c19f 30
+  s_c2b7d026684222::t_2306d4eca9de78 111
+  s_c2b7d026684222::t_dd14a18e64d3e6 115,183,187-190,202
+agentlens/docs/configuration.md
+  s_c2b7d026684222::t_6bed117e2760be 256
+ai-vision/agent-plugins/scripts/worktree-setup
+  s_c2b7d026684222::t_48867f4e01166c 463,469-470,497-500
+aivision-cli/deploy/assets-manifest.json
+  s_c2b7d026684222::t_607cb38c6f71c2 5
+ai-vision/agent-plugins/AGENTS.md
+  s_c2b7d026684222::t_cfbab9b2319c1b 125
+  s_c2b7d026684222::t_fd2930febabea0 235-237
+  s_c2b7d026684222::t_814d1b8ac5092d 108,183-185
+  s_c2b7d026684222::t_42907e0e86022a 30,147-148,151,154,162
+  s_c2b7d026684222::t_7aec00ccec1fca 121-122,124,126-127
+  s_c2b7d026684222::t_e4428c6a7b3aca 123
+ai-vision/.codex/skills/ai-vision-backend/SKILL.md
+  s_c2b7d026684222::t_c77fa6b3178b29 3,18,29,36,74,77,79
+aivision-cli/blueprints/aivision-source.yaml
+  s_c2b7d026684222::t_607cb38c6f71c2 13,567-568
+deploy/native-packaging/delivery-2026-10-28-amd64.md
+  s_c2b7d026684222::t_65806005e9454d 42
+docs/README.md
+  s_c2b7d026684222::t_1864b819836c3c 24,27,35
+ai-vision/agent-plugins/codex/cdxhooks-common-setup.md
+  s_c2b7d026684222::t_e4428c6a7b3aca 3,7
+README.ja.md
+  s_c2b7d026684222::t_f1b63be3d1c19f 30
+  s_c2b7d026684222::t_dd14a18e64d3e6 115,183,187-190,202
+  s_c2b7d026684222::t_2306d4eca9de78 111
+ai-vision/agent-plugins/docs/capabilities/C-llm-semantics.md
+  s_c2b7d026684222::t_814d1b8ac5092d 35,77,288,346
+ai-vision/docs/v2/frontend-component-layers.md
+  s_c2b7d026684222::t_ea756416b7d2d1 8
+ai-vision/agent-plugins/docs/capabilities/D-advanced-semantics.md
+  s_c2b7d026684222::t_814d1b8ac5092d 42,57
+ai-vision/docs/v2/v2-style-alignment-task.md
+  s_c2b7d026684222::t_a2db0b0045556e 29,43,204
+ai-vision/agent-plugins/CONSTITUTION.md
+  s_c2b7d026684222::t_814d1b8ac5092d 27
+  s_c2b7d026684222::t_dd5a9632e3868a 236-237
+ai-vision/agent-plugins/codex/capabilities/D2.md
+  s_c2b7d026684222::t_fc1112cb044237 18
+ai-vision/package.json
+  s_c2b7d026684222::t_e13212df9f0617 20-24
+ai-vision/.codex/skills/ai-vision-frontend/SKILL.md
+  s_c2b7d026684222::t_c77fa6b3178b29 96
+docs/deployment/en/docker.md
+  s_c2b7d026684222::t_65806005e9454d 5,45
+ai-vision/docs/backend/unify-agent-config-to-db.md
+  s_c2b7d026684222::t_85fb8270d0e83c 45
+ai-vision/docs/multi-dim-filter-status.md
+  s_c2b7d026684222::t_ea756416b7d2d1 16,33,43,58
+skills/README.md
+  s_c2b7d026684222::t_60c58861f6d51c 3-6
+  s_c2b7d026684222::t_1864b819836c3c 10-13,41-43
+agentlens/README.md
+  s_c2b7d026684222::t_6bed117e2760be 34
+README.zh-CN.md
+  s_c2b7d026684222::t_6bed117e2760be 5
+ai-vision/agent-plugins/CAPABILITIES.md
+  s_c2b7d026684222::t_42907e0e86022a 192
+ai-vision/agent-plugins/docs/capabilities/B-tool-semantics.md
+  s_c2b7d026684222::t_814d1b8ac5092d 33,81
+ai-vision/agent-plugins/codex/CAPABILITIES.md
+  s_c2b7d026684222::t_fc1112cb044237 271
+docs/superpowers/plans/2026-11-03-cross-repo-public-daily.md
+  s_c2b7d026684222::t_60c58861f6d51c 79-80
+agentlens/docs/deployment.md
+  s_c2b7d026684222::t_6bed117e2760be 6
+aivision-cli/README.md
+  s_c2b7d026684222::t_65806005e9454d 363-364
+  s_c2b7d026684222::t_13eab066794af3 724-727,750-752
+ai-vision/AGENTS.md
+  s_c2b7d026684222::t_c77fa6b3178b29 39,42,85,135
+  s_c2b7d026684222::t_ea756416b7d2d1 133
+  s_c2b7d026684222::t_7cfe5f859e0f88 35
+docs/version-info.md
+  s_c2b7d026684222::t_34b21ada4c45ad 22
+  s_c2b7d026684222::t_60c58861f6d51c 23-24
+AGENTS.md
+  s_c2b7d026684222::t_1864b819836c3c 23
+ai-vision/agent-plugins/codex/cdxhooks/CLAUDE.md
+  s_c2b7d026684222::t_e4428c6a7b3aca 11-12,15,19
+  s_c2b7d026684222::t_fc1112cb044237 85,95
+ai-vision/agent-plugins/CLAUDE.md
+  s_c2b7d026684222::t_814d1b8ac5092d 194-197
+website/public/translations.js
+  s_c2b7d026684222::t_7cce303af83c9a 130,159,161,405,434,436
+ai-vision/agent-plugins/opencode/observ-opencode/README.md
+  s_c2b7d026684222::t_42907e0e86022a 329,331,333
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "23f718c96e46db77023363fd22d837c0c2614587",
+  "prompts": {},
+  "sessions": {
+    "s_c2b7d026684222": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1cae6-6700-7c73-97bc-48fa555bb3ec",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

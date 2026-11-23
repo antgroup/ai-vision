@@ -1,0 +1,148 @@
+ai-vision/vfe/src/agents/lib/observabilityV2Api.ts
+  s_e9b64f95b6f8f0::t_a6d602ae649755 167-168,171
+ai-vision/vfe/src/labs/mcp/McpSpanCard.tsx
+  s_e9b64f95b6f8f0::t_f9771c247bee92 145
+ai-vision/vfe/src/components/product-guide/useProductGuide.ts
+  s_e9b64f95b6f8f0::t_80d8514c5984cf 5,9
+ai-vision/aivision-py-be/apps/core/services/onboarding_demo.py
+  s_e9b64f95b6f8f0::t_bb80c5a3925257 1-13,15-22,28-55,71-88,92-97,99-107,109-114,120-122,124-125,129-132,142-163,167-185
+  s_e9b64f95b6f8f0::t_4a4db27783873e 14,23-27,56-70,98,108,115-119,123,133,164-166
+  s_e9b64f95b6f8f0::t_2a60ecf5253562 89-91,126-128,134-141
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  s_e9b64f95b6f8f0::t_ae160683748bd8 526,543-560,562-574,595-613,621-652
+  s_e9b64f95b6f8f0::t_426cb53e2ce379 575-576,592-594,614-620
+  s_e9b64f95b6f8f0::t_2e1e8fe3658548 577-582,584-591
+  s_e9b64f95b6f8f0::t_f093e923007848 561
+  s_e9b64f95b6f8f0::t_8d70e20c119f21 583,653
+ai-vision/aivision-py-be/apps/core/views/onboarding_demo.py
+  s_e9b64f95b6f8f0::t_2a60ecf5253562 100-102,107-111,143-145
+  s_e9b64f95b6f8f0::t_5d6a73eb7ec44b 7,29,40,79-99,103-104,106,113-114,116-117,120-126,128-129,161
+  s_e9b64f95b6f8f0::t_911ec4195fc42d 1-6,8-28,30-39,41-78,105,112,115,118-119,127,130-142,146-160,162-177
+ai-vision/aivision-py-be/apps/core/urls/api/biz.py
+  s_e9b64f95b6f8f0::t_911ec4195fc42d 79,250-253
+  s_e9b64f95b6f8f0::t_38cd8d2a6f3fd6 254
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_e9b64f95b6f8f0::t_b310ca29b3581a 5687-5689
+  s_e9b64f95b6f8f0::t_34cc16194610cf 5683-5684
+  s_e9b64f95b6f8f0::t_a977adc0812cba 5667
+  s_e9b64f95b6f8f0::t_217058c5a9ad08 5665-5666,5668-5673,5685-5686,5690-5691,5728
+ai-vision/vfe/src/contexts/AgentContext.tsx
+  s_e9b64f95b6f8f0::t_862746749d6c26 6,67,72,195-203,212-214,223,235-236,301,335,342,355,377,379,389-391
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  s_e9b64f95b6f8f0::t_34a0146ba699ac 1123-1127,1137-1138,1140,1158-1163,1852-1856
+  s_e9b64f95b6f8f0::t_f013309f17dc38 1990
+ai-vision/vfe/tests/e2e-platform/onboardingDemo.spec.ts
+  s_e9b64f95b6f8f0::t_962cda722696f9 13-14,51-54,56-58,67-70,83-88,141-143
+  s_e9b64f95b6f8f0::t_6cb7e8965ebac9 99-112,144,182
+  s_e9b64f95b6f8f0::t_c95736fd27133b 1-2,8-12,15-50,55,59-66,71-78,80-82,89-95,113-114,136-140,145-153,158-159,186-194,196-199
+  s_e9b64f95b6f8f0::t_aa2ff7833fb102 132-133,154
+  s_e9b64f95b6f8f0::t_4cbafca4accf43 3-6
+  s_e9b64f95b6f8f0::t_c10af43aa5ba2f 79,116-118,125-128,166-168,171-174
+  s_e9b64f95b6f8f0::t_ab4aba45413f01 96-98,115,119-124,129-131,134-135,155-157,160-165,169-170,175-181,183-185,195
+  s_e9b64f95b6f8f0::t_40bcdf52c81607 7
+ai-vision/aivision-py-be/apps/core/views/agent.py
+  s_e9b64f95b6f8f0::t_911ec4195fc42d 24,325-327,390-391
+ai-vision/vfe/tests/mcpDom.test.ts
+  s_e9b64f95b6f8f0::t_0a83ef6dd0f72a 2739-2779,2781-2805,4453,4456-4457,4459,4474,4508,4522,4533,4566,4573,4580,4718,4724,4728,4732,4735,4738-4741,4761,4781,4793-4795
+  s_e9b64f95b6f8f0::t_91bc8ba72d3d4b 382-384,386,2780
+  s_e9b64f95b6f8f0::t_54e75a28bba70b 385,387-397,468,584-585
+  s_2f5254e8b447ea::t_448373cdd079f8 586,4387-4394,4454-4455,4458,4463-4473,4506-4507,4516-4518,4520-4521,4523-4525,4530-4532,4543-4558,4560-4565,4567-4572,4574-4579,4582-4594,4597-4611,4614-4623,4625-4649,4651-4662,4672-4692,4694-4696,4703-4705,4707-4709,4715-4717,4719-4723,4725-4727,4730-4731,4733-4734,4736-4737,4746-4756,4758-4760,4762-4780,4782,4785-4789
+deploy/native-packaging/build.py
+  s_e9b64f95b6f8f0::t_e4e6ccc78beeef 161-162
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx
+  s_e9b64f95b6f8f0::t_13a10c0a6322ae 12-14,16,329-342,344-358,465-468,474
+  s_e9b64f95b6f8f0::t_b35d8c278f4132 343
+  s_e9b64f95b6f8f0::t_b7cf4496408b8e 464
+  s_e9b64f95b6f8f0::t_43c17993f317ee 15
+ai-vision/aivision-py-be/scripts/native_build.py
+  s_e9b64f95b6f8f0::t_8d155c0c83bf39 14-19,30,32,50-59,61-64,151
+ai-vision/aivision-py-be/apps/core/tests/test_onboarding_demo.py
+  s_e9b64f95b6f8f0::t_93aaf49c4c3c0e 110-115,123,132,138-140,175-197
+  s_e9b64f95b6f8f0::t_9802783f744a68 23-24,31-34
+  s_e9b64f95b6f8f0::t_2a60ecf5253562 25-30,96-98,108-109,116-117
+  s_e9b64f95b6f8f0::t_db82852af670c4 2-4,6-22,35-95,99-107,118-122,124-131,133-137,141-156
+  s_e9b64f95b6f8f0::t_2414ddef4455f7 1,5,157-174
+ai-vision/vfe/src/components/product-guide/state.ts
+  s_e9b64f95b6f8f0::t_b194ea85a4d226 24-25
+  s_e9b64f95b6f8f0::t_99923b608c476d 32,38-42,52-67
+ai-vision/vfe/src/components/traces-otel/shared/TraceContentModeToggle.tsx
+  s_e9b64f95b6f8f0::t_4ea5d9ba4c240e 40-42
+ai-vision/aivision-py-be/apps/core/views/langfuse_ingest.py
+  s_e9b64f95b6f8f0::t_911ec4195fc42d 830-838,890,892-893,897
+  s_e9b64f95b6f8f0::t_2a60ecf5253562 827-829,894-896
+ai-vision/vfe/src/labs/mcp/McpTraceSummary.tsx
+  s_e9b64f95b6f8f0::t_2526d17451d216 187
+ai-vision/agent-plugins/tests/framework_e2e/execute_rag.py
+  s_e9b64f95b6f8f0::t_9b9cf92b3969bf 249,251
+ai-vision/vfe/src/components/layout/AppShell.tsx
+  s_e9b64f95b6f8f0::t_ab7fff8d575d47 168-172
+deploy/native-packaging/test_build.py
+  s_e9b64f95b6f8f0::t_8d155c0c83bf39 129-131,133-134,136-145
+  s_e9b64f95b6f8f0::t_2f5a7f709cad41 127-128,132,135,146
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_e9b64f95b6f8f0::t_0744f216af74f2 889
+  s_e9b64f95b6f8f0::t_b02eb62f034a1b 890
+ai-vision/vfe/tests/e2e/productGuide.fixtures.ts
+  s_e9b64f95b6f8f0::t_ba3739851ab8c2 469,471-473
+  s_e9b64f95b6f8f0::t_44c68e052b95ee 198,276-281
+  s_e9b64f95b6f8f0::t_c9289808951c6c 98-111,479,482-483
+  s_e9b64f95b6f8f0::t_6879c0b5b41c47 10-13,283-297,470,499-513,519,550-551,563-565,576-586,588-590
+  s_e9b64f95b6f8f0::t_aed3df52ca886b 587
+ai-vision/vfe/src/components/traces-otel/api.ts
+  s_e9b64f95b6f8f0::t_0dacfa7b74ed2b 161,174-175
+ai-vision/vfe/tests/modelConnectionNavigationDom.test.ts
+  s_e9b64f95b6f8f0::t_ef9df90ebe6104 283-284
+ai-vision/agent-plugins/tests/framework_e2e/generate_onboarding_demo.py
+  s_e9b64f95b6f8f0::t_471faa9e4e7912 1,4,8,11-14,20-22,24-26,28-38,42,50,60-61,66-84,86,100-101,106,112,117,119-125,132-133,136-137,141-157,165
+  s_e9b64f95b6f8f0::t_18e2d67cbc9c94 2-3,5-7,9-10,18-19,23,27,62-65,85,87-99,102-103,109-110,116,118,126-131,134-135,166-171
+  s_e9b64f95b6f8f0::t_19d067f82c172b 15-17,39-41,44-46,51-59,104-105,107-108,111,113-115,138-140,158-164
+  s_e9b64f95b6f8f0::t_6b4face17e4bb4 43,47-49
+ai-vision/vfe/src/components/product-guide/DemoConsentDialog.tsx
+  s_e9b64f95b6f8f0::t_0b030b8e70e90a 30,44-49,60-67,104
+  s_e9b64f95b6f8f0::t_caaf9973648bb4 31,91-98,124-128
+  s_e9b64f95b6f8f0::t_5bfb1d7b237815 1-29,32-43,50-59,68-69,73-90,99-103,105-123,129-174
+  s_e9b64f95b6f8f0::t_d72289c47d3d1c 70-72
+ai-vision/vfe/src/components/product-guide/ProductGuide.tsx
+  s_e9b64f95b6f8f0::t_836ecb8a797a66 18,129-131,133-138,145-146,148,173-174,197-205,207,214-237,257-259,289-290,294-296,298-300,331-335,353,356-357,360-362,364-371,387-389,391-393,406-408,417,468-470,474,491,493,549-557,559-562,564-565,607-617,628,647,660-677,695-703
+  s_e9b64f95b6f8f0::t_4cfa9ae760b9ff 260,297,336,390,503-510,519-522,715
+  s_e9b64f95b6f8f0::t_e4d1ac331dc12f 158-168,285-288,337-338,346-349,385-386,409-410,511-514,638,642,783-787
+  s_e9b64f95b6f8f0::t_f2eb33b3bceff4 261,301-302,714
+  s_e9b64f95b6f8f0::t_f1c4c6170d03c5 92
+  s_e9b64f95b6f8f0::t_1056bc3b0642e6 110,132,206,208-213,313
+  s_e9b64f95b6f8f0::t_4ff3ea79a12871 155-156,175-176,291-293
+  s_e9b64f95b6f8f0::t_7c2da5e892000b 351-352
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_e9b64f95b6f8f0::t_d84ba1d4393aff 5654-5655,5657-5662,5674-5675,5679-5680,5717
+  s_e9b64f95b6f8f0::t_efecc7a16c9396 5656
+  s_e9b64f95b6f8f0::t_0e9486b216366c 5676-5678
+  s_e9b64f95b6f8f0::t_bc79945a59b7f2 5672-5673
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_e9b64f95b6f8f0::t_c1b9e3efc04bc9 5665-5666,5668-5673,5685-5686,5690-5691,5728
+  s_e9b64f95b6f8f0::t_bb5f3ca0c72d5d 5683-5684
+  s_e9b64f95b6f8f0::t_d016e0a6cbb7eb 5687-5689
+  s_e9b64f95b6f8f0::t_f9f0c0b1af3885 5667
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0dc3c75767ebc2591e04d99fd3cf98088345d839",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_e9b64f95b6f8f0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ce77-82ff-7431-a6e8-b8aa6de748b7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

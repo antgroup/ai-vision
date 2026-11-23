@@ -1,0 +1,100 @@
+ai-vision/vfe/package.json
+  s_2ebf2596393549::t_39b5d0573b3cb1 49
+ai-vision/vfe/tests/e2e/traceUserInput.spec.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 191-195,212-224,234-253,255,265-273,276,374,380,405,407-411,415-416,418-425,430,441-450,456-460,462,603-610
+ai-vision/vfe/tests/e2e/relayTraceProcess.spec.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 172-179,380-381,385-392,411-419,481-484
+docs/testing/screenshots/trace-conversation-process/source-manifest.json
+  s_2ebf2596393549::t_e897e3e11eb283 1-47
+ai-vision/vfe/tests/spanContentDom.test.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 85-192,499-505,509,1010-1016,1405-1423,1457
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_2ebf2596393549::t_9a51c1b6c77132 934
+  s_2ebf2596393549::t_0fd62787850b6e 321-323,720-732,734,741-744,812,873-875
+  s_2ebf2596393549::t_39b5d0573b3cb1 85,88-93,317-320,376-379,542,558-560,565,718-719,733,735-740,755-759,767-768,800-811,813-823,825,841-842,845,876-879,913-920,928-933,935-972,983,1756-1758,1775-1777,1821-1825,1828-1829,1847,1870-1871,1875-1924
+  s_2ebf2596393549::t_9d25bf85410a5c 745-754
+  s_2ebf2596393549::t_e4894df6cbbaef 1820,1826-1827,1834-1835,1844-1846
+docs/testing/trace-conversation-process-review-20261117.md
+  s_2ebf2596393549::t_5f6ae0cf6491d2 1-23,25-46
+  s_2ebf2596393549::t_7cf761fe489592 24
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_2ebf2596393549::t_39b5d0573b3cb1 65-71,74-76,112,116,135,157-158,164-165,180-181,193-197,201-284,296,351-352,358-359,434-435,438-444,446,448-472
+ai-vision/vfe/tests/e2e/traceCompareEvidence.spec.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 1229-1230
+ai-vision/vfe/src/pages/traces-otel/traceCompareData.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 4,20-26,63-68,84-85,368-386
+  s_2ebf2596393549::t_6578a61af71461 387-388
+ai-vision/vfe/tests/nativeTraceSummaryDom.test.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 712-713,719-720,1041-1045,1085,1107
+ai-vision/vfe/src/components/traces-otel/SpanContentEnhancement.tsx
+  s_2ebf2596393549::t_39b5d0573b3cb1 1-8,13,22,33-131,136-145,155-168,170-234,237-274,307,311,335,339,352-356,494,501,525-579
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2ebf2596393549::t_39b5d0573b3cb1 4342-4345,4579-4590,5012
+ai-vision/vfe/src/components/traces-otel/TraceProcessView.tsx
+  s_2ebf2596393549::t_39b5d0573b3cb1 1,3-9,12-13,15-17,31-39,41-64,66-71,79,85,92-95,98,236,279,285,294-385,389,397-398,400-401,410,449-458,460,477,484,487-530,541-578,642,648,685-689,700-701
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2ebf2596393549::t_39b5d0573b3cb1 966-968,984-986,993-995,1020-1022,4339-4342,4576-4587,5009
+ai-vision/vfe/src/components/traces-otel/SpanDetailPanel.tsx
+  s_2ebf2596393549::t_39b5d0573b3cb1 22,75-76,100-101,330-358,360-362,368,581
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_2ebf2596393549::t_39b5d0573b3cb1 11,41,52,102-106,173,180-186,964,970-978,1035,1054,1067-1069,1233,1244,1441
+  s_2ebf2596393549::t_3b9783679f9b09 965-969
+ai-vision/vfe/tests/e2e/traceCompareDecisions.spec.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 282
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 90-96
+  s_2ebf2596393549::t_6075a978852e55 271
+ai-vision/vfe/src/components/traces/shared/TraceUserInputSummary.tsx
+  s_2ebf2596393549::t_39b5d0573b3cb1 16,92-93,98-99,157-159,206,212-216,219-223,227-244
+ai-vision/vfe/tests/traceCompareData.test.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 109-176
+ai-vision/vfe/tests/traceProcessDom.test.ts
+  s_2ebf2596393549::t_39b5d0573b3cb1 7-8,12-18,32-38,56,86-101,142-143,145-147,149-150,152,225,361,419-420,426,444,656-663,722-723,824-827,861-945
+  s_2ebf2596393549::t_7cb7ade37baaa4 946-947
+ai-vision/vfe/src/components/traces-otel/SpanTypedContent.tsx
+  s_2ebf2596393549::t_39b5d0573b3cb1 1,99-101,109-111,131,133,135,147,158,174,176-177,179-210,212-219,221-237,239,241-260,265-268,272,274-280,284-289,329-344
+ai-vision/vfe/tests/e2e/traceRootProcessReview.spec.ts
+  s_2ebf2596393549::t_e00889d3590ecf 34,45,64-68,91,121,124,131,146,164,168,172,178,180,190-192,194-198,200-207,209-211,213-243
+  s_2ebf2596393549::t_9d96cbdd042c16 1-33,35-44,46-63,69-90,92-120,122-123,125-130,132-145,147-163,165-167,169-171,173-177,179,181-189,193,199,208,212,244-267
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2ebf2596393549::t_39b5d0573b3cb1 4342-4345,4579-4590,5012
+ai-vision/vfe/tests/nativeTraceFilters.test.ts
+  s_2ebf2596393549::t_e9582d7cca5241 10-12,19-21
+  s_2ebf2596393549::t_188384851df5b5 15,26
+  s_2ebf2596393549::t_02b760484a40c0 4,13-14,16-18,22-25,27-28
+ai-vision/vfe/tests/traceEvidence.test.ts
+  s_2ebf2596393549::t_3b9783679f9b09 814,818-819
+  s_2ebf2596393549::t_551baa54a682d9 820-831
+ai-vision/vfe/src/components/traces-otel/TraceOverviewExcerpt.tsx
+  s_2ebf2596393549::t_26414056c2200b 1-60
+ai-vision/vfe/src/components/traces-otel/TraceOverviewValue.tsx
+  s_2ebf2596393549::t_d4e092c70fe64a 1-102
+ai-vision/vfe/src/components/traces-otel/TraceRootIO.tsx
+  s_2ebf2596393549::t_35ef9d413a8cfa 1-78
+ai-vision/vfe/src/components/traces-otel/traceProcessNavigation.ts
+  s_2ebf2596393549::t_f540e3bb9953f0 1-35
+ai-vision/vfe/tests/e2e/traceConversation.spec.ts
+  s_2ebf2596393549::t_b145afd75ef905 1-217
+ai-vision/vfe/tests/e2e/traceConversationComplex.spec.ts
+  s_2ebf2596393549::t_7589131d9c5d6f 1-777
+ai-vision/vfe/tests/e2e/traceRootProcess.spec.ts
+  s_2ebf2596393549::t_7d1114174d5f2e 1-492
+ai-vision/vfe/tests/traceProcessNavigation.test.ts
+  s_2ebf2596393549::t_15c73d6c3a3516 1-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4a74dd961d58fa57c4af2ec1645ac7ed0539d980",
+  "prompts": {},
+  "sessions": {
+    "s_2ebf2596393549": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e777-eb0f-7053-b3cf-99edc3113d1c",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_3aacf8368e5be4::t_073a4199c25dc0 1617-1623,1642
+  s_3aacf8368e5be4::t_4e965294bf7fc4 1641
+  s_3aacf8368e5be4::t_1d017646b6f4ba 1574
+  s_3aacf8368e5be4::t_0415156b66103d 1643
+agentlens/src/agentlens/kernel/worker/runner.py
+  s_3aacf8368e5be4::t_124a63151450fb 203-219
+ai-vision/vfe/tests/quickDiagnosisDom.test.ts
+  s_3aacf8368e5be4::t_0a92ba5c7c33f1 4170-4172,4179-4180,4184-4191,4194-4197,4212-4213,4218-4226,4230-4239,4460-4467
+  s_3aacf8368e5be4::t_bed29417726a55 4147-4169,4173-4178,4181-4183,4192-4193,4198-4203,4482,4486,4509
+  s_3aacf8368e5be4::t_ed0639eb01883a 4204-4211,4214-4217,4227-4229,4240-4241
+  s_3aacf8368e5be4::t_49a79ffc490899 4536
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_3aacf8368e5be4::t_1d017646b6f4ba 1591
+  s_3aacf8368e5be4::t_073a4199c25dc0 1634-1640,1659
+  s_3aacf8368e5be4::t_4e965294bf7fc4 1658
+  s_3aacf8368e5be4::t_0415156b66103d 1660
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisResult.tsx
+  s_3aacf8368e5be4::t_8a138be106a81c 5,87-90,101-105,127
+agentlens/src/agentlens/service/datasource/trace.py
+  s_3aacf8368e5be4::t_9b0a0139463702 17
+  s_3aacf8368e5be4::t_124a63151450fb 18-20,34,45,47-52,57-58
+ai-vision/vfe/tests/quickDiagnosis.test.ts
+  s_3aacf8368e5be4::t_0a92ba5c7c33f1 223-226
+  s_3aacf8368e5be4::t_9872b18965dcfe 212-221,228-253
+  s_3aacf8368e5be4::t_96ac8efa57669b 211,222,227
+agentlens/src/agentlens/service/datasource/projection/service.py
+  s_3aacf8368e5be4::t_124a63151450fb 5,30-32,35-37
+agentlens/docs/projection/trace-contract.md
+  s_3aacf8368e5be4::t_9b0a0139463702 115-125
+agentlens/tests/unit/kernel/worker/test_projection_failure_snapshot.py
+  s_3aacf8368e5be4::t_241ac77f10e47c 15,175-236
+  s_3aacf8368e5be4::t_23a02316adeb31 12
+  s_3aacf8368e5be4::t_9b0a0139463702 95-98,237-258
+agentlens/src/agentlens/service/datasource/projection/contracts.py
+  s_3aacf8368e5be4::t_124a63151450fb 11-18
+ai-vision/vfe/src/components/diagnose/executionMessage.ts
+  s_3aacf8368e5be4::t_c79b1f25e48fac 11-27
+  s_3aacf8368e5be4::t_fd44438acd616a 28-35
+ai-vision/vfe/src/components/diagnose/quickDiagnosis.ts
+  s_3aacf8368e5be4::t_9a5d34862dd14c 149-164
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_3aacf8368e5be4::t_4e965294bf7fc4 1658
+  s_3aacf8368e5be4::t_1d017646b6f4ba 1591
+  s_3aacf8368e5be4::t_073a4199c25dc0 1634-1640,1659
+  s_3aacf8368e5be4::t_0415156b66103d 1660
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx
+  s_3aacf8368e5be4::t_748c22d82a9e50 242-243,721-722,741
+  s_3aacf8368e5be4::t_0a92ba5c7c33f1 713-716,723-725,728-730,744-749
+  s_3aacf8368e5be4::t_38255ab7835ce9 750
+agentlens/src/agentlens/service/datasource/projection/projectors/framework/projector.py
+  s_3aacf8368e5be4::t_124a63151450fb 9,57-60
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_3aacf8368e5be4::t_309db791286592 98
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "d94629360f124407b37c0358b6868761775b1649",
+  "prompts": {},
+  "sessions": {
+    "s_3aacf8368e5be4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e756-f330-72a2-a4bc-0c5d5cfdd4ef",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

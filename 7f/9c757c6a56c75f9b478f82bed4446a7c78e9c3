@@ -1,0 +1,14 @@
+.github/workflows/framework-e2e.yml
+  h_1c39a7acc7d677 36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7f9c757c6a56c75f9b478f82bed4446a7c78e9c3",
+  "prompts": {},
+  "humans": {
+    "h_1c39a7acc7d677": {
+      "author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

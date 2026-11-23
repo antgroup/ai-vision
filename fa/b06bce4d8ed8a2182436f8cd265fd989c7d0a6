@@ -1,0 +1,24 @@
+deploy/all-in-one/test_archive_identity.py
+  s_ecdc0692ab40f8::t_4e3c314cd85077 81
+  s_ecdc0692ab40f8::t_2ef69950ab2bde 1-80,82-85
+deploy/all-in-one/build.py
+  s_ecdc0692ab40f8::t_2ef69950ab2bde 296-306,383,396,406
+  s_ecdc0692ab40f8::t_ee18fc05722c72 307-322
+  s_ecdc0692ab40f8::t_4e3c314cd85077 323,327,333,397
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "fab06bce4d8ed8a2182436f8cd265fd989c7d0a6",
+  "prompts": {},
+  "sessions": {
+    "s_ecdc0692ab40f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a181b8-d240-7e53-a5f3-51f48e363871",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

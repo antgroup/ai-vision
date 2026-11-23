@@ -1,0 +1,24 @@
+deploy/all-in-one/test_personal_smoke.py
+  s_80270f50a78a8e::t_c2bc41010fc79e 15,124-139
+  s_80270f50a78a8e::t_b79d49c4bbc54e 3,6,140-155
+deploy/all-in-one/sample_trace.py
+  s_80270f50a78a8e::t_efee71ebd01952 186
+deploy/all-in-one/smoke.py
+  s_80270f50a78a8e::t_3a0c1c4c389e3d 14-15,22,24,222-272,378-401,403-404,464
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4ab4af6025e397db4f63c8d051c05ce1456d0c3d",
+  "prompts": {},
+  "sessions": {
+    "s_80270f50a78a8e": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1f19d-1985-7b22-82e9-068aafc03da7",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

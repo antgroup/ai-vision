@@ -1,0 +1,257 @@
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_3aacf8368e5be4::t_4da4d2c4d8c59d 1727,1747,1761,1775,1779,1782-1783,1791-1793,1810-1811,1833-1842,1847-1848,1854-1864,1866-1889,1891-1916,1918-1920
+  s_3aacf8368e5be4::t_028e81d4767285 1758
+  s_3aacf8368e5be4::t_dbb190206f2c85 1865,1917
+  s_3aacf8368e5be4::t_e7b26a78d653fe 1627-1628
+  s_3aacf8368e5be4::t_30b9345248141c 637-669,2436
+  s_3aacf8368e5be4::t_4fc2e9cafda5c7 1890
+ai-vision/vfe/src/components/diagnose/specialistPolicy.ts
+  s_3aacf8368e5be4::t_91cbdd52b91286 15-16,39-41,49-53,249-252,258-264
+  s_3aacf8368e5be4::t_dbb190206f2c85 42-48,253-257
+agentlens/tests/unit/diagnoser/test_specialist_contract_rules.py
+  s_3aacf8368e5be4::t_955d01a56049c0 63-65,83-88,107-115,123-128,253-260,262-265
+  s_3aacf8368e5be4::t_d187565b5a1b56 214-238
+  s_3aacf8368e5be4::t_d98e1c675f28c3 141-154,159-163
+  s_3aacf8368e5be4::t_6e7b218fba8636 1-62,66-67,76-82,89,91-106,116-122,129-138,242-248,261,266-270
+  s_3aacf8368e5be4::t_742d6c9255d515 164,177,180-184,191-210,212-213,239-241
+  s_3aacf8368e5be4::t_5cd41599779123 68-75,90,139-140,165-176,178-179,185-186,190,211,249-252
+  s_3aacf8368e5be4::t_0bd199203c7020 187-189
+  s_3aacf8368e5be4::t_fc724b471863e9 155-158
+agentlens/tests/unit/web/routes/test_diagnoser_routes.py
+  s_3aacf8368e5be4::t_e7843a838bc65d 61,81,121-156
+  s_3aacf8368e5be4::t_5001825334c2c8 84-90
+  s_3aacf8368e5be4::t_07a11ae23c0263 983-985
+  s_3aacf8368e5be4::t_0bf8e0304b5429 52-60,62-80,82-83,91-120,157-158
+  s_3aacf8368e5be4::t_40e5935ff9bde0 986-1003
+ai-vision/aivision-py-be/apps/core/tests/test_diagnosis_run_offline.py
+  s_3aacf8368e5be4::t_f9e63ba99af32a 23-25,28-32,39-48,57-62
+  s_3aacf8368e5be4::t_72ed62461a7706 76-78,83-85
+  s_3aacf8368e5be4::t_485591d4e6f028 66-75,79-82,86-98
+  s_3aacf8368e5be4::t_29cf699faa0284 12-13,15-19,26-27,33-38,49-56,63-65
+ai-vision/aivision-py-be/apps/core/services/diagnosis_specialist.py
+  s_3aacf8368e5be4::t_ebd47a0b3b9f68 99,105-122,128-129,141-142
+ai-vision/aivision-py-be/apps/core/services/diagnosis_specialist_input.py
+  s_3aacf8368e5be4::t_6f345dfa22d991 15-16,28-30,149-150,230-245
+agentlens/docs/adr/http-api/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 25,33
+agentlens/tests/unit/diagnoser/test_specialist_policies.py
+  s_3aacf8368e5be4::t_6e7b218fba8636 32,35
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_3aacf8368e5be4::t_0f8ff8f5517efb 263
+  s_3aacf8368e5be4::t_13d6d2d0547712 197
+ai-vision/vfe/src/components/diagnose/diagnoser/DiagnoserCard.tsx
+  s_3aacf8368e5be4::t_d1c175a49b2d53 21,30,42-46,78,179,187,194
+ai-vision/aivision-py-be/apps/core/tests/test_agentlens_proxy_scope.py
+  s_3aacf8368e5be4::t_3698cf4ee877f5 400,420,438-440
+ai-vision/vfe/src/components/diagnose/diagnoser/ModelConnectionPickerModal.tsx
+  s_3aacf8368e5be4::t_99100e49472584 17,36,40-43,50,57,79-82,87-88,90-95,101-104,106-109,137-139,153-157,176,191-194
+  s_3aacf8368e5be4::t_47ff26d59f92ca 105
+agentlens/docs/adr/job/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 30,42
+ai-vision/vfe/tests/builtinRuleLabels.test.ts
+  s_3aacf8368e5be4::t_1c07e1b1ad121e 18-20,61-102
+  s_3aacf8368e5be4::t_3c9579102b736c 103
+agentlens/tests/unit/web/routes/test_specialist_routes.py
+  s_3aacf8368e5be4::t_6e7b218fba8636 125,133-140,229,235-246
+  s_3aacf8368e5be4::t_d76234168424ce 247-248
+ai-vision/vfe/src/components/diagnose/diagnoser/SpecialistConfigurationForm.tsx
+  s_3aacf8368e5be4::t_dbb190206f2c85 55-60,97-99,183-196,253-256,356-358,399-402,441-446,464-466,470-474,512-516,518-530,534-538,577,606-622,625-632,986-989,997-999,1008-1013,1016-1018,1023-1030,1036-1044,1211-1215,1227-1233,1245-1247
+  s_3aacf8368e5be4::t_9aceef1e8c4832 980-985,990-996,1000-1007,1014-1015,1019-1022,1031-1035,1045-1063,1143,1149-1159,1170,1238,1240
+  s_3aacf8368e5be4::t_f0d4159f36f141 1103,1105-1107,1136-1137
+  s_3aacf8368e5be4::t_7e9c4681aed318 21,33,46-47,71-72,100,103,109,216-217,257-259,310-313,355,360-365,415,439-440,447,501-504,507-511,517,531-533,539-540,576
+  s_3aacf8368e5be4::t_028e81d4767285 104-108,1104,1108-1135
+  s_3aacf8368e5be4::t_de34d44ae90a60 1097-1102
+  s_3aacf8368e5be4::t_e504fe026bf1bf 1216-1223
+  s_3aacf8368e5be4::t_b012d8473f2a22 359
+ai-vision/vfe/src/features/model-connections/ModelConnectionSelect.tsx
+  s_3aacf8368e5be4::t_b69911be02e23e 21,30,50
+ai-vision/vfe/src/components/diagnose/diagnoser/TrialResultView.tsx
+  s_3aacf8368e5be4::t_cb5587642abe33 7,23-24,29,34,51,79
+  s_3aacf8368e5be4::t_dbb190206f2c85 8-22,52-57,80,129-140,152-154,156-160,179-182
+agentlens/tests/unit/service/test_sandbox_snapshot.py
+  s_3aacf8368e5be4::t_65d2bdf97c6681 123,135
+  s_3aacf8368e5be4::t_5cd41599779123 4,9,104-122,126-134,136
+  s_3aacf8368e5be4::t_cc241fa399425f 124-125
+  s_3aacf8368e5be4::t_f8557dc7c6dc54 137-138
+ai-vision/vfe/tests/specialistDiagnosisDom.test.ts
+  s_3aacf8368e5be4::t_dbb190206f2c85 317-319,353-381,383-384,388-403,410-424,431-465,467-468,475-493,2198-2218,2222-2225
+  s_3aacf8368e5be4::t_9ed4efa5fd5eb3 494-497,1640-1643,2196-2197,2219-2221,2226-2231
+  s_3aacf8368e5be4::t_95ff73ead7463b 1490,1497-1503,1511,1521,1528,1580,1584-1591,1628-1633,1635-1638
+  s_3aacf8368e5be4::t_33bff9e3c63950 1645-1747,1749-1756,1758-1760
+  s_3aacf8368e5be4::t_2cc666b3b8f32c 320,351-352,382,385-387,404-409,425-430,466,469-474
+  s_3aacf8368e5be4::t_e9ac4a13ab74d6 1634,1639
+  s_3aacf8368e5be4::t_9eaef2ef86ca4a 1644,1748,1757,2232
+ai-vision/vfe/src/components/diagnose/diagnosisRunLabels.ts
+  s_3aacf8368e5be4::t_f3b1c81468071c 2-50,52-54,97-99
+  s_3aacf8368e5be4::t_22d6c99ebefed1 51
+agentlens/docs/adr/dataset/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 43
+ai-vision/vfe/src/components/diagnose/diagnoser/SpecialistTrialEvidence.tsx
+  s_3aacf8368e5be4::t_dbb190206f2c85 42-46,187-191,220-227,249-255,273-286,288-295,409-412,415-420,426-430,435-443
+  s_3aacf8368e5be4::t_e3069cd00797b6 2,4-5,39-41,179-186,192-196,198,200,203-205,209-213,217-219,228-231,287,342,344,346,348,350,352,376,378,380,404-408,413-414,421-425,431-434,444-445
+agentlens/docs/adr/diagnoser/specialist-material-policy.md
+  s_3aacf8368e5be4::t_44f6b52206e3c8 15,104-106,108-111,113-114,116-124,126-135,137,141,143,148,150,209
+  s_3aacf8368e5be4::t_f28cf44dd1f545 112,115
+  s_3aacf8368e5be4::t_8c9c664cc0b23c 107,125,136,138-140,142,144-147,149,151-208,210-211
+agentlens/docs/adr/diagnoser/README.md
+  s_3aacf8368e5be4::t_daec3e4c2c7b9f 91
+  s_3aacf8368e5be4::t_bef68f4d6ca3e2 22
+  s_3aacf8368e5be4::t_4bf64f14aeee21 16
+agentlens/docs/adr/task-stats/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 32
+agentlens/docs/adr/scope/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 31
+agentlens/docs/adr/security/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 51
+agentlens/src/agentlens/web/routes/job.py
+  s_3aacf8368e5be4::t_b7720dc071947f 87-92
+agentlens/docs/adr/metric-result/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 44
+agentlens/src/agentlens/diagnoser/executors/rule/specialists.py
+  s_3aacf8368e5be4::t_b325f25f9a92b3 6,21-22,240-305,309-341
+  s_3aacf8368e5be4::t_21d5c3f34166d5 8
+  s_3aacf8368e5be4::t_955d01a56049c0 306-308
+agentlens/docs/api.md
+  s_3aacf8368e5be4::t_49618412f35226 1590
+  s_3aacf8368e5be4::t_3cc55afb03969c 1350-1351,1591-1592
+  s_3aacf8368e5be4::t_982d625af54806 1583-1584
+  s_3aacf8368e5be4::t_812cceaa4e6430 280,1354,1588-1589
+  s_3aacf8368e5be4::t_75b56bdeaefff7 1661-1662,1674,1680-1681
+  s_3aacf8368e5be4::t_833a05807a95ac 1682
+ai-vision/aivision-py-be/apps/core/tests/test_diagnosis_specialist_input.py
+  s_3aacf8368e5be4::t_eeb215c3748336 64-76,113-159
+  s_3aacf8368e5be4::t_04b4a712d9a529 160
+agentlens/docs/diagnoser/README.md
+  s_3aacf8368e5be4::t_5087e3f37e3b8d 14,546
+  s_3aacf8368e5be4::t_38baeff8becdc8 468-469
+  s_3aacf8368e5be4::t_227152e0c3864f 544-545,549-550
+ai-vision/vfe/tests/quickDiagnosisDom.test.ts
+  s_3aacf8368e5be4::t_29c746499aada3 631,642-644
+  s_3aacf8368e5be4::t_bfcd9593327822 80-81,700-703,718-719,723-725,729-732,735-741,761-783,786-790,796-809,814-827,832-834,836,847-852,860-869,883-891,915-916
+  s_3aacf8368e5be4::t_cb1f08c7daf494 901-903
+  s_3aacf8368e5be4::t_5ae9a372b6f33e 1957-1987
+  s_3aacf8368e5be4::t_aecf13cfa6100b 698-699,705-717,726-728,742-760,837-846,895-900,904-909,911-914
+  s_3aacf8368e5be4::t_4b0bb6e3b08935 704,720-722,733-734,784-785,791-795,810-813,828-831,853-859,870-882,892-894,910
+  s_3aacf8368e5be4::t_40c9e075e6ddf8 835
+  s_3aacf8368e5be4::t_c97bafbc514224 917
+ai-vision/vfe/src/pages/diagnose/DiagnoserPage.tsx
+  s_3aacf8368e5be4::t_fb797ae26b2730 808-812
+  s_3aacf8368e5be4::t_f55f04cea6469c 207
+  s_3aacf8368e5be4::t_aa48a74e57ddd7 32,39,197-199,201-206,312,425-431,434,436-439,552-561,608,733-737,799-807,813-814,822-827
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx
+  s_3aacf8368e5be4::t_fe5346b929bacd 43
+  s_3aacf8368e5be4::t_a3e8f0c2e5d8af 2,9,11-12,40-42,44-48,94-98,100-125,131-153,155,173,193-195
+  s_3aacf8368e5be4::t_4b0bb6e3b08935 157,161-172,174-176
+  s_3aacf8368e5be4::t_ffb4c729c2b6a7 126-130,156,158-160,177-192
+ai-vision/aivision-py-be/apps/core/views/agentlens_proxy.py
+  s_3aacf8368e5be4::t_329b8fdf7ff9a7 779
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx
+  s_3aacf8368e5be4::t_e5832e589f0246 153
+agentlens/src/agentlens/service/execution_snapshot.py
+  s_3aacf8368e5be4::t_b7720dc071947f 130-140
+agentlens/src/agentlens/service/datasource/specialist_materials.py
+  s_3aacf8368e5be4::t_72ad5b175da6f9 300-304,355-356,359-361
+  s_3aacf8368e5be4::t_ecf7a1a1de415b 339-342,357-358,362-368,414
+  s_3aacf8368e5be4::t_b325f25f9a92b3 323,329-331,352-353
+  s_3aacf8368e5be4::t_93e2029e92fb45 9,372-385,393,404-405,408-413
+  s_3aacf8368e5be4::t_e1a30c65da5efb 7,13-17,20,208,211,214,229-257,259-299,305-322,324,326-328,332-334,336-338,343-351,354,369-371,386-392,394-403,406-407,415-419
+  s_3aacf8368e5be4::t_f06bc8897da3d1 258,325,335
+  s_3aacf8368e5be4::t_c4463821f6d841 420-421
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_3aacf8368e5be4::t_028e81d4767285 1766,1898
+  s_3aacf8368e5be4::t_4da4d2c4d8c59d 1735,1755,1769,1783,1790-1791,1799-1801,1818-1819,1841-1850,1855-1856,1862-1872,1874-1897,1899-1924,1926-1928
+  s_3aacf8368e5be4::t_dbb190206f2c85 1873,1925
+  s_3aacf8368e5be4::t_30b9345248141c 636-668,2444
+  s_3aacf8368e5be4::t_e7b26a78d653fe 1635-1636
+agentlens/tests/unit/service/test_saved_diagnosis_runs.py
+  s_3aacf8368e5be4::t_cdd6e34c3ebfc1 76,97-99,108-110,120,123-127
+  s_3aacf8368e5be4::t_ed61c300334b9d 139-151
+  s_3aacf8368e5be4::t_9f023582602408 71-75,77-86,89-96,100-107,111-119,121-122,128-138,152
+  s_3aacf8368e5be4::t_5001825334c2c8 87-88
+agentlens/docs/adr/diagnosis-record/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 30
+ai-vision/vfe/src/components/diagnose/diagnoseAdapters.ts
+  s_3aacf8368e5be4::t_189ea92c6bc2ad 18,189-190,222-223
+agentlens/src/agentlens/web/routes/quick_runs.py
+  s_3aacf8368e5be4::t_716dd28f475881 17-18,49,56-60,66-77
+agentlens/src/agentlens/service/datasource/runtime.py
+  s_3aacf8368e5be4::t_bb6643bee1397e 24,29-33
+agentlens/src/agentlens/domain/specialist_policy.py
+  s_3aacf8368e5be4::t_bb6643bee1397e 122-142,144-150,254-255,258-263
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_3aacf8368e5be4::t_028e81d4767285 1749,1881
+  s_3aacf8368e5be4::t_dbb190206f2c85 1856,1908
+  s_3aacf8368e5be4::t_4da4d2c4d8c59d 1718,1738,1752,1766,1770,1773-1774,1782-1784,1801-1802,1824-1833,1838-1839,1845-1855,1857-1880,1882-1907,1909-1911
+  s_3aacf8368e5be4::t_e7b26a78d653fe 1618-1619
+  s_3aacf8368e5be4::t_30b9345248141c 619-651,2427
+agentlens/docs/adr/projection/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 42,45,55
+ai-vision/aivision-py-be/apps/core/services/diagnosis_quick_run.py
+  s_3aacf8368e5be4::t_f9e63ba99af32a 58-62
+  s_3aacf8368e5be4::t_62001ec612c224 186
+  s_3aacf8368e5be4::t_59e56ff401a71a 47-57,63
+agentlens/src/agentlens/web/routes/diagnoser.py
+  s_3aacf8368e5be4::t_03f49280db095f 516,518,523,777,826,903-909,980-1007
+  s_3aacf8368e5be4::t_bec51a2275ca12 1008-1009
+ai-vision/vfe/src/components/diagnose/diagnoser/DiagnoserDetailDrawer.tsx
+  s_3aacf8368e5be4::t_a54c17bccf95da 48-49,62-63,208,210-214,241-258,260-269,271
+  s_3aacf8368e5be4::t_74bf5e943aed31 79,81
+  s_3aacf8368e5be4::t_8619b5642234a2 75-76
+  s_3aacf8368e5be4::t_6a9a2366de5034 259
+agentlens/src/agentlens/service/quick_runs.py
+  s_3aacf8368e5be4::t_50e42beb5dc4a0 14,40,143-146
+agentlens/docs/diagnoser/specialists.md
+  s_3aacf8368e5be4::t_6befbfbeaa09f4 16-17,19,23-24,41-42,45,62-68
+  s_3aacf8368e5be4::t_0ef1d90a9962cf 20-21
+  s_3aacf8368e5be4::t_33857e0dc3db63 69-71
+  s_3aacf8368e5be4::t_b54cf83da34732 48-49
+  s_3aacf8368e5be4::t_de418267a1dae3 72
+agentlens/docs/adr/llm-judge/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 36
+ai-vision/aivision-py-be/apps/core/tests/test_diagnosis_specialist_offline.py
+  s_3aacf8368e5be4::t_2c9fce12f3ddeb 16,156-183,188
+  s_3aacf8368e5be4::t_f138aa23420208 184-187
+  s_e9b64f95b6f8f0::t_e8365e9a3caed9 189
+agentlens/src/agentlens/diagnoser/definitions/specialists.py
+  s_3aacf8368e5be4::t_bb6643bee1397e 13,21,98-117
+  s_3aacf8368e5be4::t_955d01a56049c0 14-20
+agentlens/src/agentlens/service/specialists.py
+  s_3aacf8368e5be4::t_bb6643bee1397e 199,202,296,501-502
+agentlens/docs/adr/executor/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 37,49,107
+agentlens/docs/diagnoser/llm/general-core.md
+  s_3aacf8368e5be4::t_897c8876f5544e 33
+  s_3aacf8368e5be4::t_4aa8783d345d8a 31-32,34-36
+agentlens/docs/adr/task/README.md
+  s_3aacf8368e5be4::t_f9e63ba99af32a 33,37,60,62
+agentlens/docs/adr/diagnoser/builtin-definition-source.md
+  s_3aacf8368e5be4::t_975ad9f72d1ba5 301-303
+  s_3aacf8368e5be4::t_9837674137db61 160,222-224,226-229,231-232,234-253
+  s_3aacf8368e5be4::t_712a23d2d46968 230,233
+  s_3aacf8368e5be4::t_3dd9bb4a1a7bb7 225,254-300,304-314
+  s_3aacf8368e5be4::t_81229c714c41f9 111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4f1a1c0dafd751fc1a9d41720cc248c013ed0b0d",
+  "prompts": {},
+  "sessions": {
+    "s_3aacf8368e5be4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e756-f330-72a2-a4bc-0c5d5cfdd4ef",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_e9b64f95b6f8f0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ce77-82ff-7431-a6e8-b8aa6de748b7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

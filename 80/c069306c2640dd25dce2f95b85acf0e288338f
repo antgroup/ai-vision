@@ -1,0 +1,31 @@
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_0ba4aa59e34a4f::t_ea7862702df689 6-9
+ai-vision/vfe/src/components/traces/shared/TraceDocumentPreviewContent.tsx
+  s_0ba4aa59e34a4f::t_ea7862702df689 16,20,24,53-58,148-162,164-185
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_0ba4aa59e34a4f::t_ea7862702df689 6-9
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_0ba4aa59e34a4f::t_ea7862702df689 6-9
+ai-vision/vfe/tests/e2e/traceDocuments.spec.ts
+  s_0ba4aa59e34a4f::t_5c14bc6b0cabe7 848,851,880-888,902-908,911,922,933
+ai-vision/vfe/src/components/traces/shared/traceMediaText.ts
+  s_0ba4aa59e34a4f::t_ea7862702df689 5-6,25-29
+ai-vision/vfe/src/components/traces/shared/TraceTextContent.tsx
+  s_0ba4aa59e34a4f::t_ea7862702df689 31,36,53,55,67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "80c069306c2640dd25dce2f95b85acf0e288338f",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

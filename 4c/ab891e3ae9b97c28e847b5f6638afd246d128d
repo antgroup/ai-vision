@@ -1,0 +1,19 @@
+docs/adr/trace-data-flow/research/oceanbase-execution-profile-20261107.md
+  s_a4750bbd0b03d9::t_74fcd7633166fd 47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4cab891e3ae9b97c28e847b5f6638afd246d128d",
+  "prompts": {},
+  "sessions": {
+    "s_a4750bbd0b03d9": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1b0ca-3147-7952-9d66-907afe0a5268",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

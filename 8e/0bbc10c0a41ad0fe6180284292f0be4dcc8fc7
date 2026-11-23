@@ -1,0 +1,49 @@
+ai-vision/vfe/src/components/product-guide/ProductGuide.tsx
+  s_e9b64f95b6f8f0::t_06f90662278cf4 394-395,446-457,699-703,881
+ai-vision/vfe/tests/e2e/traceCompareLinkage.spec.ts
+  s_e9b64f95b6f8f0::t_06f90662278cf4 125-241
+ai-vision/vfe/src/components/product-guide/DemoConsentDialog.tsx
+  s_e9b64f95b6f8f0::t_06f90662278cf4 73,75,78,82-83,109,147,209-215
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_e9b64f95b6f8f0::t_06f90662278cf4 6112,6178
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_e9b64f95b6f8f0::t_06f90662278cf4 6109,6175
+README.zh-CN.md
+  s_e9b64f95b6f8f0::t_9fe9ffcf27e73b 37
+ai-vision/vfe/tests/e2e-platform/onboardingDemo.spec.ts
+  s_e9b64f95b6f8f0::t_06f90662278cf4 170-178,203-212,311-317,361-363
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  s_e9b64f95b6f8f0::t_06f90662278cf4 243-334,1193-1210,1462-1480
+ai-vision/vfe/tests/e2e/productGuide.fixtures.ts
+  s_e9b64f95b6f8f0::t_06f90662278cf4 22-24,417-427
+ai-vision/aivision-py-be/apps/core/views/onboarding_demo.py
+  s_e9b64f95b6f8f0::t_06f90662278cf4 182-183
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_e9b64f95b6f8f0::t_06f90662278cf4 970,994-997,1800,1820,2005
+ai-vision/vfe/tests/e2e/skillTrace.spec.ts
+  s_e9b64f95b6f8f0::t_06f90662278cf4 38-40,52-53,55,58,66-73,79-122
+ai-vision/aivision-py-be/apps/core/tests/test_onboarding_demo.py
+  s_e9b64f95b6f8f0::t_06f90662278cf4 442-524
+  s_e9b64f95b6f8f0::t_a0f104d902a2fb 25
+  s_e9b64f95b6f8f0::t_f5d081a55f44ed 525
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_e9b64f95b6f8f0::t_06f90662278cf4 6112,6178
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_e9b64f95b6f8f0::t_06f90662278cf4 69-70,1498,1508,1520,1547-1558,1573,1582
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8e0bbc10c0a41ad0fe6180284292f0be4dcc8fc7",
+  "prompts": {},
+  "sessions": {
+    "s_e9b64f95b6f8f0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ce77-82ff-7431-a6e8-b8aa6de748b7",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

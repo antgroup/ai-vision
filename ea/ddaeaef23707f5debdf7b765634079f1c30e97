@@ -1,0 +1,315 @@
+ai-vision/vfe/src/features/model-connections/ModelConnectionSelect.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 21,30,50
+ai-vision/vfe/src/components/diagnose/diagnoser/SpecialistConfigurationForm.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1,21,33,46-47,55-60,71-73,97-100,103-109,115,118-155,163,166,174,183-203,216-217,228,253-259,310-313,355-373,381,399-402,415,439-447,464-466,470-474,481,498,501-504,507-540,546-552,576-577,606-622,625-632,980-1063,1097-1137,1143,1149-1159,1170,1211-1223,1227-1233,1238,1240,1245-1247
+ai-vision/aivision-py-be/apps/core/views/diagnosis_quick_run.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 158
+ai-vision/docs/diagnose/design.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 48-51,67,82-83,124,143-151
+ai-vision/vfe/src/features/model-pricing/api.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 2,78-79,85-90
+agentlens/src/agentlens/web/routes/diagnoser.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 37,39,77,92,176-179,212,257,289-305,377,379,410-413,438-490,516,518,523,545,554,557-558,560-564,566-567,584-617,631,635-637,641-645,695-697,706,777,826,903-909,980-1007
+  s_7ddb4c6ac82aba::t_66eed5dea247cd 1008-1009
+ai-vision/vfe/tests/quickDiagnosis.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 211-253
+ai-vision/vfe/src/agents/dashboards/DashboardEntry.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 25,82,234,366-372,380-385,388-406,420,422
+agentlens/tests/unit/web/routes/test_specialist_routes.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 125,133-140,229,235-246
+  s_7ddb4c6ac82aba::t_0840220c845cc3 247-248
+ai-vision/aivision-py-be/apps/core/tests/test_diagnosis_specialist_offline.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 16,156-188
+  s_7ddb4c6ac82aba::t_c3fa8c9ce6d875 189
+ai-vision/vfe/tests/traceProcessNavigation.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-85
+agentlens/docs/scheduling.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 366-367,372
+agentlens/docs/adr/diagnoser/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 16,22,24,91
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 226,228,235-236,395-400,629-661,883-897,900-914,1012,1014-1017,1027-1029,1039-1043,1053-1055,1065-1067,1077-1079,1089-1091,1101-1103,1583,1626-1632,1635-1636,1650-1652,1738,1758,1769,1772,1786,1790,1793-1794,1802-1804,1821-1822,1844-1853,1858-1859,1865-1931,2447,4514-4517,4751-4762,4932-4939,5192
+ai-vision/vfe/tests/builtinRuleLabels.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 18-20,61-102
+  s_7ddb4c6ac82aba::t_5dfb371f5bb392 103
+agentlens/docs/diagnoser/specialists.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 16-17,19-21,23-24,41-42,45,48-49,62-71
+  s_7ddb4c6ac82aba::t_5c7fd79812c84a 72
+ai-vision/vfe/src/components/diagnose/executionMessage.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 11-35
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 65-71,74-76,112,116,135,157-158,164-165,180-181,193-197,201-284,296,351-352,358-359,434-435,438-444,446,448-472
+ai-vision/vfe/src/components/diagnose/diagnoser/TrialResultView.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 7-24,29,34,51-57,79-80,129-140,152-154,156-160,179-182
+ai-vision/vfe/src/features/model-pricing/CostSummary.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 3,29,38,158-183,254-259,261-265,267-277,283-284,289,339-348,375-385,411,478-490,573-579,582-584,652-653
+ai-vision/aivision-py-be/apps/core/tests/test_diagnosis_specialist_input.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 64-76,113-159
+  s_7ddb4c6ac82aba::t_88e3288acf3293 160
+agentlens/tests/unit/service/test_sandbox_snapshot.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 4,9,104-136
+  s_7ddb4c6ac82aba::t_8a7f1405d71129 137-138
+agentlens/src/agentlens/diagnoser/executors/rule/builtin/base.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 43-46,49
+ai-vision/aivision-py-be/apps/core/tests/test_diagnosis_run_offline.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 12-13,15-19,23-98
+agentlens/tests/unit/service/test_saved_diagnosis_runs.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 71-152
+agentlens/src/agentlens/service/specialists.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 199,202,296,501-502
+agentlens/docs/diagnoser/llm/general-core.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 31-36
+ai-vision/aivision-py-be/apps/core/views/agentlens_proxy.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 488,497-498,502,504,779,786-789,791,811-847,849-867,869,872-873,878,881-882,889,892-893
+ai-vision/vfe/src/components/diagnose/diagnosisRunLabels.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 2-54,97-99
+ai-vision/vfe/src/components/traces/shared/TraceUserInputSummary.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 16,92-93,98-99,157-159,206,212-216,219-223,227-244
+agentlens/docs/adr/projection/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 42,45,55
+agentlens/docs/adr/http-api/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 25,33,35
+agentlens/src/agentlens/service/datasource/projection/contracts.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 11-18
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 242,244,252-253,412-417,646-678,900-914,917-931,1029,1031-1034,1044-1046,1056-1060,1070-1072,1082-1084,1094-1096,1106-1108,1118-1120,1600,1643-1649,1652-1653,1667-1669,1755,1775,1786,1789,1803,1810-1811,1819-1821,1838-1839,1861-1870,1875-1876,1882-1948,2464,4514-4517,4751-4762,4932-4939,5192
+agentlens/docs/adr/diagnosis-record/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 30
+ai-vision/vfe/tests/traceProcessDom.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 7-8,12-18,32-38,56,86-101,142-143,145-147,149-150,152,225,361,419-420,426,444,656-663,722-723,824-827,861-945
+  s_7ddb4c6ac82aba::t_6f7b908c5249ce 946-947
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1101-1103
+ai-vision/vfe/tests/specialistDiagnosisDom.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 317-320,351-555,1490,1494-1495,1497-1503,1505-1511,1521,1528,1546,1580,1584-1591,1628-1760,1968-1971,2196-2231
+  s_7ddb4c6ac82aba::t_41c9c67f8f994c 2232
+agentlens/docs/adr/diagnoser/specialist-material-policy.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 15,104-211
+ai-vision/vfe/src/components/traces-otel/traceProcessNavigation.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-35
+agentlens/docs/adr/security/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 51
+ai-vision/vfe/src/components/diagnose/diagnoser/CreateLlmDiagnoserModal.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 352-360
+agentlens/src/agentlens/diagnoser/definitions/specialists.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 13-21,98-117
+agentlens/src/agentlens/domain/execution_revision.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 6-9
+ai-vision/aivision-py-be/apps/core/tests/test_diagnosis_quick_offline.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 44-50
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 154,242-243,713-716,721-725,728-730,741,744-749
+  s_7ddb4c6ac82aba::t_2a1546ef93dca3 750
+docs/testing/screenshots/trace-conversation-process/source-manifest.json
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-47
+agentlens/src/agentlens/kernel/worker/runner.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 23,203-219,548,1143
+agentlens/docs/adr/diagnoser/builtin-definition-source.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 111,160,222-314
+agentlens/docs/adr/task-stats/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 32
+ai-vision/vfe/tests/e2e/nativePrimaryMetrics.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-5,8-25,28-60,68,85-86,171-189,251-603,605
+  s_7ddb4c6ac82aba::t_ee6b2e1ba820f6 604
+ai-vision/vfe/tests/llmDiagnoserSpec.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 290,570
+ai-vision/vfe/tests/quickDiagnosisDom.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 80-81,631,642-644,698-917,1957-1987,4147-4241,4460-4467,4482,4486,4509,4536
+ai-vision/aivision-py-be/apps/core/tests/test_agentlens_proxy_scope.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 10-16,400,420,438-440,715-717,720,761-766,780-782,786,791,795,799-820,823-944
+  s_7ddb4c6ac82aba::t_ea4630710e9f3f 945
+agentlens/tests/unit/diagnoser/test_specialist_policies.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 32,35
+ai-vision/vfe/src/components/diagnose/quickDiagnosis.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 149-164
+ai-vision/vfe/src/pages/traces-otel/traceCompareData.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 4,20-26,63-68,84-85,368-386
+  s_7ddb4c6ac82aba::t_892f24e58d43fb 387-388
+ai-vision/vfe/tests/e2e/traceRootProcess.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-492
+ai-vision/vfe/tests/e2e/personalBuiltinDiagnoser.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-251
+agentlens/tests/unit/diagnoser/test_specialist_contract_rules.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-270
+agentlens/src/agentlens/service/datasource/trace.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 17-20,34,45,47-52,57-58
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisResult.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 5,87-90,101-105,127
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 85,88-93,317-323,376-379,542,558-560,565,718-759,767-768,800-823,825,841-842,845,873-879,913-920,928-972,983,1756-1758,1775-1777,1820-1829,1834-1835,1844-1847,1870-1871,1875-1924
+ai-vision/vfe/src/components/diagnose/diagnoserApi.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 60,64-65,67,69,75-87,90-91,93-94
+ai-vision/vfe/src/pages/diagnose/DiagnoserPage.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 5,37,39,41-43,63,136,183-188,197-211,213-216,219-223,239,241,296-312,410-419,425-431,434,436-439,443,446-502,534,552-561,582-586,600-602,608,714-728,733-737,742,748-758,762,799-814,820,822-834,837-848,850-852,857-858
+ai-vision/vfe/src/components/traces-otel/SpanDetailPanel.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 22,75-76,100-101,330-358,360-362,368,581
+agentlens/src/agentlens/web/routes/job.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 8,87-92,98
+ai-vision/vfe/src/components/traces-otel/SpanTypedContent.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1,99-101,109-111,131,133,135,147,158,174,176-177,179-210,212-219,221-237,239,241-260,265-268,272,274-280,284-289,329-344
+agentlens/src/agentlens/service/datasource/projection/projectors/framework/projector.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 9,57-60
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 2,9,12-13,42-50,96-100,102-161,163-203
+ai-vision/vfe/tests/e2e/traceCompareEvidence.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1229-1230
+ai-vision/vfe/tests/e2e/traceCompareDecisions.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 282
+ai-vision/aivision-py-be/apps/core/services/diagnosis_specialist.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 99,105-122,128-129,141-142
+ai-vision/vfe/src/components/diagnose/diagnoseAdapters.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 17-18,189-190,222-223,250,283-295
+  s_7ddb4c6ac82aba::t_57194811a09251 296
+ai-vision/vfe/tests/e2e/traceUserInput.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 191-195,212-224,234-253,255,265-273,276,374,380,405,407-411,415-416,418-425,430,441-450,456-460,462,603-610
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 30,91-97,99,112-113,208,273-274,278-279
+ai-vision/vfe/src/features/model-pricing/ModelPricingContent.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 107
+ai-vision/aivision-py-be/apps/core/views/__init__.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 222
+ai-vision/vfe/src/components/diagnose/specialistPolicy.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 15-16,39-53,249-264
+agentlens/docs/api.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 223,280,301-310,320,322,328-333,340,1350-1351,1354,1463,1583-1584,1588-1592,1661-1662,1674,1680-1681
+  s_7ddb4c6ac82aba::t_de0aa161cd1f79 1682
+ai-vision/vfe/tests/spanContentDom.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 85-192,499-505,509,1010-1016,1405-1423,1457
+agentlens/docs/diagnoser/rule/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 21,50,60,64-67
+  s_7ddb4c6ac82aba::t_9b69329fdfc10b 68
+agentlens/src/agentlens/service/datasource/specialist_materials.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 7,9,13-17,20,208,211,214,229-419
+  s_7ddb4c6ac82aba::t_bbb3f5a60d2e45 420-421
+ai-vision/vfe/src/components/diagnose/builtinDiagnoserPolicy.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-2,33-86
+ai-vision/vfe/tests/nativeTraceFilters.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 4,10-28
+agentlens/docs/adr/job/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 30,42
+ai-vision/vfe/tests/traceEvidence.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 814,818-831
+agentlens/docs/adr/scope/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 31
+ai-vision/vfe/tests/nativeTraceSummaryDom.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 712-713,719-720,1041-1045,1085,1107
+ai-vision/aivision-py-be/apps/core/services/diagnosis_quick_run.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 47-63,186
+ai-vision/vfe/src/components/diagnose/diagnoser/BuiltinRuleConfigurationDialog.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-237
+ai-vision/aivision-py-be/apps/core/services/diagnosis_specialist_input.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 15-16,28-30,149-150,230-245
+agentlens/docs/adr/llm-judge/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 36
+agentlens/docs/diagnoser/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 14,34,51,67-68,468-469,544-546,549-550
+agentlens/src/agentlens/web/schemas/diagnoser.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 2,4,26-29,35-38
+  s_7ddb4c6ac82aba::t_75ea8a8e38556a 39-40
+agentlens/src/agentlens/service/execution_snapshot.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 15-21,35-36,39,130-140,149,151-159,165-166,249,300-304,318-320,341,413,436,491,505,559-563,565,567,577,593-594
+ai-vision/vfe/src/components/diagnose/diagnoser/CreateDiagnoserModal.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 23,67-71
+ai-vision/vfe/src/components/traces-otel/SpanContentEnhancement.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-8,13,22,33-131,136-145,155-168,170-234,237-274,307,311,335,339,352-356,494,501,525-579
+ai-vision/vfe/src/components/layout/AppShell.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 598,604,620,626,642,648
+agentlens/docs/adr/executor/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 37,49,52,107
+ai-vision/vfe/tests/e2e/traceRootProcessReview.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-267
+ai-vision/aivision-py-be/apps/core/urls/api/diagnose.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 14,153-156
+  s_7ddb4c6ac82aba::t_dd7b182d40e468 157
+agentlens/docs/projection/trace-contract.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 115-125
+ai-vision/vfe/tests/e2e/traceConversationComplex.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-777
+ai-vision/vfe/tests/e2e/traceConversation.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-217
+ai-vision/vfe/tests/traceCompareData.test.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 109-176
+agentlens/docs/adr/task/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 33,37-38,60,62-63
+agentlens/src/agentlens/domain/specialist_policy.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 122-142,144-150,254-255,258-263
+agentlens/src/agentlens/service/quick_runs.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 14,40,143-146
+ai-vision/vfe/src/components/diagnose/diagnoser/CreateRuleDiagnoserForm.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 143,293-299,522-530,589-593
+ai-vision/vfe/src/components/layout/PageBreadcrumb.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 13,18,24,40-42,46-57,69-75
+agentlens/docs/adr/diagnoser/type-and-mode.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 15-16,56-123
+ai-vision/vfe/tests/e2e/relayTraceProcess.spec.ts
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 172-179,380-381,385-392,411-419,481-484
+agentlens/src/agentlens/service/datasource/projection/service.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 5,30-32,35-37
+agentlens/src/agentlens/diagnoser/executors/rule/specialists.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 6,8,21-22,240-341
+agentlens/src/agentlens/service/datasource/runtime.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 24,29-33
+ai-vision/vfe/src/components/diagnose/diagnoser/ModelConnectionPickerModal.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 17,33,36,40-43,47,50,57,79-82,87-88,90-95,101-109,137-139,153-157,176,191-194
+ai-vision/vfe/src/components/diagnose/diagnoser/DiagnoserDetailDrawer.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 25,47-52,61-66,69,73,75-76,79,81,101-151,208-235,241-269,271,286-304,319,346-367,371-395
+  s_7ddb4c6ac82aba::t_810f67216c41e3 396
+ai-vision/vfe/src/components/traces-otel/TraceRootIO.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-78
+agentlens/tests/unit/web/test_llm_generation_options.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 117-126
+agentlens/tests/unit/diagnoser/test_diagnoser_lifecycle.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 297
+ai-vision/vfe/src/components/diagnose/diagnoser/DiagnoserCard.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 6,21,30,37,42-46,78,90-93,138,179,187,194,198-220
+ai-vision/vfe/src/components/traces-otel/TraceProcessView.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1,3-9,12-13,15-17,31-39,41-64,66-71,79,85,92-95,98,236,279,285,294-385,389,397-398,400-401,410,449-458,460,477,484,487-530,541-578,642,648,685-689,700-701
+agentlens/tests/unit/kernel/worker/test_projection_failure_snapshot.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 12,15,95-98,175-258
+ai-vision/vfe/tests/e2e/traceSpanNavigation.spec.ts
+  s_7ddb4c6ac82aba::t_7615afbb7cd8bb 119-128,183,193
+  s_7ddb4c6ac82aba::t_e19a448cfbb48e 78,97,146-178,182,184-191
+ai-vision/vfe/src/components/traces-otel/TraceOverviewExcerpt.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-60
+ai-vision/vfe/package.json
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 49
+agentlens/docs/adr/dataset/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 43
+agentlens/docs/adr/metric-result/README.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 44
+agentlens/tests/unit/web/routes/test_diagnoser_routes.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 11,22-24,52-158,213-387,983-1003
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 241,243,253-254,413-418,647-679,900-914,917-931,1029,1031-1034,1040-1042,1044-1046,1056-1060,1066-1068,1070-1072,1078-1080,1082-1084,1094-1096,1106-1108,1114-1116,1118-1120,1600,1643-1649,1652-1653,1667-1669,1755,1775,1786,1789,1803,1807,1810-1811,1819-1821,1838-1839,1861-1870,1875-1876,1882-1948,2464,4511-4514,4748-4759,4929-4936,5189
+ai-vision/vfe/src/components/diagnose/diagnoser/SpecialistTrialEvidence.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 2,4-5,39-46,179-196,198,200,203-205,209-213,217-231,249-255,273-295,342,344,346,348,350,352,376,378,380,404-445
+docs/testing/trace-conversation-process-review-20261117.md
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-46
+ai-vision/vfe/src/components/traces-otel/TraceOverviewValue.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-102
+ai-vision/vfe/src/agents/dashboards/DashboardCost.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 1-175
+agentlens/src/agentlens/web/routes/quick_runs.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 17-18,49,56-60,66-77
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 11,41,52,102-106,173,180-186,964-978,1035,1054,1067-1069,1233,1244,1441
+agentlens/src/agentlens/diagnoser/registry.py
+  s_7ddb4c6ac82aba::t_20c750f2a9ab56 6-7,50-68,83-94
+  s_7ddb4c6ac82aba::t_9612a7c9f975aa 95-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "eaddaeaef23707f5debdf7b765634079f1c30e97",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

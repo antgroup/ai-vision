@@ -1,0 +1,42 @@
+README.md
+  s_d47cba2fff0854::t_8095a254048544 21,117
+  s_d47cba2fff0854::t_dfecba32fbe975 65
+  s_d47cba2fff0854::t_067a94ba996c62 69
+  s_d47cba2fff0854::t_746268d995ee26 32,42,45,47,63
+  s_d47cba2fff0854::t_75fb662b8f74e0 15
+  s_d47cba2fff0854::t_597fb650baeb42 53,98,119,121,138-139,141,143,147,165,167
+  s_d47cba2fff0854::t_6a5e88befab1eb 55-57
+  s_d47cba2fff0854::t_3aff3750699f2f 84
+  s_d47cba2fff0854::t_d28eca7b45318b 33
+  s_d47cba2fff0854::t_b126e35ad2206e 5,8,10,14,16-19,23,26-28,30,36,38
+  s_d47cba2fff0854::t_21db68ac584594 40
+  s_d47cba2fff0854::t_7e215beb71edba 71,74,76,106,109,111,131,149-150,154,156-157,159,161
+  s_d47cba2fff0854::t_34ea7cb8afa109 61,82,100
+  s_d47cba2fff0854::t_192df25203cd13 96,152
+  s_d47cba2fff0854::t_d39e191b909279 104,115
+  s_d47cba2fff0854::t_6e99c8715ebff0 136
+  s_d47cba2fff0854::t_db79d27428ec82 88-92,94,102,170,172,174
+  s_d47cba2fff0854::t_1f7e494251dcac 145
+  s_d47cba2fff0854::t_33d7e3edc84d35 129,132
+  s_d47cba2fff0854::t_049d23da6e6845 34,169
+  s_d47cba2fff0854::t_8cb867c91f2c11 123,125-127,146
+  s_d47cba2fff0854::t_9e7201c7093f53 67
+  s_d47cba2fff0854::t_2a81c41da34057 86
+  s_d47cba2fff0854::t_cb97f1136d078c 51,59,80,87,134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "962c5a4daa7afe7e82a7672ae50c47fdfe7d988d",
+  "prompts": {},
+  "sessions": {
+    "s_d47cba2fff0854": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ed83-8bc3-7652-856b-9e3b75235765",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

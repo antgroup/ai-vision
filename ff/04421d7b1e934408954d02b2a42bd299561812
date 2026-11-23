@@ -1,0 +1,258 @@
+ai-vision/vfe/tests/e2e/productGuide.fixtures.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 6-10,23,163-214,342-344,427-458,461-464,693-703,705,709-710,721-726,729,736-740,770-782,784-786,790-796,798-799
+ai-vision/vfe/tests/hermesDashboardIdentityDom.test.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 113-116
+docs/testing/trace-conversation-process-review-20261117.md
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-46
+ai-vision/aivision-py-be/apps/core/tests/test_onboarding_demo.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 10,58-114,209-211,300-302,305-306,314-315,323-324,328-355,391-397,403-405,410,413-415,417-432,435,437-439,461-503
+ai-vision/vfe/src/features/model-pricing/CostSummary.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 29,37,248,250,500,513-517,554-562
+ai-vision/aivision-py-be/apps/core/models/space_keys.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 25-33
+deploy/all-in-one/test_repack.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-103
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisPanel.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 114-115,748-759
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 6-9,12,108-286,1046,1059,1076-1078,1082-1084,1243-1249,1326-1379,1382
+  s_3aacf8368e5be4::t_150c7576dac1c6 1101-1103
+  s_3aacf8368e5be4::t_2fe6ed279cbe2c 1380-1381,1383
+ai-vision/vfe/src/components/traces-otel/SpanContentEnhancement.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-8,13,22,33-131,136-145,155-168,170-234,237-274,307,311,335,339,352-356,494,501,525-579
+ai-vision/vfe/tests/e2e-platform/onboardingShowcase.spec.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-282
+ai-vision/aivision-py-be/apps/core/tests/test_agent_scoped_shares.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 9,121-150
+  s_3aacf8368e5be4::t_81782751a5dc68 151
+ai-vision/aivision-py-be/apps/core/urls/api/biz.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 20,281-284
+  s_3aacf8368e5be4::t_fb27d5a5ea523f 285
+ai-vision/vfe/tests/e2e/traceRootProcess.spec.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-492
+ai-vision/aivision-py-be/apps/core/views/agent.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 5,15,18-24,30,33-39,393-469
+  s_3aacf8368e5be4::t_b70b07294ab14c 470-471
+ai-vision/aivision-py-be/apps/core/views/space_keys.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 14-18,54,63
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 85,88-93,317-323,376-379,542,558-560,565,718-759,767-768,800-823,825,841-842,845,873-879,913-920,928-972,983,1756-1758,1775-1777,1820-1829,1834-1835,1844-1847,1870-1871,1875-1924
+  s_3aacf8368e5be4::t_6eb7c49051df02 2-5,186,296,832,1133-1145,1170,1747,1766,2012
+ai-vision/vfe/src/pages/onboarding/frameworkGuides.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 54-67
+ai-vision/vfe/src/components/traces-otel/TraceRootIO.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-78
+ai-vision/vfe/src/components/traces-otel/traceProcessNavigation.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-35
+ai-vision/vfe/src/components/product-guide/DemoConsentDialog.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-9,11-14,36-42,45-75,81,87,98-166,171,176,178-182,185,187,218-219,222-239,241-258,261,265-268,283-287,291-295,298-365
+ai-vision/vfe/src/pages/traces-otel/NativeTracePage.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 168,185,192,1022-1033,1052-1058,1933,2031
+ai-vision/vfe/src/features/model-pricing/pricingQueryInvalidation.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 3-4,9
+ai-vision/vfe/src/components/agents/AgentCard.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 4,43,58,116,119-124,162-175,179-195
+ai-vision/vfe/src/agents/dashboards/DashboardEntry.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 45-48,392-394
+ai-vision/aivision-py-be/apps/core/services/onboarding_demo.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 6,23-26,41-43,85-101,117,175-215,217,235,245-275,285-289,298-304
+ai-vision/vfe/src/contexts/TimeFilterContext.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 11,13,18-24,52-53,70-73,138-142,160-164,172-173,177-178,181-182,187,190,193,197,202-219,262,275,331
+ai-vision/vfe/src/pages/LangfuseOnboardingPage.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 3,11,25,71-73,84,96,98,104-108,129-147,149-152,154-164,171-173,177-181,185-186,189-190,193-196,232-243,247-254,259-264,302,382-384,430,433,459,470-471,485-495,500,503-504,515-518,524,527,535-545,563-567,569
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 65-71,74-76,112,116,135,157-158,164-165,180-181,193-197,201-284,296,351-352,358-359,434-435,438-444,446,448-472
+ai-vision/aivision-py-be/apps/core/tests/test_langfuse_onboarding.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 3,22,33,95-287,401,469-480,490
+ai-vision/vfe/src/components/traces-otel/TraceOverviewValue.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-102
+ai-vision/vfe/tests/nativeTraceFilters.test.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 4,10-28
+ai-vision/vfe/src/components/product-guide/ProductGuide.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 19,21-26,101,153,163-184,277-281,284-288,290-294,329-362,364,367,482-486,894,899,972,1007-1017,1069-1070,1086-1087,1094,1099,1105,1202,1316-1320
+ai-vision/aivision-py-be/apps/core/tests/test_space_key_quota.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-107
+ai-vision/vfe/src/components/diagnose/TraceDiagnosisDialog.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 10
+  s_3aacf8368e5be4::t_12804ea0b63af9 41,125,127-132
+ai-vision/agent-plugins/tests/framework_e2e/execute_rag.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 250-251,294-295
+deploy/all-in-one/build.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 14-15,263-265,282,296,358-359,428-429
+ai-vision/vfe/src/lib/timeFilter.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 9-14,84-85,90-96,112-115,119,140-141,149-153,189-190
+ai-vision/vfe/tests/spanContentDom.test.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 85-192,499-505,509,1010-1016,1405-1423,1457
+ai-vision/vfe/tests/traceProcessNavigation.test.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-85
+ai-vision/aivision-py-be/apps/core/services/credential_service.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 13,22-32,76-91
+  s_3aacf8368e5be4::t_d8c4a1ad125988 92-93
+ai-vision/vfe/tests/traceSourceSwitchDom.test.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 93-96
+deploy/all-in-one/test_elf_strip.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-107
+ai-vision/aivision-py-be/apps/core/services/space_key_policy.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 7-11,15,23-43,45-54
+ai-vision/vfe/tests/e2e/traceCompareEvidence.spec.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1229-1230
+ai-vision/agent-plugins/tests/framework_e2e/generate_onboarding_demo.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1,7,13,18-19,21,38-67,69-109,118-120,128-138,140,142-153,156,158-168,186,189-193,195-204,215-231,244-255,257,262,270-291,304,308,311-315,320,322,324-339,342-344,349-365,410-412,418-602,614,616-635,638-640,642-646,651,658-663,675-954,970-971,973-976,978-987,992-994,1003-1008,1012,1021,1027-1031,1034-1037,1047-1085
+ai-vision/vfe/src/pages/onboarding/useOnboarding.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 2-15,19,80,205-317,321,325,328-329,346,354,360,381,461,465,469,479-503,505-512,530,559-562,568-572,578,597
+ai-vision/vfe/src/components/traces-otel/NativeSessionDetailPanel.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 2-5,349,382,799-804,810,813,961,973-977,980-992
+ai-vision/vfe/tests/traceProcessDom.test.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 7-8,12-18,32-38,56,86-101,142-143,145-147,149-150,152,225,361,419-420,426,444,656-663,722-723,824-827,861-945
+  s_3aacf8368e5be4::t_b8e8104ffb03a4 946-947
+ai-vision/vfe/src/components/product-guide/useProductGuide.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 6,11
+ai-vision/vfe/src/components/traces-otel/SpanTypedContent.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1,99-101,109-111,131,133,135,147,158,174,176-177,179-210,212-219,221-237,239,241-260,265-268,272,274-280,284-289,329-344
+ai-vision/aivision-py-be/apps/core/migrations/0038_project_onboarding_credentials.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-26
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 4495-4498,4732-4743,5165
+  s_3aacf8368e5be4::t_6eb7c49051df02 75-76,2594-2604,4841-4842,4913-4914,5881-5883,5885-5914,6002
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 195,343-345,351-355,368-386
+deploy/all-in-one/repack.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-124
+ai-vision/vfe/tests/nativeTraceSummaryDom.test.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 712-713,719-720,1041-1045,1085,1107
+ai-vision/aivision-py-be/apps/core/views/__init__.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 43
+ai-vision/aivision-py-be/apps/core/views/share.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 13,386-394
+  s_3aacf8368e5be4::t_e0169e7a256910 395
+ai-vision/vfe/tests/onboardingPagesDom.test.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 121-131,137-141,211,237-245,311-316,340-343,351,372-377,392-395,532-534,985-1155,1885-1981
+deploy/all-in-one/README.md
+  s_3aacf8368e5be4::t_6eb7c49051df02 20-65
+ai-vision/vfe/src/pages/traces-otel/traceCompareData.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 4,20-26,63-68,84-85,368-386
+  s_3aacf8368e5be4::t_932edf6cd5dbbf 387-388
+ai-vision/vfe/src/features/model-pricing/PricingCurrency.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 2,140,144-149,153,155,158,160-163,167-169,173-175,179-181,188
+ai-vision/vfe/src/pages/SharePage.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 42,195,254,309,341
+ai-vision/vfe/tests/e2e/agentSetupSaveOrder.spec.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-99
+ai-vision/vfe/tests/e2e/qualityTimeRange.spec.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 11,26-31,40,125-128,130,142-145,152,210-242
+  s_3aacf8368e5be4::t_a6c0798ab3381a 243-244
+ai-vision/vfe/src/agents/lib/agent-display.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-13,17,20
+ai-vision/vfe/tests/agentIntegrationsDom.test.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 22,76-80,246-247,261-268
+ai-vision/vfe/src/components/layout/AppShell.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 21,35-36,41-44,84,96-101,182,217-230,261-264,423,462-470,476,480-485,495-499,741-743,830,832-837,840,842-881,886-892
+ai-vision/vfe/tests/modelPricing.test.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 16,23-64,144,147-148,259,739-773
+  s_3aacf8368e5be4::t_19adbf412739dc 774
+ai-vision/aivision-py-be/apps/core/tests/test_pricing_inventory_snapshot.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 13-14,127-161
+  s_3aacf8368e5be4::t_eb0a363d9dd2fd 162-163
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 7,10,14,223-288
+  s_3aacf8368e5be4::t_18160ba721b2eb 289
+ai-vision/vfe/src/agents/traces/TraceEntry.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 36-39,63-69,77,524
+ai-vision/vfe/tests/e2e/traceRootProcessReview.spec.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-267
+ai-vision/vfe/src/components/header/agentselector/AgentSelector.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 180,182,187-188,194,197,202-205
+ai-vision/vfe/tests/traceCompareData.test.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 109-176
+deploy/all-in-one/slim.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-132
+ai-vision/vfe/src/components/header/TimeFilterControl.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 19,148-156,226-227,285-288
+ai-vision/vfe/tests/e2e/traceCompareDecisions.spec.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 282
+ai-vision/vfe/tests/e2e/agentSetupEditing.spec.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-160
+ai-vision/vfe/src/pages/RelayOnboardingPage.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 3-7,10,25,35-36,47,55,58,60,66-70,79-88,90,92,105-106,110,129-177,184-186,217,228-232,236-243,250,265-268,287-297,324,326,385,472-474
+deploy/all-in-one/test_slim.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-68
+ai-vision/aivision-py-be/apps/core/services/model_pricing.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 484,529-543
+ai-vision/aivision-py-be/apps/core/tests/test_pricing_inventory_transport.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 2,30-46,49-54
+ai-vision/vfe/package.json
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 49
+ai-vision/vfe/tests/e2e/traceConversation.spec.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-217
+docs/testing/screenshots/trace-conversation-process/source-manifest.json
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-47
+ai-vision/vfe/src/features/model-pricing/ModelPricingContent.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 1,4,18-19,42-43,45-47,56,66-80,88-99,106,108,111-126,233-239,259,261-265,276,284,290-291,293-300,352,370-376,447,590,733,740-744
+ai-vision/aivision-py-be/apps/core/views/onboarding_demo.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 119,127-129,140,147-148,167-172
+deploy/all-in-one/elf_strip.py
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-273
+ai-vision/vfe/src/components/traces-otel/TraceOverviewExcerpt.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-60
+ai-vision/vfe/src/components/header/AutoRefreshControl.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 21-25,45-46,48-52
+ai-vision/vfe/tests/e2e/relayTraceProcess.spec.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 172-179,380-381,385-392,411-419,481-484
+ai-vision/vfe/src/components/product-guide/DemoControls.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-38
+ai-vision/vfe/tests/e2e-platform/onboardingDemo.spec.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 197,270,321,331-337
+ai-vision/vfe/src/components/layout/SpaceSelect.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 43,132-133,150
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 11,41,52,102-106,173,180-186,964-978,1035,1054,1067-1069,1233,1244,1441
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_3aacf8368e5be4::t_6eb7c49051df02 76-77,2594-2604,4838-4839,4910-4911,5878-5880,5882-5911,5999
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1031-1033,1057-1059,1069-1071,1105-1107,4492-4495,4729-4740,5162
+ai-vision/vfe/tests/e2e/traceUserInput.spec.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 191-195,212-224,234-253,255,265-273,276,374,380,405,407-411,415-416,418-425,430,441-450,456-460,462,603-610
+ai-vision/vfe/tests/e2e/traceConversationComplex.spec.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1-777
+ai-vision/vfe/tests/traceEvidence.test.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 814,818-831
+ai-vision/vfe/tests/e2e/modelPricing.spec.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 45-46,308-309,316-326,432,435-461,463-493,496,501-618,621-622,626,628-637,644-734,777-803,940,942,1222,1230-1234,1237-1239,1477-1482,1506,1508
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 90-96,274
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 4495-4498,4732-4743,5165
+  s_3aacf8368e5be4::t_6eb7c49051df02 75-76,2568-2578,4841-4842,4913-4914,5881-5883,5885-5914,6002
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 703-706
+ai-vision/vfe/src/components/traces-otel/DetailDrawer/NativeDetailDrawer.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 27,46,72,119
+ai-vision/vfe/src/features/model-pricing/timeRange.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 1-21
+ai-vision/vfe/src/pages/onboarding/OnboardingPageTemplate.tsx
+  s_3aacf8368e5be4::t_6eb7c49051df02 33,53-54,67,83-88,156,158-159,166-170,198-207,217-328,445-447,482-498,510-513,547-636,648,650-652
+ai-vision/vfe/src/components/traces-otel/SpanDetailPanel.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 22,75-76,100-101,330-358,360-362,368,581
+  s_3aacf8368e5be4::t_6eb7c49051df02 68,93,423
+ai-vision/vfe/src/components/traces-otel/TraceProcessView.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 1,3-9,12-13,15-17,31-39,41-64,66-71,79,85,92-95,98,236,279,285,294-385,389,397-398,400-401,410,449-458,460,477,484,487-530,541-578,642,648,685-689,700-701
+ai-vision/vfe/src/components/traces/shared/TraceUserInputSummary.tsx
+  s_3aacf8368e5be4::t_f0b48fa2ac7257 16,92-93,98-99,157-159,206,212-216,219-223,227-244
+ai-vision/vfe/tests/modelConnectionNavigationDom.test.ts
+  s_3aacf8368e5be4::t_6eb7c49051df02 252
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ff04421d7b1e934408954d02b2a42bd299561812",
+  "prompts": {},
+  "sessions": {
+    "s_3aacf8368e5be4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e756-f330-72a2-a4bc-0c5d5cfdd4ef",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

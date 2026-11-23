@@ -1,0 +1,22 @@
+README.md
+  s_d47cba2fff0854::t_0bb6e13c123580 38,40,45,65,69,86-90,92,94,100,104,113
+  s_d47cba2fff0854::t_f8892739e8444a 61
+  s_d47cba2fff0854::t_5c424898125d51 121-123,125,128,132,141-142,148,150,161
+  s_d47cba2fff0854::t_4b4a39556aa040 143,166
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1316dd35c067932e7764bbfdaac32183f30cad8c",
+  "prompts": {},
+  "sessions": {
+    "s_d47cba2fff0854": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ed83-8bc3-7652-856b-9e3b75235765",
+        "model": "gpt-6.1-terra"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

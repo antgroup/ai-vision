@@ -1,0 +1,37 @@
+ai-vision/vfe/src/pages/LocalAuthPage.tsx
+  s_6f3b0c31205c4c::t_a95b6551f03752 1,5-18,30-33,167-169,223-227,244,322-324,342-353,355-360,367,370-371,382,389-408,410-416,418-494,496-561,564-630,632-635
+  s_6f3b0c31205c4c::t_31ad37d6b69741 495,631
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_6f3b0c31205c4c::t_6ec5382665697f 1994-1995
+  s_6f3b0c31205c4c::t_a95b6551f03752 1965,1969-1993
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_6f3b0c31205c4c::t_a95b6551f03752 1948,1952-1976
+  s_6f3b0c31205c4c::t_6ec5382665697f 1977-1978
+ai-vision/vfe/tests/e2e/localAuth.spec.ts
+  s_6f3b0c31205c4c::t_58d0a25456a84d 167-172,180-183,191-194,205-207,342-344,426-428
+  s_6f3b0c31205c4c::t_3a302bf857037b 244-246
+  s_6f3b0c31205c4c::t_17559fa44e3f8a 1-166,173-179,184-190,195-204,208-243,247-341,345-358,362-364,367-425,429-449,451-463
+  s_6f3b0c31205c4c::t_75a9cb3fa5f308 359-361,365-366
+  s_6f3b0c31205c4c::t_1438603c57a9ff 450
+ai-vision/vfe/src/pages/localAuth.css
+  s_6f3b0c31205c4c::t_a95b6551f03752 1-432
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_6f3b0c31205c4c::t_6ec5382665697f 1986-1987
+  s_6f3b0c31205c4c::t_a95b6551f03752 1957,1961-1985
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "a1485f2974a2143d4edf8d784b0489e36e5dbf63",
+  "prompts": {},
+  "sessions": {
+    "s_6f3b0c31205c4c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bb1-b435-7412-b35b-7e4148e67348",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
