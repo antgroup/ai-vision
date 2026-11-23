@@ -129,6 +129,12 @@ def install(repo, out, apps):
                 'HOME', 'USERPROFILE', 'APPDATA', 'LOCALAPPDATA', 'NODE_AUTH_TOKEN', 'NPM_CONFIG_USERCONFIG'}}
             dsh_env.update(HOME=str(private_home), USERPROFILE=str(private_home),
                 npm_config_userconfig=str(npm_config), XDG_CACHE_HOME=str(private_home / '.cache'))
+            if os.name == 'nt':
+                # Native npm dependencies use Windows application data for their build cache.
+                for name, subdirectory in (('APPDATA', 'Roaming'), ('LOCALAPPDATA', 'Local')):
+                    app_data = private_home / 'AppData' / subdirectory
+                    app_data.mkdir(parents=True, exist_ok=True)
+                    dsh_env[name] = str(app_data)
             pins = dsh_dependency_pins(npm, VERSIONS[app], dsh_env)
             (destination / 'package.json').write_text(json.dumps({'private': True,
                 'dependencies': {'@deepseek-ai/dsh': VERSIONS[app]}, 'overrides': pins}, indent=2) + '\n')
