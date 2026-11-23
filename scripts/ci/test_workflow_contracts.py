@@ -433,6 +433,17 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Unknown test tier", result.stderr)
 
+    def test_framework_gate_rejects_conflicting_platform_modes(self):
+        document = workflow("framework-e2e.yml")
+        declarations = triggers(document)["workflow_call"]["inputs"]
+        inputs = {key: definition["default"] for key, definition in declarations.items() if key != "tier"}
+        inputs.update(tier="release", platform=True, intel_docker=True, browser_only=True)
+        gate = document["jobs"]["result"]
+        needs = {job: {"result": "skipped"} for job in gate["needs"]}
+        result, _ = run_step(gate["steps"][0], inputs=inputs, needs=needs)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Intel Docker and browser-only are mutually exclusive for platform checks", result.stderr)
+
     def test_daily_sdk_smoke_requires_both_live_platform_gates(self):
         document = workflow("framework-e2e.yml")
         declarations = triggers(document)["workflow_call"]["inputs"]
@@ -874,11 +885,15 @@ class CallerContractTests(unittest.TestCase):
         document = workflow("intel-macos-docker.yml")
         self.assertEqual(set(triggers(document)), {"workflow_dispatch"})
         declarations = triggers(document)["workflow_dispatch"]["inputs"]
-        self.assertEqual(set(declarations), {"public_platform_images"})
-        self.assertEqual(declarations["public_platform_images"]["type"], "string")
-        self.assertIs(declarations["public_platform_images"]["required"], True)
+        self.assertEqual(set(declarations), {"release_manifest"})
+        self.assertEqual(declarations["release_manifest"]["type"], "string")
+        self.assertIs(declarations["release_manifest"]["required"], True)
         self.assertEqual(document["permissions"], {"contents": "read", "packages": "read"})
         jobs = document["jobs"]
+        fixture_step = jobs["inputs"]["steps"][-1]["id"]
+        self.assertEqual(jobs["inputs"]["outputs"], {
+            "public_platform_images": f"${{{{ steps.{fixture_step}.outputs.public_platform_images }}}}",
+        })
         families = {
             "framework": ("framework-e2e.yml", {"database": True}),
             "diagnostics": ("diagnostics-e2e.yml", {"database": True}),
@@ -891,7 +906,7 @@ class CallerContractTests(unittest.TestCase):
                 self.assertEqual(jobs[family]["uses"], f"./.github/workflows/{filename}")
                 self.assertEqual(jobs[family]["with"], {
                     "tier": "release", "intel_docker": True, "platform": True,
-                    "public_platform_images": "${{ inputs.public_platform_images }}", **selectors,
+                    "public_platform_images": "${{ needs.inputs.outputs.public_platform_images }}", **selectors,
                 })
         for job in jobs.values():
             self.assertNotIn("permissions", job)
@@ -914,26 +929,51 @@ class CallerContractTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0)
                     self.assertIn(job, result.stderr)
 
-    def test_intel_docker_wrapper_requires_the_public_source_fixture_projection(self):
+    def test_intel_docker_wrapper_only_projects_fixtures_from_the_checked_out_candidate(self):
         from public_registry import PUBLIC_REPOSITORY, product_image_repositories, source_fixtures
 
         step = workflow("intel-macos-docker.yml")["jobs"]["inputs"]["steps"][-1]
-        digest = "@sha256:" + "a" * 64
-        fixtures = source_fixtures({
+        sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+        images = {role: f"{repo}@sha256:{index:064x}"
+                  for index, (role, repo) in enumerate(product_image_repositories().items(), 1)}
+        manifest = {
             "source_repository": PUBLIC_REPOSITORY,
-            "images": {role: repo + digest for role, repo in product_image_repositories().items()},
-            "databases": {"oceanbase": "oceanbase/oceanbase-ce" + digest},
-        })
-        result, _ = run_step(step, inputs={"public_platform_images": json.dumps(fixtures)})
+            "source_sha": sha,
+            "images": images,
+            "databases": {"oceanbase": "oceanbase/oceanbase-ce@sha256:" + "a" * 64},
+        }
+        expected = source_fixtures(manifest)
+
+        def run_manifest(raw):
+            with tempfile.TemporaryDirectory(prefix="aivision-intel-fixtures-") as directory:
+                output = Path(directory) / "output"
+                env = dict(os.environ, GITHUB_SHA=sha, GITHUB_OUTPUT=str(output))
+                env.update({key: render(value, inputs={"release_manifest": raw})
+                            for key, value in step["env"].items()})
+                result = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", step["run"]],
+                                        cwd=ROOT, env=env, capture_output=True, text=True, timeout=10)
+                return result, output.read_text() if output.exists() else ""
+
+        result, output = run_manifest(json.dumps(manifest, indent=2))
         self.assertEqual(result.returncode, 0, result.stderr)
-        for invalid in ("", "[]", json.dumps({}),
-                        json.dumps({**fixtures, "gateway": fixtures["gateway"].split("@")[0] + ":latest"}),
-                        json.dumps({**fixtures, "gateway": "example.invalid/fixture" + digest}),
-                        json.dumps({**fixtures, "signoz": fixtures["backend"]})):
-            with self.subTest(invalid=invalid):
-                result, _ = run_step(step, inputs={"public_platform_images": invalid})
+        name, data = output.strip().split("=", 1)
+        self.assertEqual(name, "public_platform_images")
+        self.assertEqual(json.loads(data), expected)
+        for case, invalid in {
+            "empty": "",
+            "malformed": "{",
+            "array": json.dumps([]),
+            "missing source SHA": json.dumps({}),
+            "bare fixture map": json.dumps(expected),
+            "stale SHA": json.dumps({**manifest, "source_sha": "0" * 40}),
+            "wrong source repository": json.dumps({**manifest, "source_repository": "example/ai-vision"}),
+            "mutable image": json.dumps({**manifest, "images": {**images, "aivision-fe": images["aivision-fe"].split("@")[0] + ":latest"}}),
+            "wrong image repository": json.dumps({**manifest, "images": {**images, "aivision-fe": "example.invalid/fixture@sha256:" + "a" * 64}}),
+        }.items():
+            with self.subTest(case=case):
+                result, output = run_manifest(invalid)
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn("six pinned public source fixtures", result.stderr)
+                self.assertEqual(output, "")
 
     def test_database_architecture_reaches_helpers_and_keeps_release_image_pins(self):
         from release_assets import DATABASES

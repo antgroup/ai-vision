@@ -691,6 +691,9 @@ jobs:
         env:
           TIER: ${{ inputs.tier }}
           SDK_COVERAGE: ${{ inputs.sdk_coverage }}
+          PLATFORM_REQUESTED: ${{ inputs.platform }}
+          INTEL_DOCKER: ${{ inputs.intel_docker }}
+          BROWSER_ONLY: ${{ inputs.browser_only }}
           SELECTED_JSON: >-
             {"frontend": ${{ inputs.frontend }}, "frontend-browser": ${{ inputs.frontend }}, "backend-contracts": ${{ inputs.backend }}, "cli": ${{ inputs.cli }}, "contracts": ${{ inputs.contracts }}, "js-contracts": ${{ inputs.contracts }}, "docker-database": ${{ inputs.database }}, "browser-platform": ${{ inputs.platform && !inputs.intel_docker }}, "docker-platform": ${{ inputs.platform && !inputs.browser_only }}}
           RESULTS_JSON: ${{ toJSON(needs) }}
@@ -709,6 +712,8 @@ jobs:
               failures.append('Unknown test tier: ' + tier)
           if coverage not in {'full', 'smoke'}:
               failures.append('Unknown Docker SDK coverage: ' + coverage)
+          if all(os.environ[key] == 'true' for key in ('PLATFORM_REQUESTED', 'INTEL_DOCKER', 'BROWSER_ONLY')):
+              failures.append('Intel Docker and browser-only are mutually exclusive for platform checks')
           if coverage == 'smoke' and (tier != 'daily' or not selected['browser-platform'] or not selected['docker-platform']):
               failures.append('Docker SDK smoke requires Daily with both the Docker and the complete SDK/browser jobs')
           lines = ['## Selected checks', '', f'Docker SDK coverage `{coverage}`.', '',

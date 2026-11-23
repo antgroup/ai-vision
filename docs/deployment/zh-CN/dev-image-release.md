@@ -86,17 +86,17 @@ SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运�
 Agent 测试由独立手动工作流 [Intel macOS Docker](../../../.github/workflows/intel-macos-docker.yml)
 验收。通过后可为对应候选记录这些源码检查的结果。制品部署验收覆盖 Linux amd64。
 
-待工作流进入默认分支后，从候选源码检出目录执行。将 `SOURCE_REF` 设为指向 manifest
-中 `source_sha` 的分支或标签，将 `MANIFEST` 设为已核验的候选 `release-manifest.json`。
-用与正式 CI 相同的命令生成源码测试镜像 JSON，其中包含按摘要固定的 SigNoz 精度 fixture。
+待工作流进入默认分支后，从候选源码检出目录执行。将 `SOURCE_REF` 设为指向清单中
+`source_sha` 的分支或标签，将 `MANIFEST` 设为 **Release images** 工作流中已核验的候选
+`release-manifest.json`。传入完整清单后，工作流会核对清单记录的源码 SHA 与实际检出提交，
+并生成与正式 CI 相同的源码测试镜像列表，其中包含按摘要固定的 SigNoz 精度 fixture。
 
 ```bash
 SOURCE_REF=...
 MANIFEST=release-manifest.json
 test "$(git rev-parse "${SOURCE_REF}^{commit}")" = "$(jq -er '.source_sha' "$MANIFEST")" &&
-  public_platform_images=$(python3 scripts/ci/public_registry.py source-fixtures --manifest "$MANIFEST") &&
   gh workflow run intel-macos-docker.yml -R antgroup/ai-vision \
-    --ref "$SOURCE_REF" -f public_platform_images="$public_platform_images"
+    --ref "$SOURCE_REF" -F "release_manifest=@$MANIFEST"
 ```
 
 核对 Actions 运行的提交 SHA 与 manifest 一致，并把结果与候选回执一同留存。这个

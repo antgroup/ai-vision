@@ -94,16 +94,17 @@ candidate. Packaged deployment acceptance covers Linux amd64.
 
 Run from a checkout of the candidate source after the workflow reaches the default
 branch. Set `SOURCE_REF` to a branch or tag at the manifest's `source_sha` and
-`MANIFEST` to that candidate's verified `release-manifest.json`. Generate the same
-source-fixture JSON as formal CI, including its pinned SigNoz precision fixture.
+`MANIFEST` to that candidate's verified `release-manifest.json` from **Release images**.
+Pass the full manifest. The workflow checks its source SHA against the checkout
+and uses the same pinned source fixtures as formal CI, including the SigNoz
+precision fixture.
 
 ```bash
 SOURCE_REF=...
 MANIFEST=release-manifest.json
 test "$(git rev-parse "${SOURCE_REF}^{commit}")" = "$(jq -er '.source_sha' "$MANIFEST")" &&
-  public_platform_images=$(python3 scripts/ci/public_registry.py source-fixtures --manifest "$MANIFEST") &&
   gh workflow run intel-macos-docker.yml -R antgroup/ai-vision \
-    --ref "$SOURCE_REF" -f public_platform_images="$public_platform_images"
+    --ref "$SOURCE_REF" -F "release_manifest=@$MANIFEST"
 ```
 
 Check the Actions run SHA against the manifest and record its result with the

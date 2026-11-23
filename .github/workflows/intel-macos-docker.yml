@@ -3,8 +3,8 @@ name: Intel macOS Docker
 on:
   workflow_dispatch:
     inputs:
-      public_platform_images:
-        description: JSON from public_registry.py source-fixtures for the matching release manifest
+      release_manifest:
+        description: Verified release-manifest.json for the selected source commit
         type: string
         required: true
 
@@ -18,44 +18,37 @@ concurrency:
 
 jobs:
   inputs:
-    name: Validate pinned platform fixtures
+    name: Resolve candidate platform fixtures
     runs-on: ubuntu-24.04
     timeout-minutes: 5
+    outputs:
+      public_platform_images: ${{ steps.fixtures.outputs.public_platform_images }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Require the public source-fixture projection
+      - name: Bind the verified candidate manifest to the checkout
+        id: fixtures
         env:
-          PUBLIC_PLATFORM_IMAGES: ${{ inputs.public_platform_images }}
+          RELEASE_MANIFEST: ${{ inputs.release_manifest }}
         run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           PYTHONPATH=scripts/ci python3 - <<'PY'
           import json
           import os
+          from pathlib import Path
 
-          from product_registry import product_image_repositories
-          from public_registry import SOURCE_SIGNOZ_FIXTURE
-          from release_plan import require_digest
+          from public_registry import source_fixtures
 
-          packages = product_image_repositories()
-          repositories = {
-              'oceanbase': 'oceanbase/oceanbase-ce',
-              'gateway': packages['antcollector-gw'],
-              'backend': packages['aivision-be'],
-              'agentlens': packages['agentlens'],
-              'frontend': packages['aivision-fe'],
-          }
           try:
-              images = json.loads(os.environ['PUBLIC_PLATFORM_IMAGES'])
-              if not isinstance(images, dict) or set(images) != {*repositories, 'signoz'}:
-                  raise ValueError
-              for role, repository in repositories.items():
-                  if require_digest(images[role]).split('@', 1)[0] != repository:
-                      raise ValueError
-              if images['signoz'] != SOURCE_SIGNOZ_FIXTURE:
-                  raise ValueError
-          except ValueError:
-              raise SystemExit('Input must be the six pinned public source fixtures from the matching release manifest.') from None
+              manifest = json.loads(os.environ['RELEASE_MANIFEST'])
+              if not isinstance(manifest, dict) or manifest.get('source_sha') != os.environ['GITHUB_SHA']:
+                  raise ValueError('manifest source_sha must match the workflow checkout')
+              fixtures = source_fixtures(manifest)
+          except (KeyError, TypeError, ValueError) as error:
+              raise SystemExit(f'Invalid public release manifest: {error}') from None
+          with Path(os.environ['GITHUB_OUTPUT']).open('a', encoding='utf-8') as outputs:
+              outputs.write('public_platform_images=' + json.dumps(fixtures, separators=(',', ':')) + '\n')
           PY
 
   framework:
@@ -66,7 +59,7 @@ jobs:
       intel_docker: true
       database: true
       platform: true
-      public_platform_images: ${{ inputs.public_platform_images }}
+      public_platform_images: ${{ needs.inputs.outputs.public_platform_images }}
 
   diagnostics:
     needs: inputs
@@ -76,7 +69,7 @@ jobs:
       intel_docker: true
       database: true
       platform: true
-      public_platform_images: ${{ inputs.public_platform_images }}
+      public_platform_images: ${{ needs.inputs.outputs.public_platform_images }}
 
   native:
     needs: inputs
@@ -87,7 +80,7 @@ jobs:
       units: false
       source: false
       platform: true
-      public_platform_images: ${{ inputs.public_platform_images }}
+      public_platform_images: ${{ needs.inputs.outputs.public_platform_images }}
 
   result:
     name: Intel macOS Docker checks passed

@@ -116,9 +116,9 @@ Every selected check must succeed. Formal release continues to require all Linux
 database and platform checks, including the Linux SDK/browser suite.
 
 To run the Intel gate, match the workflow ref to the candidate's source SHA and
-pass the six pinned source fixtures generated from that candidate's
-`release-manifest.json`. The workflow accepts the same public image projection
-and pinned SigNoz precision fixture as release source CI. Follow the
+pass the full verified `release-manifest.json` from that candidate. The workflow
+checks the manifest's source SHA against the checkout and uses the same public
+image projection and pinned SigNoz precision fixture as release source CI. Follow the
 [dispatch recipe](../../docs/deployment/en/dev-image-release.md#qualify-docker-on-intel-macos).
 
 The hosted OceanBase container on Intel macOS 15 reached Observer's first
