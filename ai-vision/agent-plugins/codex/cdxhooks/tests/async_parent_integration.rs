@@ -992,12 +992,31 @@ fn post_parent_returns_without_waiting_for_remote_work() {
 fn pretool_parent_timing_p95_stays_below_50_ms() {
     let _guard = serialize_hook_performance_test();
     let root = tempfile::tempdir().unwrap();
-    for index in 0..22 {
+    let session_id = "p95-session";
+    // Exercise the warm append path under existing ownership. A detached
+    // worker could otherwise interleave writes into the parent's timing log.
+    let _owner = {
+        let previous_state_dir = std::env::var_os("CDXHOOKS_STATE_DIR");
+        std::env::set_var("CDXHOOKS_STATE_DIR", root.path().join("state"));
+        let owner = cdxhooks::common::runtime_state::SessionOwner::acquire(
+            session_id,
+            Duration::from_millis(100),
+        );
+        match previous_state_dir {
+            Some(value) => std::env::set_var("CDXHOOKS_STATE_DIR", value),
+            None => std::env::remove_var("CDXHOOKS_STATE_DIR"),
+        }
+        owner.unwrap()
+    };
+    let tool_ids = (0..22)
+        .map(|index| format!("tool-{index}"))
+        .collect::<Vec<_>>();
+    for tool_id in &tool_ids {
         let payload = json!({
             "hook_event_name": "PreToolUse",
-            "session_id": "p95-session",
+            "session_id": session_id,
             "tool_name": "Bash",
-            "tool_use_id": format!("tool-{index}"),
+            "tool_use_id": tool_id,
             "tool_input": {"command": "true"}
         });
         let output = run_hook(root.path(), &payload);
@@ -1008,15 +1027,27 @@ fn pretool_parent_timing_p95_stays_below_50_ms() {
         );
     }
 
+    let queue = session_runtime_dir(root.path(), session_id).join("worker.queue.jsonl");
+    let queued_tool_ids = std::fs::read_to_string(queue)
+        .unwrap()
+        .lines()
+        .map(|line| {
+            serde_json::from_str::<Value>(line).unwrap()["payload"]["tool_use_id"]
+                .as_str()
+                .unwrap()
+                .to_string()
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(queued_tool_ids, tool_ids);
+
     let samples = parent_total_samples_ms(&root.path().join("logs"), "PreToolUse");
     assert_eq!(samples.len(), 22);
     // Cold process launch is covered separately. This p95 measures the normal
-    // same-session append/coalesce path after two warm-up hooks.
+    // same-session append path after two warm-up hooks.
     let mut samples = samples.into_iter().skip(2).collect::<Vec<_>>();
     samples.sort_unstable();
     let p95 = samples[(samples.len() * 95).div_ceil(100) - 1];
     assert!(p95 < 50, "PreToolUse parent p95 took {p95}ms");
-    std::thread::sleep(Duration::from_millis(200));
 }
 
 #[test]
