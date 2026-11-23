@@ -66,6 +66,18 @@ class OpenCodeProcessTests(unittest.TestCase):
     def test_timeout_kills_signal_ignoring_descendant_after_live_parent_exits(self):
         self.check_inherited_stdout(parent_wait=10)
 
+    @unittest.skipUnless(os.name == "posix", "POSIX graceful termination contract")
+    def test_timeout_of_live_parent_is_failure_even_when_termination_returns_zero(self):
+        script = ("import signal,sys,time\n"
+                  "signal.signal(signal.SIGTERM,lambda *_: sys.exit(0))\n"
+                  "print('ready',flush=True)\n"
+                  "time.sleep(2)\n")
+        code, output, timed_out, cancelled = self.invoke(script, timeout=.25)
+        self.assertEqual(output, "ready\n")
+        self.assertTrue(timed_out)
+        self.assertFalse(cancelled)
+        self.assertNotEqual(code, 0)
+
     def check_inherited_stdout(self, parent_wait):
         # Natural fixture lifetime bounds failures in the pre-fix implementation.
         child = "import signal,time; signal.signal(signal.SIGTERM, signal.SIG_IGN); time.sleep(2)"
@@ -328,10 +340,11 @@ if 'cancel native' in sys.argv:
  if not (pathlib.Path(os.environ['HOME'])/'abort-requested').exists(): raise SystemExit(4)
  print(json.dumps({'type':'error','sessionID':'session-native','error':{'name':'MessageAbortedError'}}),flush=True)
  raise SystemExit(0)
-if 'wait forever' in sys.argv:
+if 'wait forever' in sys.argv or 'inherited stdout' in sys.argv:
  import time, subprocess
  subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(5)'])
  print(json.dumps({'type':'step_start','sessionID':'session-native'}), flush=True)
+ if 'inherited stdout' in sys.argv: raise SystemExit(0)
  time.sleep(60)
 print(json.dumps({'type':'step_finish','sessionID':'session-native','part':{'reason':'tool-calls' if '--attach' in sys.argv else 'stop'}}), flush=True)
 print(json.dumps({'type':'text','sessionID':'session-native','part':{'text':'synthetic output'}}), flush=True)
@@ -528,6 +541,15 @@ class OpenCodeDriverTest(unittest.TestCase):
         self.assertNotEqual(result.exit_code, 0)
         self.assertEqual(result.session_id, "session-native")
         self.assertTrue(result.details["timed_out"])
+        self.assertLess(time.monotonic() - started, 4, "children must not retain the native stdout pipe")
+
+    def test_inherited_stdout_timeout_fails_case_after_the_host_exits_zero(self):
+        started = time.monotonic()
+        result = self.run_driver(prompt="inherited stdout", timeout_seconds=1)
+        self.assertTrue(result.details["timed_out"])
+        self.assertEqual(result.session_id, "session-native")
+        self.assertEqual(result.details["turns_completed"], 0)
+        self.assertNotEqual(result.exit_code, 0)
         self.assertLess(time.monotonic() - started, 4, "children must not retain the native stdout pipe")
 
     def test_cancel_requests_official_abort_before_reaping_server(self):
