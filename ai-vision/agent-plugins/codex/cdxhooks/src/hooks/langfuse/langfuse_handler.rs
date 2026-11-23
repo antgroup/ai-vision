@@ -5593,6 +5593,7 @@ mod tests {
             include_str!("../../../tests/fixtures/codex_collab_tool_call_same_turn_child.jsonl"),
         )
         .unwrap();
+        let _fixture_polling = child_fixture_polling(None);
         crate::cli::worker::run_subagent_recovery_with_context(
             "parent-collab",
             &record,
@@ -6939,6 +6940,7 @@ mod tests {
             None,
         );
         let logger = crate::common::logger::Logger::new(dir.path().join("native.log"), true);
+        let _fixture_polling = child_fixture_polling(None);
 
         let outcome = merge_child_sessions_into_body(
             &mut body,
@@ -7228,6 +7230,7 @@ mod tests {
             None,
         );
         let logger = crate::common::logger::Logger::new(dir.path().join("followup.log"), true);
+        let _fixture_polling = child_fixture_polling(None);
         let result = merge_child_sessions_into_body(
             &mut body,
             std::slice::from_ref(&current_turn),
