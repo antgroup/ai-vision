@@ -19,6 +19,10 @@ on:
         default: basic
   workflow_call:
     inputs:
+      sdk_coverage:
+        description: SDK Docker acceptance coverage selected from the previous release
+        type: string
+        default: full
       public_platform_images:
         description: Pinned public candidate images from the current release attempt
         type: string
@@ -115,6 +119,7 @@ jobs:
     if: needs.scope.outputs.framework == 'true'
     uses: ./.github/workflows/framework-e2e.yml
     with:
+      sdk_coverage: ${{ needs.scope.outputs.tier == 'daily' && inputs.sdk_coverage || 'full' }}
       public_platform_images: ${{ inputs.public_platform_images }}
       tier: ${{ needs.scope.outputs.tier }}
       frontend: ${{ fromJSON(needs.scope.outputs.plan).frontend }}

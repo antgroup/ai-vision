@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import subprocess
 import tempfile
+from urllib.parse import urlencode
 
 import windows_release_cli
 
@@ -233,8 +234,6 @@ def preflight(plan, images, repository):
     require_product_repository(repository)
     require_release_environment(api(f"repos/{repository}/environments/release"))
     require_live_tag(repository, plan["release_tag"], plan["source_sha"])
-    release = api(f"repos/{repository}/releases/tags/{plan['release_tag']}")
-    require_draft_notes(release)
     if plan["channel"] == "stable":
         latest = api(f"repos/{repository}/releases/latest", missing=True)
         if latest:
@@ -248,7 +247,48 @@ def preflight(plan, images, repository):
             ):
                 raise ValueError("refusing to replace a newer or equal stable Release")
     check_version_tags(plan, images, repository=repository)
+
+
+def read_draft(repository, tag, release_id):
+    release = api(f"repos/{repository}/releases/{release_id}")
+    if (not isinstance(release, dict)
+            or type(release.get("id")) is not int or release["id"] != release_id
+            or release.get("tag_name") != tag or release.get("draft") is not True
+            or release.get("immutable")):
+        raise ValueError("draft Release identity differs from the reviewed version")
     return release
+
+
+def find_release_draft(repository, tag):
+    require_product_repository(repository)
+    # The tag lookup is for published Releases. The protected publisher has
+    # push access and can see drafts in the repository's paginated listing.
+    matches = []
+    page = 1
+    while True:
+        releases = api(f"repos/{repository}/releases?per_page=100&page={page}")
+        if not isinstance(releases, list):
+            raise ValueError("repository releases response must be a list")
+        matches.extend(release for release in releases if release.get("tag_name") == tag)
+        if len(releases) < 100:
+            break
+        page += 1
+    if (len(matches) != 1 or matches[0].get("draft") is not True
+            or type(matches[0].get("id")) is not int or matches[0]["id"] <= 0):
+        raise ValueError(f"expected exactly one draft Release for {tag}")
+    draft = read_draft(repository, tag, matches[0]["id"])
+    if draft.get("assets") != []:
+        raise ValueError("prepare a draft Release with no assets")
+    require_draft_notes(draft)
+    return draft
+
+
+def upload_draft_assets(repository, release_id, assets):
+    for asset in assets:
+        query = urlencode({"name": Path(asset).name})
+        run("gh", "api",
+            f"https://uploads.github.com/repos/{repository}/releases/{release_id}/assets?{query}",
+            "--method", "POST", "--input", asset, "-H", "Content-Type: application/octet-stream")
 
 
 def rolling_versioned_tag(existing, repository):
@@ -387,12 +427,19 @@ def require_known_dev_assets(directory, repository, existing):
         raise ValueError("Dev has duplicate or unknown assets outside the frozen candidate")
 
 
-def verify_remote_assets(directory, plan, repository):
+def verify_remote_assets(directory, plan, repository, *, release_id=None, draft=False):
     """Authenticated download and byte verification, including the checksum file."""
-    require_live_tag(repository, plan["release_tag"], plan["source_sha"])
-    release = api(f"repos/{repository}/releases/tags/{plan['release_tag']}")
-    if release.get("tag_name") != plan["release_tag"] or type(release.get("id")) is not int:
-        raise ValueError("remote release identity differs from the frozen release")
+    tag = plan["release_tag"]
+    require_live_tag(repository, tag, plan["source_sha"])
+    if draft:
+        release = read_draft(repository, tag, release_id)
+    else:
+        release = api(f"repos/{repository}/releases/tags/{tag}")
+        if (not isinstance(release, dict)
+                or release.get("tag_name") != tag or type(release.get("id")) is not int
+                or (release_id is not None and
+                    (release["id"] != release_id or release.get("draft") is not False))):
+            raise ValueError("remote release identity differs from the frozen release")
     assets = remote_release_assets(repository, release)
     expected = {path.name: path for path in directory.iterdir()}
     names = [asset.get("name") for asset in assets]
@@ -475,6 +522,8 @@ def main():
         build_id,
         repository=repository,
     )
+    if plan.get("release_preview"):
+        raise ValueError("a release preview cannot enter publication preflight or publish")
     stable = plan["channel"] in {"stable", "rc"}
     if not stable and plan["alias"] not in {"daily", "dev"}:
         raise ValueError("trial aliases are candidate-only and cannot publish product versions")
@@ -483,8 +532,9 @@ def main():
             or live_repository.get("visibility") != "public"):
         raise ValueError("public publication requires the official repository to be public")
     public_registry.verify_public_images(images)
-    release = preflight(plan, images, repository) if stable else None
-    if not stable:
+    if stable:
+        preflight(plan, images, repository)
+    else:
         check_version_tags(plan, images, repository=repository)
     if args.command == "preflight":
         return
@@ -556,18 +606,11 @@ def main():
     if plan["alias"] == "dev" and existing:
         require_known_dev_assets(args.directory, repository, existing)
     generated = generate_rolling_notes(plan, repository, existing) if rolling and not recovery else None
+    release = find_release_draft(repository, plan["release_tag"]) if stable else None
     publish_version_tags(plan, images, repository=repository)
     if stable:
-        # Never overwrite reviewed bilingual notes or existing assets.
-        run(
-            "gh",
-            "release",
-            "upload",
-            plan["release_tag"],
-            *assets,
-            "--repo",
-            repository,
-        )
+        # Upload through the reviewed draft's ID, never through a tag lookup.
+        upload_draft_assets(repository, release["id"], assets)
     elif rolling and versioned is None:
         run(
             "gh",
@@ -586,7 +629,10 @@ def main():
             "--notes",
             f"{generated}\n\n## Deployment\n\n{scope}{details}",
         )
-    verify_remote_assets(args.directory, plan, repository)
+    if stable:
+        verify_remote_assets(args.directory, plan, repository, release_id=release["id"], draft=True)
+    else:
+        verify_remote_assets(args.directory, plan, repository)
     if hashlib.sha256(acceptance_path.read_bytes()).hexdigest() != acceptance_sha256:
         raise ValueError("candidate acceptance changed during publication")
     if args.acceptance:
@@ -605,6 +651,20 @@ def main():
         current = require_unchanged_dev_release(existing, repository)
         if recovery:
             require_same_dev_candidate(current, plan, repository)
+    if stable:
+        require_live_tag(repository, plan["release_tag"], source_sha)
+        draft = read_draft(repository, plan["release_tag"], release["id"])
+        if draft.get("body") != release["body"]:
+            raise ValueError("reviewed draft Release notes changed during publication")
+        api(
+            f"repos/{repository}/releases/{release['id']}",
+            data={
+                "draft": False,
+                "prerelease": plan["channel"] == "rc",
+                "make_latest": "true" if plan["channel"] == "stable" else "false",
+            },
+        )
+        verify_remote_assets(args.directory, plan, repository, release_id=release["id"])
     # No alias is written until every required check has passed. Registry aliases
     # are not a cross-image transaction: a publishing outage may require reconciliation.
     for name, image in product_image_repositories(repository).items():
@@ -617,17 +677,7 @@ def main():
         for tag in tags:
             run("docker", "buildx", "imagetools", "create", "--tag", f"{image}:{tag}", ref)
             public_registry.verify_public_tag(f"{image}:{tag}", ref)
-    if stable:
-        api(
-            f"repos/{repository}/releases/{release['id']}",
-            data={
-                "draft": False,
-                "prerelease": plan["channel"] == "rc",
-                "make_latest": "true" if plan["channel"] == "stable" else "false",
-            },
-        )
-        verify_remote_assets(args.directory, plan, repository)
-    elif rolling:
+    if rolling:
         alias = plan["alias"]
         tag = api(f"repos/{repository}/git/ref/tags/{alias}", missing=True)
         if tag:

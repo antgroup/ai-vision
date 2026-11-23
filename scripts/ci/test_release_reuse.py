@@ -3,16 +3,18 @@
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from product_registry import PUBLIC_REPOSITORY, product_image_repositories
+from product_registry import PUBLIC_REPOSITORY, UPSTREAM_SIGNOZ, product_image_repositories
 from release_plan import IMAGES, make_plan
-from release_reuse import CONTEXTS, fingerprint, latest_release, native_reuse, prepare, published_manifest, validate_build
+from release_reuse import CONTEXTS, fingerprint, latest_release, main, native_reuse, prepare, published_manifest, validate_build
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -63,6 +65,84 @@ class ReuseTests(unittest.TestCase):
                          run_id, run_number, "1", self.sha(), "20261021")
         (self.directory / "release-plan.json").write_text(json.dumps(plan))
 
+    def prepare_coverage(self, *, prior, force=False):
+        output = self.directory / "github-output"
+        argv = ["release_reuse.py", "prepare", "--directory", str(self.directory), "--root", str(self.root)]
+        if force:
+            argv.append("--force")
+        with (patch.object(sys, "argv", argv),
+              patch.dict(os.environ, GITHUB_REPOSITORY=PUBLIC_REPOSITORY, GITHUB_OUTPUT=str(output)),
+              patch("release_reuse.latest_release", return_value="v0.0.1-daily.20261020"),
+              patch("release_reuse.published_manifest", return_value=prior)):
+            main()
+        plan = json.loads((self.directory / "release-plan.json").read_text())
+        return plan, output.read_text() if output.exists() else ""
+
+    def with_matching_signoz(self):
+        upstream = f"{UPSTREAM_SIGNOZ}@sha256:" + "b" * 64
+        (self.directory / "signoz-image.txt").write_text(upstream + "\n")
+        mirror = product_image_repositories()["signoz-ob"] + "@sha256:" + "b" * 64
+        return {**self.prior, "images": {**self.prior["images"], "signoz-ob": mirror},
+                "data_backend_mirror": {"upstream_ref": upstream, "mirror_ref": mirror}}
+
+    def test_daily_prose_and_ui_with_exact_published_baseline_uses_smoke(self):
+        ui = self.root / "ai-vision/vfe/src/components/Example.tsx"
+        ui.parent.mkdir(parents=True)
+        ui.write_text("export default function Example() { return null; }\n")
+        self.commit()
+        self.write_plan("125", "9")
+        plan, output = self.prepare_coverage(prior=self.with_matching_signoz())
+        self.assertEqual(plan.get("sdk_coverage"), "smoke")
+        self.assertIn("sdk_coverage=smoke\n", output)
+        self.assertEqual(plan["reuse_release"], "v0.0.1-daily.20261020")
+
+    def test_moved_sensitive_path_is_seen_even_with_rename_detection_enabled(self):
+        (self.root / "docs").mkdir()
+        self.git("config", "diff.renames", "true")
+        self.git("mv", "antcollector/Dockerfile", "docs/notes.md")
+        self.commit()
+        self.write_plan("125", "9")
+        plan, _ = self.prepare_coverage(prior=self.with_matching_signoz())
+        self.assertEqual(plan.get("sdk_coverage"), "full")
+
+    def test_docs_with_executable_mode_are_not_safe_prose(self):
+        (self.root / "README.md").chmod(0o755)
+        self.commit()
+        self.write_plan("125", "9")
+        plan, output = self.prepare_coverage(prior=self.with_matching_signoz())
+        self.assertEqual(plan.get("sdk_coverage"), "full")
+        self.assertIn("sdk_coverage_reason=source-diff-requires-compatibility\n", output)
+
+    def test_unproven_or_non_daily_candidates_keep_full_coverage(self):
+        prior = self.with_matching_signoz()
+        for options in (dict(prior=None), dict(prior=prior, force=True), dict(prior=self.prior)):
+            with self.subTest(options=options):
+                plan, _ = self.prepare_coverage(**options)
+                self.assertEqual(plan.get("sdk_coverage"), "full")
+        release = make_plan("0.0.1", "workflow_dispatch", "refs/heads/main", "main", "dev",
+                            "126", "10", "1", self.sha(), "20261021", release_preview=True)
+        (self.directory / "release-plan.json").write_text(json.dumps(release))
+        plan, _ = self.prepare_coverage(prior=prior)
+        self.assertEqual(plan.get("sdk_coverage"), "full")
+
+    def test_upstream_digest_change_and_unreadable_diff_keep_full_coverage(self):
+        prior = self.with_matching_signoz()
+        (self.directory / "signoz-image.txt").write_text(f"{UPSTREAM_SIGNOZ}@sha256:" + "c" * 64)
+        plan, _ = self.prepare_coverage(prior=prior)
+        self.assertEqual(plan.get("sdk_coverage"), "full")
+        self.with_matching_signoz()
+        original = subprocess.check_output
+
+        def unreadable(args, **kwargs):
+            if args[:2] == ["git", "diff"]:
+                raise subprocess.CalledProcessError(128, args)
+            return original(args, **kwargs)
+
+        with patch("release_reuse.subprocess.check_output", side_effect=unreadable):
+            plan, output = self.prepare_coverage(prior=prior)
+        self.assertEqual(plan.get("sdk_coverage"), "full")
+        self.assertIn("sdk_coverage=full\n", output)
+
     def test_unchanged_context_reuses_digest_and_complete_old_identity(self):
         result = prepare(self.root, self.directory, self.prior)
         for name in IMAGES:
@@ -87,6 +167,15 @@ class ReuseTests(unittest.TestCase):
         result = prepare(self.root, self.directory, self.prior)
         self.assertIsNone(result["aivision-be"]["ref"])
         self.assertTrue(all(result[name]["ref"] is not None for name in IMAGES if name != "aivision-be"))
+
+    def test_shared_image_workflow_is_an_input_to_all_owned_images(self):
+        workflow = self.root / ".github/workflows/release-image-build.yml"
+        workflow.parent.mkdir(parents=True)
+        workflow.write_text("name: changed shared image builder\n")
+        self.commit()
+        self.write_plan("125", "9")
+        result = prepare(self.root, self.directory, self.prior)
+        self.assertTrue(all(value["ref"] is None for value in result.values()))
 
     def test_force_and_legacy_metadata_rebuild_instead_of_claiming_reuse(self):
         for prior, force in ((self.prior, True), ({"images": self.prior["images"], "source_repository": PUBLIC_REPOSITORY}, False)):

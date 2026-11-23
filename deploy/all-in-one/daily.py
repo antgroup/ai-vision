@@ -1,4 +1,4 @@
-"""Stage All-in-One inputs from a frozen source-compatible Daily."""
+"""Stage All-in-One inputs from a frozen source-compatible product candidate."""
 
 import hashlib
 import json
@@ -18,9 +18,11 @@ from product_registry import PUBLIC_REPOSITORY
 from public_registry import _anonymous_reader, _checked_json, _descriptor_digest, _index
 from release_candidate import verify_frozen
 from release_assets import PERSONAL_MAX_ATTACHMENT_SIZE, write_checksums
+from release_plan import VERSION as TAGGED_VERSION
 
 
 PROFILE = "daily-source"
+DAILY_VERSION = re.compile(r"\d+\.\d+\.\d+-daily\.\d{8}(?:\.\d+)?")
 BASE = "docker.io/library/python@sha256:549988ff0804593d8373682ef5c0f0ceee48328abaaa2e054241c23f5c324751"
 DIRS = {
     "aivision-be": {"app/": "opt/aivision/backend/", "agent-plugins/": "agent-plugins/",
@@ -49,11 +51,18 @@ PYTHON_LINKS = {"python", "python3", "python3.11"}
 def candidate(directory, acceptance_path, *, expected_source):
     manifest = json.loads((directory / "release-manifest.json").read_text())
     acceptance = json.loads(acceptance_path.read_text())
-    if (manifest.get("channel") != "daily" or manifest.get("source_sha") != expected_source
-            or not re.fullmatch(r"\d+\.\d+\.\d+-daily\.\d{8}(?:\.\d+)?", manifest.get("product_version", ""))):
-        raise ValueError("All-in-One requires a frozen Daily for the selected source checkout")
+    channel = manifest.get("channel")
+    version = manifest.get("product_version", "")
+    if channel == "daily":
+        version_matches = DAILY_VERSION.fullmatch(version)
+    else:
+        version_matches = (manifest.get("personal_edition") is True and TAGGED_VERSION.fullmatch(version)
+                           and channel == ("rc" if "-" in version else "stable"))
+    if (not version_matches or manifest.get("source_sha") != expected_source
+            or manifest.get("release_tag") != f"v{version}"):
+        raise ValueError("All-in-One requires a frozen Daily, Stable, or RC for the selected source checkout")
     if not isinstance(acceptance, dict):
-        raise ValueError("The Daily acceptance receipt must be a JSON object")
+        raise ValueError("The product acceptance receipt must be a JSON object")
     verify_frozen(directory, acceptance, repository=PUBLIC_REPOSITORY, source_sha=expected_source,
                   build_id=manifest["build_id"], base_only=acceptance.get("phase") == "base")
     return manifest, acceptance
@@ -69,7 +78,7 @@ def image_configs(images, architecture):
         rows = [row for row in descriptors if row.get("platform", {}).get("os") == "linux"
                 and row["platform"].get("architecture") == architecture]
         if len(rows) != 1:
-            raise ValueError(f"expected one Daily linux/{architecture} payload for {name}")
+            raise ValueError(f"expected one candidate linux/{architecture} payload for {name}")
         row = rows[0]
         manifest_digest = _descriptor_digest(row)
         child = _checked_json(fetch("manifests", manifest_digest), manifest_digest, row["size"])
@@ -105,7 +114,7 @@ def stage_export(stream, rootfs, component):
                     continue
             parts = PurePosixPath(destination)
             if not member.isreg() or parts.is_absolute() or ".." in parts.parts:
-                raise ValueError(f"unexpected daily image member in {component}: {member.name}")
+                raise ValueError(f"unexpected candidate image member in {component}: {member.name}")
             output = rootfs / destination
             output.parent.mkdir(parents=True, exist_ok=True)
             with archive.extractfile(member) as payload, output.open("xb") as target_stream:
@@ -116,7 +125,7 @@ def stage_export(stream, rootfs, component):
 def validate_payload(rootfs, component):
     if any(not (rootfs / name).is_file() for name in REQUIRED_FILES[component]):
         name = "AgentLens" if component == "agentlens" else component
-        raise ValueError(f"incomplete Daily image payload for {name}")
+        raise ValueError(f"incomplete candidate image payload for {name}")
     if component == "aivision-be":
         entrypoint = rootfs / "opt/aivision/backend/docker-entrypoint.sh"
         original = entrypoint.read_bytes()
@@ -156,7 +165,7 @@ def stage_images(rootfs, images):
 def stage_metadata(rootfs, directory, manifest):
     observed = rootfs / "opt/aivision/backend/aivision_backend/build-info.json"
     if json.loads(observed.read_bytes()) != manifest["component_builds"]["aivision-be"]:
-        raise ValueError("backend build metadata differs from the frozen Daily")
+        raise ValueError("backend build metadata differs from the frozen candidate")
     metadata = rootfs / "etc/aivision"
     metadata.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(observed, metadata / "build-info.json")
@@ -169,7 +178,7 @@ def package(directory, manifest, acceptance, image_archive, image_receipt, outpu
     cli_path = directory / f"aiv-linux-{'arm64' if suffix else 'x64'}.tar.gz"
     expected_cli = acceptance["assets"][cli_path.name]
     if cli_path.stat().st_size != expected_cli["size"] or file_digest(cli_path) != expected_cli["sha256"]:
-        raise ValueError("CLI asset differs from the frozen Daily")
+        raise ValueError("CLI asset differs from the frozen candidate")
     with tarfile.open(cli_path, mode="r:gz") as bundle:
         [executable] = [entry for entry in bundle.getmembers() if entry.name == "aiv" and entry.isfile()]
         cli = bundle.extractfile(executable).read()

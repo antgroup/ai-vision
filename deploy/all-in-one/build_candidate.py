@@ -68,7 +68,7 @@ def build(architecture, assets, acceptance, output):
             "--wheel", str(work / wheel), "--pymysql-wheel", str(work / pymysql),
             "--supervisor", str(supervisor), "--db-owner", str(work / "aivision-seekdb"),
             "--context", str(context))
-        image_tag = f"aiv-all-in-one:{manifest['product_version']}-{architecture}"
+        image_tag = f"aiv-all-in-one:{manifest['product_version'].lower()}-{architecture}"
         archive = work / "image.tar.gz"
         run(*command, "build", "--context", str(context), "--tag", image_tag, "--archive", str(archive))
         run(*command, "package-daily", *frozen, "--archive", str(archive), "--output", str(output))

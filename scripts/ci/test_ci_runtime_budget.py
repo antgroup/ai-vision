@@ -33,6 +33,45 @@ class RuntimeBudgetTests(unittest.TestCase):
         self.assertNotIn('if', jobs['assets'])
         self.assertNotIn('openshell-catalog', str(jobs['assets']['steps']))
 
+    def test_only_publication_jobs_share_the_publication_queue(self):
+        images, promote = workflow('release-images.yml'), workflow('promote-release.yml')
+        jobs = images['jobs']
+        publishers = (jobs['publish-stable'], jobs['publish-development'], promote['jobs']['promote'])
+        gates = [job['concurrency'] for job in publishers]
+        self.assertTrue(all(gate == gates[0] for gate in gates))
+        gate = gates[0]
+        self.assertIs(gate['cancel-in-progress'], False)
+        self.assertNotEqual(images['concurrency']['group'], gate['group'])
+        self.assertIn('github.ref', images['concurrency']['group'])
+        self.assertNotEqual(promote.get('concurrency', {}).get('group'), gate['group'])
+        for name in ('prepare', 'build-services', 'build-backend', 'manifest', 'artifact-smoke', 'personal'):
+            self.assertNotEqual(jobs[name].get('concurrency', {}).get('group'), gate['group'])
+
+    def test_component_builds_wait_only_for_inputs_they_use(self):
+        jobs = workflow('release-images.yml')['jobs']
+        services, backend = jobs['build-services'], jobs['build-backend']
+        self.assertEqual(set(services['needs']), {'prepare'})
+        self.assertEqual(set(backend['needs']), {'prepare', 'plugins'})
+        self.assertEqual(services['uses'], './.github/workflows/release-image-build.yml')
+        self.assertEqual(services['uses'], backend['uses'])
+        self.assertIn('build-services', jobs['manifest']['needs'])
+        self.assertIn('build-backend', jobs['manifest']['needs'])
+        pipeline = workflow('release-image-build.yml')['jobs']['build']
+        self.assertIn('amd64', str(pipeline['strategy']['matrix']))
+        self.assertIn('arm64', str(pipeline['strategy']['matrix']))
+        artifact = next(step for step in pipeline['steps'] if step.get('uses', '').startswith('actions/upload-artifact@'))
+        self.assertIn('github.run_attempt', artifact['with']['name'])
+
+    def test_release_sdk_scope_flows_from_verified_plan_to_framework(self):
+        images = workflow('release-images.yml')['jobs']
+        ci = workflow('ci.yml')
+        declaration = ci.get('on', ci.get(True))['workflow_call']['inputs']['sdk_coverage']
+        self.assertEqual(declaration['default'], 'full')
+        self.assertEqual(declaration['type'], 'string')
+        self.assertIn('steps.reuse.outputs.sdk_coverage', images['prepare']['outputs']['sdk_coverage'])
+        self.assertIn('needs.prepare.outputs.sdk_coverage', images['public-source-checks']['with']['sdk_coverage'])
+        self.assertIn('inputs.sdk_coverage', ci['jobs']['framework']['with']['sdk_coverage'])
+
     def test_browser_shards_consume_one_build_for_the_exact_run_and_source(self):
         jobs = workflow('framework-e2e.yml')['jobs']
         producer, browser = jobs['frontend'], jobs['frontend-browser']

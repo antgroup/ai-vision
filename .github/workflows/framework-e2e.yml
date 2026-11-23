@@ -39,6 +39,10 @@ on:
         description: When platform is selected, run SDK/browser acceptance without the separate Docker SDK suite
         type: boolean
         default: false
+      sdk_coverage:
+        description: Full Docker SDK matrix or the fixed Daily smoke with the complete SDK/browser job
+        type: string
+        default: full
   workflow_dispatch:
     inputs:
       tier:
@@ -74,6 +78,11 @@ on:
         description: When platform is selected, run SDK/browser acceptance without the separate Docker SDK suite
         type: boolean
         default: false
+      sdk_coverage:
+        description: Docker SDK coverage. Smoke requires the Daily tier and both platform jobs.
+        type: choice
+        options: [full, smoke]
+        default: full
       nvidia_browser:
         description: 'Run NVIDIA free-endpoint browser acceptance (7 requests, 32 output tokens each, no retries)'
         type: boolean
@@ -560,7 +569,11 @@ jobs:
           PYRESULT
 
   docker-platform:
-    if: always() && !cancelled() && inputs.platform && !inputs.browser_only && (!inputs.frontend || (needs.frontend.result == 'success' && needs.frontend-browser.result == 'success')) && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: >-
+      always() && !cancelled() && inputs.platform && !inputs.browser_only &&
+      (inputs.sdk_coverage == 'full' || (inputs.tier == 'daily' && inputs.sdk_coverage == 'smoke')) &&
+      (!inputs.frontend || (needs.frontend.result == 'success' && needs.frontend-browser.result == 'success')) &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     # When selected, frontend source must pass; deployment uses a pinned FE image.
     needs: [frontend, frontend-browser]
     name: Docker platform (${{ matrix.os }})
@@ -625,7 +638,11 @@ jobs:
       - name: Install host deployment and SQL clients
         run: python -m pip install httpx==0.28.1 PyYAML==6.0.3 mysql-connector-python==9.6.0
       - name: Deploy candidate platform and verify actual ingestion and reads
-        run: python ai-vision/agent-plugins/tests/framework_e2e/docker_platform.py --repo . --out artifacts/docker-platform
+        env:
+          SDK_COVERAGE: ${{ inputs.sdk_coverage }}
+        run: >-
+          python ai-vision/agent-plugins/tests/framework_e2e/docker_platform.py
+          --repo . --out artifacts/docker-platform --sdk-coverage "$SDK_COVERAGE"
       - name: Preserve sanitized deployment and acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -652,6 +669,7 @@ jobs:
       - name: Verify every selected check completed
         env:
           TIER: ${{ inputs.tier }}
+          SDK_COVERAGE: ${{ inputs.sdk_coverage }}
           SELECTED_JSON: >-
             {"frontend": ${{ inputs.frontend }}, "frontend-browser": ${{ inputs.frontend }}, "backend-contracts": ${{ inputs.backend }}, "cli": ${{ inputs.cli }}, "contracts": ${{ inputs.contracts }}, "js-contracts": ${{ inputs.contracts }}, "docker-database": ${{ inputs.database }}, "browser-platform": ${{ inputs.platform }}, "docker-platform": ${{ inputs.platform && !inputs.browser_only }}}
           RESULTS_JSON: ${{ toJSON(needs) }}
@@ -665,9 +683,15 @@ jobs:
           results = json.loads(os.environ['RESULTS_JSON'])
           failures = []
           tier = os.environ['TIER']
+          coverage = os.environ['SDK_COVERAGE']
           if tier not in {'pr', 'daily', 'release'}:
               failures.append('Unknown test tier: ' + tier)
-          lines = ['## Selected checks', '', '| Check | Selected | Result |', '| --- | --- | --- |']
+          if coverage not in {'full', 'smoke'}:
+              failures.append('Unknown Docker SDK coverage: ' + coverage)
+          if coverage == 'smoke' and (tier != 'daily' or not selected['browser-platform'] or not selected['docker-platform']):
+              failures.append('Docker SDK smoke requires Daily with both the Docker and the complete SDK/browser jobs')
+          lines = ['## Selected checks', '', f'Docker SDK coverage `{coverage}`.', '',
+                   '| Check | Selected | Result |', '| --- | --- | --- |']
           for job, required in selected.items():
               result = results.get(job, {}).get('result', 'missing')
               lines.append(f'| {job} | {required} | {result} |')

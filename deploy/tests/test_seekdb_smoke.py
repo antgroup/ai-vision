@@ -2,9 +2,13 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
+from native_memory_canary import MemoryCanaryError, NativeMemoryCanary
 from seekdb_deploy_smoke import SECRET_VARS, Smoke, legacy_stop_evidence
 
 
@@ -66,6 +70,75 @@ class StopEventsTest(unittest.TestCase):
         for output in (self.events(signal='15'), self.events(code='137'), self.events(container='new-database'), ''):
             with self.assertRaises(AssertionError):
                 legacy_stop_evidence(output, 'old-database')
+
+
+class NativeMemoryReleaseGateTest(unittest.TestCase):
+    def test_required_native_memory_rejects_legacy_source_fixture(self):
+        script = Path(__file__).with_name('seekdb_deploy_smoke.py')
+        result = subprocess.run(
+            [sys.executable, str(script), '--out', 'unused', '--require-native-memory',
+             '--source-baseline-legacy-health'],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('--require-native-memory cannot be combined with --source-baseline-legacy-health',
+                      result.stderr)
+
+
+class NativeMemoryCanaryTest(unittest.TestCase):
+    def setUp(self):
+        self.requests = []
+        self.result = 200, {}
+        self.memory = NativeMemoryCanary(self.request, space_id='workspace',
+                                         agent_product='langfuse', agent_uuid='agent')
+        self.memory.ingest('http://127.0.0.1:4318', 'fixture-token')
+
+    def request(self, path, **options):
+        self.requests.append((path, options))
+        return self.result
+
+    def test_pass_requires_real_query_shape_and_matching_typed_operation(self):
+        path, options = self.requests[0]
+        self.assertEqual(path, '/v1/traces')
+        self.assertEqual(options['origin'], 'http://127.0.0.1:4318')
+        self.assertEqual(options['headers']['Authorization'], 'Bearer fixture-token')
+        group = options['body']['resourceSpans'][0]['scopeSpans'][0]
+        self.assertEqual(group['scope']['name'], 'powercontext.server')
+        operation, search = group['spans']
+        self.assertEqual(operation['traceId'], search['traceId'])
+        self.assertEqual(operation['spanId'], search['parentSpanId'])
+        search_attrs = {attr['key']: attr['value'] for attr in search['attributes']}
+        self.assertEqual(search_attrs['powercontext.memory.search.result_count'], {'intValue': '2'})
+        self.result = 200, {'code': 0, 'data': {
+            'evidence': {'source': 'recorded_memory_spans', 'complete': True,
+                         'agentProduct': 'langfuse', 'agentUuid': 'agent'},
+            'overview': {'calls': 1, 'searchCalls': 1, 'totalHits': 2},
+            'servers': [{'serverId': 'powercontext', 'recentCalls': [{
+                'traceId': operation['traceId'], 'spanId': operation['spanId'],
+                'toolName': 'prepare_context', 'hits': 2,
+            }]}],
+        }}
+        self.assertEqual(self.memory.read(), {'trace_id': operation['traceId'],
+                                               'span_id': operation['spanId'], 'hits': 2})
+        url = urlsplit(self.requests[-1][0])
+        self.assertEqual(url.path, '/api/v2/spaces/workspace/labs/memory/observations')
+        params = parse_qs(url.query)
+        self.assertEqual(params['agent_product'], ['langfuse'])
+        self.assertEqual(params['agent_uuid'], ['agent'])
+        self.assertIn('fromTimestamp', params)
+        self.assertIn('toTimestamp', params)
+
+    def test_missing_memory_endpoint_is_not_treated_as_an_empty_window(self):
+        self.result = 400, {'code': 3011, 'message': 'private upstream detail'}
+        with self.assertRaisesRegex(MemoryCanaryError, r'query failed \(HTTP 400, API 3011\)$'):
+            self.memory.read()
+        self.assertEqual(len(self.requests), 2)
+
+    def test_successful_empty_response_cannot_issue_a_receipt(self):
+        self.result = 200, {'code': 0, 'data': {'overview': {'calls': 0}, 'servers': []}}
+        with patch('native_memory_canary.time.monotonic', side_effect=[0, 121]):
+            with self.assertRaisesRegex(MemoryCanaryError, 'never returned its complete operation'):
+                self.memory.read()
 
 
 class OpenShellGateTest(unittest.TestCase):

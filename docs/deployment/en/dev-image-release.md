@@ -14,6 +14,7 @@ Native compilation is available through an [optional candidate workflow](../../.
 | Manual `dev`, default `publish=false` | Current default branch; `VERSION-dev.YYYYMMDD.RUN_NUMBER[.ATTEMPT]` | Frozen development candidate; no Release or product aliases |
 | Manual trial alias | Selected pushed branch; unique non-version alias and selected candidate channel | Candidate assets only; publication is rejected before version-tag writes |
 | Qualified Daily/Dev promotion | Exact successful candidate run/attempt, still at the current default-branch head | Versioned prerelease and rolling entry using the original frozen assets |
+| Manual `release_preview=true` | Selected branch and exact `VERSION` | Full formal-release matrix and frozen artifacts with publication disabled |
 | Push of a `v*` tag | Tag matches `VERSION` and is reachable from the default branch | Reviewed stable Release or RC prerelease after protected approval |
 
 An explicit `publish=true` manual Daily/Dev run still publishes after the same source/artifact gates. The separate promotion path is useful when a candidate must be reviewed before publication; it does not rebuild.
@@ -28,11 +29,11 @@ PRs select Linux basic checks by changed paths, including version/release PRs. I
 
 ## Candidate validation and publication
 
-1. Resolve the exact source SHA and approve an immutable upstream SigNoz index. For public candidates, stage and verify the same index as `ghcr.io/antgroup/ai-vision/data-backend`.
+1. Resolve the exact source SHA and approve an immutable upstream SigNoz index. Stable and RC builds use the index recorded in [the dependency lock](../../../deploy/config/release-dependencies.json) for the numeric product version. For public candidates, stage and verify the same index as `ghcr.io/antgroup/ai-vision/data-backend`.
 2. Confirm basic CI passed on the selected source, then build plugins and the matching ordinary CLI.
 3. Build changed product-owned images on Linux amd64/arm64 builders, or verify both architectures reused from a published Release. Record their actual build identities and digests under unique candidate tags.
 4. Assemble checksummed CLI/assets, `release-manifest.json` and both pinned vars files. The manifest binds `source_repository`, `release_tag`, `product_version`, source SHA and original build ID.
-5. Verify anonymous access to all five public candidate image references. Run the full source checks with the staged owned images and the pinned SigNoz precision fixture. Deploy the packaged Linux amd64 CLI and exact release images separately against OceanBase CE and seekdb. Require health, authentication, OTLP ingestion/API readback, recast persistence, image identity and cleanup checks.
+5. Verify anonymous access to all five public candidate image references. Run the full source checks with the staged owned images and the pinned SigNoz precision fixture. Deploy the packaged Linux amd64 CLI and exact release images separately against OceanBase CE and seekdb. Require health, authentication, OTLP ingestion and API readback (including native memory operations), recast persistence, image identity and cleanup checks.
 6. Freeze the exact asset sizes/hashes and both sanitized passed smoke receipts in `candidate-acceptance.json`. Candidate-only runs stop here.
 7. On explicit publication, validate candidate provenance and current remote state, tag the five public packages, publish the versioned Release, then download and compare its actual asset bytes before moving rolling aliases. Stable/RC additionally requires reviewed notes and protected approval.
 
@@ -46,14 +47,14 @@ On disposable GitHub-hosted Linux x64 runners with less than 64 GiB free on the 
 
 Confirm these prerequisites before expensive builds or publication:
 
-- Set `AIVISION_SIGNOZ_IMAGE`, or manual `signoz_image`, to the approved `ghcr.io/ob-labs/signoz-ob@sha256:...` reference containing both Linux architectures. Retain its independently produced source/build receipt when qualifying that dependency.
+- For Daily and Dev, set `AIVISION_SIGNOZ_IMAGE` or the manual `signoz_image` input to an approved `ghcr.io/ob-labs/signoz-ob@sha256:...` index containing both Linux architectures. For a formal version, review the image digest, upstream source commit, and build receipt in the dependency lock. The lock applies to the corresponding RC and Stable versions.
 - Confirm that the product repository is public and the intended actor has package and Release access. Candidate runs stage bytes in GHCR even when `publish=false`. The first authorized staging run can create private packages and stop before deployment smoke. Configure repository association, workflow access and public visibility for all five packages in GHCR. Then rerun the candidate so the registry gate can verify anonymous access.
-- For stable/RC, configure the `release` environment with required reviewers, prevention of self-review and administrator bypass disabled. Prepare an asset-free draft for the exact tag with reviewed English/Chinese notes using the [release template](../../../.github/RELEASE_TEMPLATE.md). The workflow checks protection; this guide does not claim remote setup is complete.
+- For stable/RC, configure the `release` environment with required reviewers, prevention of self-review and administrator bypass disabled. Prepare an asset-free draft for the exact tag with reviewed English and Chinese notes using the [release template](../../../.github/RELEASE_TEMPLATE.md). The protected publishing job resolves that draft and verifies its uploaded assets before publication.
 - An optional `AIVISION_E2E_DOCKER_LINUX_RUNNER` must identify a trusted Linux Docker runner with enough resources for the full stack.
 
 The release workflow qualifies the five core services. Optional OpenShell installation is documented separately in the [sandbox plugin guide](sandbox-plugins.md).
 
-In **Actions → Release images → Run workflow**, select the default branch, `tag=daily`, the fixed snapshot/revision and **`publish=false`**. `candidate_channel` accepts `auto`, `daily` or `dev`. For a pushed branch trial, select that branch, set a unique `tag` and an explicit candidate channel, and keep `publish=false`. `latest`, version-like aliases and generated `candidate-*` names are reserved. The workflow serializes writers across the package and Release updates.
+In **Actions → Release images → Run workflow**, select the default branch, `tag=daily`, the fixed snapshot/revision and **`publish=false`**. `candidate_channel` accepts `auto`, `daily` or `dev`. For a pushed branch trial, select that branch, set a unique `tag` and an explicit candidate channel, and keep `publish=false`. `latest`, version-like aliases and generated `candidate-*` names are reserved. Candidate builds queue per Git ref. Publication jobs share one queue for package aliases and Releases.
 
 ```bash
 # Select the actual snapshot date/revision before running.
@@ -66,13 +67,32 @@ gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 
 This assumes the external dependency variable is configured. Otherwise also pass `-f signoz_image=IMAGE@sha256:DIGEST` with the approved reference. A newly added workflow is dispatchable by name after reaching the default branch.
 
+The release plan records the SDK Docker coverage and selection reason.
+A Daily with a verified published baseline, an unchanged SigNoz digest and
+only allowlisted documentation or presentation changes uses the fixed SDK
+smoke. The same run still needs the complete SDK/browser job and the usual
+artifact deployment acceptance. The [CI guide](../../../scripts/ci/README.md)
+describes the full-coverage conditions.
+
+## Rehearse a formal release before tagging
+
+Run the image workflow on the proposed release branch with `release_preview=true`
+and `publish=false`. Leave the Daily date, revision, and channel settings at
+their defaults. The run uses the exact `VERSION`, pinned SigNoz dependency and
+full Release matrix. Review the frozen acceptance before merging. After merging,
+push the matching version tag at the accepted `main` commit. The tag run
+qualifies its own build and then waits for approval in the `release` environment.
+
 ## Qualify the All-in-One Personal Edition
 
-Select `personal_edition=true` and `publish=false` on a Daily run to add the
-Linux amd64 and arm64 single-container edition with embedded seekdb. The native
+Stable and RC builds include the Linux amd64 and arm64 single-container edition
+with embedded seekdb. On a Daily run, select `personal_edition=true` and
+`publish=false` to qualify those same platforms. Formal previews also qualify the
+Windows x64 CLI alongside the Personal Edition and distributed artifacts. The native
 jobs consume the frozen distributed candidate after both database smokes pass.
 Both run actual installs from the candidate files and record packaged image and
-CLI identities and persistent first-use results. The final `release-assets`
+CLI identities and persistent first-use results. Each architecture also checks
+native memory operation readback on the packaged data backend. The final `release-assets`
 and `release-acceptance` artifacts contain the original distributed assets,
 the Personal Edition installers, manifests, archives, and verified receipts.
 Use the final acceptance for promotion and the versioned Release for downloads.

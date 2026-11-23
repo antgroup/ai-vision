@@ -11,8 +11,10 @@ trace with API readback, and persistence; it is not full Agent/framework accepta
 
   python3 deploy/tests/seekdb_deploy_smoke.py --out /tmp/seekdb-evidence
 
-Release jobs must supply --aiv and --require-pinned-images, with all five service
-image overrides pinned by sha256 digest. The selected database is also pinned.
+Release jobs must supply --aiv, --require-pinned-images, and
+--require-native-memory, with all five service image overrides and the database
+pinned by sha256 digest. The native memory canary verifies one real OTLP
+operation and its hit count through the authenticated Labs API on both casts.
 This candidate gate requires every running image to be Linux amd64 during both
 initial deployment and recast; other image builds do not establish qualification.
 Set AIVISION_RELEASE_MANIFEST_BASE64 to forward the verified release record and
@@ -51,6 +53,8 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+
+from native_memory_canary import NativeMemoryCanary
 
 
 SEEKDB_IMAGE = 'oceanbase/seekdb@sha256:500910bda197c0bc5f8bbada10c6ad727807308826818c0ea0391844dedc5cc2'
@@ -355,7 +359,13 @@ class TraceCanary:
                 status, payload = response.status, json.loads(response.read() or b'{}')
         except urllib.error.HTTPError as error:
             # Never include arbitrary server response text or cookie values in evidence.
-            return error.code, {}
+            with error:
+                try:
+                    problem = json.loads(error.read(4096))
+                except (OSError, ValueError):
+                    problem = None
+            code = problem.get('code') if isinstance(problem, dict) else None
+            return error.code, {'code': code} if type(code) is int else {}
         finally:
             self.smoke.private.extend(cookie.value for cookie in self.cookies)
         return status, payload
@@ -403,7 +413,8 @@ class TraceCanary:
                                  {'Authorization': 'Bearer ' + key})
         if minted.get('agent_uuid') != agent['agent_uuid'] or minted.get('agent_product') != 'langfuse':
             raise AssertionError('ingest token has unexpected Agent identity')
-        self.smoke.private.append(minted['token'])
+        self.ingest_token = minted['token']
+        self.smoke.private.append(self.ingest_token)
         self.basic = base64.b64encode((agent['agent_uuid'] + ':' + key).encode()).decode()
         self.smoke.private.append(self.basic)
         started = time.time_ns() - 2_000_000_000
@@ -427,7 +438,7 @@ class TraceCanary:
             self.expected_spans.add(span_id)
             spans.append(dict(spans[0], spanId=span_id, parentSpanId=self.span_id))
         status, response = self.request('/v1/traces', body=payload,
-                                        headers={'Authorization': 'Bearer ' + minted['token']},
+                                        headers={'Authorization': 'Bearer ' + self.ingest_token},
                                         origin='http://127.0.0.1:' + self.smoke.values['GATEWAY_HTTP_PORT'])
         if status != 200 or int(response.get('partialSuccess', {}).get('rejectedSpans', 0)):
             raise AssertionError(f'OTLP canary ingestion failed (HTTP {status})')
@@ -854,11 +865,15 @@ def main():
     parser.add_argument('--backend', choices=('seekdb', 'oceanbase'), default='seekdb')
     parser.add_argument('--require-pinned-images', action='store_true',
                         help='require a supplied CLI and all six immutable candidate image references')
+    parser.add_argument('--require-native-memory', action='store_true',
+                        help='read back one OTLP native memory operation after initial cast and recast')
     parser.add_argument('--source-baseline-legacy-health', action='store_true',
                         help='source CI only: private legacy HTTP/custom lifecycle fixture; strict product shutdown is not validated')
     args = parser.parse_args()
     if args.source_baseline_legacy_health and args.require_pinned_images:
         parser.error('--source-baseline-legacy-health cannot be combined with --require-pinned-images')
+    if args.source_baseline_legacy_health and args.require_native_memory:
+        parser.error('--require-native-memory cannot be combined with --source-baseline-legacy-health')
     if args.baseline_aiv and args.require_pinned_images:
         parser.error('--baseline-aiv cannot be combined with --require-pinned-images')
     if args.require_pinned_images and (not args.aiv or not args.aiv.is_file() or not os.access(args.aiv, os.X_OK)):
@@ -968,6 +983,11 @@ def main():
         if metadata_values:
             summary['initial_version'] = trace.version()
         summary['initial_trace'] = trace.read()
+        if args.require_native_memory:
+            memory = NativeMemoryCanary(trace.request, space_id=trace.space_id,
+                                        agent_product='langfuse', agent_uuid=trace.agent_uuid)
+            memory.ingest('http://127.0.0.1:' + values['GATEWAY_HTTP_PORT'], trace.ingest_token)
+            summary['initial_memory'] = memory.read()
         # Recast uses persisted overrides, exercising real restart semantics.
         recast = [str(cli), 'cast', *common]
         persisted = runtime / 'work' / namespace / 'state/vars.json'
@@ -1008,6 +1028,8 @@ def main():
         if metadata_values:
             summary['recast_version'] = trace.version()
         summary['recast_trace'] = trace.read()
+        if args.require_native_memory:
+            summary['recast_memory'] = memory.read()
         summary['recast_identity'] = smoke.database_identity('recast')
         if summary['recast_identity'] != initial_identity:
             raise AssertionError('CLI upgrade changed organization identity or database mounts')

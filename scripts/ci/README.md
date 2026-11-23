@@ -122,6 +122,17 @@ count and still rejects every skipped test, so unrelated omissions cannot pass.
 
 For a targeted framework browser repair rerun, manually select `platform=true`, `browser_only=true`, and the required `tier`; set the other suite selectors to `false` to omit their independent checks. This still deploys a fresh platform and requires the SDK/browser acceptance, while the separate Docker SDK profile is unselected. It is partial coverage. `browser_only` defaults to `false` for both manual and reusable calls; the central CI caller leaves it unset, so ordinary PR/Daily/release plans still require both selected platform jobs. The independent NVIDIA opt-in and all selected-check failure/skip gates are unchanged.
 
+For product Daily candidates, the release plan permits the Docker SDK smoke
+only with a verified published baseline, the same upstream SigNoz digest, and
+a complete diff limited to ordinary documentation or allowlisted frontend
+presentation files. The plan records the selected coverage and its reason.
+The Docker smoke checks 20 fixed Langfuse 4 and NeMo Relay cases against a
+fresh OceanBase deployment. The same run must pass the SDK/browser job,
+including all 22 Python 5 cases and the JavaScript matrix. Formal Release,
+RC, manual default coverage, missing baselines, changed dependencies, and
+unclassified paths retain the full 110-case Docker matrix. Any selected
+platform job that is missing, skipped, or failed blocks qualification.
+
 To reproduce the bounded browser matrix locally, run `pnpm test:e2e --shard=N/4` from `ai-vision/vfe/` for each `N` from 1 through 4. All four results are required; a single shard is partial coverage. The unsharded command shares the eight-minute Playwright ceiling. Use the four shards for complete validation.
 
 Each profile gate requires the plan, metadata checks, and every selected family to succeed. Reusable families reject failure, cancellation, missing results, and unexpected skips. Private-image integration remains an explicit trusted-branch operation; a fork does not receive project secrets or an implied integration pass. A separate manual integration run cannot satisfy the ordinary PR's basic check. Basic database jobs use disposable hosted runners rather than the configurable persistent integration runner.
@@ -136,6 +147,13 @@ not cancel active qualification or its cleanup. Other integration workflows have
 separate concurrency policies; this is not a global quota for a shared runner pool.
 
 PR reruns cancel obsolete PR runs. Daily/release runs are not cancelled by a newer PR. Matrices bound parallelism; jobs have timeouts; locked dependencies and build caches are reused where supported. Broad platform checks are concentrated in release validation instead of every frontend or documentation change.
+
+Product candidate builds serialize per Git ref. Only jobs that publish a
+Release or move public package or Git aliases share the publication queue.
+The frontend, ingest gateway and diagnosis image builds start after the plan
+is ready. The backend waits for the plugin archive. Both groups use one
+[image build workflow](../../.github/workflows/release-image-build.yml), and the
+image indexes require both groups to succeed.
 
 The diagnostic platform job loads its Codex and deployment CLI images from a randomly named, job-owned Buildx builder. It removes that builder and its cache before database startup and on build failure; loaded runtime images and the host's selected builder remain available. A cleanup failure fails the build step.
 

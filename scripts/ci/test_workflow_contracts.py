@@ -90,6 +90,12 @@ def call_inputs(job, plan):
         if expression == "${{ needs.scope.outputs.tier }}":
             inputs[name] = plan["tier"]
             continue
+        if name == "sdk_coverage":
+            if expression != "${{ needs.scope.outputs.tier == 'daily' && inputs.sdk_coverage || 'full' }}":
+                raise AssertionError("Only the Daily CI tier may select the SDK smoke profile")
+            if declarations[name]["type"] != "string" or inputs.get(name) != "full":
+                raise AssertionError("The SDK coverage fallback must be full")
+            continue
         if expression == "${{ inputs.public_platform_images }}":
             if name != "public_platform_images" or declarations[name]["type"] != "string":
                 raise AssertionError("Candidate fixture override must be a typed workflow input")
@@ -170,6 +176,32 @@ class WorkflowGateTests(unittest.TestCase):
                                             env=env, capture_output=True, text=True, timeout=10)
                     self.assertNotEqual(result.returncode, 0)
 
+    def test_formal_release_requires_both_personal_bundles_and_final_receipt(self):
+        document = workflow("release-images.yml")
+        self.assertIs(triggers(document)["workflow_dispatch"]["inputs"]["release_preview"]["default"], False)
+        jobs = document["jobs"]
+        self.assertEqual(jobs["prepare"]["outputs"]["personal_edition"],
+                         "${{ steps.plan.outputs.personal_edition }}")
+        self.assertIn("needs.prepare.outputs.personal_edition == 'true'", jobs["personal"]["if"])
+        self.assertNotIn("channel == 'daily'", jobs["personal"]["if"])
+        self.assertEqual({row["architecture"] for row in jobs["personal"]["strategy"]["matrix"]["include"]},
+                         {"amd64", "arm64"})
+        self.assertIn("cli-smoke-${{ github.run_attempt }}-windows-x64", str(jobs["personal-acceptance"]["steps"]))
+        self.assertIn("needs.personal.result == 'success'", jobs["personal-acceptance"]["if"])
+        for name in ("preflight", "publish-stable"):
+            self.assertIn("personal-acceptance", jobs[name]["needs"])
+            self.assertIn("!inputs.release_preview", jobs[name]["if"])
+
+    def test_stable_dependency_comes_from_the_versioned_lock(self):
+        lock = json.loads((ROOT / "deploy/config/release-dependencies.json").read_text())
+        self.assertRegex(lock["product_version"], r"^\d+\.\d+\.\d+$")
+        self.assertRegex(lock["signoz"]["image"], r"^ghcr\.io/ob-labs/signoz-ob@sha256:[a-f0-9]{64}$")
+        self.assertRegex(lock["signoz"]["source_sha"], r"^[a-f0-9]{40}$")
+        prepare = workflow("release-images.yml")["jobs"]["prepare"]
+        pin = next(step for step in prepare["steps"] if step.get("name") == "Pin SigNoz before building any product artifact")
+        self.assertIn("deploy/config/release-dependencies.json", pin["run"])
+        self.assertIn("AIVISION_SIGNOZ_IMAGE", pin["env"]["DEFAULT_SIGNOZ"])
+
     def test_public_daily_runs_full_source_checks_with_verified_candidate_images(self):
         jobs = workflow("release-images.yml")["jobs"]
         self.assertEqual(jobs["prepare"]["if"], "github.repository == 'antgroup/ai-vision'")
@@ -236,7 +268,7 @@ class WorkflowGateTests(unittest.TestCase):
                          "needs.prepare.outputs.channel == 'daily')")
         stable_gate = (
             "(needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') && "
-            "(github.event_name == 'push' || inputs.publish == true)"
+            "!inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)"
         )
         self.assertEqual(jobs["preflight"]["if"].strip(), stable_gate)
         self.assertEqual(jobs["publish-stable"]["if"].strip(), stable_gate)
@@ -255,7 +287,7 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertIn("public-data-backend", jobs["assets"]["needs"])
         self.assertNotIn("packages", jobs["public-registry"]["permissions"])
         self.assertTrue(any("push-by-digest=true" in step.get("with", {}).get("outputs", "")
-                            for step in jobs["build"]["steps"]))
+                            for step in workflow("release-image-build.yml")["jobs"]["build"]["steps"]))
         index = next(step for step in jobs["manifest"]["steps"] if "imagetools create" in step.get("run", ""))
         self.assertIn('--tag "$IMAGE_REPOSITORY:$CANDIDATE_TAG"', index["run"])
         from release_plan import make_plan
@@ -373,7 +405,8 @@ class WorkflowGateTests(unittest.TestCase):
         for tier in ("pr", "daily", "release"):
             for platform, browser_only in ((True, True), (True, False), (False, True)):
                 with self.subTest(tier=tier, platform=platform, browser_only=browser_only):
-                    inputs = {key: False for key in declarations if key != "tier"}
+                    inputs = {key: definition["default"] for key, definition in declarations.items()
+                              if key != "tier"}
                     inputs.update(tier=tier, platform=platform, browser_only=browser_only)
                     required = {"browser-platform"} if platform else set()
                     if platform and not browser_only:
@@ -398,6 +431,29 @@ class WorkflowGateTests(unittest.TestCase):
         result, _ = run_step(step, inputs=inputs, needs=needs)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Unknown test tier", result.stderr)
+
+    def test_daily_sdk_smoke_requires_both_live_platform_gates(self):
+        document = workflow("framework-e2e.yml")
+        declarations = triggers(document)["workflow_call"]["inputs"]
+        gate = document["jobs"]["result"]
+        inputs = {key: definition["default"] for key, definition in declarations.items() if key != "tier"}
+        inputs.update(tier="daily", sdk_coverage="smoke", platform=True)
+        needs = {job: {"result": "skipped"} for job in gate["needs"]}
+        required = ("browser-platform", "docker-platform")
+        needs.update({job: {"result": "success"} for job in required})
+        result, summary = run_step(gate["steps"][0], inputs=inputs, needs=needs)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Docker SDK coverage `smoke`", summary)
+        for job in required:
+            with self.subTest(missing=job):
+                result, _ = run_step(gate["steps"][0], inputs=inputs,
+                                     needs={**needs, job: {"result": "skipped"}})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(job, result.stderr)
+        for override in ({"tier": "release"}, {"browser_only": True}, {"sdk_coverage": "unknown"}):
+            with self.subTest(override=override):
+                result, _ = run_step(gate["steps"][0], inputs={**inputs, **override}, needs=needs)
+                self.assertNotEqual(result.returncode, 0)
 
     def test_deployment_gate_does_not_accept_a_fork_skip(self):
         gate = workflow("seekdb-deploy-smoke.yml")["jobs"]["gate"]
@@ -632,6 +688,12 @@ class CallerContractTests(unittest.TestCase):
                 self.assertNotIn("public_platform_images", triggers(called)["workflow_dispatch"]["inputs"])
                 if "browser_only" in inputs:
                     self.assertIs(inputs.pop("browser_only"), False)
+                if "sdk_coverage" in inputs:
+                    self.assertEqual(inputs.pop("sdk_coverage"), "full")
+                    self.assertEqual(declarations["sdk_coverage"]["type"], "string")
+                    self.assertEqual(declarations["sdk_coverage"]["default"], "full")
+                    manual_coverage = triggers(called)["workflow_dispatch"]["inputs"]["sdk_coverage"]
+                    self.assertEqual(manual_coverage["default"], "full")
                 if "unit_scope" in inputs:
                     from native_unit_scope import UNIT_GROUPS
                     self.assertEqual(json.loads(inputs.pop("unit_scope")), list(UNIT_GROUPS))

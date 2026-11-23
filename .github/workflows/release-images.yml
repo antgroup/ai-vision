@@ -24,8 +24,12 @@ on:
         description: Build and qualify the Linux amd64 and arm64 Personal Edition assets for this Daily
         type: boolean
         default: false
+      release_preview:
+        description: Qualify all formal release artifacts from a branch without publishing
+        type: boolean
+        default: false
       signoz_image:
-        description: External SigNoz image@sha256 digest; otherwise use AIVISION_SIGNOZ_IMAGE
+        description: Daily or Dev SigNoz digest override; formal builds use the versioned lock
         type: string
         required: false
       reuse_release:
@@ -50,9 +54,9 @@ on:
         options: [auto, daily, dev]
         default: auto
 
-# Serializes this workflow's alias writers. Registry updates are not transactional.
+# Candidates stage run-specific artifacts. Only Release and rolling-alias writes share a cross-ref lock.
 concurrency:
-  group: release-images
+  group: release-candidate-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -78,6 +82,8 @@ jobs:
       channel: ${{ steps.plan.outputs.channel }}
       candidate_tag: ${{ steps.plan.outputs.candidate_tag }}
       tier: ${{ steps.plan.outputs.tier }}
+      personal_edition: ${{ steps.plan.outputs.personal_edition }}
+      sdk_coverage: ${{ steps.reuse.outputs.sdk_coverage }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,6 +93,7 @@ jobs:
         env:
           INPUT_TAG: ${{ inputs.tag }}
           INPUT_PERSONAL_EDITION: ${{ inputs.personal_edition }}
+          INPUT_RELEASE_PREVIEW: ${{ inputs.release_preview }}
           INPUT_SNAPSHOT_DATE: ${{ inputs.snapshot_date }}
           INPUT_DAILY_REVISION: ${{ inputs.daily_revision }}
           INPUT_CANDIDATE_CHANNEL: ${{ inputs.candidate_channel }}
@@ -103,6 +110,10 @@ jobs:
           if [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" && "$GITHUB_REF" != refs/tags/v* ]] &&
              [[ "$GITHUB_EVENT_NAME" != workflow_dispatch || "$PUBLISH" != false ]]; then
             echo '::error::A public trial branch requires a manual candidate-only run with publish=false.'
+            exit 1
+          fi
+          if [[ "${INPUT_RELEASE_PREVIEW:-}" == true && "$PUBLISH" != false ]]; then
+            echo '::error::Formal release previews require publish=false.'
             exit 1
           fi
           mkdir -p "$RUNNER_TEMP/release-plan"
@@ -124,12 +135,29 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pin SigNoz before building any product artifact
         env:
-          EXPLICIT_SIGNOZ: ${{ inputs.signoz_image || vars.AIVISION_SIGNOZ_IMAGE }}
+          INPUT_SIGNOZ: ${{ inputs.signoz_image }}
+          DEFAULT_SIGNOZ: ${{ vars.AIVISION_SIGNOZ_IMAGE }}
+          RELEASE_CHANNEL: ${{ steps.plan.outputs.channel }}
+          PRODUCT_VERSION: ${{ steps.plan.outputs.product_version }}
         run: |
           set -euo pipefail
-          ref="$EXPLICIT_SIGNOZ"
+          if [[ "$RELEASE_CHANNEL" == stable || "$RELEASE_CHANNEL" == rc ]]; then
+            lock=deploy/config/release-dependencies.json
+            ref=$(jq -er --arg version "${PRODUCT_VERSION%%-*}" '
+              select(.product_version == $version) | .signoz.image
+            ' "$lock") || {
+              echo "::error::Lock the approved SigNoz digest for ${PRODUCT_VERSION%%-*} in $lock."
+              exit 1
+            }
+            if [[ -n "$INPUT_SIGNOZ" && "$INPUT_SIGNOZ" != "$ref" ]]; then
+              echo '::error::The formal release cannot override its reviewed SigNoz lock.'
+              exit 1
+            fi
+          else
+            ref="${INPUT_SIGNOZ:-$DEFAULT_SIGNOZ}"
+          fi
           if [[ ! "$ref" =~ ^ghcr\.io/ob-labs/signoz-ob@sha256:[a-f0-9]{64}$ ]]; then
-            echo '::error::Set AIVISION_SIGNOZ_IMAGE or signoz_image to an explicit ghcr.io/ob-labs/signoz-ob@sha256 digest.'
+            echo '::error::Select an approved ghcr.io/ob-labs/signoz-ob@sha256 digest.'
             exit 1
           fi
           manifest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}')
@@ -142,6 +170,7 @@ jobs:
           printf '%s@%s\n' "$image" "$digest" > "$RUNNER_TEMP/release-plan/signoz-image.txt"
           python3 scripts/ci/release_plan.py digest --file "$RUNNER_TEMP/release-plan/signoz-image.txt"
       - name: Plan unchanged component reuse from a verified published Release
+        id: reuse
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REUSE_RELEASE: ${{ inputs.reuse_release }}
@@ -222,133 +251,38 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  build:
-    name: candidate ${{ matrix.image }} ${{ matrix.arch }}
-    needs: [prepare, plugins]
+  build-services:
+    name: candidate services
+    needs: [prepare]
+    uses: ./.github/workflows/release-image-build.yml
+    with:
+      images: >-
+        [
+          {"name":"aivision-fe","context":"ai-vision/vfe","file":"ai-vision/vfe/Dockerfile"},
+          {"name":"antcollector-gw","context":"antcollector","file":"antcollector/Dockerfile"},
+          {"name":"agentlens","context":"agentlens","file":"agentlens/docker/Dockerfile.selfhost"}
+        ]
+      image_repositories: ${{ needs.prepare.outputs.image_repositories }}
+      product_version: ${{ needs.prepare.outputs.product_version }}
     permissions:
       contents: read
       packages: write
-    env:
-      IMAGE_REPOSITORY: ${{ fromJSON(needs.prepare.outputs.image_repositories)[matrix.image] }}
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        image: [aivision-be, aivision-fe, antcollector-gw, agentlens]
-        arch: [amd64, arm64]
-        include:
-          - image: aivision-be
-            context: ai-vision
-            file: ai-vision/aivision-py-be/Dockerfile
-          - image: aivision-fe
-            context: ai-vision/vfe
-            file: ai-vision/vfe/Dockerfile
-          - image: antcollector-gw
-            context: antcollector
-            file: antcollector/Dockerfile
-          - image: agentlens
-            context: agentlens
-            file: agentlens/docker/Dockerfile.selfhost
-          - arch: amd64
-            runner: ubuntu-22.04
-          - arch: arm64
-            runner: ubuntu-22.04-arm
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@v4
-        with:
-          name: release-plan-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/release-plan
-      - name: Read the shared actual component build identity
-        id: identity
-        env:
-          COMPONENT: ${{ matrix.image }}
-        run: |
-          set -euo pipefail
-          identity=$(jq -c --arg image "$COMPONENT" '.[$image].identity' "$RUNNER_TEMP/release-plan/component-plan.json" | base64 -w0)
-          echo "base64=$identity" >> "$GITHUB_OUTPUT"
-          echo "reuse=$(jq -r --arg image "$COMPONENT" '.[$image].ref // empty' "$RUNNER_TEMP/release-plan/component-plan.json")" >> "$GITHUB_OUTPUT"
-      - if: matrix.image == 'aivision-be' && steps.identity.outputs.reuse == ''
-        uses: actions/download-artifact@v4
-        with:
-          name: plugin-dist-${{ github.run_attempt }}
-          path: ai-vision/agent-plugins/dist
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Verify both native children of an unchanged published image
-        if: steps.identity.outputs.reuse != ''
-        id: reuse
-        env:
-          IMAGE: ${{ matrix.image }}
-          ARCH: ${{ matrix.arch }}
-        run: |
-          set -euo pipefail
-          digest=$(python3 scripts/ci/release_reuse.py native --directory "$RUNNER_TEMP/release-plan" --component "$IMAGE" --arch "$ARCH")
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
-      - id: build
-        if: steps.identity.outputs.reuse == ''
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.file }}
-          platforms: linux/${{ matrix.arch }}
-          build-args: |
-            AIVISION_BUILD_INFO_BASE64=${{ steps.identity.outputs.base64 }}
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ needs.prepare.outputs.product_version }}
-            io.aivision.build-id=${{ github.run_id }}.${{ github.run_attempt }}
-          outputs: type=image,name=${{ env.IMAGE_REPOSITORY }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
-          cache-to: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }},mode=max
-      - name: Read identity back from the native candidate image
-        id: native
-        if: steps.identity.outputs.reuse == ''
-        env:
-          PUSH_DIGEST: ${{ steps.build.outputs.digest }}
-          IDENTITY: ${{ steps.identity.outputs.base64 }}
-          ARCH: ${{ matrix.arch }}
-        run: |
-          set -euo pipefail
-          [[ "$PUSH_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
-          docker buildx imagetools inspect "$IMAGE_REPOSITORY@$PUSH_DIGEST" --format '{{json .Manifest}}' > "$RUNNER_TEMP/pushed-manifest.json"
-          digest=$(python3 scripts/ci/release_plan.py native-digest --file "$RUNNER_TEMP/pushed-manifest.json" --digest "$PUSH_DIGEST" --arch "$ARCH")
-          python3 scripts/ci/release_image.py --ref "$IMAGE_REPOSITORY@$digest" --arch "$ARCH" --identity "$IDENTITY"
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
-      - name: Export pushed digest, verified native digest and actual build identity
-        env:
-          PUSH_DIGEST: ${{ steps.build.outputs.digest }}
-          NATIVE_DIGEST: ${{ steps.native.outputs.digest || steps.reuse.outputs.digest }}
-          IDENTITY: ${{ steps.identity.outputs.base64 }}
-          IMAGE: ${{ matrix.image }}
-        run: |
-          set -euo pipefail
-          [[ "$NATIVE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
-          mkdir -p "$RUNNER_TEMP/digests"
-          touch "$RUNNER_TEMP/digests/${NATIVE_DIGEST#sha256:}"
-          if [[ -n "$PUSH_DIGEST" ]]; then
-            printf '%s\n' "$PUSH_DIGEST" > "$RUNNER_TEMP/digests/push-digest.txt"
-          fi
-          printf '%s' "$IDENTITY" | base64 -d > "$RUNNER_TEMP/digests/$IMAGE.build-info.json"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ github.run_attempt }}-${{ matrix.image }}-${{ matrix.arch }}
-          path: ${{ runner.temp }}/digests/*
-          if-no-files-found: error
-          retention-days: 14
+
+  build-backend:
+    name: candidate backend
+    needs: [prepare, plugins]
+    uses: ./.github/workflows/release-image-build.yml
+    with:
+      images: '[{"name":"aivision-be","context":"ai-vision","file":"ai-vision/aivision-py-be/Dockerfile"}]'
+      image_repositories: ${{ needs.prepare.outputs.image_repositories }}
+      product_version: ${{ needs.prepare.outputs.product_version }}
+    permissions:
+      contents: read
+      packages: write
 
   manifest:
     name: candidate manifest ${{ matrix.image }}
-    needs: [prepare, build]
+    needs: [prepare, build-services, build-backend]
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
@@ -452,14 +386,14 @@ jobs:
           python3 scripts/ci/release_assets.py --directory release --image-refs image-refs --require-windows
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release/
           if-no-files-found: error
           retention-days: 14
 
   public-registry:
     name: verify public candidate indexes anonymously
-    needs: [assets]
+    needs: [prepare, assets]
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
@@ -473,7 +407,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - id: qualify
         run: |
@@ -490,6 +424,7 @@ jobs:
     with:
       tier: ${{ needs.prepare.outputs.tier }}
       profile: full
+      sdk_coverage: ${{ needs.prepare.outputs.sdk_coverage || 'full' }}
       public_platform_images: ${{ needs.public-registry.outputs.platform_images }}
       public_deploy_images: ${{ needs.public-registry.outputs.deployment_images }}
     permissions:
@@ -524,7 +459,7 @@ jobs:
         run: python scripts/ci/prepare_platform_disk.py
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - name: Deploy the packaged CLI and exact image digests without source mounts
         run: |
@@ -549,11 +484,15 @@ jobs:
           SEEKDB_IMAGE=$(jq -r .databases.seekdb release/release-manifest.json)
           AIVISION_SEEKDB_SMOKE_IMAGES_JSON=$(jq -c '.images | {signoz: .["signoz-ob"], gateway: .["antcollector-gw"], backend: .["aivision-be"], agentlens: .agentlens, frontend: .["aivision-fe"]}' release/release-manifest.json)
           python3 deploy/tests/seekdb_deploy_smoke.py \
-            --backend "$BACKEND" --require-pinned-images \
+            --backend "$BACKEND" --require-pinned-images --require-native-memory \
             --aiv "$RUNNER_TEMP/release-cli/aiv" \
             --runtime-base "$RUNNER_TEMP" \
             --out "$RUNNER_TEMP/release-smoke-$BACKEND"
-          jq -e --arg backend "$BACKEND" '.status == "passed" and .backend == $backend and .initial_images.pinned_content_verified == true and .recast_images.pinned_content_verified == true' "$RUNNER_TEMP/release-smoke-$BACKEND/summary.json"
+          jq -e --arg backend "$BACKEND" '
+            .status == "passed" and .backend == $backend and
+            .initial_images.pinned_content_verified == true and .recast_images.pinned_content_verified == true and
+            .initial_memory.hits == 2 and .initial_memory == .recast_memory
+          ' "$RUNNER_TEMP/release-smoke-$BACKEND/summary.json"
       - name: Export only the sanitized passed smoke receipt
         run: |
           python3 scripts/ci/release_candidate.py smoke --directory release \
@@ -581,7 +520,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - uses: actions/download-artifact@v4
         with:
@@ -594,7 +533,7 @@ jobs:
           path: receipts
       - name: Freeze exact base assets and deployment receipts
         env:
-          PERSONAL_EDITION: ${{ inputs.personal_edition }}
+          PERSONAL_EDITION: ${{ needs.prepare.outputs.personal_edition }}
         run: |
           set -euo pipefail
           options=()
@@ -603,7 +542,7 @@ jobs:
             --output acceptance/candidate-acceptance.json "${options[@]}"
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-acceptance' || 'release-acceptance' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-acceptance' || 'release-acceptance' }}-${{ github.run_attempt }}
           path: acceptance/candidate-acceptance.json
           if-no-files-found: error
           retention-days: 14
@@ -611,7 +550,7 @@ jobs:
   personal:
     name: Personal Edition (linux/${{ matrix.architecture }})
     needs: [prepare, assets, artifact-smoke]
-    if: inputs.personal_edition && needs.prepare.outputs.channel == 'daily'
+    if: needs.prepare.outputs.personal_edition == 'true'
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -694,61 +633,61 @@ jobs:
 
   personal-acceptance:
     name: freeze qualified Personal Edition acceptance
-    needs: [acceptance, personal]
+    needs: [prepare, acceptance, personal]
     if: >-
       always() && !cancelled() && needs.acceptance.result == 'success' &&
-      ((inputs.personal_edition && needs.personal.result == 'success') ||
-       (!inputs.personal_edition && needs.personal.result == 'skipped'))
+      ((needs.prepare.outputs.personal_edition == 'true' && needs.personal.result == 'success') ||
+       (needs.prepare.outputs.personal_edition != 'true' && needs.personal.result == 'skipped'))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Keep the qualified base assets for a standard release
-        if: '!inputs.personal_edition'
+        if: needs.prepare.outputs.personal_edition != 'true'
         run: echo 'This candidate selected the distributed edition.'
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           name: release-base-assets-${{ github.run_attempt }}
           path: release
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           name: personal-assets-${{ github.run_attempt }}-amd64
           path: personal/personal-assets-amd64
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           name: personal-assets-${{ github.run_attempt }}-arm64
           path: personal/personal-assets-arm64
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           pattern: release-smoke-${{ github.run_attempt }}-*
           path: receipts
           merge-multiple: true
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           pattern: personal-smoke-${{ github.run_attempt }}-*
           path: receipts
           merge-multiple: true
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           name: cli-smoke-${{ github.run_attempt }}-windows-x64
           path: receipts
       - name: Verify both native receipts and freeze the final release bytes
-        if: inputs.personal_edition
+        if: needs.prepare.outputs.personal_edition == 'true'
         run: |
           set -euo pipefail
           python3 scripts/ci/release_personal.py --directory release --personal-assets personal
           python3 scripts/ci/release_candidate.py freeze --directory release --receipts receipts \
             --personal-receipts receipts --output acceptance/candidate-acceptance.json
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: release-assets-${{ github.run_attempt }}
@@ -756,7 +695,7 @@ jobs:
           compression-level: 0
           if-no-files-found: error
           retention-days: 14
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: release-acceptance-${{ github.run_attempt }}
@@ -766,10 +705,10 @@ jobs:
 
   preflight:
     name: verify stable publication prerequisites
-    needs: [prepare, assets, artifact-smoke, acceptance]
+    needs: [prepare, acceptance, personal-acceptance]
     if: >-
       (needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') &&
-      (github.event_name == 'push' || inputs.publish == true)
+      !inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
@@ -801,13 +740,16 @@ jobs:
 
   publish-stable:
     name: publish reviewed stable or RC artifacts
-    needs: [prepare, preflight, artifact-smoke, acceptance]
+    needs: [prepare, preflight, acceptance, personal-acceptance]
     if: >-
       (needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') &&
-      (github.event_name == 'push' || inputs.publish == true)
+      !inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)
     environment: release
+    concurrency:
+      group: release-publication
+      cancel-in-progress: false
     runs-on: ubuntu-22.04
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
       contents: write
       packages: write
@@ -837,6 +779,9 @@ jobs:
 
   publish-development:
     name: publish verified development artifacts
+    concurrency:
+      group: release-publication
+      cancel-in-progress: false
     needs: [prepare, assets, artifact-smoke, acceptance, personal-acceptance]
     if: inputs.publish == true && (needs.prepare.outputs.channel == 'dev' || needs.prepare.outputs.channel == 'daily')
     runs-on: ubuntu-22.04
