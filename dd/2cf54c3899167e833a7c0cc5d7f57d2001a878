@@ -1,0 +1,21 @@
+docs/deployment/README.md
+  s_82be5084f06fc7::t_2ae03f553c0a7c 16
+README.md
+  s_82be5084f06fc7::t_2ae03f553c0a7c 88
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "dd2cf54c3899167e833a7c0cc5d7f57d2001a878",
+  "prompts": {},
+  "sessions": {
+    "s_82be5084f06fc7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a201c6-414d-76c2-8c5c-41946c65fc01",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
