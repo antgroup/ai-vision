@@ -136,6 +136,12 @@ jobs:
           fi
           cargo build --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${cargo_profile[@]}" --bins --jobs 2
           cargo test --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${cargo_profile[@]}" "${test_targets[@]}" --jobs 2
+      - name: Shared state-lock deadline contract
+        if: inputs.source
+        run: >-
+          cargo test --locked --manifest-path ai-vision/agent-plugins/agentic-otel-common/Cargo.toml
+          --target-dir ai-vision/agent-plugins/codex/cdxhooks/target
+          --lib state::tests::state_lock_retry_delay_respects_deadline --jobs 2 -- --exact
       - name: Native production onboarding contracts
         if: steps.unit-scope.outputs.onboarding == 'true'
         run: make -C ai-vision/agent-plugins test-onboarding PLUGIN_PYTHON=python

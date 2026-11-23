@@ -28,6 +28,7 @@ UNIT_STEPS = {
     'Native harness negative controls',
 }
 SOURCE_STEPS = {
+    'Shared state-lock deadline contract',
     'Install official pinned isolated Agent runtimes',
     'Real native processes with local LangChain fake provider',
     'Hermes turn numbering across three native processes',
@@ -265,6 +266,11 @@ class NativeWorkflowScopeTests(unittest.TestCase):
     def test_source_retains_all_hook_integration_targets(self):
         for units in (False, True):
             _, commands = source_commands(dict(tier='pr', units=units, source=True, platform=False))
+            self.assertIn(['cargo', 'test', '--locked', '--manifest-path',
+                'ai-vision/agent-plugins/agentic-otel-common/Cargo.toml', '--target-dir',
+                'ai-vision/agent-plugins/codex/cdxhooks/target', '--lib',
+                'state::tests::state_lock_retry_delay_respects_deadline', '--jobs', '2', '--', '--exact'],
+                commands)
             for source in ('codex/cdxhooks', 'claudecode/cchooks'):
                 manifest = 'ai-vision/agent-plugins/' + source + '/Cargo.toml'
                 with self.subTest(units=units, source=source):
