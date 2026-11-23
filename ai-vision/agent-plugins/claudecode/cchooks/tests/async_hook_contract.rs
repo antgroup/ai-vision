@@ -6,7 +6,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
-#[cfg(unix)]
 use sha2::{Digest, Sha256};
 
 fn performance_test_lock() -> &'static Mutex<()> {
@@ -354,7 +353,6 @@ fn worker_process_ids(root: &std::path::Path) -> std::collections::BTreeSet<u32>
         .collect()
 }
 
-#[cfg(unix)]
 fn session_runtime_dir(root: &std::path::Path, session_id: &str) -> std::path::PathBuf {
     let digest = Sha256::digest(session_id.as_bytes());
     let suffix = digest[..8]
