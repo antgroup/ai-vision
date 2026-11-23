@@ -34,7 +34,7 @@
 
 > 由蚂蚁集团可观测团队与 OceanBase 联合研发。
 
-https://github.com/user-attachments/assets/db901439-ad98-46b7-a1a2-7cb1bb9ebc43
+https://github.com/user-attachments/assets/6759491d-092c-467d-bcb9-0171353051d1
 
 > [!NOTE]
 > **个人部署** · 把这句话发给能执行命令的 AI 助手。
