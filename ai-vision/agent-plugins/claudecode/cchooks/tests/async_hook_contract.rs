@@ -1649,7 +1649,7 @@ fn tool_hook_runtime_contract_moves_http_out_of_parent_handlers() {
 
 #[test]
 fn pretooluse_control_response_uses_the_tool_context_platform_gate() {
-    let main_source = include_str!("../src/main.rs");
+    let main_source = include_str!("../src/main.rs").replace("\r\n", "\n");
     assert!(
         main_source.contains(
             "#[cfg(all(feature = \"tool_context\", not(windows)))]\n    if matches!(event, HookEvent::PreToolUse)"
@@ -1887,8 +1887,8 @@ fn segmented_timing_contract_covers_parent_and_worker_boundaries() {
     let otel_source = include_str!("../src/common/otel.rs");
     let state_source = include_str!("../src/hooks/langfuse/state.rs");
     let domain_source = include_str!("../src/hooks/langfuse/domain_state.rs");
-    let sources =
-        format!("{main_source}\n{worker_source}\n{otel_source}\n{state_source}\n{domain_source}");
+    let sources = format!("{main_source}\n{worker_source}\n{otel_source}\n{state_source}\n{domain_source}")
+        .replace("\r\n", "\n");
     for phase in [
         "stdin",
         "queue",

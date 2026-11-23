@@ -149,7 +149,7 @@ fn stop_keeps_transcript_otel_and_http_outside_state_transactions() {
 
 #[test]
 fn progressive_turn_builder_records_build_phase_timing() {
-    let source = include_str!("../src/common/otel.rs");
+    let source = include_str!("../src/common/otel.rs").replace("\r\n", "\n");
     let start = source
         .find("pub fn build_otel_export_request_for_turn_with_full_context(")
         .expect("progressive turn builder");
