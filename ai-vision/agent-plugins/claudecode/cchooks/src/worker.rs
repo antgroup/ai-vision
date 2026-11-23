@@ -4282,12 +4282,19 @@ mod tests {
             }),
         )
         .unwrap();
-        let owner = SessionOwner::acquire(session_id, std::time::Duration::from_millis(100))
-            .expect("simulate active worker ownership");
+        let (owner_ready_tx, owner_ready_rx) = std::sync::mpsc::sync_channel(0);
+        let (owner_observed_tx, owner_observed_rx) = std::sync::mpsc::sync_channel(0);
         let owner_thread = std::thread::spawn(move || {
+            let owner = SessionOwner::acquire(session_id, std::time::Duration::from_millis(100))
+                .expect("simulate active worker ownership");
+            owner_ready_tx.send(()).unwrap();
+            owner_observed_rx.recv().unwrap();
             std::thread::sleep(std::time::Duration::from_millis(40));
             drop(owner);
         });
+        owner_ready_rx.recv().unwrap();
+        assert!(SessionOwner::try_acquire(session_id).unwrap().is_none());
+        owner_observed_tx.send(()).unwrap();
 
         let mut wake_count = 0usize;
         let outcome = wait_for_session_idle_with_wake(
