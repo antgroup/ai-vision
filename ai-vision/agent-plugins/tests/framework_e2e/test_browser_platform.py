@@ -127,7 +127,7 @@ class BrowserPlatformTests(unittest.TestCase):
         rows = [{"case": f"{framework}-langfuse-{scenario}", "execute_exit": 0, "verify_exit": 0,
                  "source_verified": True, "platform_verified": True}
                 for framework in ("langchain", "deepagents") for scenario in browser.shared.scenarios()]
-        summary = {"status": "passed", "mode": "ci", "data_backend": "oceanbase", "sdks": ["langfuse"],
+        summary = {"status": "passed", "mode": "ci", "sdk_coverage": "full", "data_backend": "oceanbase", "sdks": ["langfuse"],
                    "langfuse_version": "5.0.2", "expected_cases": 22, "executed_cases": 22, "cases": rows}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory); (root / "python5").mkdir()

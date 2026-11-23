@@ -1675,7 +1675,7 @@ def require_publication_gates(jobs):
     ]
     if not publishers:
         raise ValueError("no publication job to validate")
-    for name in ("plugins", "cli", "build", "public-data-backend"):
+    for name in ("plugins", "cli", "build-services", "build-backend", "public-data-backend"):
         if "prepare" not in ancestors(name):
             raise ValueError("artifact builds can start before the official release plan")
     if "public-registry" not in ancestors("artifact-smoke"):
@@ -1704,7 +1704,7 @@ class WorkflowTests(unittest.TestCase):
         cls.root = Path(__file__).resolve().parents[2]
         cls.workflows = {
             name: yaml.safe_load((cls.root / ".github/workflows" / name).read_text())
-            for name in ("release-images.yml", "release-cli.yml", "release-plugins.yml")
+            for name in ("release-images.yml", "release-image-build.yml", "release-cli.yml", "release-plugins.yml")
         }
 
     def test_publication_reaches_both_gates_and_cannot_skip_independent_review(self):
@@ -1715,7 +1715,8 @@ class WorkflowTests(unittest.TestCase):
             ("publish-development", {"needs": ["prepare", "assets", "artifact-smoke"]}),
             ("artifact-smoke", {"needs": ["prepare", "assets"]}),
             ("plugins", {"needs": []}),
-            ("build", {"needs": []}),
+            ("build-services", {"needs": []}),
+            ("build-backend", {"needs": []}),
             ("publish-stable", {"environment": "unprotected"}),
             ("publish-development", {"if": "always()"}),
         ):

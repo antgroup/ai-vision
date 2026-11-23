@@ -54,9 +54,9 @@ on:
         options: [auto, daily, dev]
         default: auto
 
-# Serializes this workflow's alias writers. Registry updates are not transactional.
+# Candidates stage run-specific artifacts. Only Release and rolling-alias writes share a cross-ref lock.
 concurrency:
-  group: release-images
+  group: release-candidate-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
@@ -83,6 +83,7 @@ jobs:
       candidate_tag: ${{ steps.plan.outputs.candidate_tag }}
       tier: ${{ steps.plan.outputs.tier }}
       personal_edition: ${{ steps.plan.outputs.personal_edition }}
+      sdk_coverage: ${{ steps.reuse.outputs.sdk_coverage }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -169,6 +170,7 @@ jobs:
           printf '%s@%s\n' "$image" "$digest" > "$RUNNER_TEMP/release-plan/signoz-image.txt"
           python3 scripts/ci/release_plan.py digest --file "$RUNNER_TEMP/release-plan/signoz-image.txt"
       - name: Plan unchanged component reuse from a verified published Release
+        id: reuse
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REUSE_RELEASE: ${{ inputs.reuse_release }}
@@ -249,133 +251,38 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  build:
-    name: candidate ${{ matrix.image }} ${{ matrix.arch }}
-    needs: [prepare, plugins]
+  build-services:
+    name: candidate services
+    needs: [prepare]
+    uses: ./.github/workflows/release-image-build.yml
+    with:
+      images: >-
+        [
+          {"name":"aivision-fe","context":"ai-vision/vfe","file":"ai-vision/vfe/Dockerfile"},
+          {"name":"antcollector-gw","context":"antcollector","file":"antcollector/Dockerfile"},
+          {"name":"agentlens","context":"agentlens","file":"agentlens/docker/Dockerfile.selfhost"}
+        ]
+      image_repositories: ${{ needs.prepare.outputs.image_repositories }}
+      product_version: ${{ needs.prepare.outputs.product_version }}
     permissions:
       contents: read
       packages: write
-    env:
-      IMAGE_REPOSITORY: ${{ fromJSON(needs.prepare.outputs.image_repositories)[matrix.image] }}
-    strategy:
-      fail-fast: false
-      max-parallel: 4
-      matrix:
-        image: [aivision-be, aivision-fe, antcollector-gw, agentlens]
-        arch: [amd64, arm64]
-        include:
-          - image: aivision-be
-            context: ai-vision
-            file: ai-vision/aivision-py-be/Dockerfile
-          - image: aivision-fe
-            context: ai-vision/vfe
-            file: ai-vision/vfe/Dockerfile
-          - image: antcollector-gw
-            context: antcollector
-            file: antcollector/Dockerfile
-          - image: agentlens
-            context: agentlens
-            file: agentlens/docker/Dockerfile.selfhost
-          - arch: amd64
-            runner: ubuntu-22.04
-          - arch: arm64
-            runner: ubuntu-22.04-arm
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: actions/download-artifact@v4
-        with:
-          name: release-plan-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/release-plan
-      - name: Read the shared actual component build identity
-        id: identity
-        env:
-          COMPONENT: ${{ matrix.image }}
-        run: |
-          set -euo pipefail
-          identity=$(jq -c --arg image "$COMPONENT" '.[$image].identity' "$RUNNER_TEMP/release-plan/component-plan.json" | base64 -w0)
-          echo "base64=$identity" >> "$GITHUB_OUTPUT"
-          echo "reuse=$(jq -r --arg image "$COMPONENT" '.[$image].ref // empty' "$RUNNER_TEMP/release-plan/component-plan.json")" >> "$GITHUB_OUTPUT"
-      - if: matrix.image == 'aivision-be' && steps.identity.outputs.reuse == ''
-        uses: actions/download-artifact@v4
-        with:
-          name: plugin-dist-${{ github.run_attempt }}
-          path: ai-vision/agent-plugins/dist
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Verify both native children of an unchanged published image
-        if: steps.identity.outputs.reuse != ''
-        id: reuse
-        env:
-          IMAGE: ${{ matrix.image }}
-          ARCH: ${{ matrix.arch }}
-        run: |
-          set -euo pipefail
-          digest=$(python3 scripts/ci/release_reuse.py native --directory "$RUNNER_TEMP/release-plan" --component "$IMAGE" --arch "$ARCH")
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
-      - id: build
-        if: steps.identity.outputs.reuse == ''
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ matrix.context }}
-          file: ${{ matrix.file }}
-          platforms: linux/${{ matrix.arch }}
-          build-args: |
-            AIVISION_BUILD_INFO_BASE64=${{ steps.identity.outputs.base64 }}
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.version=${{ needs.prepare.outputs.product_version }}
-            io.aivision.build-id=${{ github.run_id }}.${{ github.run_attempt }}
-          outputs: type=image,name=${{ env.IMAGE_REPOSITORY }},push-by-digest=true,name-canonical=true,push=true
-          cache-from: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }}
-          cache-to: type=gha,scope=${{ matrix.image }}-${{ matrix.arch }},mode=max
-      - name: Read identity back from the native candidate image
-        id: native
-        if: steps.identity.outputs.reuse == ''
-        env:
-          PUSH_DIGEST: ${{ steps.build.outputs.digest }}
-          IDENTITY: ${{ steps.identity.outputs.base64 }}
-          ARCH: ${{ matrix.arch }}
-        run: |
-          set -euo pipefail
-          [[ "$PUSH_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
-          docker buildx imagetools inspect "$IMAGE_REPOSITORY@$PUSH_DIGEST" --format '{{json .Manifest}}' > "$RUNNER_TEMP/pushed-manifest.json"
-          digest=$(python3 scripts/ci/release_plan.py native-digest --file "$RUNNER_TEMP/pushed-manifest.json" --digest "$PUSH_DIGEST" --arch "$ARCH")
-          python3 scripts/ci/release_image.py --ref "$IMAGE_REPOSITORY@$digest" --arch "$ARCH" --identity "$IDENTITY"
-          echo "digest=$digest" >> "$GITHUB_OUTPUT"
-      - name: Export pushed digest, verified native digest and actual build identity
-        env:
-          PUSH_DIGEST: ${{ steps.build.outputs.digest }}
-          NATIVE_DIGEST: ${{ steps.native.outputs.digest || steps.reuse.outputs.digest }}
-          IDENTITY: ${{ steps.identity.outputs.base64 }}
-          IMAGE: ${{ matrix.image }}
-        run: |
-          set -euo pipefail
-          [[ "$NATIVE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
-          mkdir -p "$RUNNER_TEMP/digests"
-          touch "$RUNNER_TEMP/digests/${NATIVE_DIGEST#sha256:}"
-          if [[ -n "$PUSH_DIGEST" ]]; then
-            printf '%s\n' "$PUSH_DIGEST" > "$RUNNER_TEMP/digests/push-digest.txt"
-          fi
-          printf '%s' "$IDENTITY" | base64 -d > "$RUNNER_TEMP/digests/$IMAGE.build-info.json"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: digests-${{ github.run_attempt }}-${{ matrix.image }}-${{ matrix.arch }}
-          path: ${{ runner.temp }}/digests/*
-          if-no-files-found: error
-          retention-days: 14
+
+  build-backend:
+    name: candidate backend
+    needs: [prepare, plugins]
+    uses: ./.github/workflows/release-image-build.yml
+    with:
+      images: '[{"name":"aivision-be","context":"ai-vision","file":"ai-vision/aivision-py-be/Dockerfile"}]'
+      image_repositories: ${{ needs.prepare.outputs.image_repositories }}
+      product_version: ${{ needs.prepare.outputs.product_version }}
+    permissions:
+      contents: read
+      packages: write
 
   manifest:
     name: candidate manifest ${{ matrix.image }}
-    needs: [prepare, build]
+    needs: [prepare, build-services, build-backend]
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
@@ -517,6 +424,7 @@ jobs:
     with:
       tier: ${{ needs.prepare.outputs.tier }}
       profile: full
+      sdk_coverage: ${{ needs.prepare.outputs.sdk_coverage || 'full' }}
       public_platform_images: ${{ needs.public-registry.outputs.platform_images }}
       public_deploy_images: ${{ needs.public-registry.outputs.deployment_images }}
     permissions:
@@ -837,6 +745,9 @@ jobs:
       (needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') &&
       !inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)
     environment: release
+    concurrency:
+      group: release-publication
+      cancel-in-progress: false
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     permissions:
@@ -868,6 +779,9 @@ jobs:
 
   publish-development:
     name: publish verified development artifacts
+    concurrency:
+      group: release-publication
+      cancel-in-progress: false
     needs: [prepare, assets, artifact-smoke, acceptance, personal-acceptance]
     if: inputs.publish == true && (needs.prepare.outputs.channel == 'dev' || needs.prepare.outputs.channel == 'daily')
     runs-on: ubuntu-22.04

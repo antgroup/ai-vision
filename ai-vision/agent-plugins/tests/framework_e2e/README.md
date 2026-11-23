@@ -93,6 +93,13 @@ python ai-vision/agent-plugins/tests/framework_e2e/suite.py \
 各后端与 SDK 矩阵独立运行，避免某个单测失败遮蔽其他环境的结果。
 Docker 平台任务等待前端源码检查通过；整套 CI 通过仍要求全部任务成功。
 
+`sdk_coverage=full` 是默认配置，正式 Release 使用完整矩阵。Daily 可以显式选择
+`sdk_coverage=smoke`，在真实 OceanBase 平台上用 Langfuse 4.16.0 与 NeMo Relay
+分别验证 LangChain 和 Deep Agents 的 `success`、`unknown-usage`、`stream`、
+`cancel`、`concurrent`，共 20 例。启用冒烟集时，同一次运行还要求独立的真实
+SDK／浏览器任务通过，其中 Langfuse 5.0.2 完整执行 22 例。两种 Docker 配置都按
+精确用例 ID、固定 SDK 版本以及源码和平台对账结果验收；CI 不接收调试用的场景列表。
+
 | Job | 环境 | 验证范围 |
 | --- | --- | --- |
 | frontend | Linux / macOS / Windows | 当前前端全量 lint、回归、类型检查和生产构建 |
@@ -101,7 +108,7 @@ Docker 平台任务等待前端源码检查通过；整套 CI 通过仍要求全
 | contracts | 三系统 × Langfuse SDK3 / SDK4 / SDK5 | 业务、oracle、onboarding 与生命周期单测；SDK3/4 各44项、SDK5仅 Langfuse 22项实际导出到本地 OTLP 接收器 |
 | js-contracts | 三系统 × JS 5.14 / 6.0，Node 22 | 严格 TypeScript、四入口双模式、protobuf/gzip、metadata、IO/usage、stream/cancel 与 flush/shutdown |
 | docker-database | Linux / macOS Intel Colima × OceanBase / seekdb | 临时数据库启动、SQL 事务读回；当前 Django 全量单测使用同一数据库引擎 |
-| docker-platform | Linux / macOS Intel Colima | 临时六服务平台、初始化、SDK3/SDK4 各44项与 SDK5 22项的 ingest / API 对账，共110项 |
+| docker-platform | Linux / macOS Intel Colima | 完整矩阵在临时六服务平台验证 SDK3／SDK4 各 44 例和 SDK5 22 例的采集与 API 对账。显式 Daily 冒烟集在 Linux 验证 SDK4／Relay 共 20 例 |
 | browser-platform | Linux | 独立临时平台；Python5 fake 22 cases、JS5/6 本地 provider fixture 各33 traces；当前源码页面与实际 API 闭环 |
 | browser-platform-nvidia | Linux，手动显式启用 | 独立临时平台；Python5 3请求、JS5/6 各2请求；NVIDIA 原始 usage、SDK、API 和实际页面对账 |
 
@@ -116,7 +123,7 @@ Windows 暂不运行 Docker。macOS Docker 使用 `macos-15-intel` 和 Colima，
 Linux 默认使用标准 `ubuntu-24.04`；可用
 repository variable `AIVISION_E2E_DOCKER_LINUX_RUNNER` 选择已有 runner。
 CI 记录可用资源，执行结果及容器 OOM 状态决定验收，不因预设预算直接跳过测试，
-也不会自动创建收费 runner。SDK3/4/5 套件顺序执行且每次只运行一个 case worker。
+也不会自动创建收费 runner。Docker SDK 套件顺序执行，每次只运行一个用例 worker。
 
 Docker 数据库只使用官方 OceanBase / seekdb 的固定 digest，六服务基础镜像也在
 workflow 中固定 digest。需要更新时同时审查对应镜像仓库、支持架构和实际部署结果。

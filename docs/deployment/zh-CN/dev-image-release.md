@@ -54,7 +54,7 @@ PR 按改动路径选择 Linux 基础检查，包括版本和 release PR。集�
 
 发布工作流验收五个核心服务。可选 OpenShell 安装见[沙箱插件指南](sandbox-plugins.md)。
 
-在 **Actions → Release images → Run workflow** 选择默认分支、`tag=daily`、固定日期和修订号，并使用 **`publish=false`**。`candidate_channel` 接受 `auto`、`daily`、`dev`。试用已推送的分支时，选择该分支，设置独立的 `tag` 和明确的候选渠道，并使用 `publish=false`。`latest`、版本号格式和自动生成的 `candidate-*` 名称被保留。工作流会串行执行镜像仓库和 Release 的写入。
+在 **Actions → Release images → Run workflow** 选择默认分支、`tag=daily`、固定日期和修订号，并使用 **`publish=false`**。`candidate_channel` 接受 `auto`、`daily`、`dev`。试用已推送的分支时，选择该分支，设置独立的 `tag` 和明确的候选渠道，并使用 `publish=false`。`latest`、版本号格式和自动生成的 `candidate-*` 名称被保留。候选按 Git ref 排队。更新镜像别名和 Release 的发布任务共用一个队列。
 
 ```bash
 # 运行前填写实际快照日期／修订号。
@@ -66,6 +66,11 @@ gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 ```
 
 此命令假设外部依赖变量已配置；否则另加 `-f signoz_image=IMAGE@sha256:DIGEST`，填写已确认的引用。新增工作流到达默认分支后，才可按名称手动触发。
+
+发布计划记录 SDK Docker 覆盖范围和选择原因。上一份已发布基线可核验、
+SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运行固定的 SDK
+冒烟集。同次运行仍须通过完整 SDK 浏览器检查和制品部署验收。
+完整覆盖的触发条件见 [CI 指南](../../../scripts/ci/README.md)。
 
 ## 打标签前预演正式发布
 

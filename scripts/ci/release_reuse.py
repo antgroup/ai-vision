@@ -12,7 +12,12 @@ import subprocess
 import sys
 import tempfile
 
-from product_registry import PUBLIC_REPOSITORY, product_image_repositories, require_product_repository
+from product_registry import (
+    PUBLIC_REPOSITORY,
+    product_image_repositories,
+    require_product_repository,
+    validate_data_backend_mirror,
+)
 from release_plan import IMAGES, VERSION, require_digest, require_platforms
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "build"))
@@ -34,7 +39,8 @@ def fingerprint(root, component, source="HEAD"):
     # Hash Git modes, paths and blobs, not the worktree or generated plugin dist.
     # The whole tracked Docker context intentionally over-invalidates builds.
     paths = [CONTEXTS[component], "scripts/build/build_info.py",
-             ".github/workflows/release-images.yml", "scripts/ci/release_reuse.py"]
+             ".github/workflows/release-images.yml", ".github/workflows/release-image-build.yml",
+             "scripts/ci/release_reuse.py"]
     if component == "aivision-be":
         paths.append(".github/workflows/release-plugins.yml")
     entries = subprocess.check_output(
@@ -127,6 +133,55 @@ def published_manifest(root, tag, *, allow_ineligible=False, repository=PUBLIC_R
     return manifest
 
 
+def sdk_smoke_path(path):
+    root_prose = {b"README.md", b"README.en.md", b"README.ja.md", b"README.zh-CN.md",
+                  b"README.zh-TW.md", b"CONTRIBUTING.md"}
+    return (path in root_prose
+            or path.startswith(b"docs/") and path.endswith((b".md", b".rst"))
+            or path.startswith(b"ai-vision/vfe/src/") and path.endswith((b".tsx", b".css"))
+            and not path.endswith(b".config.tsx"))
+
+
+def sdk_coverage(root, directory, plan, prior, *, force=False):
+    """Reduce only Daily coverage backed by an already verified published manifest."""
+    if plan.get("channel") != "daily":
+        return "full", "non-daily-channel"
+    if force:
+        return "full", "forced-rebuild"
+    if not prior:
+        return "full", "no-verified-release-baseline"
+    images = prior.get("images")
+    if not isinstance(images, dict):
+        return "full", "data-backend-provenance-unavailable"
+    try:
+        mirror = validate_data_backend_mirror(prior.get("data_backend_mirror"), images.get("signoz-ob"))
+        current_upstream = (directory / "signoz-image.txt").read_text().strip()
+    except (OSError, ValueError):
+        return "full", "data-backend-provenance-unavailable"
+    if current_upstream != mirror["upstream_ref"]:
+        return "full", "data-backend-changed"
+    revisions = (prior.get("source_sha"), plan.get("source_sha"))
+    if not all(isinstance(sha, str) and re.fullmatch(r"[a-f0-9]{40}", sha) for sha in revisions):
+        return "full", "source-diff-unavailable"
+    try:
+        # Read both sides of renames and include file modes, including symlinks.
+        raw = subprocess.check_output(
+            ["git", "diff", "--raw", "--no-renames", "--no-abbrev", "--no-ext-diff",
+             "--ignore-submodules=none", "-z", *revisions, "--"],
+            cwd=root, stderr=subprocess.DEVNULL,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return "full", "source-diff-unavailable"
+    *entries, terminator = raw.split(b"\0")
+    if terminator or len(entries) % 2:
+        return "full", "source-diff-unavailable"
+    header = rb":(?:000000|100644) (?:000000|100644) [0-9a-f]{40} [0-9a-f]{40} [AMD]"
+    if any(not re.fullmatch(header, meta) or not sdk_smoke_path(path)
+           for meta, path in zip(entries[::2], entries[1::2])):
+        return "full", "source-diff-requires-compatibility"
+    return "smoke", "verified-release-and-prose-or-ui-only"
+
+
 def prepare(root, directory, prior=None, *, force=False, repository=PUBLIC_REPOSITORY):
     repositories = product_image_repositories(repository)
     if prior and not force:
@@ -214,8 +269,13 @@ def main():
         plan_path = args.directory / "release-plan.json"
         plan = json.loads(plan_path.read_text())
         plan["reuse_release"] = selected or None
+        coverage, reason = sdk_coverage(args.root, args.directory, plan, prior, force=args.force)
+        plan.update(sdk_coverage=coverage, sdk_coverage_reason=reason)
         plan_path.write_text(json.dumps(plan, indent=2) + "\n")
         prepare(args.root, args.directory, prior, force=args.force, repository=repository)
+        if output := os.environ.get("GITHUB_OUTPUT"):
+            with open(output, "a", encoding="utf-8") as stream:
+                stream.write(f"sdk_coverage={coverage}\nsdk_coverage_reason={reason}\n")
     else:
         data = json.loads((args.directory / "component-plan.json").read_text())[args.component]
         if not data["ref"]:

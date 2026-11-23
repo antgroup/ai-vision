@@ -54,7 +54,7 @@ Confirm these prerequisites before expensive builds or publication:
 
 The release workflow qualifies the five core services. Optional OpenShell installation is documented separately in the [sandbox plugin guide](sandbox-plugins.md).
 
-In **Actions → Release images → Run workflow**, select the default branch, `tag=daily`, the fixed snapshot/revision and **`publish=false`**. `candidate_channel` accepts `auto`, `daily` or `dev`. For a pushed branch trial, select that branch, set a unique `tag` and an explicit candidate channel, and keep `publish=false`. `latest`, version-like aliases and generated `candidate-*` names are reserved. The workflow serializes writers across the package and Release updates.
+In **Actions → Release images → Run workflow**, select the default branch, `tag=daily`, the fixed snapshot/revision and **`publish=false`**. `candidate_channel` accepts `auto`, `daily` or `dev`. For a pushed branch trial, select that branch, set a unique `tag` and an explicit candidate channel, and keep `publish=false`. `latest`, version-like aliases and generated `candidate-*` names are reserved. Candidate builds queue per Git ref. Publication jobs share one queue for package aliases and Releases.
 
 ```bash
 # Select the actual snapshot date/revision before running.
@@ -66,6 +66,13 @@ gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 ```
 
 This assumes the external dependency variable is configured. Otherwise also pass `-f signoz_image=IMAGE@sha256:DIGEST` with the approved reference. A newly added workflow is dispatchable by name after reaching the default branch.
+
+The release plan records the SDK Docker coverage and selection reason.
+A Daily with a verified published baseline, an unchanged SigNoz digest and
+only allowlisted documentation or presentation changes uses the fixed SDK
+smoke. The same run still needs the complete SDK/browser job and the usual
+artifact deployment acceptance. The [CI guide](../../../scripts/ci/README.md)
+describes the full-coverage conditions.
 
 ## Rehearse a formal release before tagging
 

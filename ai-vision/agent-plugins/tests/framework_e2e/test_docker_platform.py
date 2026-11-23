@@ -134,7 +134,7 @@ class DockerPlatformContractTests(unittest.TestCase):
                 for framework in ('langchain', 'deepagents') for sdk in ('langfuse', 'nemo-relay')
                 for scenario in ('success', 'no-results', 'retrieval-error', 'retry', 'changed-corpus',
                                  'zero-usage', 'unknown-usage', 'stream', 'cancel', 'concurrent', 'tool-exception')]
-        summary = {'status': 'passed', 'mode': 'ci', 'data_backend': 'oceanbase', 'expected_cases': 44,
+        summary = {'status': 'passed', 'mode': 'ci', 'sdk_coverage': 'full', 'data_backend': 'oceanbase', 'expected_cases': 44,
                    'executed_cases': 44, 'cases': rows, 'langfuse_version': '4.16.0', 'sdks': ['langfuse', 'nemo-relay']}
         self.assertTrue(platform.suite_passed(summary, sdk='lf4'))
         self.assertFalse(platform.suite_passed(summary, sdk='lf3'))
@@ -149,6 +149,33 @@ class DockerPlatformContractTests(unittest.TestCase):
         self.assertFalse(platform.suite_passed(lf5, sdk='lf4'))
         self.assertFalse(platform.suite_passed(summary, sdk='lf5'))
         self.assertFalse(platform.suite_passed({**summary, 'langfuse_version': None}, sdk='other'))
+
+    def test_docker_smoke_uses_only_the_pinned_sdk4_environment(self):
+        command = platform.sdk_suite_command(ROOT, Path('/artifacts'), 'aiv-e2e-test', coverage='smoke')
+        self.assertIn('requirements-lf4.txt', command[-1])
+        self.assertIn('--sdk-coverage smoke', command[-1])
+        self.assertNotIn('--scenarios', command[-1])
+        for sdk in ('lf3', 'lf5'):
+            with self.subTest(sdk=sdk), self.assertRaises(ValueError):
+                platform.sdk_suite_command(ROOT, Path('/artifacts'), 'aiv-e2e-test', sdk=sdk, coverage='smoke')
+
+    def test_smoke_summary_requires_exact_coverage_and_success_for_all_cases(self):
+        good = {'execute_exit': 0, 'verify_exit': 0, 'source_verified': True, 'platform_verified': True}
+        cases = [{**good, 'case': f'{framework}-{sdk}-{scenario}'}
+                 for framework in ('langchain', 'deepagents') for sdk in ('langfuse', 'nemo-relay')
+                 for scenario in ('success', 'unknown-usage', 'stream', 'cancel', 'concurrent')]
+        summary = {'status': 'passed', 'mode': 'ci', 'data_backend': 'oceanbase', 'expected_cases': 20,
+                   'executed_cases': 20, 'cases': cases, 'langfuse_version': '4.16.0',
+                   'sdks': ['langfuse', 'nemo-relay'], 'sdk_coverage': 'smoke'}
+        self.assertTrue(platform.suite_passed(summary, sdk='lf4', coverage='smoke'))
+        self.assertFalse(platform.suite_passed(summary, sdk='lf4'))
+        self.assertFalse(platform.suite_passed(summary, sdk='lf4', coverage='unknown'))
+        for invalid in ({'sdk_coverage': 'full'}, {'sdk_coverage': None}, {'langfuse_version': '5.0.2'},
+                        {'data_backend': 'seekdb'}, {'cases': cases[1:] + cases[1:2]},
+                        {'cases': [{**cases[0], 'case': 'langchain-langfuse-retry'}, *cases[1:]]},
+                        {'cases': [{**cases[0], 'source_verified': False}, *cases[1:]]},
+                        {'cases': [{**cases[0], 'platform_verified': False}, *cases[1:]]}):
+            self.assertFalse(platform.suite_passed({**summary, **invalid}, sdk='lf4', coverage='smoke'))
 
     def test_sdk_suite_uses_pinned_linux_container_and_private_environment(self):
         self.assertTrue(hasattr(platform.Smoke, 'sdk_suite'), 'SDK acceptance must run inside Linux Docker')
@@ -392,7 +419,7 @@ class DockerPlatformContractTests(unittest.TestCase):
         cases = [{**case, 'case': f'{framework}-{sdk}-{scenario}'}
                  for framework in ('langchain', 'deepagents') for sdk in ('langfuse', 'nemo-relay')
                  for scenario in scenarios]
-        summary = {'status': 'passed', 'mode': 'ci', 'data_backend': 'oceanbase',
+        summary = {'status': 'passed', 'mode': 'ci', 'sdk_coverage': 'full', 'data_backend': 'oceanbase',
                    'expected_cases': 44, 'executed_cases': 44, 'cases': cases, 'sdks': ['langfuse', 'nemo-relay']}
         self.assertTrue(platform.suite_passed(summary))
         self.assertFalse(platform.suite_passed({**summary, 'executed_cases': 43}))
@@ -433,7 +460,8 @@ class DockerPlatformContractTests(unittest.TestCase):
     def test_suite_requires_each_distinct_matrix_case_not_44_duplicate_successes(self):
         case = {'case': 'langchain-langfuse-success', 'execute_exit': 0, 'verify_exit': 0,
                 'source_verified': True, 'platform_verified': True}
-        self.assertFalse(platform.suite_passed({'status': 'passed', 'mode': 'ci', 'data_backend': 'oceanbase',
+        self.assertFalse(platform.suite_passed({'status': 'passed', 'mode': 'ci', 'sdk_coverage': 'full',
+                                              'data_backend': 'oceanbase', 'sdks': ['langfuse', 'nemo-relay'],
                                               'expected_cases': 44, 'executed_cases': 44, 'cases': [case]*44}))
 
     def test_sanitizer_removes_generated_keys_even_from_subprocess_error_text(self):

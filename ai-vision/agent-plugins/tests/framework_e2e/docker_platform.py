@@ -31,6 +31,8 @@ from suite import scenarios
 from signoz_precision import build_candidate, remove_candidate
 
 
+SDK_VERSIONS = {'lf3': '3.15.0', 'lf4': '4.16.0', 'lf5': '5.0.2'}
+SDK_PROFILES = {'full': ('lf3', 'lf4', 'lf5'), 'smoke': ('lf4',)}
 IMAGE_REPOS = {
     'oceanbase': ('oceanbase/oceanbase-ce',),
     'signoz': ('ghcr.io/ob-labs/signoz-ob', 'ghcr.io/ob-labs/signoz'),
@@ -193,15 +195,24 @@ def deployment_blueprint(source, repo, runtime, namespace, images, passwords, po
     return plan
 
 
-def suite_passed(summary, sdk=None):
+def sdk_integrations(sdk):
+    return ['langfuse'] if sdk == 'lf5' else ['langfuse', 'nemo-relay']
+
+
+def expected_sdk_cases(sdk, coverage):
+    return {f'{framework}-{integration}-{scenario}' for framework in ('langchain', 'deepagents')
+            for integration in sdk_integrations(sdk) for scenario in scenarios(coverage)}
+
+
+def suite_passed(summary, sdk=None, *, coverage='full'):
+    if sdk not in SDK_PROFILES.get(coverage, ()) and (coverage, sdk) != ('full', None):
+        return False
     cases = summary.get('cases', [])
-    sdks = ['langfuse'] if sdk == 'lf5' else ['langfuse', 'nemo-relay']
-    expected = {f'{framework}-{integration}-{scenario}' for framework in ('langchain', 'deepagents')
-                for integration in sdks for scenario in scenarios()}
+    expected = expected_sdk_cases(sdk, coverage)
     return (summary.get('status') == 'passed' and summary.get('mode') == 'ci'
-            and summary.get('data_backend') == 'oceanbase' and summary.get('sdks') == sdks
-            and (sdk is None or sdk in ('lf3', 'lf4', 'lf5') and
-                 summary.get('langfuse_version') == {'lf3': '3.15.0', 'lf4': '4.16.0', 'lf5': '5.0.2'}[sdk])
+            and summary.get('data_backend') == 'oceanbase' and summary.get('sdks') == sdk_integrations(sdk)
+            and summary.get('sdk_coverage') == coverage
+            and (sdk is None or summary.get('langfuse_version') == SDK_VERSIONS[sdk])
             and summary.get('expected_cases') == summary.get('executed_cases') == len(cases) == len(expected)
             and {case.get('case') for case in cases} == expected
             and all(case.get('execute_exit') == case.get('verify_exit') == 0
@@ -209,10 +220,10 @@ def suite_passed(summary, sdk=None):
                     for case in cases))
 
 
-def sdk_suite_command(repo, out, namespace, sdk='lf4'):
+def sdk_suite_command(repo, out, namespace, sdk='lf4', *, coverage='full'):
     """Run current SDK acceptance in a pinned Linux Python toolchain."""
-    if sdk not in ('lf3', 'lf4', 'lf5'):
-        raise ValueError('Choose the pinned lf3, lf4 or lf5 SDK environment')
+    if sdk not in SDK_PROFILES.get(coverage, ()):
+        raise ValueError('SDK environment must belong to the selected coverage profile')
     script = '''command -v uv >/dev/null 2>&1 || { echo "SDK acceptance image requires uv" >&2; exit 127; }
 export AIVISION_E2E_DATA_BACKEND=oceanbase PYTHONDONTWRITEBYTECODE=1
 export NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost UV_PYTHON_DOWNLOADS=never
@@ -222,6 +233,8 @@ exec /tmp/aivision-framework-e2e/bin/python /workspace/ai-vision/agent-plugins/t
     script = script.replace('requirements-lf4.txt', 'requirements-' + sdk + '.txt')
     if sdk == 'lf5':
         script += ' --sdks langfuse'
+    if coverage == 'smoke':
+        script += ' --sdk-coverage smoke'
     return ['docker', 'run', '--name', namespace + '-sdk-' + sdk,
             '--label', 'aivision.framework-e2e.namespace=' + namespace,
             '--platform', 'linux/amd64', '--network', 'host', '--workdir', '/tmp',
@@ -409,13 +422,13 @@ class Smoke:
     def write(self, filename, value):
         (self.out/filename).write_text(self.sanitize(value), encoding='utf-8')
 
-    def sdk_suite(self, repo, namespace, targets, sdk='lf4'):
+    def sdk_suite(self, repo, namespace, targets, sdk='lf4', *, coverage='full'):
         out = self.out/'sdk'/sdk
         out.mkdir(parents=True)
         # Docker resolves --env NAME from this child environment. Neither the
         # command line nor a mounted file contains the generated SpaceKey.
         env = dict(self.env, AIVISION_E2E_TARGETS_JSON=json.dumps(targets))
-        return self.run('api-suite-' + sdk, sdk_suite_command(repo, out, namespace, sdk=sdk),
+        return self.run('api-suite-' + sdk, sdk_suite_command(repo, out, namespace, sdk=sdk, coverage=coverage),
                         env=env, timeout=1800)
 
     def run(self, label, command, *, cwd=None, env=None, timeout=120, check=True):
@@ -551,7 +564,14 @@ def main(argv=None, *, acceptance=None, target_factory=None, expected_cases=110,
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--sdk-coverage', choices=SDK_PROFILES, default='full')
     args = parser.parse_args(argv)
+    coverage = args.sdk_coverage
+    if acceptance is not None and coverage != 'full':
+        parser.error('SDK smoke applies only to the built-in Docker acceptance')
+    sdk_profiles = SDK_PROFILES[coverage]
+    if acceptance is None:
+        expected_cases = sum(len(expected_sdk_cases(sdk, coverage)) for sdk in sdk_profiles)
     args.out = args.out.resolve()
     args.repo = args.repo.resolve()
     args.out.mkdir(parents=True, exist_ok=False)
@@ -561,6 +581,8 @@ def main(argv=None, *, acceptance=None, target_factory=None, expected_cases=110,
               'backend_source': 'current checkout apps/aivision_backend/manage.py',
               'health_probe_mode': 'legacy-source-baseline-http',
               'other_services': 'explicit candidate image digests'}
+    if acceptance is None:
+        result['sdk_coverage'] = coverage
     passwords = deployment_passwords()
     account_password = 'Ci-' + secrets.token_hex(24) + '!'
     private = set(passwords.values()) | {account_password}
@@ -632,21 +654,20 @@ def main(argv=None, *, acceptance=None, target_factory=None, expected_cases=110,
                 if acceptance is None:
                     result['sdk_runner_image'] = SDK_RUNNER_IMAGE
                     result['sdk_suites'] = {}
-                    for sdk in ('lf3', 'lf4', 'lf5'):
-                        smoke.sdk_suite(args.repo, namespace, targets, sdk=sdk)
+                    for sdk in sdk_profiles:
+                        smoke.sdk_suite(args.repo, namespace, targets, sdk=sdk, coverage=coverage)
                         summary = json.loads((args.out/'sdk'/sdk/'cases/summary.json').read_text(encoding='utf-8'))
-                        if not suite_passed(summary, sdk=sdk):
-                            raise AssertionError('Full selected SDK profile source and runner-local API reconciliation failed for ' + sdk)
+                        if not suite_passed(summary, sdk=sdk, coverage=coverage):
+                            raise AssertionError(f'{coverage} SDK source and runner-local API reconciliation failed for {sdk}')
                         result['sdk_suites'][sdk] = {'status': summary['status'], 'cases': summary['executed_cases'],
                                                      'langfuse_version': summary['langfuse_version']}
-                    result['checks']['all_110_ingest_read_cases'] = True
                 else:
                     accepted=acceptance(repo=args.repo,out=args.out,runtime=runtime,namespace=namespace,
                                         images=images,smoke=smoke,targets=targets)
                     if not isinstance(accepted,dict) or accepted.get('verified') is not True:
                         raise AssertionError('Runner-local acceptance failed')
                     result.update({k:v for k,v in accepted.items() if k!='verified'})
-                    result['checks']['all_'+str(expected_cases)+'_ingest_read_cases'] = True
+                result['checks'][f'all_{expected_cases}_ingest_read_cases'] = True
                 result['status'] = 'passed'
             finally:
                 if attempted:
