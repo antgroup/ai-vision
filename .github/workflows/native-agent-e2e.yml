@@ -109,7 +109,7 @@ jobs:
         run: |
           # Match the shipped common edition without requiring embedded keys.
           test_targets=(--lib --bins)
-          if [ "$NATIVE_SOURCE" = true ]; then test_targets=(--all-targets); fi
+          if [ "$NATIVE_SOURCE" = true ]; then test_targets=(--all-targets --no-fail-fast); fi
           cargo build --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common --bins --jobs 2
           cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2
       - name: Claude production common-edition contracts
@@ -123,7 +123,7 @@ jobs:
           test_targets=(--lib --bins)
           cargo_profile=()
           if [ "$NATIVE_SOURCE" = true ]; then
-            test_targets=(--all-targets)
+            test_targets=(--all-targets --no-fail-fast)
             # The latency tests exercise the same optimization as the shipped hook.
             cargo_profile=(--release)
           fi

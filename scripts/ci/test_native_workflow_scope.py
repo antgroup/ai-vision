@@ -232,6 +232,7 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                     self.assertEqual(command[command.index('--features') + 1], 'common')
                     self.assertIn('--bins', command)
                     self.assertNotIn('--all-targets', command)
+                    self.assertNotIn('--no-fail-fast', command)
                     self.assertNotIn('--release', command)
                     if operation == 'test':
                         self.assertIn('--lib', command)
@@ -248,6 +249,7 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                                 if command[0] == 'cargo' and manifest in command]
                     self.assertEqual([command[1] for command in matching], ['build', 'test'])
                     self.assertIn('--all-targets', matching[1])
+                    self.assertIn('--no-fail-fast', matching[1])
                     self.assertNotIn('--lib', matching[1])
                     for command in matching:
                         self.assertEqual('--release' in command, source == 'claudecode/cchooks')
