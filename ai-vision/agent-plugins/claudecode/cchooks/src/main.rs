@@ -68,8 +68,10 @@ fn main() {
         cli::SubCommand::WorkerStatus { session_id } => {
             match worker::worker_status(session_id.as_deref()) {
                 Ok(status) => println!("{}", serde_json::json!({"status": status})),
-                Err(error) => {
-                    eprintln!("Error: {error}");
+                Err(_) => {
+                    eprintln!(
+                        "Error: Worker status is unavailable. Check the worker state and its permissions."
+                    );
                     std::process::exit(1);
                 }
             }

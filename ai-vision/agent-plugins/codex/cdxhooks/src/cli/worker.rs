@@ -6416,7 +6416,10 @@ secret_key_env = "CDXHOOKS_TEST_SUBAGENT_RECOVERY_SECRET"
         let before_credential = load_state(&state_file);
         std::env::set_var("CDXHOOKS_TEST_SUBAGENT_RECOVERY_SECRET", "new-secret");
         let err = run_subagent_recovery("parent-collab", &credential_record).unwrap_err();
-        assert!(err.contains("delivery context changed"), "{err}");
+        assert!(
+            err.contains("delivery context changed"),
+            "recovery should reject changed credentials"
+        );
         assert_eq!(load_state(&state_file), before_credential);
         std::env::remove_var("CDXHOOKS_TEST_SUBAGENT_RECOVERY_SECRET");
 
@@ -6448,7 +6451,10 @@ secret_key_env = "CDXHOOKS_TEST_SUBAGENT_RECOVERY_SECRET"
         let before_header = load_state(&state_file);
         std::env::set_var("LANGFUSE_HEADERS", "x-route=new");
         let err = run_subagent_recovery("parent-collab", &header_record).unwrap_err();
-        assert!(err.contains("delivery context changed"), "{err}");
+        assert!(
+            err.contains("delivery context changed"),
+            "recovery should reject changed exporter headers"
+        );
         assert_eq!(load_state(&state_file), before_header);
         std::env::remove_var("LANGFUSE_HEADERS");
 
@@ -6456,7 +6462,10 @@ secret_key_env = "CDXHOOKS_TEST_SUBAGENT_RECOVERY_SECRET"
             write_public_subagent_recovery_record(&state_file, &parent_path, None);
         let before_missing = load_state(&state_file);
         let err = run_subagent_recovery("parent-collab", &missing_context_record).unwrap_err();
-        assert!(err.contains("missing delivery context"), "{err}");
+        assert!(
+            err.contains("missing delivery context"),
+            "recovery should reject a missing delivery context"
+        );
         assert_eq!(load_state(&state_file), before_missing);
     }
 
@@ -11767,7 +11776,7 @@ secret_key = "sk"
         std::env::remove_var("CDXHOOKS_TEST_TRANSCRIPT_TERMINAL_TIMEOUT_MS");
         assert!(
             err.contains("incomplete JSONL tail"),
-            "unexpected finalizer error: {err}"
+            "the finalizer should defer an incomplete JSONL tail"
         );
 
         let final_state = load_state(&state_file);

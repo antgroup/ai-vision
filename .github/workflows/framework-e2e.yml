@@ -241,7 +241,7 @@ jobs:
           apps.core.tests.test_releases
           apps.core.tests.test_url_routing
           --noinput --verbosity 2
-      - name: MCP configuration and local protocol regressions
+      - name: Labs import and MCP protocol regressions
         if: runner.os == 'Linux'
         env:
           AIVISION_LOG_DIR: ${{ runner.temp }}/aivision-backend-logs
@@ -250,6 +250,7 @@ jobs:
         run: >-
           uv run --frozen --python 3.12 python manage.py test
           apps.core.tests.test_labs_mcp
+          apps.core.tests.test_labs_import_conflicts
           --noinput --verbosity 2
 
   cli:

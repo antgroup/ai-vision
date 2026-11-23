@@ -323,7 +323,10 @@ fn queue_capacity_is_bounded_and_overflow_is_accounted() {
             EnqueueOutcome::Appended
         );
         let overflow = worker::enqueue_and_wake(session_id, &payload, 700, &logger).unwrap_err();
-        assert!(overflow.contains("queue capacity exceeded"), "{overflow}");
+        assert!(
+            overflow.contains("queue capacity exceeded"),
+            "queue should reject an item above the byte limit"
+        );
         assert_eq!(worker::pending_count(session_id).unwrap(), 1);
         assert_eq!(worker::overflow_count(session_id).unwrap(), 1);
         assert!(
@@ -377,7 +380,10 @@ fn queue_item_cap_rejects_new_observation_but_coalesces_duplicate_lifecycle() {
             "sequence": 2
         });
         let error = worker::enqueue_and_wake(session_id, &rejected, 1, &logger).unwrap_err();
-        assert!(error.contains("pending_items=2"), "{error}");
+        assert!(
+            error.contains("pending_items=2"),
+            "overflow should report the number of pending items"
+        );
         assert_eq!(worker::pending_count(session_id).unwrap(), 2);
         assert_eq!(worker::overflow_count(session_id).unwrap(), 1);
         drop(owner);
@@ -453,7 +459,10 @@ fn appender_never_compacts_beneath_an_inflight_worker_record() {
         inflight_rx.recv_timeout(Duration::from_secs(2)).unwrap();
 
         let overflow = worker::enqueue_and_wake(session_id, &rejected, 1, &logger).unwrap_err();
-        assert!(overflow.contains("queue capacity exceeded"), "{overflow}");
+        assert!(
+            overflow.contains("queue capacity exceeded"),
+            "queue should count in-flight items toward the item limit"
+        );
         assert_eq!(std::fs::read(&queue_path).unwrap(), before);
         release_tx.send(()).unwrap();
         let (stats, seen) = worker_thread.join().unwrap();

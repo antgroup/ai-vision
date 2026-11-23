@@ -1,8 +1,6 @@
 # AI Vision 产品部署资产
 
-`deploy/` 是产品部署定义、初始化材料和验收入口的权威目录。用户安装教程在
-[AI Vision 文档站](https://aivision.mintlify.site/zh-CN/deployment/docker)；
-当前源码能力、版本差异和运维补充见 [部署维护索引](../docs/deployment/README.md)。
+`deploy/` 是产品部署定义、初始化材料和验收入口的权威目录。安装前请在[部署概览](https://aivision.mintlify.site/zh-CN/deployment/overview)选择适合的方式。当前源码能力、版本差异和运维补充见[部署维护索引](../docs/deployment/README.md)。
 
 日常产品操作统一使用固定安装的 `aiv`，并[验证新终端可直接执行](../aivision-cli/README.md#make-aiv-available-in-new-terminals)。部署、升级、状态、日志、重建和保留数据停止使用所选 target 支持的 CLI 命令；每次保留原 namespace、workdir、blueprint、私密配置或 Compose file/env，不另建 `manage` 包装脚本。Kubernetes 当前没有 `destroy`／`redeploy`；单组件开发、原生只读排障和明确的运维修复保留各自入口。
 
