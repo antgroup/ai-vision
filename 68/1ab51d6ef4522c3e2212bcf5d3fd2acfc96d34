@@ -1,0 +1,47 @@
+deploy/README.md
+  s_82be5084f06fc7::t_9380ead6fab54f 3
+docs/README.md
+  s_82be5084f06fc7::t_b644060d9dd2f7 31
+docs/deployment/README.md
+  s_82be5084f06fc7::t_9380ead6fab54f 3,5,14
+ai-vision/docs/diagnose/model-connections.md
+  s_82be5084f06fc7::t_9380ead6fab54f 230-231
+README.md
+  s_82be5084f06fc7::t_b644060d9dd2f7 142
+  s_82be5084f06fc7::t_cd32bb25dea417 44-45,63,88,98-100,138,144
+AGENTS.md
+  s_82be5084f06fc7::t_9380ead6fab54f 23
+ai-vision/agent-plugins/README.md
+  s_82be5084f06fc7::t_9380ead6fab54f 26
+ai-vision/agent-plugins/deepseek/README.md
+  s_82be5084f06fc7::t_b644060d9dd2f7 184-185
+  s_82be5084f06fc7::t_9380ead6fab54f 183
+README.ja.md
+  s_82be5084f06fc7::t_b644060d9dd2f7 142
+  s_82be5084f06fc7::t_cd32bb25dea417 44-45,63,98-100,138,144
+  s_82be5084f06fc7::t_9380ead6fab54f 88
+README.zh-TW.md
+  s_82be5084f06fc7::t_9380ead6fab54f 88
+  s_82be5084f06fc7::t_b644060d9dd2f7 142
+  s_82be5084f06fc7::t_cd32bb25dea417 44-45,63,98-100,138,144
+README.zh-CN.md
+  s_82be5084f06fc7::t_9380ead6fab54f 88
+  s_82be5084f06fc7::t_cd32bb25dea417 44-45,63,98-100,138,144
+  s_82be5084f06fc7::t_b644060d9dd2f7 142
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "681ab51d6ef4522c3e2212bcf5d3fd2acfc96d34",
+  "prompts": {},
+  "sessions": {
+    "s_82be5084f06fc7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a201c6-414d-76c2-8c5c-41946c65fc01",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
