@@ -163,7 +163,8 @@ impl StateLock {
                         };
                     }
                 }
-                if Instant::now() >= deadline {
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                if remaining.is_zero() {
                     return StateLock {
                         _file: Some(file),
                         #[cfg(windows)]
@@ -171,7 +172,7 @@ impl StateLock {
                         acquired: false,
                     };
                 }
-                std::thread::sleep(Duration::from_millis(50));
+                std::thread::sleep(Duration::from_millis(50).min(remaining));
             }
         }
 
