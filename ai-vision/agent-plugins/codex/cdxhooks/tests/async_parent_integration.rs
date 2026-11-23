@@ -914,10 +914,10 @@ fn prompt_seed_is_reused_by_pretool_control_response() {
         .unwrap();
     assert!(command.contains(&format!("TRACEPARENT='00-{trace_id}-")));
     assert!(command.ends_with("echo CANARY_TOOL_INPUT"));
-    let pre_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PreToolUse").unwrap();
+    // Measure latency separately in pretool_parent_timing_p95_stays_below_50_ms.
     assert!(
-        pre_parent_total_ms < 50,
-        "PreToolUse parent fast path took {pre_parent_total_ms}ms"
+        parent_total_ms(&root.path().join("logs"), "PreToolUse").is_some(),
+        "PreToolUse parent timing was not recorded"
     );
 
     let key = cdxhooks::common::dirs::session_key("session/one").unwrap();
