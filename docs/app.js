@@ -9,9 +9,8 @@ function enterContent(element) {
   // These panels replace their children; the new nodes start fresh animations.
   element.classList.add('motion-enter');
 }
-const repo = 'https://github.com/antgroup/ai-vision';
 const lensData = {
-  cost: ['看见消耗', '重复的步骤，也可能推高消耗。', '重复读取、重试与上下文恢复，都可能继续消耗 Token。沿着轨迹找到它们，才知道先改哪里。', '本次模型调用用量', '18.6', 'k Token', '输入、输出与缓存分别查看'],
+  cost: ['看得清', '先筛选和排序，再沿行动轨迹追查。', 'Trace 列表可按耗时、总 Token 或状态筛选，按耗时或总 Token 排序。进入调用树，可进一步筛选 Span，再回看执行过程。', '本次模型调用用量', '18.6', 'k Token', '输入、输出与缓存分别查看'],
   tools: ['看见执行', '请求发出去了，工具真的做到了吗？', '把模型的工具请求与实际执行连起来：参数、返回内容、耗时和错误，回到任务卡住的那一步。', '连续相同调用', '3', '次', '展开每次参数与返回内容'],
   rules: ['看见要求', '“修改之后运行测试”，它照做了吗？', '先看本次加载了哪些项目指令，再往下追踪实际动作。把要求和测试结果放在一起复查。', '本次加载的约定', '1', '份', '按目录与内容版本查看']
 };
@@ -19,7 +18,7 @@ const stepData = {
   rules: ['项目指令', '先确认，你写的要求有没有被读到。', '示例项目的 AGENTS.md 写着“修改接口后，运行契约测试”。本次任务已加载，后续可以继续核对验证步骤。', '加载的指令文件', '1', '份', '查看适用目录与记录版本'],
   model: ['模型与上下文', '在它回答之前，先看它收到了什么。', '展开实际模型、系统指令、对话历史与工具返回，定位关键要求是否缺失、上下文是否被重复带入。', '模型调用用量', '18.6', 'k Token', 'GPT、Claude、DeepSeek、Kimi 等'],
   tool: ['工具请求与结果', '拿到的资料，是否足够完成这一步？', '展开工具名称、参数和返回内容。外部文档通过 MCP 服务访问；读取文件等本地工具也在同一条轨迹中。', '相同文件读取', '3', '次', '查看每次调用的完整记录'],
-  retry: lensData.cost,
+  retry: ['看见消耗', '重复的步骤，也可能推高消耗。', '重复读取、重试与上下文恢复，都可能继续消耗 Token。沿着轨迹找到它们，才知道先改哪里。', '本次模型调用用量', '18.6', 'k Token', '输入、输出与缓存分别查看'],
   test: ['验证与交付', '看到“完成了”，再看看测试结果。', '把具体测试执行、工具返回和最终回复关联起来。诊断提供复查线索，是否满足要求还要结合验收。', '验收需要', '你', '来判断', '证据、测试与业务目标一起看']
 };
 function renderDetail(d) {
@@ -92,15 +91,19 @@ $$('[data-copy]').forEach(button => button.addEventListener('click', async () =>
   toast(copied ? '已复制。粘贴给你的 Coding Agent 即可。' : '请选中提示词，手动复制。');
 }));
 const featureData = {
-  agents: ['AGENTS.md · 项目约定', '你写的要求，它读到了吗？', '项目可以用 AGENTS.md 向 Agent 说明目录、编码规范与测试要求。AI Vision 把指令文件的加载放回具体任务里，展示适用目录与记录的内容版本。', '<div class="feature-example">要求：“修改接口后运行契约测试。”<br>继续沿轨迹检查：有没有运行，返回了什么？</div>', '这些信息按实际采集记录展示。', 'https://agents.md/', '了解 AGENTS.md'],
-  mcp: ['MCP · 外部工具与资料', '它从外部拿到了什么？', 'MCP 是连接 Agent 与工具、数据的通用协议。访问知识库、数据库或业务服务时，你可以查看具体服务、请求和返回内容。', '<div class="feature-example">search_docs("订单接口契约")<br>查看服务返回的文档，再确认这些内容是否进入了模型上下文。</div>', '反复取回的大段资料，也能沿轨迹检查是否被重复使用。', 'https://modelcontextprotocol.io/', '了解 MCP'],
-  a2a: ['A2A · Agent 间协作', '交出去的任务，进行到哪了？', 'A2A 让不同 Agent 服务交换任务、进度和结果。AI Vision 将请求交给谁、任务状态和返回内容放在一起，帮助定位任务交接的问题。', '<div class="feature-example">修改接口 → 发起复核 → 等待审查结果<br>对方正在处理，还是需要补充信息？</div>', '远端 Agent 也接入观测后，可继续查看它的内部步骤与用量；只有通信记录时，查看双方交换的内容。', 'https://a2a-protocol.org/', '了解 A2A'],
-  systemone: ['System One · 模型的选择与判断', '返回一个值，然后程序怎么做？', '模型输出也可能是一项选择、一个评分或是非判断。AI Vision 提供专门的 Choice、Score、Noul 卡片与中文解说，把返回值和后续程序动作连起来。', '<div class="primitive-example"><strong>Choice · 选择</strong><br>模型 A 72% / 模型 B 21% / 模型 C 7%<br>查看选中项、各项概率与置信度，关联实际模型调用。</div><div class="primitive-example"><strong>Score · 评分</strong><br>按应用定义的等级，看分数位置、概率分布和置信度。</div><div class="primitive-example"><strong>Noul · 是非判断</strong><br>“是否违反授权？” 是的概率 0.92；应用阈值 0.80。<br>关联程序的拦截决定与工具是否实际执行。</div>', '以上为响应示例。Choice、Score 的置信度不等于正确率；Noul 展示返回概率，阈值由应用配置。', 'https://github.com/agentseek-ai/agentseek-templates/tree/main/templates/langchain/jev-harness', '用 AgentSeek 模板体验'],
+  conversation: ["对话增强", "按轮次回看 Agent 看到和说过的内容。", "在根概览打开执行过程，按角色查看已采集的提问、模型消息和工具返回。", "<div class=\"feature-example\">从有来源记录的消息回到关联 Span，核对这一轮的输入和输出。</div>", "可见内容随接入方式和上报数据而变化。", "guides/trace-process", "查看执行过程指南"],
+  mcp: ["MCP 增强", "查清调用了哪个服务和工具。", "在 Trace 中查看已采集的工具说明、参数、返回内容与耗时。", "<div class=\"feature-example\">在 MCP 总览查看各服务的工具调用，也可从 MCP 仓库搜索并导入配置。</div>", "可见内容随接入方式和上报数据而变化。", "guides/mcp-observability", "查看 MCP 观测与配置指南"],
+  a2a: ['A2A · Agent 间协作', '交出去的任务，进行到哪了？', 'A2A 让不同 Agent 服务交换任务、进度和结果。Ant AI Vision 将请求交给谁、任务状态和返回内容放在一起，帮助定位任务交接的问题。', '<div class="feature-example">修改接口 → 发起复核 → 等待审查结果<br>对方正在处理，还是需要补充信息？</div>', '远端 Agent 也接入观测后，可继续查看它的内部步骤与用量；只有通信记录时，查看双方交换的内容。', 'https://a2a-protocol.org/', '了解 A2A'],
+  skill: ["Skill 增强", "从根概览定位具体技能执行。", "点开 Skill 条目，查看已上报的技能描述、可用工具和运行条件。", "<div class=\"feature-example\">在 Skill 总览回看调用记录，也可以批量导入本地技能目录。</div>", "可见内容随接入方式和上报数据而变化。", "guides/skill-observability", "查看 Skill 观测与导入指南"],
+  decision: ["决策增强", "查看选项、概率和实际选择。", "有决策上报时，可以查看模型路由或工具审批的结果，以及关联的后续调用。", "<div class=\"feature-example\">例如在模型路由决策中，对照候选模型与实际执行用到的模型。</div>", "可见内容随接入方式和上报数据而变化。", "guides/decision-traces", "查看决策观测指南"],
   costcase: ['一次真实使用记录', '问题拆得更细，为什么消耗更大了？', '一位开发者把约 70 个待修问题拆成任务，交给 Codex 夜间并行处理。第二天，额度耗尽了。回看过程，这批任务产生了 910 次接力轮次；同一份背景在多任务、多轮次中反复加载。', '<div class="feature-metrics"><div><strong>≈70</strong><span>待修问题</span></div><div><strong>910</strong><span>接力轮次</span></div></div><div class="feature-example">先定位反复发生的步骤，再尝试合并相关修复、明确完成标准，用一小批任务观察效果。</div>', '根据一次 Codex 使用记录改写，已隐去项目和人员信息。接力轮次不等于模型调用次数，不能直接推算账单或节省比例。', '', '']
 };
 $$('[data-feature]').forEach(button => button.addEventListener('click', () => {
   const f = featureData[button.dataset.feature];
-  $('#feature-content').innerHTML = `<span class="section-tag">${f[0]}</span><h2 id="feature-title">${f[1]}</h2><p>${f[2]}</p>${f[3]}<p class="fine">${f[4]}</p>${f[5] ? `<p><a href="${f[5]}">${f[6]}</a></p>` : ''}`;
+  const guide = f[5];
+  const docsPage = guide && !guide.startsWith('https://') ? guide : '';
+  const guideLink = docsPage ? `<a data-docs-page="${docsPage}" href="https://aivision.mintlify.site/zh-CN/${docsPage}">${f[6]}</a>` : `<a href="${guide}">${f[6]}</a>`;
+  $('#feature-content').innerHTML = `<span class="section-tag">${f[0]}</span><h2 id="feature-title">${f[1]}</h2><p>${f[2]}</p>${f[3]}<p class="fine">${f[4]}</p>${guide ? `<p>${guideLink}</p>` : ''}`;
   openDialog('feature-dialog');
 }));
 const cases = {
@@ -117,8 +120,8 @@ $$('[data-case]').forEach(button => button.addEventListener('click', () => {
   window.AIVisionUI.translate($('#case-panel'));
 }));
 const connectData = {
-  app: `<div class="connect-message"><h3>给日常使用的 Agent，<br>加上观测。</h3><p>支持多种 Coding Agent 和个人助手。安装对应采集插件，照常使用，就能回看任务。完整支持列表见平台「Agent 接入」。</p><button class="button primary" data-deploy>先部署 AI Vision</button></div><ol class="connect-steps"><li><span>1</span><div><b>选应用</b><p>在「Agent 接入」找到你的 Agent。</p></div></li><li><span>2</span><div><b>装插件</b><p>生成并执行安装命令，按提示启用采集。</p></div></li><li><span>3</span><div><b>看任务</b><p>完成一次熟悉的任务，回来查看轨迹。</p></div></li></ol>`,
-  framework: `<div class="connect-message"><h3>自己的智能体，<br>也能打开过程。</h3><p>用 LangChain、Google ADK 等框架开发的应用，按现有采集方案选择接入。从测试请求开始，把用户反馈对应到具体轨迹。</p><button class="button primary" data-deploy>先部署 AI Vision</button></div><div class="framework-paths"><div><h4>Langfuse SDK</h4><p>沿用 SDK、Callback 和插桩，配置上报地址与凭据。</p></div><div><h4>NVIDIA NeMo Relay</h4><p>采集框架运行数据，配置导出地址与凭据，再发送到 AI Vision。</p></div><a href="${repo}/tree/HEAD/ai-vision/agent-plugins/langfuse/examples">查看框架接入示例</a></div>`,
+  app: `<div class="connect-message"><h3>给日常使用的 Agent，<br>加上观测。</h3><p>给 Codex、Claude Code 等已支持的应用安装采集插件，按接入指引启用后，就能回看任务轨迹。</p><button class="button primary" data-deploy>先部署 Ant AI Vision</button></div><ol class="connect-steps"><li><span>1</span><div><b>选应用</b><p><a data-docs-page="integrations/agents" href="https://aivision.mintlify.site/zh-CN/integrations/agents">查看支持的应用与安装方式</a></p></div></li><li><span>2</span><div><b>装插件</b><p>生成并执行安装命令，按提示启用采集。</p></div></li><li><span>3</span><div><b>看任务</b><p>完成一次熟悉的任务，回来查看轨迹。</p></div></li></ol>`,
+  framework: `<div class="connect-message"><h3>自己的智能体，<br>也能打开过程。</h3><p>用 LangChain、Google ADK 等框架开发的应用，按现有采集方案选择接入。从测试请求开始，把用户反馈对应到具体轨迹。</p><button class="button primary" data-deploy>先部署 Ant AI Vision</button></div><div class="framework-paths"><div><h4>Langfuse SDK</h4><p>沿用 SDK、Callback 和插桩，配置上报地址与凭据。</p></div><div><h4>NVIDIA NeMo Relay</h4><p>采集框架运行数据，配置导出地址与凭据，再发送到 Ant AI Vision。</p></div><a data-docs-page="integrations/frameworks" href="https://aivision.mintlify.site/zh-CN/integrations/frameworks">查看框架接入示例</a></div>`,
   langfuse: `<div class="connect-message"><h3>埋点已经做了，<br>换个接入地址就好。</h3><p>保留 Langfuse SDK、Callback 和插桩代码。切换 Server Endpoint 与接入凭据，无需修改业务代码或重新埋点。</p><button class="button primary" data-compat>了解兼容范围</button></div><div class="env-block"><pre>LANGFUSE_BASE_URL=&lt;接入地址&gt;\nLANGFUSE_PUBLIC_KEY=&lt;Public Key&gt;\nLANGFUSE_SECRET_KEY=&lt;Secret Key&gt;</pre><p>加载新配置，发起一次请求，查看第一条轨迹。</p></div>`
 };
 $$('[data-connect]').forEach(button => button.addEventListener('click', () => {
