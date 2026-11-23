@@ -5,12 +5,14 @@ unchanged; only bounded response facts enter the independent acceptance ledger.
 CI never selects this optional live provider.
 """
 from collections import deque
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 import threading
 import time
 from urllib.parse import urlsplit
 import httpx
+
+from loopback_http import LoopbackHTTPServer
 
 
 class RateBudget:
@@ -217,7 +219,7 @@ class NvidiaProvider:
                         if 'response' in locals():
                             owner.responses.discard(response)
                         owner.workers.discard(threading.current_thread())
-        self.server = ThreadingHTTPServer(('127.0.0.1',0), Handler)
+        self.server = LoopbackHTTPServer(Handler)
         self.server.daemon_threads = True
         self.thread = threading.Thread(target=self.server.serve_forever,daemon=True)
         self.thread.start()

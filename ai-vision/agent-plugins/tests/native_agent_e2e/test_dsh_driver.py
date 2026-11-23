@@ -1,7 +1,7 @@
 """DSH's real HTTP, WebSocket, and isolated process boundaries."""
 from __future__ import annotations
 
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 import os
 from pathlib import Path
@@ -16,6 +16,7 @@ from unittest.mock import patch
 from websockets.sync.server import serve
 
 from drivers import dsh
+from loopback_http import LoopbackHTTPServer
 from models import CaseContext
 
 
@@ -62,7 +63,7 @@ class DshDriverTests(unittest.TestCase):
                 self.send_header('Content-Length', str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        server = LoopbackHTTPServer(Handler)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:

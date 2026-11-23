@@ -1,11 +1,13 @@
 """Real HTTP contracts for the diagnostic Responses/Chat carrier."""
 import importlib
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 import threading
 import unittest
 from urllib.error import HTTPError
 from urllib.request import Request, ProxyHandler, build_opener
+
+from loopback_http import LoopbackHTTPServer
 
 
 class CodexProviderTests(unittest.TestCase):
@@ -50,7 +52,7 @@ class CodexProviderTests(unittest.TestCase):
                     if owner.usage is not None: row["usage"] = owner.usage
                     self.wfile.write(json.dumps(row).encode())
                 self.close_connection = True
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server = LoopbackHTTPServer(Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.addCleanup(self.thread.join, 2)
