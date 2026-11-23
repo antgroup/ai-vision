@@ -2,7 +2,7 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/aivision-logo-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="docs/assets/aivision-logo-light.svg">
-    <img src="docs/assets/aivision-logo-light.svg" width="320" alt="AI Vision">
+    <img src="docs/assets/aivision-logo-light.svg" width="320" alt="Ant AI Vision">
   </picture>
 </p>
 
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  AI Vision は、自分の環境で運用できるオープンソースのエージェント可観測性・診断プラットフォームです。
+  Ant AI Vision は、自分の環境で運用できるオープンソースのエージェント可観測性・診断プラットフォームです。
 </p>
 
 <p align="center">
@@ -39,7 +39,7 @@ https://github.com/user-attachments/assets/d1ceb5ea-fc3b-4ed9-98df-8270cc219db4
 > [!NOTE]
 > **個人向けの導入** · コマンドを実行できる AI アシスタントに、次の一文を送ってください。
 >
-> `ob-labs/ai-vision-skills` の `aivision-deploy` スキルを使って、この環境に AI Vision All-in-One を導入し、サービスが動作することを確認してください。
+> `ob-labs/ai-vision-skills` の `aivision-deploy` スキルを使って、この環境に Ant AI Vision All-in-One を導入し、サービスが動作することを確認してください。
 
 **使っているエージェントをつなぐ**
 
@@ -106,7 +106,7 @@ https://github.com/user-attachments/assets/d1ceb5ea-fc3b-4ed9-98df-8270cc219db4
 <details>
 <summary>診断にはどんなデータが必要ですか？</summary>
 
-診断には AI Vision が受信・保存したトレースが必要です。Langfuse SDK 経由で新たに送ったトレースも対象になります。外部 Langfuse のデータソースを参照している場合は、そこで読み取ったトレースに直接診断を実行することはできません。必要なデータが不足していると、判定不能になる場合があります。
+診断には Ant AI Vision が受信・保存したトレースが必要です。Langfuse SDK 経由で新たに送ったトレースも対象になります。外部 Langfuse のデータソースを参照している場合は、そこで読み取ったトレースに直接診断を実行することはできません。必要なデータが不足していると、判定不能になる場合があります。
 
 </details>
 
@@ -114,11 +114,11 @@ https://github.com/user-attachments/assets/d1ceb5ea-fc3b-4ed9-98df-8270cc219db4
 
 ## ⚖️ Langfuse との違いは？
 
-AI Vision は、実際の実行から問題を調べ、修正後に似たタスクで効果を確かめる流れに重点を置いています。
+Ant AI Vision は、実際の実行から問題を調べ、修正後に似たタスクで効果を確かめる流れに重点を置いています。
 
-- **余分な処理が入った理由を調べたい。** どちらも MCP と Skill のトレースに対応しています。AI Vision の[行動別ビュー](#understand)では、ツールの結果、メモリからの取得、モデルの振り分けを実行の流れの中で確認し、別の実行と比較できます。
-- **手元でまず試したい。** Langfuse の公式 Docker Compose 構成は複数のサービスを起動します。AI Vision All-in-One はプラットフォームと組み込みの seekdb を 1 つのコンテナで動かします。軽量化したイメージの圧縮アーカイブは実測で約 200 MiB です。モデルを設定せずにデモを試せます。
-- **同じ合格条件で繰り返し検証したい。** どちらもコードで条件を判定できるため、その分の LLM 評価呼び出しを省けます。Langfuse の標準評価環境では言語の標準ライブラリが使えます。AI Vision の[オプションのサンドボックス](https://aivision.mintlify.site/ja/guides/sandbox)には `pytest` などが含まれ、既存のテストや参照ファイルを成果物の検証に使えます。
+- **余分な処理が入った理由を調べたい。** どちらも MCP と Skill のトレースに対応しています。Ant AI Vision の[行動別ビュー](#understand)では、ツールの結果、メモリからの取得、モデルの振り分けを実行の流れの中で確認し、別の実行と比較できます。
+- **手元でまず試したい。** Langfuse の公式 Docker Compose 構成は複数のサービスを起動します。Ant AI Vision All-in-One はプラットフォームと組み込みの seekdb を 1 つのコンテナで動かします。軽量化したイメージの圧縮アーカイブは実測で約 200 MiB です。モデルを設定せずにデモを試せます。
+- **同じ合格条件で繰り返し検証したい。** どちらもコードで条件を判定できるため、その分の LLM 評価呼び出しを省けます。Langfuse の標準評価環境では言語の標準ライブラリが使えます。Ant AI Vision の[オプションのサンドボックス](https://aivision.mintlify.site/ja/guides/sandbox)には `pytest` などが含まれ、既存のテストや参照ファイルを成果物の検証に使えます。
 
 **Langfuse が充実している部分。** プロンプトや Skill のバージョン管理、同じデータセットを使った実験の実行と比較では、Langfuse の機能がより充実しています。
 
@@ -127,7 +127,7 @@ AI Vision は、実際の実行から問題を調べ、修正後に似たタス�
 
 <a id="langfuse-integration"></a>
 
-**Langfuse で計装済みなら。** 対応する SDK と既存の計装を使い、新しいトレースを AI Vision に送れます。対応バージョン、収集設定、クエリの対応範囲は[接続ガイド](https://aivision.mintlify.site/ja/integrations/langfuse)にまとめています。過去データの移行は個別にご検討ください。
+**Langfuse で計装済みなら。** 対応する SDK と既存の計装を使い、新しいトレースを Ant AI Vision に送れます。対応バージョン、収集設定、クエリの対応範囲は[接続ガイド](https://aivision.mintlify.site/ja/integrations/langfuse)にまとめています。過去データの移行は個別にご検討ください。
 
 <a id="self-hosting"></a>
 <a id="quick-start"></a>
@@ -136,14 +136,14 @@ AI Vision は、実際の実行から問題を調べ、修正後に似たタス�
 
 <a id="personal-deployment"></a>
 
-- **個人で使う。** [All-in-One](https://aivision.mintlify.site/ja/deployment/all-in-one) なら、Linux x86-64 または ARM64 で、AI Vision と組み込みの seekdb を 1 つの Docker コンテナで実行できます。オンライン導入には [AI Vision Skills リポジトリの読み取り権限](skills/README.md)が必要です。利用許可を得たオフライン配布物も使えます。
+- **個人で使う。** [All-in-One](https://aivision.mintlify.site/ja/deployment/all-in-one) なら、Linux x86-64 または ARM64 で、Ant AI Vision と組み込みの seekdb を 1 つの Docker コンテナで実行できます。オンライン導入には [Skills リポジトリの読み取り権限](skills/README.md)が必要です。利用許可を得たオフライン配布物も使えます。
 - <a id="team-deployment"></a>**チームで使う。** OceanBase CE と組み合わせてサービスを分けて運用します。スペースのメンバーとロールを使って、観測・診断結果を共有できます。[Docker](https://aivision.mintlify.site/ja/deployment/docker) で導入するか、既存の Kubernetes クラスターで [OB Operator](https://aivision.mintlify.site/ja/deployment/kubernetes) を使います。
 - <a id="deploy-with-skills"></a>**スキルや CLI で操作する。** `aivision-deploy` は導入と動作確認、`aivision-quickstart` は起動済みの環境で収集と診断を試すためのスキルです。CLI からも[導入](https://aivision.mintlify.site/ja/deployment/overview)や[トレースの検索](https://aivision.mintlify.site/ja/guides/cli)ができます。
 
 > [!TIP]
 > **まずはデモから。** ログイン後、個人スペースで **デモサンプル** を開き、「一連の操作を体験」を選んでサンプルデータを作成します。モデルを設定せずに、トレースの比較とルール診断を試せます。チームスペースでは、エージェント接続と診断の権限が必要です。
 
-**実際のタスクをトレースする。** **エージェント接続** から、[自作エージェント](https://aivision.mintlify.site/ja/integrations/frameworks)の SDK やランタイムを設定します。既存のアプリなら、実行環境に[プラグイン](https://aivision.mintlify.site/ja/integrations/plugins)を入れてアプリを再起動します。Codex ではさらに `/hooks` で AI Vision のフックを確認して信頼し、新しいセッションを開きます。モデルとツールを使うタスクを実行したら、**エージェントのトレース** から新しいトレースを開き、ツール呼び出しの引数とステータスを確認します。
+**実際のタスクをトレースする。** **エージェント接続** から、[自作エージェント](https://aivision.mintlify.site/ja/integrations/frameworks)の SDK やランタイムを設定します。既存のアプリなら、実行環境に[プラグイン](https://aivision.mintlify.site/ja/integrations/plugins)を入れてアプリを再起動します。Codex ではさらに `/hooks` で Ant AI Vision のフックを確認して信頼し、新しいセッションを開きます。モデルとツールを使うタスクを実行したら、**エージェントのトレース** から新しいトレースを開き、ツール呼び出しの引数とステータスを確認します。
 
 対応プラグインの [Privacy 収集モード](https://aivision.mintlify.site/ja/guides/privacy)では、プロンプト、回答、ツールの入出力などを実行環境で除外しつつ、呼び出し構造と使用量は収集できます。
 
