@@ -914,10 +914,11 @@ fn prompt_seed_is_reused_by_pretool_control_response() {
         .unwrap();
     assert!(command.contains(&format!("TRACEPARENT='00-{trace_id}-")));
     assert!(command.ends_with("echo CANARY_TOOL_INPUT"));
-    // Measure latency separately in pretool_parent_timing_p95_stays_below_50_ms.
+    let pre_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PreToolUse")
+        .expect("PreToolUse parent timing");
     assert!(
-        parent_total_ms(&root.path().join("logs"), "PreToolUse").is_some(),
-        "PreToolUse parent timing was not recorded"
+        pre_parent_total_ms < 50,
+        "PreToolUse parent fast path took {pre_parent_total_ms}ms"
     );
 
     let key = cdxhooks::common::dirs::session_key("session/one").unwrap();
@@ -981,9 +982,11 @@ fn post_parent_returns_without_waiting_for_remote_work() {
         elapsed < Duration::from_secs(1),
         "debug binary did not return promptly: {elapsed:?}"
     );
+    let post_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse")
+        .expect("PostToolUse parent timing");
     assert!(
-        parent_total_ms(&root.path().join("logs"), "PostToolUse").is_some(),
-        "PostToolUse parent timing was not recorded"
+        post_parent_total_ms < 50,
+        "parent fast path took {post_parent_total_ms}ms"
     );
 }
 
@@ -992,30 +995,12 @@ fn pretool_parent_timing_p95_stays_below_50_ms() {
     let _guard = serialize_hook_performance_test();
     let root = tempfile::tempdir().unwrap();
     let session_id = "p95-session";
-    // Exercise the warm append path under existing ownership. A detached
-    // worker could otherwise interleave writes into the parent's timing log.
-    let _owner = {
-        let previous_state_dir = std::env::var_os("CDXHOOKS_STATE_DIR");
-        std::env::set_var("CDXHOOKS_STATE_DIR", root.path().join("state"));
-        let owner = cdxhooks::common::runtime_state::SessionOwner::acquire(
-            session_id,
-            Duration::from_millis(100),
-        );
-        match previous_state_dir {
-            Some(value) => std::env::set_var("CDXHOOKS_STATE_DIR", value),
-            None => std::env::remove_var("CDXHOOKS_STATE_DIR"),
-        }
-        owner.unwrap()
-    };
-    let tool_ids = (0..22)
-        .map(|index| format!("tool-{index}"))
-        .collect::<Vec<_>>();
-    for tool_id in &tool_ids {
+    for index in 0..22 {
         let payload = json!({
             "hook_event_name": "PreToolUse",
             "session_id": session_id,
             "tool_name": "Bash",
-            "tool_use_id": tool_id,
+            "tool_use_id": format!("tool-{index}"),
             "tool_input": {"command": "true"}
         });
         let output = run_hook(root.path(), &payload);
@@ -1026,24 +1011,18 @@ fn pretool_parent_timing_p95_stays_below_50_ms() {
         );
     }
 
-    let queue = session_runtime_dir(root.path(), session_id).join("worker.queue.jsonl");
-    let queued_tool_ids = std::fs::read_to_string(queue)
-        .unwrap()
-        .lines()
-        .map(|line| {
-            serde_json::from_str::<Value>(line).unwrap()["payload"]["tool_use_id"]
-                .as_str()
-                .unwrap()
-                .to_string()
-        })
+    let records = parent_phase_records(&root.path().join("logs"), "PreToolUse");
+    assert_eq!(records.len(), 22);
+    assert!(
+        records.iter().all(|record| record["outcome"] == "queued"),
+        "each hook must accept its unique event into the durable queue"
+    );
+    // Keep the real consumer and exclude the first two invocations from p95.
+    let phase_samples = records[2..]
+        .iter()
+        .map(|record| &record["elapsed_ms"])
         .collect::<Vec<_>>();
-    assert_eq!(queued_tool_ids, tool_ids);
-
-    let phase_samples = parent_phase_samples_ms(&root.path().join("logs"), "PreToolUse");
-    assert_eq!(phase_samples.len(), 22);
-    // Cold process launch is covered separately. This p95 measures the normal
-    // same-session append path after two warm-up hooks.
-    let mut samples = phase_samples[2..]
+    let mut samples = phase_samples
         .iter()
         .map(|phases| phases["total"].as_u64().expect("parent total milliseconds"))
         .collect::<Vec<_>>();
@@ -1074,8 +1053,9 @@ fn pretool_parent_timing_p95_stays_below_50_ms() {
     assert!(
         within_budget || report_only,
         "PreToolUse parent p95 took {p95}ms; ordered phase samples (ms)={:?}",
-        &phase_samples[2..]
+        phase_samples
     );
+    std::thread::sleep(Duration::from_millis(200));
 }
 
 #[test]
@@ -1223,9 +1203,11 @@ fn one_second_collector_does_not_delay_post_parent() {
         elapsed < Duration::from_millis(250),
         "PostToolUse parent waited for slow collector: {elapsed:?}"
     );
+    let post_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse")
+        .expect("PostToolUse parent timing");
     assert!(
-        parent_total_ms(&root.path().join("logs"), "PostToolUse").is_some(),
-        "PostToolUse parent timing was not recorded"
+        post_parent_total_ms < 50,
+        "PostToolUse parent phase took {post_parent_total_ms}ms"
     );
     if let Err(error) = accepted_rx.recv_timeout(Duration::from_secs(3)) {
         panic!(
@@ -1710,9 +1692,9 @@ fn production_parent_worker_quarantines_poison_and_keeps_later_turn_live() {
 }
 
 fn parent_total_ms(root: &Path, event: &str) -> Option<u64> {
-    parent_phase_samples_ms(root, event)
+    parent_phase_records(root, event)
         .iter()
-        .find_map(|phases| phases["total"].as_u64())
+        .find_map(|record| record["elapsed_ms"]["total"].as_u64())
 }
 
 fn phase_event_count(root: &Path, component: &str, event: &str) -> usize {
@@ -1742,15 +1724,15 @@ fn worker_process_ids(root: &Path) -> std::collections::BTreeSet<u32> {
         .collect()
 }
 
-fn parent_phase_samples_ms(root: &Path, event: &str) -> Vec<Value> {
+fn parent_phase_records(root: &Path, event: &str) -> Vec<Value> {
     walk_text(root)
         .lines()
         .filter_map(|line| {
-            let mut record: Value = serde_json::from_str(line).ok()?;
+            let record: Value = serde_json::from_str(line).ok()?;
             (record["kind"] == "cdxhooks.phase_timing"
                 && record["component"] == "parent"
                 && record["event"] == event)
-                .then(|| record["elapsed_ms"].take())
+                .then_some(record)
         })
         .collect()
 }
