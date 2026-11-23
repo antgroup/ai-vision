@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto';
-import { closeSync, constants, fstatSync, openSync, readSync } from 'node:fs';
+import { closeSync, constants, fstatSync, lstatSync, openSync, readSync } from 'node:fs';
 import type { DshContentBlock } from './types.js';
 import { truncateText } from './privacy.js';
 import { mediaBlock } from '../../../shared/media-content.mjs';
 
 const MAX_BYTES = 16 * 1024 * 1024;
+const NO_FOLLOW = constants.O_NOFOLLOW ?? 0;
+const ATTACHMENT_OPEN_FLAGS = constants.O_RDONLY | NO_FOLLOW | (constants.O_NONBLOCK ?? 0);
 export const MAX_MEDIA_TRANSPORT_CHARS = 48 * 1024 * 1024;
 
 interface MediaBudget {
@@ -27,11 +29,21 @@ export function hostImageReader(provider: { imageHostPath(ref: DshImageReference
   return (ref) => {
     const path = ref.mediaType?.startsWith('image/') ? provider.imageHostPath(ref) : provider.fileHostPath?.(ref);
     if (!path) throw new Error('Attachment provider has no host mapping');
-    const fd = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    // Windows lacks O_NOFOLLOW. Check the directory entry and compare its
+    // file identity with the opened handle before reading any bytes.
+    const expectedFile = NO_FOLLOW ? undefined : lstatSync(path, { bigint: true });
+    if (expectedFile && (!expectedFile.isFile() || expectedFile.ino === 0n)) {
+      throw new Error('Attachment path must identify a regular file');
+    }
+    const fd = openSync(path, ATTACHMENT_OPEN_FLAGS);
     try {
-      const info = fstatSync(fd);
-      if (!info.isFile() || info.size !== ref.bytes || info.size <= 0 || info.size > MAX_BYTES) throw new Error('Invalid attachment size');
-      const data = Buffer.alloc(info.size);
+      const info = fstatSync(fd, { bigint: true });
+      if (expectedFile && (info.dev !== expectedFile.dev || info.ino !== expectedFile.ino)) {
+        throw new Error('Attachment file changed before it was opened');
+      }
+      const size = Number(info.size);
+      if (!info.isFile() || size !== ref.bytes || size <= 0 || size > MAX_BYTES) throw new Error('Invalid attachment size');
+      const data = Buffer.alloc(size);
       let offset = 0;
       while (offset < data.length) {
         const count = readSync(fd, data, offset, data.length - offset, null);
