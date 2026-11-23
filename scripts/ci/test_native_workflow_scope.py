@@ -43,6 +43,11 @@ def workflow():
 def predicate(expression, inputs, outputs=None):
     if expression == 'always()':
         return True
+    if expression.startswith('!cancelled()'):
+        values = {**{'inputs.' + key: value for key, value in inputs.items()},
+                  **{'steps.unit-scope.outputs.' + key: value for key, value in (outputs or {}).items()},
+                  'steps.codex-contracts.outcome': 'success'}
+        return evaluate_condition(expression, values)
     scoped = re.fullmatch(r"steps\.unit-scope\.outputs\.([a-z_]+) == 'true'", expression)
     if scoped:
         return (outputs or {}).get(scoped[1]) == 'true'
@@ -81,17 +86,22 @@ def platform_condition(inputs, status, *, cancelled=False, fork=False):
         'github.event_name': 'pull_request' if fork else 'workflow_dispatch',
         'github.event.pull_request.head.repo.full_name': 'outside/fork' if fork else 'antgroup/ai-vision',
         'github.repository': 'antgroup/ai-vision'}
-    expression = expression.replace('always()', 'True').replace('cancelled()', repr(cancelled))
-    expression = re.sub(r'(?:inputs|needs|github)\.[A-Za-z0-9_.-]+',
+    return evaluate_condition(expression, values, cancelled=cancelled)
+
+
+def evaluate_condition(expression, values, *, cancelled=False, success=True):
+    expression = (expression.replace('always()', 'True').replace('cancelled()', repr(cancelled))
+                  .replace('success()', repr(success)))
+    expression = re.sub(r'(?:inputs|needs|github|steps)\.[A-Za-z0-9_.-]+',
                         lambda match: repr(values[match[0]]), expression)
     expression = expression.replace('&&', ' and ').replace('||', ' or ')
     expression = re.sub(r'!(?!=)', ' not ', expression)
-    tree = ast.parse(expression, mode='eval')
+    tree = ast.parse(expression.strip(), mode='eval')
     allowed = (ast.Expression, ast.BoolOp, ast.And, ast.Or, ast.UnaryOp,
                ast.Not, ast.Compare, ast.Eq, ast.NotEq, ast.Constant)
     if any(not isinstance(node, allowed) for node in ast.walk(tree)):
-        raise AssertionError('Unexpected native platform condition syntax')
-    return eval(compile(tree, '<native-platform-if>', 'eval'), {'__builtins__': {}})
+        raise AssertionError('Unexpected native workflow condition syntax')
+    return eval(compile(tree, '<native-workflow-if>', 'eval'), {'__builtins__': {}})
 
 
 def run_gate(inputs, needs):
@@ -238,6 +248,19 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                         self.assertIn('--lib', command)
         self.assertIn(['make', '-C', 'ai-vision/agent-plugins', 'test-onboarding',
                        'PLUGIN_PYTHON=python'], commands)
+
+    def test_failed_codex_source_does_not_hide_claude_failure_evidence(self):
+        steps = workflow()['jobs']['native-source']['steps']
+        codex = next(step for step in steps if step.get('id') == 'codex-contracts')
+        claude = next(step for step in steps if step.get('name') == 'Claude production common-edition contracts')
+        for step in (codex, claude):
+            self.assertFalse(step.get('continue-on-error', False))
+        for source, cancelled, outcome in itertools.product((False, True), (False, True), ('failure', 'skipped')):
+            values = {'inputs.source': source, 'steps.unit-scope.outputs.claudecode': 'true',
+                      'steps.codex-contracts.outcome': outcome}
+            with self.subTest(source=source, cancelled=cancelled, outcome=outcome):
+                self.assertEqual(evaluate_condition(claude['if'], values, cancelled=cancelled, success=False),
+                                 source and not cancelled and outcome == 'failure')
 
     def test_source_retains_all_hook_integration_targets(self):
         for units in (False, True):

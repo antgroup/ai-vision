@@ -101,6 +101,7 @@ jobs:
           python -m pip install -r ai-vision/agent-plugins/tests/native_agent_e2e/requirements.txt
           python -m pip install opentelemetry-api==1.45.2 opentelemetry-sdk==1.45.2 opentelemetry-exporter-otlp-proto-http==1.45.2
       - name: Codex production common-edition contracts
+        id: codex-contracts
         if: steps.unit-scope.outputs.codex == 'true'
         env:
           # These contracts share process environment and measure hook latency.
@@ -113,7 +114,9 @@ jobs:
           cargo build --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common --bins --jobs 2
           cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2
       - name: Claude production common-edition contracts
-        if: steps.unit-scope.outputs.claudecode == 'true'
+        if: >-
+          !cancelled() && steps.unit-scope.outputs.claudecode == 'true' &&
+          (success() || (inputs.source && steps.codex-contracts.outcome == 'failure'))
         env:
           RUST_TEST_THREADS: '1'
           NATIVE_SOURCE: ${{ inputs.source }}
