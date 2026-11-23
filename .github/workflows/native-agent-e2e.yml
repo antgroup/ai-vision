@@ -174,7 +174,7 @@ jobs:
         if: steps.unit-scope.outputs.hermes == 'true'
         working-directory: ai-vision/agent-plugins/hermes
         run: >-
-          python -m unittest -v tests.test_config tests.test_config_migration tests.test_normalize
+          python -m unittest -v tests.test_config tests.test_config_migration tests.test_cohort tests.test_normalize
           tests.test_privacy tests.test_semantic_state tests.test_hook_adapters tests.test_native_usage
           tests.test_execution_usage tests.test_auxiliary_hooks tests.test_telemetry tests.test_privacy_boundary
           tests.test_protocol_spike tests.test_diagnostics tests.test_security_config tests.test_common_schema_alignment

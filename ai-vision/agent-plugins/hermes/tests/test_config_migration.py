@@ -230,6 +230,7 @@ class ConfigMigrationTests(unittest.TestCase):
                 capture_output=True,
             )
             self.assertNotEqual(result.returncode, 0)
+            self.assertIn("simulated swap failure", result.stderr)
             self.assertEqual(marker.read_text(), "old")
             self.assertEqual(legacy.read_text(), original)
             self.assertFalse((root / "observ-hermes.json").exists())
