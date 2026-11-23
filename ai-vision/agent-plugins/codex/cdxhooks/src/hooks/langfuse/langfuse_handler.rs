@@ -5133,15 +5133,21 @@ mod tests {
         let outcome = LangfuseHandler::new()
             .handle_stop_with_outcome(&HookEvent::Stop, &payload, &context)
             .unwrap();
+        let elapsed = started.elapsed();
 
         assert!(
             matches!(outcome, StopDispatchOutcome::Deferred(ref reason) if reason.contains("target turn awaiting terminal")),
             "unexpected bounded poll outcome: {outcome:?}"
         );
         assert!(
-            started.elapsed() >= Duration::from_secs(9)
-                && started.elapsed() < Duration::from_secs(12),
-            "target polling must be bounded"
+            elapsed >= Duration::from_secs(9) && elapsed < Duration::from_secs(12),
+            "target polling elapsed {elapsed:?}, expected at least 9s and less than 12s\n{}",
+            std::fs::read_to_string(dir.path().join("test.log"))
+                .unwrap_or_default()
+                .lines()
+                .filter(|line| line.contains("Transcript terminal"))
+                .collect::<Vec<_>>()
+                .join("\n")
         );
         assert_single_turn_bodies(&sink.join().unwrap(), &["Turn 1"]);
         let state = load_state(&context.state_file);
