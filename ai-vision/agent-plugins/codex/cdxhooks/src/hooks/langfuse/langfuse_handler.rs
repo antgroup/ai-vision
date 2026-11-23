@@ -6885,6 +6885,7 @@ mod tests {
             .filter_map(|line| serde_json::from_str(line).ok())
             .collect();
         let parent_turns = build_turns(&parent_messages);
+        let _fixture_polling = child_fixture_polling(None);
         let result = merge_child_sessions_into_body(
             &mut body,
             &parent_turns,
