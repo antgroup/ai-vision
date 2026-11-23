@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 from contextlib import contextmanager
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 import math
 import os
@@ -22,7 +22,7 @@ import uuid
 import httpx
 
 from execute_rag import clear_environment, targets, versions
-from sdk_transport import CaptureForwarder, Ledger, remember_private, safe, write_json
+from sdk_transport import CaptureForwarder, Ledger, LoopbackHTTPServer, remember_private, safe, write_json
 from verify_rag import (compare_native_spans, compare_source_fields, compare_v1_observations,
                         decoded, http_query, iso_nano, observation_type, projected_io,
                         projected_metadata, span_usage)
@@ -107,7 +107,7 @@ class ProviderProxy:
                     owner.records.append(safe(record))
                     self.close_connection = True
 
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server = LoopbackHTTPServer(Handler)
         self.worker = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.worker.start()
         return f"http://127.0.0.1:{self.server.server_port}/v1"

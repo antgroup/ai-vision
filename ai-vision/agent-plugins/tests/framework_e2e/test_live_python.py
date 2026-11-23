@@ -87,7 +87,8 @@ class LiveProviderLedgerTests(unittest.TestCase):
         proxy.client.close()
         proxy.client = httpx.Client(transport=httpx.MockTransport(
             lambda request: (forwarded.append(json.loads(request.content)) or httpx.Response(404, json={"error": "fixture"}))))
-        endpoint = proxy.start()
+        with patch("socket.getfqdn", side_effect=AssertionError("Loopback bind must not use reverse DNS")):
+            endpoint = proxy.start()
         bounded = {"model": "fixture", "messages": [], "stream": True,
                    "stream_options": {"include_usage": True}, "max_tokens": 32}
         try:

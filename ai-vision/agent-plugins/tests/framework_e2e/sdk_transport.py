@@ -10,6 +10,7 @@ import hashlib
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from socketserver import TCPServer
 from typing import Any
 
 import httpx
@@ -123,13 +124,24 @@ def decode_spans(body: bytes, encoding: str = "") -> dict[str, Any]:
     return {"spans": spans, "protobuf": MessageToDict(request, preserving_proto_field_name=True)}
 
 
+class LoopbackHTTPServer(ThreadingHTTPServer):
+    """Bind the local fixture without a reverse DNS lookup."""
+
+    def __init__(self, handler: type[BaseHTTPRequestHandler]) -> None:
+        super().__init__(("127.0.0.1", 0), handler)
+
+    def server_bind(self) -> None:
+        TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address
+
+
 class CaptureForwarder:
     def __init__(self, platform_origin: str | None, ledger: Ledger):
         self.platform_origin = platform_origin.rstrip("/") if platform_origin else None
         self.ledger = ledger
         self.exports: list[dict[str, Any]] = []
         self.lock = threading.Lock()
-        self.server: ThreadingHTTPServer | None = None
+        self.server: LoopbackHTTPServer | None = None
         self.thread: threading.Thread | None = None
         self.client: httpx.Client | None = None
 
@@ -189,7 +201,7 @@ class CaptureForwarder:
                 self.wfile.write(payload)
 
         self.client = httpx.Client(timeout=30, trust_env=False)
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server = LoopbackHTTPServer(Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         return f"http://127.0.0.1:{self.server.server_port}"
