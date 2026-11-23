@@ -8,6 +8,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+from textwrap import indent
 import threading
 from types import SimpleNamespace
 import time
@@ -17,6 +18,19 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).parent))
 from models import CaseContext
 from _process_test_helpers import assert_posix_process_stopped
+
+
+# HTTPServer.server_bind resolves a hostname before listen. The fixtures only
+# use numeric loopback, and reverse DNS can stall on hosted macOS runners.
+LOOPBACK_HTTP_SERVER = """\
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import TCPServer
+
+class LoopbackHTTPServer(HTTPServer):
+    def server_bind(self):
+        TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address
+"""
 
 
 class OpenCodeProcessTests(unittest.TestCase):
@@ -150,16 +164,16 @@ class OpenCodeProcessTests(unittest.TestCase):
     def test_attached_server_allows_delayed_termination_flush(self):
         from drivers.opencode import _attached_server
         marker = self.workspace / "server-flush"
-        script = ("import signal,sys,time\n"
+        script = LOOPBACK_HTTP_SERVER + (
+                  "import signal,sys,time\n"
                   "from pathlib import Path\n"
-                  "from http.server import BaseHTTPRequestHandler,HTTPServer\n"
                   "def stop(*args):\n time.sleep(.75); "
                   f"Path({str(marker)!r}).write_text('flush-complete'); sys.exit(23)\n"
                   "signal.signal(signal.SIGTERM,stop)\n"
                   "class Handler(BaseHTTPRequestHandler):\n"
                   " def log_message(self,*args): pass\n"
                   " def do_GET(self):\n  self.send_response(200); self.end_headers()\n"
-                  "HTTPServer(('127.0.0.1',int(sys.argv[sys.argv.index('--port')+1])),Handler).serve_forever()\n")
+                  "LoopbackHTTPServer(('127.0.0.1',int(sys.argv[sys.argv.index('--port')+1])),Handler).serve_forever()\n")
         started = time.monotonic()
         with _attached_server([sys.executable, "-c", script], dict(os.environ), self.workspace, 2, True):
             self.assertFalse(marker.exists())
@@ -254,7 +268,7 @@ import json, os, pathlib, sys
 if '--version' in sys.argv:
  print('1.18.34'); raise SystemExit(0)
 if 'serve' in sys.argv:
- from http.server import BaseHTTPRequestHandler, HTTPServer
+''' + indent(LOOPBACK_HTTP_SERVER, ' ') + r'''
  class Handler(BaseHTTPRequestHandler):
   def log_message(self,*args): pass
   def do_GET(self):
@@ -284,7 +298,7 @@ if 'serve' in sys.argv:
    pending.daemon=True
    pending.start()
    self.send_response(200);self.end_headers();self.wfile.write(b'true')
- HTTPServer(('127.0.0.1',int(sys.argv[sys.argv.index('--port')+1])),Handler).serve_forever()
+ LoopbackHTTPServer(('127.0.0.1',int(sys.argv[sys.argv.index('--port')+1])),Handler).serve_forever()
 root = pathlib.Path(os.environ['XDG_CONFIG_HOME']) / 'opencode'
 config = json.loads((root / 'opencode.json').read_text())
 plugin = json.loads((root / 'observ-opencode.json').read_text())
