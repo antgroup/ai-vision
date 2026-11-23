@@ -15,12 +15,22 @@ DIGEST_REF = re.compile(r"[a-z0-9][a-z0-9./_-]*@sha256:[a-f0-9]{64}")
 IMAGES = ("aivision-be", "aivision-fe", "antcollector-gw", "agentlens")
 
 
+def formal_release_channel(version):
+    """Classify an exact release version without changing supported prereleases."""
+    if not isinstance(version, str) or not VERSION.fullmatch(version):
+        raise ValueError("invalid formal release version")
+    return "rc" if "-" in version else "stable"
+
+
 def make_plan(
     version, event, ref, default_branch, tag, run_id, run_number, attempt, source_sha, date,
     snapshot_date=None, daily_revision="1", candidate_channel="auto", personal_edition=False,
+    release_preview=False,
 ):
-    if not VERSION.fullmatch(version):
+    if not isinstance(version, str) or not VERSION.fullmatch(version):
         raise ValueError("invalid root VERSION")
+    if type(personal_edition) is not bool or type(release_preview) is not bool:
+        raise ValueError("Personal Edition and release preview inputs must be boolean")
     if not re.fullmatch(r"[a-f0-9]{40}", source_sha):
         raise ValueError("source must be a full commit SHA")
     if not all(
@@ -44,14 +54,19 @@ def make_plan(
     selected_date = snapshot_date or date
     if event == "schedule" and (daily_revision != "1" or candidate_channel != "auto"):
         raise ValueError("scheduled Daily builds do not accept manual selection inputs")
-    if ref.startswith("refs/tags/v"):
+    branches = "refs/heads/"
+    if release_preview and (event != "workflow_dispatch" or not ref.startswith(branches) or ref == branches):
+        raise ValueError("release preview requires a manually selected branch")
+    tagged = ref.startswith("refs/tags/v")
+    if tagged or release_preview:
         if snapshot_date not in (None, "") or daily_revision != "1" or candidate_channel != "auto":
-            raise ValueError("tagged releases do not accept Daily selection inputs")
-        if event not in {"push", "workflow_dispatch"} or ref[11:] != version:
+            raise ValueError("formal releases and previews do not accept Daily selection inputs")
+        if tagged and (event not in {"push", "workflow_dispatch"} or ref != f"refs/tags/v{version}"):
             raise ValueError("release tag must exactly match root VERSION")
-        channel = "rc" if "-" in version else "stable"
+        channel = formal_release_channel(version)
         product_version, alias, tier = version, version, "release"
         selected_date = ""
+        personal_edition = True
     else:
         if event not in {"schedule", "workflow_dispatch"}:
             raise ValueError("unsupported release event")
@@ -82,10 +97,11 @@ def make_plan(
             if attempt != "1":
                 product_version += f".{attempt}"
         tier = "daily"
-    if type(personal_edition) is not bool or (personal_edition and channel != "daily"):
-        raise ValueError("Personal Edition currently requires a Daily candidate")
+    if personal_edition and channel == "dev":
+        raise ValueError("Personal Edition requires a Daily, Stable or RC candidate")
     return {
         **({"personal_edition": True} if personal_edition else {}),
+        **({"release_preview": True} if release_preview else {}),
         "source_sha": source_sha,
         "product_version": product_version,
         "channel": channel,
@@ -231,10 +247,14 @@ def main():
                 daily_revision=os.environ.get("INPUT_DAILY_REVISION") or "1",
                 candidate_channel=os.environ.get("INPUT_CANDIDATE_CHANNEL") or "auto",
                 personal_edition=os.environ.get("INPUT_PERSONAL_EDITION") == "true",
+                release_preview=os.environ.get("INPUT_RELEASE_PREVIEW") == "true",
             )
             args.file.write_text(json.dumps(plan, indent=2) + "\n")
             with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-                output.writelines(f"{key}={value}\n" for key, value in plan.items())
+                for key, value in plan.items():
+                    if isinstance(value, bool):
+                        value = json.dumps(value)
+                    output.write(f"{key}={value}\n")
         elif args.command == "digest":
             print(require_digest(args.file.read_text().strip()))
         else:

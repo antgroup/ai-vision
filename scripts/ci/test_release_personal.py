@@ -102,5 +102,6 @@ class PersonalReleaseTests(unittest.TestCase):
         jobs = yaml.safe_load(workflow.read_text())["jobs"]
         self.assertIn("artifact-smoke", jobs["personal"]["needs"])
         self.assertIn("public-source-checks", jobs["acceptance"]["needs"])
-        self.assertEqual(set(jobs["personal-acceptance"]["needs"]), {"acceptance", "personal"})
+        self.assertTrue({"acceptance", "personal"} <= set(jobs["personal-acceptance"]["needs"]))
         self.assertIn("personal-acceptance", jobs["publish-development"]["needs"])
+        self.assertIn("personal-acceptance", jobs["publish-stable"]["needs"])

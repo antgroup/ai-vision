@@ -12,7 +12,7 @@ import tarfile
 import windows_release_cli
 
 from product_registry import product_image_repositories, validate_data_backend_mirror
-from release_plan import IMAGES, require_digest
+from release_plan import IMAGES, formal_release_channel, require_digest
 from release_reuse import validate_build
 
 DATABASES = {
@@ -72,9 +72,16 @@ def release_asset_names(manifest, *, base_only=False):
     if "plugins" in manifest:
         raise ValueError("optional plugin catalogs are not part of the standard product release")
     personal = manifest.get("personal_edition", False)
-    if type(personal) is not bool or (personal and manifest.get("channel") != "daily"):
-        raise ValueError("Personal Edition requires a Daily manifest")
+    channel = manifest.get("channel")
     windows = {windows_release_cli.ASSET} if windows_release_cli.included(manifest) else set()
+    if type(personal) is not bool or (personal and channel not in {"daily", "stable", "rc"}):
+        raise ValueError("Personal Edition requires a Daily, Stable or RC manifest")
+    if channel in {"stable", "rc"}:
+        version = manifest.get("product_version")
+        if formal_release_channel(version) != channel or manifest.get("release_tag") != f"v{version}":
+            raise ValueError("formal release channel and tag must match the product version")
+        if not personal or not windows:
+            raise ValueError("Stable and RC require Personal Edition and the Windows x64 CLI")
     return RELEASE_ASSETS | windows | (PERSONAL_ASSETS if personal and not base_only else set())
 
 
@@ -92,6 +99,7 @@ def assemble(directory, image_refs, *, source_sha, build_id, repository, require
         "component-plan.json",
         "data-backend-mirror.json",
     }
+    require_windows = require_windows or plan["channel"] in {"stable", "rc"}
     if require_windows:
         expected.add(windows_release_cli.ASSET)
     mirror_path = directory / "data-backend-mirror.json"
@@ -153,8 +161,8 @@ def assemble(directory, image_refs, *, source_sha, build_id, repository, require
     }
     if require_windows:
         manifest["cli_platforms"] = windows_release_cli.PLATFORMS
-    if plan.get("personal_edition", False):
-        manifest["personal_edition"] = True
+    if "personal_edition" in plan:
+        manifest["personal_edition"] = plan["personal_edition"]
     release_asset_names(manifest, base_only=True)
     (directory / "release-manifest.json").write_text(
         json.dumps(manifest, indent=2) + "\n"

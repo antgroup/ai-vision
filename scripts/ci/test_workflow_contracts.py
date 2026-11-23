@@ -170,6 +170,32 @@ class WorkflowGateTests(unittest.TestCase):
                                             env=env, capture_output=True, text=True, timeout=10)
                     self.assertNotEqual(result.returncode, 0)
 
+    def test_formal_release_requires_both_personal_bundles_and_final_receipt(self):
+        document = workflow("release-images.yml")
+        self.assertIs(triggers(document)["workflow_dispatch"]["inputs"]["release_preview"]["default"], False)
+        jobs = document["jobs"]
+        self.assertEqual(jobs["prepare"]["outputs"]["personal_edition"],
+                         "${{ steps.plan.outputs.personal_edition }}")
+        self.assertIn("needs.prepare.outputs.personal_edition == 'true'", jobs["personal"]["if"])
+        self.assertNotIn("channel == 'daily'", jobs["personal"]["if"])
+        self.assertEqual({row["architecture"] for row in jobs["personal"]["strategy"]["matrix"]["include"]},
+                         {"amd64", "arm64"})
+        self.assertIn("cli-smoke-${{ github.run_attempt }}-windows-x64", str(jobs["personal-acceptance"]["steps"]))
+        self.assertIn("needs.personal.result == 'success'", jobs["personal-acceptance"]["if"])
+        for name in ("preflight", "publish-stable"):
+            self.assertIn("personal-acceptance", jobs[name]["needs"])
+            self.assertIn("!inputs.release_preview", jobs[name]["if"])
+
+    def test_stable_dependency_comes_from_the_versioned_lock(self):
+        lock = json.loads((ROOT / "deploy/config/release-dependencies.json").read_text())
+        self.assertRegex(lock["product_version"], r"^\d+\.\d+\.\d+$")
+        self.assertRegex(lock["signoz"]["image"], r"^ghcr\.io/ob-labs/signoz-ob@sha256:[a-f0-9]{64}$")
+        self.assertRegex(lock["signoz"]["source_sha"], r"^[a-f0-9]{40}$")
+        prepare = workflow("release-images.yml")["jobs"]["prepare"]
+        pin = next(step for step in prepare["steps"] if step.get("name") == "Pin SigNoz before building any product artifact")
+        self.assertIn("deploy/config/release-dependencies.json", pin["run"])
+        self.assertIn("AIVISION_SIGNOZ_IMAGE", pin["env"]["DEFAULT_SIGNOZ"])
+
     def test_public_daily_runs_full_source_checks_with_verified_candidate_images(self):
         jobs = workflow("release-images.yml")["jobs"]
         self.assertEqual(jobs["prepare"]["if"], "github.repository == 'antgroup/ai-vision'")
@@ -236,7 +262,7 @@ class WorkflowGateTests(unittest.TestCase):
                          "needs.prepare.outputs.channel == 'daily')")
         stable_gate = (
             "(needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') && "
-            "(github.event_name == 'push' || inputs.publish == true)"
+            "!inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)"
         )
         self.assertEqual(jobs["preflight"]["if"].strip(), stable_gate)
         self.assertEqual(jobs["publish-stable"]["if"].strip(), stable_gate)

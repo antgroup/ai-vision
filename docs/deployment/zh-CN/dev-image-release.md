@@ -14,6 +14,7 @@ native 编译由[可选候选工作流](../../../.github/workflows/native-candid
 | 手动 `dev`，默认 `publish=false` | 当前默认分支；`VERSION-dev.YYYYMMDD.RUN_NUMBER[.ATTEMPT]` | 冻结的开发候选版，不发布 Release 或产品 alias |
 | 手动试用 alias | 所选已推送分支；独立的非版本号 alias 和所选候选渠道 | 仅生成候选制品；发布会在写入版本标签之前被拒绝 |
 | 合格 Daily／Dev 的推进发布 | 仍对应当前默认分支 head 的准确成功候选 run／attempt | 用原始冻结制品发布带版本号的预发布和滚动入口 |
+| 手动 `release_preview=true` | 所选分支及准确的 `VERSION` | 运行完整正式发布矩阵并冻结制品，关闭发布 |
 | 推送 `v*` tag | 与 `VERSION` 一致，且提交在默认分支历史中 | 通过受保护审批后的正式 Release 或 RC 预发布 |
 
 显式 `publish=true` 的手动 Daily/Dev 运行仍可在相同源码／制品门禁通过后发布。独立推进流程用于先审阅候选、再发布，不会重新构建。
@@ -28,7 +29,7 @@ PR 按改动路径选择 Linux 基础检查，包括版本和 release PR。集�
 
 ## 候选验收与发布
 
-1. 确定准确的源码 SHA 和已批准的上游 SigNoz 镜像索引 digest。公开候选将同一索引复制到 `ghcr.io/antgroup/ai-vision/data-backend` 并回读校验。
+1. 确定准确的源码 SHA 和已批准的上游 SigNoz 镜像索引 digest。正式版和 RC 读取[依赖锁文件](../../../deploy/config/release-dependencies.json)中对应基础版本的固定索引。公开候选将同一索引复制到 `ghcr.io/antgroup/ai-vision/data-backend` 并回读校验。
 2. 确认所选源码通过基础 CI，再构建插件及配套普通 CLI。
 3. 在 Linux amd64／arm64 构建器上构建变化的自有镜像，或验证从已发布 Release 复用的两个架构。记录实际构建身份和 digest，使用唯一候选 tag。
 4. 生成带校验和的 CLI／制品、`release-manifest.json` 和两份固定变量文件。manifest 绑定 `source_repository`、`release_tag`、`product_version`、源码 SHA 和原始 build ID。
@@ -46,9 +47,9 @@ PR 按改动路径选择 Linux 基础检查，包括版本和 release PR。集�
 
 在昂贵构建或发布前确认以下条件：
 
-- 将 `AIVISION_SIGNOZ_IMAGE` 或手动 `signoz_image` 设为已经确认的 `ghcr.io/ob-labs/signoz-ob@sha256:...`，且包含两个 Linux 架构。验收此依赖时保留其独立产生的源码／构建回执。
+- Daily 和 Dev 可用 `AIVISION_SIGNOZ_IMAGE` 或手动 `signoz_image` 指定含两个 Linux 架构的 `ghcr.io/ob-labs/signoz-ob@sha256:...`。发布正式版本时，通过依赖锁文件评审 SigNoz 的镜像摘要、源码提交和构建回执。同一基础版本的 RC 和正式版使用同一份锁。
 - 确认产品仓库已公开，并核对实际操作账户的 Package 和 Release 权限。即使 `publish=false`，候选也会向 GHCR 写入镜像数据。首次获授权的候选可能创建私有 Package，随后在部署 smoke 前停止。为五个 Package 配置仓库关联、工作流访问权限和公开可见性，再重跑候选，由镜像仓库门禁验证匿名访问。
-- 正式版／RC：为 `release` environment 配置 required reviewers，禁止自我审批并关闭管理员绕过。为准确 tag 准备无附件的 draft，按 [release 模板](../../../.github/RELEASE_TEMPLATE.md)审阅中英文说明。工作流会检查审批配置，本文不表示远端配置已经完成。
+- 正式版／RC：为 `release` environment 配置 required reviewers，禁止自我审批并关闭管理员绕过。按 [Release 模板](../../../.github/RELEASE_TEMPLATE.md)为准确的 tag 准备无附件的中英双语草稿。受保护的发布任务定位草稿并回读核验附件，通过后才发布。
 - 可选的 `AIVISION_E2E_DOCKER_LINUX_RUNNER` 必须指向可信且足以运行完整系统的 Linux Docker runner。
 
 发布工作流验收五个核心服务。可选 OpenShell 安装见[沙箱插件指南](sandbox-plugins.md)。
@@ -66,10 +67,18 @@ gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 
 此命令假设外部依赖变量已配置；否则另加 `-f signoz_image=IMAGE@sha256:DIGEST`，填写已确认的引用。新增工作流到达默认分支后，才可按名称手动触发。
 
+## 打标签前预演正式发布
+
+在待发布分支运行镜像工作流，设置 `release_preview=true` 和 `publish=false`，
+保留 Daily 日期、修订和通道的默认值。工作流按准确 `VERSION`、固定的 SigNoz
+依赖和完整正式发布矩阵验收。核对冻结回执后合入 `main`，在对应提交推送匹配
+版本的标签。标签运行验收该次构建，通过后在 `release` 环境等待审批。
+
 ## 验收 All-in-One 个人版
 
-运行 Daily 时选择 `personal_edition=true` 和 `publish=false`，即可加入内置
-seekdb 的 Linux amd64 和 arm64 单容器个人版。原生双架构作业使用双库验收
+正式版和 RC 都包含内嵌 seekdb 的 Linux amd64 和 arm64 单容器个人版。Daily
+可设置 `personal_edition=true` 和 `publish=false` 验收同样的双架构。正式预演也会
+验证 Windows x64 CLI、个人版和分布式制品。原生双架构作业使用双库验收
 通过后冻结的分布式候选，实际安装并验证镜像、CLI、首次使用和数据持久化。
 两种架构均使用包内数据后端验证原生记忆操作回读。
 最终的 `release-assets` 与 `release-acceptance` 保留分布式附件，加入个人版

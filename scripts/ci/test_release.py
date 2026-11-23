@@ -18,7 +18,7 @@ import tarfile
 import yaml
 
 from product_registry import PUBLIC_REPOSITORY, UPSTREAM_SIGNOZ, product_image_repositories
-from release_assets import assemble, DATABASES
+from release_assets import assemble, DATABASES, PERSONAL_ASSETS, release_asset_names
 from release_image import check_identity
 from release_plan import (
     make_plan,
@@ -30,6 +30,7 @@ from release_plan import (
 )
 from release_publish import (
     check_version_tags,
+    find_release_draft,
     inspect_digest,
     publish_version_tags,
     preflight,
@@ -48,11 +49,11 @@ REF = PUBLIC_IMAGES["aivision-be"]
 
 
 @contextmanager
-def mock_inline_acceptance(directory):
+def mock_inline_acceptance(directory, command="publish"):
     with tempfile.TemporaryDirectory() as root:
         acceptance = Path(root) / "candidate-acceptance.json"
         acceptance.write_text("{}")
-        with patch.object(sys, "argv", ["release_publish.py", "publish", "--directory", str(directory),
+        with patch.object(sys, "argv", ["release_publish.py", command, "--directory", str(directory),
                                        "--acceptance", str(acceptance)]), patch("release_candidate.verify_frozen"):
             yield
 
@@ -117,6 +118,32 @@ class PlanningTests(unittest.TestCase):
         )
         rc = plan(event="push", version="0.1.0-rc.1", ref="refs/tags/v0.1.0-rc.1")
         self.assertEqual(rc["channel"], "rc")
+        self.assertIs(stable.get("personal_edition"), True)
+        self.assertIs(rc.get("personal_edition"), True)
+        self.assertNotIn("release_preview", stable)
+
+    def test_release_preview_uses_formal_identity_and_required_personal_edition(self):
+        for version, channel in (("0.0.1", "stable"), ("0.0.1-rc.1", "rc"), ("0.0.1-beta.2", "rc")):
+            with self.subTest(version=version):
+                preview = plan(event="workflow_dispatch", ref="refs/heads/cicd/qualify-native-memory",
+                               version=version, release_preview=True)
+                self.assertEqual((preview["product_version"], preview["channel"], preview["tier"]),
+                                 (version, channel, "release"))
+                self.assertEqual(preview["release_tag"], f"v{version}")
+                self.assertEqual(preview["alias"], version)
+                self.assertEqual(preview["snapshot_date"], "")
+                self.assertEqual(preview["candidate_tag"], "candidate-123-2")
+                self.assertIs(preview["personal_edition"], True)
+                self.assertIs(preview["release_preview"], True)
+
+    def test_release_preview_rejects_non_branches_and_daily_selection(self):
+        options = dict(event="workflow_dispatch", ref="refs/heads/release/0.0.1", release_preview=True)
+        for change in (dict(event="schedule"), dict(event="push"), dict(ref="refs/tags/v0.0.1"),
+                       dict(ref="refs/pull/7/merge"), dict(ref="refs/heads/"),
+                       dict(snapshot_date="20261021"), dict(daily_revision="2"),
+                       dict(candidate_channel="daily"), dict(candidate_channel="dev")):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                plan(**(options | change))
 
     def test_selected_snapshot_and_revision_identify_daily_candidates(self):
         daily = plan(event="workflow_dispatch", ref="refs/heads/feature", tag="trial-abc",
@@ -353,16 +380,19 @@ class PublicationTests(unittest.TestCase):
                 "prevent_self_review": True,
                 "reviewers": [{"type": "Team", "reviewer": {"id": 1}}]}],
         }
-        draft = {"id": 42, "draft": True, "assets": [],
-                 "body": "## English\nChange\n## 中文\n变更"}
-        images = PUBLIC_IMAGES
+        responses = {
+            f"repos/{PUBLIC_REPOSITORY}/environments/release": environment,
+            f"repos/{PUBLIC_REPOSITORY}/git/ref/tags/v0.0.1": {
+                "object": {"type": "commit", "sha": SHA},
+            },
+            f"repos/{PUBLIC_REPOSITORY}/releases/latest": None,
+        }
         with (
-            patch("release_publish.api", side_effect=[environment,
-                  {"object": {"type": "commit", "sha": SHA}}, draft, None]),
+            patch("release_publish.api", side_effect=lambda path, **kwargs: responses[path]),
             patch("release_publish.inspect_digest", return_value=None) as inspect,
         ):
-            preflight(plan(event="push", ref="refs/tags/v0.0.1"), images,
-                      "antgroup/ai-vision")
+            preflight(plan(event="push", ref="refs/tags/v0.0.1"), PUBLIC_IMAGES,
+                      PUBLIC_REPOSITORY)
             self.assertEqual({call.args[0] for call in inspect.call_args_list},
                              {f"{package}:0.0.1" for package in PACKAGES.values()})
 
@@ -411,8 +441,11 @@ class PublicationTests(unittest.TestCase):
                 patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY="antgroup/ai-vision"),
                 patch("public_registry.verify_public_images"),
                 patch("release_publish.validate_bundle", return_value=(product_plan, images)),
-                patch("release_publish.preflight", return_value={"id": 42}),
-                patch("release_publish.verify_remote_assets", side_effect=lambda *args: events.append(("remote-verified",))),
+                patch("release_publish.preflight"),
+                patch("release_publish.find_release_draft", return_value={"id": 42, "body": "Fixture"}),
+                patch("release_publish.read_draft", return_value={"id": 42, "body": "Fixture"}),
+                patch("release_publish.require_live_tag"),
+                patch("release_publish.verify_remote_assets", side_effect=lambda *args, **kwargs: events.append(("remote-verified",))),
                 patch("release_publish.api", side_effect=lambda path, **kwargs: {"body": "## Changes\n* Fixture"} if path.endswith("/generate-notes") else (LIVE_REPOSITORY if path == f"repos/{PUBLIC_REPOSITORY}" else None)),
                 patch("release_publish.inspect_digest", return_value=None),
                 patch("release_publish.run", side_effect=lambda *args, **kwargs: events.append(("write", args)) or ""),
@@ -427,6 +460,122 @@ class PublicationTests(unittest.TestCase):
             aliases = {event[1][-2] for event in events if event[0] == "write"
                        and event[1][0] == "docker" and event[1][-2].endswith(":" + alias)}
             self.assertEqual(aliases, {f"{package}:{alias}" for package in PACKAGES.values()})
+
+    def test_release_preview_cannot_enter_preflight_or_publication(self):
+        preview = {**plan(event="push", ref="refs/tags/v0.0.1"), "release_preview": True}
+        for command in ("preflight", "publish"):
+            with (
+                self.subTest(command=command),
+                tempfile.TemporaryDirectory() as root,
+                mock_inline_acceptance(root, command),
+                patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123",
+                           GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY=PUBLIC_REPOSITORY),
+                patch("release_publish.validate_bundle", return_value=(preview, PUBLIC_IMAGES)),
+                patch("release_publish.api") as api,
+                patch("release_publish.run") as run,
+            ):
+                with self.assertRaisesRegex(ValueError, "preview"):
+                    publish_main()
+                api.assert_not_called()
+                run.assert_not_called()
+
+    def test_draft_lookup_fails_closed_on_duplicates_across_pages(self):
+        tag = "v0.0.1"
+        unrelated = [{"id": i, "tag_name": f"v0.0.{i}", "draft": False} for i in range(100, 199)]
+        draft = {"id": 42, "tag_name": tag, "draft": True}
+        with patch("release_publish.api", side_effect=[unrelated + [draft], [{**draft, "id": 43}]]) as api:
+            with self.assertRaisesRegex(ValueError, "exactly one draft"):
+                find_release_draft(PUBLIC_REPOSITORY, tag)
+        self.assertEqual([call.args[0] for call in api.call_args_list],
+                         [f"repos/{PUBLIC_REPOSITORY}/releases?per_page=100&page={page}" for page in (1, 2)])
+
+    def exercise_stable_publisher(self, events, *, published_id=42):
+        product = plan(event="push", ref="refs/tags/v0.0.1")
+        tag = product["release_tag"]
+        prefix = f"repos/{PUBLIC_REPOSITORY}"
+        release = {"id": 42, "tag_name": tag, "draft": True, "immutable": False,
+                   "assets": [], "body": "## English\nChange\n## 中文\n变更"}
+        content = b"frozen release checksum bytes"
+        asset = {"id": 12, "name": "SHA256SUMS", "size": len(content), "state": "uploaded"}
+
+        def api(path, *, data=None, **kwargs):
+            if path == prefix:
+                return LIVE_REPOSITORY
+            if path == f"{prefix}/git/ref/tags/{tag}":
+                return {"object": {"type": "commit", "sha": SHA}}
+            if path == f"{prefix}/releases?per_page=100&page=1":
+                return [{"id": 41, "tag_name": "v0.0.0", "draft": True}, release.copy()]
+            if path == f"{prefix}/releases/42":
+                if data is None:
+                    events.append("draft-read")
+                else:
+                    self.assertTrue(release["draft"])
+                    self.assertEqual(data, {"draft": False, "prerelease": False, "make_latest": "true"})
+                    release.update(data)
+                    events.append("publish")
+                return release.copy()
+            if path == f"{prefix}/releases/42/assets?per_page=100&page=1":
+                return release["assets"]
+            if path == f"{prefix}/releases/tags/{tag}":
+                if release["draft"]:
+                    raise RuntimeError("HTTP 404: published releases only")
+                events.append("published-read")
+                return {**release, "id": published_id}
+            self.fail(f"Unexpected GitHub API call: {path}")
+
+        def upload(*args, **kwargs):
+            endpoint = f"https://uploads.github.com/{prefix}/releases/42/assets?name=SHA256SUMS"
+            self.assertEqual(args, ("gh", "api", endpoint, "--method", "POST", "--input",
+                                    str(directory / "SHA256SUMS"), "-H", "Content-Type: application/octet-stream"))
+            release["assets"].append(asset)
+            events.append("upload")
+
+        def download(command, *, stdout, **kwargs):
+            self.assertIn(f"{prefix}/releases/assets/12", command)
+            stdout.write(content)
+            events.append("draft-bytes" if release["draft"] else "published-bytes")
+            return subprocess.CompletedProcess(command, 0, stderr=b"")
+
+        def write(*args, **kwargs):
+            if args[0] == "docker":
+                events.append("latest")
+            else:
+                upload(*args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as root:
+            directory = Path(root)
+            (directory / "SHA256SUMS").write_bytes(content)
+            with (
+                mock_inline_acceptance(root),
+                patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123",
+                           GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY=PUBLIC_REPOSITORY),
+                patch("public_registry.verify_public_images"),
+                patch("public_registry.verify_public_tag"),
+                patch("release_publish.validate_bundle", return_value=(product, PUBLIC_IMAGES)),
+                patch("release_publish.preflight"),
+                patch("release_publish.publish_version_tags", side_effect=lambda *a, **k: events.append("version-tags")),
+                patch("release_publish.api", side_effect=api),
+                patch("release_publish.run", side_effect=write),
+                patch("release_publish.subprocess.run", side_effect=download),
+            ):
+                publish_main()
+
+    def test_stable_publisher_keeps_draft_identity_through_upload_and_public_readback(self):
+        events = []
+        self.exercise_stable_publisher(events)
+        self.assertLess(events.index("draft-read"), events.index("version-tags"))
+        self.assertLess(events.index("upload"), events.index("draft-bytes"))
+        self.assertLess(events.index("draft-bytes"), events.index("publish"))
+        self.assertLess(events.index("publish"), events.index("published-read"))
+        self.assertLess(events.index("published-bytes"), events.index("latest"))
+
+    def test_stable_publisher_does_not_move_latest_if_public_release_id_changed(self):
+        events = []
+        with self.assertRaisesRegex(ValueError, "remote release identity"):
+            self.exercise_stable_publisher(events, published_id=43)
+        self.assertIn("draft-bytes", events)
+        self.assertIn("published-read", events)
+        self.assertNotIn("latest", events)
 
     def test_promotion_keeps_current_publisher_identity_and_validates_original_build(self):
         import release_candidate
@@ -658,9 +807,11 @@ class GeneratedRollingNotesTests(unittest.TestCase):
             mock_inline_acceptance(directory),
             patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY="antgroup/ai-vision"),
             patch("public_registry.verify_public_images"),
-                patch("release_publish.validate_bundle", return_value=(product_plan, images)),
-            patch("release_publish.preflight", return_value={"id": 42}),
-            patch("release_publish.verify_remote_assets", side_effect=lambda directory, value, repository: events.append(("remote-readback", value["release_tag"])) or {}),
+            patch("release_publish.validate_bundle", return_value=(product_plan, images)),
+            patch("release_publish.preflight"),
+            patch("release_publish.find_release_draft", return_value={"id": 42, "body": "Fixture"}),
+            patch("release_publish.read_draft", return_value={"id": 42, "body": "Fixture"}),
+            patch("release_publish.verify_remote_assets", side_effect=lambda directory, value, repository, **kwargs: events.append(("remote-readback", value["release_tag"])) or {}),
             patch("release_publish.check_version_tags"),
             patch("release_publish.publish_version_tags", side_effect=lambda *args, **kwargs: events.append(("version-tags",))),
             patch("release_publish.api", side_effect=api),
@@ -668,6 +819,11 @@ class GeneratedRollingNotesTests(unittest.TestCase):
             patch("public_registry.verify_public_tag"),
             patch("release_publish.subprocess.run", side_effect=download),
         ):
+            if product_plan["channel"] in {"stable", "rc"}:
+                (Path(directory) / "SHA256SUMS").write_text("fixture checksums")
+                with patch("release_publish.require_live_tag"):
+                    publish_main()
+                return events
             try:
                 publish_main()
             except Exception as error:
@@ -758,7 +914,8 @@ class GeneratedRollingNotesTests(unittest.TestCase):
             with self.subTest(channel=product_plan["channel"]):
                 events = self.publish(product_plan)
                 self.assertFalse(any(e[0] == "api" and e[1].endswith("/generate-notes") for e in events))
-                self.assertTrue(any(e[0] == "run" and e[1][:3] == ("gh", "release", "upload") for e in events))
+                endpoint = f"https://uploads.github.com/repos/{PUBLIC_REPOSITORY}/releases/42/assets?name=SHA256SUMS"
+                self.assertTrue(any(e[0] == "run" and e[1][:3] == ("gh", "api", endpoint) for e in events))
                 for e in events:
                     if e[0] == "run":
                         self.assertNotIn("--notes", e[1])
@@ -819,6 +976,49 @@ class AssetTests(unittest.TestCase):
             build_id="123.2",
             repository="antgroup/ai-vision",
         )
+
+    def test_formal_asset_contract_requires_both_personal_and_windows(self):
+        from windows_release_cli import ASSET, PLATFORMS
+
+        for version, channel in (("0.0.1", "stable"), ("0.0.1-rc.1", "rc")):
+            with self.subTest(channel=channel):
+                manifest = {"channel": channel, "product_version": version, "release_tag": f"v{version}",
+                            "personal_edition": True, "cli_platforms": PLATFORMS}
+                with self.assertRaises(ValueError):
+                    release_asset_names({"channel": channel, "product_version": version,
+                                         "release_tag": f"v{version}"})
+                names = release_asset_names(manifest)
+                base = release_asset_names(manifest, base_only=True)
+                self.assertTrue(PERSONAL_ASSETS <= names)
+                self.assertFalse(PERSONAL_ASSETS & base)
+                self.assertIn(ASSET, base)
+                for missing in ("personal_edition", "cli_platforms"):
+                    with self.subTest(missing=missing), self.assertRaises(ValueError):
+                        release_asset_names({k: v for k, v in manifest.items() if k != missing})
+                for invalid in ({"release_tag": "v9.9.9"}, {"product_version": "bad"},
+                                {"channel": "stable" if channel == "rc" else "rc"},
+                                {"personal_edition": "true"}):
+                    with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                        release_asset_names(manifest | invalid)
+
+    def test_formal_bundle_requires_windows_without_legacy_daily_flag(self):
+        from test_windows_release_cli import pe_header
+        from windows_release_cli import ASSET, PLATFORMS, pack
+
+        self.plan = plan(event="push", ref="refs/tags/v0.0.1")
+        (self.directory / "release-plan.json").write_text(json.dumps(self.plan))
+        with self.assertRaisesRegex(ValueError, "CLI, plugin and plan assets"):
+            self.assemble()
+        binary = self.directory.parent / "aiv.exe"
+        license_path = self.directory.parent / "LICENSE"
+        binary.write_bytes(pe_header(0x8664))
+        license_path.write_text("attribution\n")
+        pack(binary, license_path, self.directory / ASSET)
+        self.assemble()
+        manifest = json.loads((self.directory / "release-manifest.json").read_text())
+        self.assertIs(manifest["personal_edition"], True)
+        self.assertEqual(manifest["cli_platforms"], PLATFORMS)
+        validate_bundle(self.directory, SHA, "123.2", base_only=True)
 
     def test_release_vars_and_manifest_are_the_same_smoke_inputs(self):
         self.assemble()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build an isolated Linux All-in-One from a frozen Daily or audited 1108 archive."""
+"""Build an isolated Linux All-in-One from a frozen product candidate or audited 1108 archive."""
 
 import argparse
 import base64
@@ -332,7 +332,7 @@ def prepare_daily(args):
     for name, identity in images.items():
         local = inspect_image(identity["config_id"])
         if (local["Id"], local["Os"], local["Architecture"]) != (identity["config_id"], "linux", architecture):
-            raise ValueError(f"local image differs from the selected Daily platform: {name}")
+            raise ValueError(f"local image differs from the selected candidate platform: {name}")
         if name in {"aivision-be", "agentlens"} and local["RootFS"]["Layers"][:len(base_layers)] != base_layers:
             raise ValueError(f"source service does not share the pinned Python runtime: {name}")
     context.parent.mkdir(parents=True, exist_ok=True)
@@ -375,9 +375,9 @@ def package_daily(args):
     receipt = json.loads(receipt_path.read_text())
     for key in ("source_repository", "source_sha", "release_tag", "product_version", "build_id"):
         if receipt.get("source_candidate", {}).get(key) != manifest[key]:
-            raise ValueError("All-in-One build receipt belongs to a different Daily")
+            raise ValueError("All-in-One build receipt belongs to a different candidate")
     if receipt.get("release_manifest_sha256") != acceptance["assets"]["release-manifest.json"]["sha256"]:
-        raise ValueError("All-in-One build receipt belongs to different Daily assets")
+        raise ValueError("All-in-One build receipt belongs to different candidate assets")
     package(args.daily_assets, manifest, acceptance, args.archive, receipt, args.output)
 
 
@@ -434,7 +434,7 @@ def verify_context(context):
         raise ValueError(f"unexpected database wheels in the prepared context: {context}")
     if receipt.get("source_profile") == "daily-source":
         if receipt.get("source_candidate", {}).get("source_sha") != preparation_source():
-            raise ValueError("prepared context belongs to a different Daily source checkout")
+            raise ValueError("prepared context belongs to a different candidate source checkout")
     else:
         if (receipt.get("archive_sha256") != platform["bundle"]
                 or receipt.get("source_image_configs") != platform["configs"]):
@@ -483,7 +483,7 @@ def build(args):
         actual = inspect_image(reference)
         if (actual["Id"], actual["Os"], actual["Architecture"], tuple(actual["RootFS"]["Layers"])) != (
                 base_config, "linux", architecture, base_layers):
-            raise ValueError("local runtime base differs from the prepared Daily context")
+            raise ValueError("local runtime base differs from the prepared candidate context")
         manifest = context / "rootfs/etc/aivision/release-manifest.json"
         require_hash(manifest, prepared["release_manifest_sha256"])
         release = base64.b64encode(manifest.read_bytes()).decode("ascii")
@@ -527,7 +527,7 @@ def main():
     preparation.add_argument("--strip-amd64", required=True, help="GNU strip supporting Linux x86-64 ELF")
     preparation.add_argument("--strip-arm64", help="GNU strip supporting Linux ARM64 ELF, required for ARM64 preparation")
     preparation.set_defaults(run=prepare)
-    daily = commands.add_parser("prepare-daily", help="stage the frozen source-compatible Daily assets")
+    daily = commands.add_parser("prepare-daily", help="stage a frozen source-compatible Daily, Stable, or RC")
     for argument in ("daily-assets", "acceptance", "wheel", "pymysql-wheel", "supervisor", "db-owner", "context"):
         daily.add_argument(f"--{argument}", type=Path, required=True)
     daily.add_argument("--architecture", choices=PLATFORMS, default=DEFAULT_ARCHITECTURE)

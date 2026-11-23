@@ -24,6 +24,7 @@ from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import ProxyHandler, Request, build_opener
 
+from daily import DAILY_VERSION, TAGGED_VERSION
 from sample_trace import DemoError, NoRedirects, Platform, prepare_demo, resource_id, trace_complete, wait_for_trace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
@@ -90,7 +91,7 @@ def read_candidate(directory, architecture, source_sha, build_id):
         type(manifest["schema_version"]) is int and manifest["schema_version"] == 1
         and manifest["profile"] == "all-in-one"
         and manifest["platform"] == f"linux/{architecture}"
-        and re.fullmatch(r"v\d+\.\d+\.\d+-daily\.\d{8}(?:\.\d+)?", tag)
+        and tag.startswith("v") and (DAILY_VERSION.fullmatch(tag[1:]) or TAGGED_VERSION.fullmatch(tag[1:]))
         and manifest["base_release"] == tag
         and identity == {
             "source_repository": "antgroup/ai-vision", "source_sha": source_sha,

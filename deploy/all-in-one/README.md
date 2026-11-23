@@ -2,15 +2,17 @@
 
 The All-in-One image runs the frontend, backend, ingest gateway, diagnosis engine, and data backend alongside an embedded seekdb instance. One process owns `pylibseekdb`. The backend, diagnosis engine, and data backend share its local MySQL Unix socket. The image and CLI are specific to a Linux architecture.
 
-## Qualify the Personal Edition in Daily CI
+## Qualify the Personal Edition in CI
 
-Select `personal_edition=true` and `publish=false` in the product release
-workflow. The two native Linux jobs consume the same frozen distributed base
+Stable and RC tags include Personal Edition. For a Daily candidate run, select
+`personal_edition=true` and `publish=false` in the product release workflow.
+The two native Linux jobs consume the same frozen distributed base
 and produce an amd64 and an arm64 bundle. Each job verifies archive format and
 identity and installs the bundled CLI and Docker payload. After registration, it
 runs the packaged `--sample-trace` command in a terminal and checks the Trace
-link against the new personal Space. It also checks a persisted rule diagnosis,
-clean shutdown, and same-volume recreation. The final acceptance includes both passed
+link against the new personal Space. It also checks native memory ingestion and
+readback, a persisted rule diagnosis, clean shutdown, and same-volume recreation.
+The final acceptance includes both passed
 receipts and a single checksum inventory for the release. Use the hosted job
 receipts for each architecture when recording qualification.
 
@@ -18,14 +20,16 @@ The user-facing bundle contains `install-all-in-one.py`, `sample-trace.py`, an
 architecture manifest, the matching Linux CLI, and gzip and zstd archives of
 the same image. Use `--from-dir` with the qualified candidate directory for
 an offline install. A published version is accessed with `--tag` and its exact
-versioned tag. Both routes validate the manifest and SHA-256 before loading the
+versioned tag, such as `v0.6.0` or `v0.6.0-rc.1`. Automatic discovery prefers a
+compatible published Stable release, then falls back to a compatible Daily or
+legacy preview. Select an RC by its exact tag. Both install routes validate the manifest and SHA-256 before loading the
 selected archive. A fresh installation stores its state in a named Docker volume.
 
-## Prepare an offline candidate from a qualified Daily
+## Prepare an offline candidate from a qualified release build
 
-Use the exact source checkout, `release-assets-<attempt>` directory, and `candidate-acceptance.json` from a successful public Daily. Keep the assets as downloaded. The preparation command checks the frozen acceptance, resolves each of the five image indexes to its target Linux manifest and config digest, and stages files from the exact locally loaded images. The backend and diagnosis images must share the pinned Python 3.11 Bookworm base. Preload that base and the accepted images for the selected architecture.
+Use the exact source checkout, `release-assets-<attempt>` directory, and `candidate-acceptance.json` from a successful product workflow. Keep the assets as downloaded. The preparation command checks the frozen acceptance, resolves each of the five image indexes to its target Linux manifest and config digest, and stages files from the exact locally loaded images. The backend and diagnosis images must share the pinned Python 3.11 Bookworm base. Preload that base and the accepted images for the selected architecture.
 
-Build the supervisor and seekdb owner as shown below. Pass the two pinned PyPI wheels for the selected architecture. This example targets Linux ARM64. A Personal Edition-enabled Daily stages both archive formats and the product installer. Historical distributed-only Daily inputs continue to produce a gzip-only compatibility bundle.
+Build the supervisor and seekdb owner as shown below. Pass the two pinned PyPI wheels for the selected architecture. This example targets Linux ARM64. Stable, RC, and Personal Edition-enabled Daily builds stage both archive formats and the product installer. Historical distributed-only Daily inputs produce a gzip-only compatibility bundle. The existing `prepare-daily` and `package-daily` commands accept all three channels.
 
 ```sh
 python3 deploy/all-in-one/build.py prepare-daily \
@@ -34,7 +38,7 @@ python3 deploy/all-in-one/build.py prepare-daily \
   --supervisor "$platform_supervisor" --db-owner "$platform_db_owner" --context "$context"
 
 python3 deploy/all-in-one/build.py build \
-  --context "$context" --tag "aiv-all-in-one:${daily_version}-arm64" --archive "$image_archive"
+  --context "$context" --tag "aiv-all-in-one:${product_version}-arm64" --archive "$image_archive"
 
 python3 deploy/all-in-one/build.py package-daily \
   --daily-assets "$release_assets" --acceptance "$acceptance" --archive "$image_archive" \
@@ -43,7 +47,7 @@ python3 deploy/all-in-one/build.py package-daily \
 python3 /path/to/install-all-in-one.py --from-dir "$candidate_dir"
 ```
 
-Use a fresh candidate directory and local image tag. Retain the context and image build receipts alongside the architecture-specific archive, manifest, CLI, and checksums. The candidate retains the Daily identity and uses the same CLI bytes. Qualify the embedded database separately from the Daily's multi-container smoke. Check startup, Agent onboarding, trace and diagnosis readback, shutdown, and same-volume recreation on each intended Linux architecture.
+Use a fresh candidate directory and local image tag. Retain the context and image build receipts alongside the architecture-specific archive, manifest, CLI, and checksums. The bundle retains the frozen release identity and CLI bytes. Qualify the embedded database separately from the distributed artifact smoke. Check startup, Agent onboarding, trace, native memory and diagnosis readback, shutdown, and same-volume recreation on each intended Linux architecture.
 
 ## Reproduce the audited 1108 native prototype
 

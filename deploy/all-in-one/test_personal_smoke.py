@@ -3,6 +3,7 @@
 from contextlib import redirect_stdout
 import gzip
 import hashlib
+import importlib.util
 from io import BytesIO, StringIO
 import json
 from pathlib import Path
@@ -20,6 +21,10 @@ from smoke import QualificationError, inspect, memory_request, read_candidate, r
 SOURCE = "a" * 40
 BUILD = "123.2"
 TAG = "v0.6.0-daily.20261119.2"
+INSTALLER_PATH = Path(__file__).with_name("install-all-in-one.py")
+INSTALLER_SPEC = importlib.util.spec_from_file_location("personal_installer", INSTALLER_PATH)
+installer = importlib.util.module_from_spec(INSTALLER_SPEC)
+INSTALLER_SPEC.loader.exec_module(installer)
 
 
 class CandidateTests(unittest.TestCase):
@@ -32,6 +37,7 @@ class CandidateTests(unittest.TestCase):
         self.manifest = {
             "profile": "all-in-one", "schema_version": 1, "platform": "linux/amd64",
             "release_tag": TAG, "base_release": TAG, "image_id": "sha256:" + "b" * 64,
+            "image_tag": f"aiv-all-in-one:{TAG[1:]}-amd64",
             "source_candidate": {
                 "source_repository": "antgroup/ai-vision", "source_sha": SOURCE,
                 "release_tag": TAG, "build_id": BUILD,
@@ -80,6 +86,67 @@ class CandidateTests(unittest.TestCase):
         self.write_inventory()
         with self.assertRaisesRegex(QualificationError, "version or architecture"):
             read_candidate(self.root, "amd64", SOURCE, BUILD)
+
+    def test_stable_and_rc_candidate_use_the_exact_matching_cli_version(self):
+        for tag in ("v0.6.0", "v0.6.0-rc.1"):
+            with self.subTest(tag=tag):
+                self.manifest.update(release_tag=tag, base_release=tag)
+                self.manifest["source_candidate"]["release_tag"] = tag
+                self.manifest["agent_cli"]["version"] = tag[1:]
+                self.write_inventory()
+                self.assertEqual(read_candidate(self.root, "amd64", SOURCE, BUILD)[0], self.manifest)
+
+    def test_installer_binds_stable_and_rc_online_and_offline_bundles(self):
+        for channel, tag in (("stable", "v0.6.0"), ("rc", "v0.6.0-rc.1")):
+            with self.subTest(channel=channel):
+                self.manifest.update(release_tag=tag, base_release=tag)
+                self.manifest["source_candidate"]["release_tag"] = tag
+                self.manifest["agent_cli"].update(version=tag[1:], binary_sha256="c" * 64)
+                product = {**self.manifest["source_candidate"], "product_version": tag[1:], "channel": channel}
+                (self.root / "release-manifest.json").write_text(json.dumps(product))
+                self.write_inventory()
+
+                def download(folder, selected, *names):
+                    self.assertEqual(selected, tag)
+                    for name in names:
+                        shutil.copyfile(self.root / name, folder / name)
+
+                with patch.object(installer, "download", side_effect=download), patch.object(
+                    installer, "release_pages", side_effect=AssertionError("exact tags do not require discovery")
+                ):
+                    self.assertEqual(installer.resolve_release(tag, "linux/amd64"), tag)
+                manifest, assets = installer.preview_manifest(self.root, None, "linux/amd64")
+                selection = installer.select_cli(self.root, manifest, "linux/amd64", assets, online=False)
+                self.assertEqual(selection["version"], tag[1:])
+
+                (self.root / "release-manifest.json").write_text(json.dumps({**product, "channel": "daily"}))
+                self.write_inventory()
+                with self.assertRaisesRegex(ValueError, "source candidate differs"):
+                    installer.preview_manifest(self.root, None, "linux/amd64")
+
+    def test_installer_still_accepts_a_trusted_legacy_offline_bundle(self):
+        self.manifest.update(profile="all-in-one-preview", release_tag=f"all-in-one-preview-{TAG}",
+                             base_release=f"delivery-{TAG}")
+        self.manifest["agent_cli"]["binary_sha256"] = "c" * 64
+        (self.root / "release-manifest.json").unlink()
+        self.write_inventory()
+        manifest, assets = installer.preview_manifest(self.root, None, "linux/amd64")
+        selection = installer.select_cli(self.root, manifest, "linux/amd64", assets, online=False)
+        self.assertEqual(selection["version"], TAG[1:])
+
+    def test_automatic_discovery_prefers_compatible_stable_over_newer_previews(self):
+        target = "linux/amd64"
+        uploaded = [{"name": item, "state": "uploaded"}
+                    for item in (*installer.ASSETS[target], "install-all-in-one.py", "SHA256SUMS", "release-manifest.json")]
+        releases = [
+            {"tag_name": tag, "draft": False, "prerelease": prerelease, "published_at": f"2026-11-{day:02}T00:00:00Z",
+             "id": day, "assets": uploaded}
+            for tag, prerelease, day in (("v0.6.0", False, 21), ("v0.6.1-rc.1", True, 24), (TAG, True, 23))
+        ]
+        with patch.object(installer, "release_pages", return_value=[releases]):
+            self.assertEqual(installer.resolve_release(None, target), "v0.6.0")
+        with patch.object(installer, "release_pages", return_value=[releases[1:]]):
+            self.assertEqual(installer.resolve_release(None, target), TAG)
 
     def test_candidate_rejects_corrupt_sample_bytes(self):
         (self.root / "sample-trace.py").write_text("# edited after freeze")

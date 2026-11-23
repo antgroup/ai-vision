@@ -4,8 +4,9 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from daily import stage_export, stage_metadata, validate_payload
+from daily import PUBLIC_REPOSITORY, candidate, stage_export, stage_metadata, validate_payload
 
 
 def exported(*entries):
@@ -26,6 +27,23 @@ def exported(*entries):
 
 
 class DailyPayloadTests(unittest.TestCase):
+    def test_frozen_stable_and_rc_assets_can_build_personal_edition(self):
+        source = "a" * 40
+        acceptance = {"phase": "base"}
+        with tempfile.TemporaryDirectory() as workspace:
+            root = Path(workspace)
+            receipt = root / "acceptance.json"
+            receipt.write_text(json.dumps(acceptance))
+            for channel, version in (("stable", "0.6.0"), ("rc", "0.6.0-rc.1")):
+                with self.subTest(channel=channel):
+                    manifest = {"channel": channel, "product_version": version, "release_tag": f"v{version}",
+                                "source_sha": source, "build_id": "31.2", "personal_edition": True}
+                    (root / "release-manifest.json").write_text(json.dumps(manifest))
+                    with patch("daily.verify_frozen") as verify:
+                        self.assertEqual(candidate(root, receipt, expected_source=source), (manifest, acceptance))
+                        verify.assert_called_once_with(root, acceptance, repository=PUBLIC_REPOSITORY,
+                                                       source_sha=source, build_id="31.2", base_only=True)
+
     def test_backend_relocates_its_entrypoint_and_never_materializes_archive_symlinks(self):
         with tempfile.TemporaryDirectory() as temporary:
             rootfs = Path(temporary)
@@ -49,7 +67,7 @@ class DailyPayloadTests(unittest.TestCase):
     def test_unexpected_source_links_do_not_cross_the_staging_boundary(self):
         for name, link in (("app/a.py", "../../somewhere"), ("app/.venv/bin/python", "/tmp/python")):
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
-                with exported((name, link)) as stream, self.assertRaisesRegex(ValueError, "unexpected daily image member"):
+                with exported((name, link)) as stream, self.assertRaisesRegex(ValueError, "unexpected candidate image member"):
                     stage_export(stream, Path(temporary), "aivision-be")
 
     def test_incomplete_lifecycle_payload_is_rejected(self):
@@ -73,5 +91,5 @@ class DailyPayloadTests(unittest.TestCase):
             self.assertEqual((rootfs / "etc/aivision/release-manifest.json").read_bytes(), accepted.read_bytes())
 
             metadata.write_text(json.dumps({"build_id": "41.1"}))
-            with self.assertRaisesRegex(ValueError, "differs from the frozen Daily"):
+            with self.assertRaisesRegex(ValueError, "differs from the frozen candidate"):
                 stage_metadata(rootfs, root, manifest)

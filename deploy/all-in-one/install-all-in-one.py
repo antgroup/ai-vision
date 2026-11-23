@@ -25,7 +25,13 @@ REPO = "antgroup/ai-vision"
 PRODUCT_PROFILE = "all-in-one"
 LEGACY_PROFILE = "all-in-one-preview"
 DAILY_VERSION = r"\d+\.\d+\.\d+-daily\.\d{8}(?:\.\d+)?"
-PRODUCT_TAG = re.compile(rf"v({DAILY_VERSION})")
+NUMERIC_PART = r"(?:0|[1-9][0-9]*)"
+STABLE_VERSION = rf"{NUMERIC_PART}\.{NUMERIC_PART}\.{NUMERIC_PART}"
+# Keep versioned tag syntax in sync with scripts/ci/release_plan.py. The installer is standalone.
+TAGGED_VERSION = rf"{STABLE_VERSION}(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?"
+PRODUCT_TAG = re.compile(rf"v({DAILY_VERSION}|{TAGGED_VERSION})")
+STABLE_TAG = re.compile(rf"v{STABLE_VERSION}")
+DAILY_TAG = re.compile(rf"v{DAILY_VERSION}")
 LEGACY_TAG = re.compile(rf"all-in-one-preview-v{DAILY_VERSION}")
 TAG = re.compile(rf"(?:{PRODUCT_TAG.pattern}|{LEGACY_TAG.pattern})")
 # Existing offline bundles may still carry the former delivery- tag prefix.
@@ -80,7 +86,7 @@ def release_pages():
                 page = json.load(response)
         except HTTPError as error:
             if error.code in (403, 429):
-                raise ValueError("GitHub Release discovery is rate-limited. Use --tag with an exact published Daily tag.") from error
+                raise ValueError("GitHub Release discovery is rate-limited. Use --tag with an exact published tag.") from error
             raise
         if not isinstance(page, list):
             raise ValueError("GitHub did not return a Release list.")
@@ -105,16 +111,19 @@ def resolve_release(tag, target):
     for page in release_pages():
         for release in page:
             current_tag = release["tag_name"]
-            if not TAG.fullmatch(current_tag) or (tag is not None and tag != current_tag):
+            stable = STABLE_TAG.fullmatch(current_tag) is not None
+            preview = DAILY_TAG.fullmatch(current_tag) or LEGACY_TAG.fullmatch(current_tag)
+            # RCs are opt-in through an exact versioned tag.
+            if not (stable or preview) or (tag is not None and tag != current_tag):
                 continue
-            if release["draft"] or not release["prerelease"] or not release["published_at"]:
+            if release["draft"] or release["prerelease"] == stable or not release["published_at"]:
                 continue
             required = required_product if PRODUCT_TAG.fullmatch(current_tag) else required_assets
             if required <= {asset["name"] for asset in release["assets"] if asset["state"] == "uploaded"}:
                 releases.append(release)
     if not releases:
         raise ValueError(f"No published All-in-One release for {target} matches the request in {REPO}.")
-    return max(releases, key=lambda release: (release["published_at"], release["id"]))["tag_name"]
+    return max(releases, key=lambda release: (not release["prerelease"], release["published_at"], release["id"]))["tag_name"]
 
 
 def file_sha256(path):
@@ -179,9 +188,9 @@ def require_size(value):
 def read_manifest(folder, selected, target):
     manifest_name, archive, client_archive = ASSETS[target]
     manifest = json.loads((folder / manifest_name).read_text(encoding="utf-8"))
-    base = BASE.fullmatch(manifest["base_release"])
     manifest_tag = manifest["release_tag"]
     product = PRODUCT_TAG.fullmatch(manifest_tag)
+    base = (PRODUCT_TAG if product else BASE).fullmatch(manifest["base_release"])
     expected_profile = PRODUCT_PROFILE if product else LEGACY_PROFILE
     if (
         manifest.get("schema_version") != 1
@@ -272,9 +281,15 @@ def product_assets(folder, manifest):
     product = json.loads(path.read_text(encoding="utf-8"))
     source = {key: product[key] for key in SOURCE_KEYS}
     tag = manifest["release_tag"]
+    version = tag[1:]
+    channel = product.get("channel")
+    if channel == "daily":
+        channel_matches = DAILY_TAG.fullmatch(tag)
+    else:
+        channel_matches = re.fullmatch(TAGGED_VERSION, version) and channel == ("rc" if "-" in version else "stable")
     if (source != manifest.get("source_candidate") or source["source_repository"] != REPO
-            or source["release_tag"] != tag or product.get("product_version") != tag[1:]
-            or product.get("channel") != "daily"
+            or source["release_tag"] != tag or product.get("product_version") != version
+            or not channel_matches
             or not re.fullmatch(r"[0-9a-f]{40}", source["source_sha"])
             or not re.fullmatch(r"[1-9][0-9]*\.[1-9][0-9]*", source["build_id"])):
         raise ValueError("The All-in-One source candidate differs from the product Release manifest.")

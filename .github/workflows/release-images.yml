@@ -24,8 +24,12 @@ on:
         description: Build and qualify the Linux amd64 and arm64 Personal Edition assets for this Daily
         type: boolean
         default: false
+      release_preview:
+        description: Qualify all formal release artifacts from a branch without publishing
+        type: boolean
+        default: false
       signoz_image:
-        description: External SigNoz image@sha256 digest; otherwise use AIVISION_SIGNOZ_IMAGE
+        description: Daily or Dev SigNoz digest override; formal builds use the versioned lock
         type: string
         required: false
       reuse_release:
@@ -78,6 +82,7 @@ jobs:
       channel: ${{ steps.plan.outputs.channel }}
       candidate_tag: ${{ steps.plan.outputs.candidate_tag }}
       tier: ${{ steps.plan.outputs.tier }}
+      personal_edition: ${{ steps.plan.outputs.personal_edition }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,6 +92,7 @@ jobs:
         env:
           INPUT_TAG: ${{ inputs.tag }}
           INPUT_PERSONAL_EDITION: ${{ inputs.personal_edition }}
+          INPUT_RELEASE_PREVIEW: ${{ inputs.release_preview }}
           INPUT_SNAPSHOT_DATE: ${{ inputs.snapshot_date }}
           INPUT_DAILY_REVISION: ${{ inputs.daily_revision }}
           INPUT_CANDIDATE_CHANNEL: ${{ inputs.candidate_channel }}
@@ -103,6 +109,10 @@ jobs:
           if [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" && "$GITHUB_REF" != refs/tags/v* ]] &&
              [[ "$GITHUB_EVENT_NAME" != workflow_dispatch || "$PUBLISH" != false ]]; then
             echo '::error::A public trial branch requires a manual candidate-only run with publish=false.'
+            exit 1
+          fi
+          if [[ "${INPUT_RELEASE_PREVIEW:-}" == true && "$PUBLISH" != false ]]; then
+            echo '::error::Formal release previews require publish=false.'
             exit 1
           fi
           mkdir -p "$RUNNER_TEMP/release-plan"
@@ -124,12 +134,29 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pin SigNoz before building any product artifact
         env:
-          EXPLICIT_SIGNOZ: ${{ inputs.signoz_image || vars.AIVISION_SIGNOZ_IMAGE }}
+          INPUT_SIGNOZ: ${{ inputs.signoz_image }}
+          DEFAULT_SIGNOZ: ${{ vars.AIVISION_SIGNOZ_IMAGE }}
+          RELEASE_CHANNEL: ${{ steps.plan.outputs.channel }}
+          PRODUCT_VERSION: ${{ steps.plan.outputs.product_version }}
         run: |
           set -euo pipefail
-          ref="$EXPLICIT_SIGNOZ"
+          if [[ "$RELEASE_CHANNEL" == stable || "$RELEASE_CHANNEL" == rc ]]; then
+            lock=deploy/config/release-dependencies.json
+            ref=$(jq -er --arg version "${PRODUCT_VERSION%%-*}" '
+              select(.product_version == $version) | .signoz.image
+            ' "$lock") || {
+              echo "::error::Lock the approved SigNoz digest for ${PRODUCT_VERSION%%-*} in $lock."
+              exit 1
+            }
+            if [[ -n "$INPUT_SIGNOZ" && "$INPUT_SIGNOZ" != "$ref" ]]; then
+              echo '::error::The formal release cannot override its reviewed SigNoz lock.'
+              exit 1
+            fi
+          else
+            ref="${INPUT_SIGNOZ:-$DEFAULT_SIGNOZ}"
+          fi
           if [[ ! "$ref" =~ ^ghcr\.io/ob-labs/signoz-ob@sha256:[a-f0-9]{64}$ ]]; then
-            echo '::error::Set AIVISION_SIGNOZ_IMAGE or signoz_image to an explicit ghcr.io/ob-labs/signoz-ob@sha256 digest.'
+            echo '::error::Select an approved ghcr.io/ob-labs/signoz-ob@sha256 digest.'
             exit 1
           fi
           manifest=$(docker buildx imagetools inspect "$ref" --format '{{json .Manifest}}')
@@ -452,14 +479,14 @@ jobs:
           python3 scripts/ci/release_assets.py --directory release --image-refs image-refs --require-windows
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release/
           if-no-files-found: error
           retention-days: 14
 
   public-registry:
     name: verify public candidate indexes anonymously
-    needs: [assets]
+    needs: [prepare, assets]
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
@@ -473,7 +500,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - id: qualify
         run: |
@@ -524,7 +551,7 @@ jobs:
         run: python scripts/ci/prepare_platform_disk.py
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - name: Deploy the packaged CLI and exact image digests without source mounts
         run: |
@@ -585,7 +612,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - uses: actions/download-artifact@v4
         with:
@@ -598,7 +625,7 @@ jobs:
           path: receipts
       - name: Freeze exact base assets and deployment receipts
         env:
-          PERSONAL_EDITION: ${{ inputs.personal_edition }}
+          PERSONAL_EDITION: ${{ needs.prepare.outputs.personal_edition }}
         run: |
           set -euo pipefail
           options=()
@@ -607,7 +634,7 @@ jobs:
             --output acceptance/candidate-acceptance.json "${options[@]}"
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.personal_edition && 'release-base-acceptance' || 'release-acceptance' }}-${{ github.run_attempt }}
+          name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-acceptance' || 'release-acceptance' }}-${{ github.run_attempt }}
           path: acceptance/candidate-acceptance.json
           if-no-files-found: error
           retention-days: 14
@@ -615,7 +642,7 @@ jobs:
   personal:
     name: Personal Edition (linux/${{ matrix.architecture }})
     needs: [prepare, assets, artifact-smoke]
-    if: inputs.personal_edition && needs.prepare.outputs.channel == 'daily'
+    if: needs.prepare.outputs.personal_edition == 'true'
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -698,61 +725,61 @@ jobs:
 
   personal-acceptance:
     name: freeze qualified Personal Edition acceptance
-    needs: [acceptance, personal]
+    needs: [prepare, acceptance, personal]
     if: >-
       always() && !cancelled() && needs.acceptance.result == 'success' &&
-      ((inputs.personal_edition && needs.personal.result == 'success') ||
-       (!inputs.personal_edition && needs.personal.result == 'skipped'))
+      ((needs.prepare.outputs.personal_edition == 'true' && needs.personal.result == 'success') ||
+       (needs.prepare.outputs.personal_edition != 'true' && needs.personal.result == 'skipped'))
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - name: Keep the qualified base assets for a standard release
-        if: '!inputs.personal_edition'
+        if: needs.prepare.outputs.personal_edition != 'true'
         run: echo 'This candidate selected the distributed edition.'
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           name: release-base-assets-${{ github.run_attempt }}
           path: release
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           name: personal-assets-${{ github.run_attempt }}-amd64
           path: personal/personal-assets-amd64
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           name: personal-assets-${{ github.run_attempt }}-arm64
           path: personal/personal-assets-arm64
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           pattern: release-smoke-${{ github.run_attempt }}-*
           path: receipts
           merge-multiple: true
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           pattern: personal-smoke-${{ github.run_attempt }}-*
           path: receipts
           merge-multiple: true
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/download-artifact@v4
         with:
           name: cli-smoke-${{ github.run_attempt }}-windows-x64
           path: receipts
       - name: Verify both native receipts and freeze the final release bytes
-        if: inputs.personal_edition
+        if: needs.prepare.outputs.personal_edition == 'true'
         run: |
           set -euo pipefail
           python3 scripts/ci/release_personal.py --directory release --personal-assets personal
           python3 scripts/ci/release_candidate.py freeze --directory release --receipts receipts \
             --personal-receipts receipts --output acceptance/candidate-acceptance.json
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: release-assets-${{ github.run_attempt }}
@@ -760,7 +787,7 @@ jobs:
           compression-level: 0
           if-no-files-found: error
           retention-days: 14
-      - if: inputs.personal_edition
+      - if: needs.prepare.outputs.personal_edition == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: release-acceptance-${{ github.run_attempt }}
@@ -770,10 +797,10 @@ jobs:
 
   preflight:
     name: verify stable publication prerequisites
-    needs: [prepare, assets, artifact-smoke, acceptance]
+    needs: [prepare, acceptance, personal-acceptance]
     if: >-
       (needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') &&
-      (github.event_name == 'push' || inputs.publish == true)
+      !inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
@@ -805,13 +832,13 @@ jobs:
 
   publish-stable:
     name: publish reviewed stable or RC artifacts
-    needs: [prepare, preflight, artifact-smoke, acceptance]
+    needs: [prepare, preflight, acceptance, personal-acceptance]
     if: >-
       (needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') &&
-      (github.event_name == 'push' || inputs.publish == true)
+      !inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)
     environment: release
     runs-on: ubuntu-22.04
-    timeout-minutes: 15
+    timeout-minutes: 30
     permissions:
       contents: write
       packages: write
