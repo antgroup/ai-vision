@@ -167,6 +167,11 @@ const tick = () =>
   new Promise((done) => {
     setTimeout(done, 15)
   })
+async function waitFor(predicate: () => boolean, description: string) {
+  const deadline = Date.now() + 2_000
+  while (!predicate() && Date.now() < deadline) await act(tick)
+  assert.ok(predicate(), description)
+}
 const connection = {
   uuid: "connection-one",
   space_uuid: "space-one",
@@ -1194,13 +1199,17 @@ for (const failed of ["runtime", "connections", "binding"])
     )
     const key = failed === "runtime" ? "rule-runtime" : `rule-runtime-${failed}`
     try {
-      assert.ok(JSON.parse(view.container.textContent!).manifest)
+      const readState = () => JSON.parse(view.container.textContent!)
+      await waitFor(
+        () => !!readState().manifest,
+        "the runtime manifest qualifies after the initial queries settle"
+      )
       fail = true
       await act(async () => {
         await view.client.refetchQueries({ queryKey: [key] })
-        await tick()
       })
-      const state = JSON.parse(view.container.textContent!)
+      await waitFor(() => readState().error, "the failed refresh is rendered")
+      const state = readState()
       assert.equal(state.error, true)
       assert.equal(state.loading, false)
       assert.equal(state.manifest, undefined)
@@ -1211,10 +1220,9 @@ for (const failed of ["runtime", "connections", "binding"])
       fail = false
       await act(async () => {
         await view.client.refetchQueries({ queryKey: [key] })
-        await tick()
       })
-      assert.ok(
-        JSON.parse(view.container.textContent!).manifest,
+      await waitFor(
+        () => !!readState().manifest,
         "fresh successful evidence restores qualification"
       )
     } finally {

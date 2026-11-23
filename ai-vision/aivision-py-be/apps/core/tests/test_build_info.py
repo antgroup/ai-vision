@@ -336,7 +336,11 @@ class InstalledReleaseTests(SimpleTestCase):
         self.addCleanup(environment.stop)
 
     def get_expected(self, encoded):
-        with patch.dict(os.environ, {"AIVISION_RELEASE_MANIFEST_BASE64": encoded}):
+        # Exercise the application limit even on Windows, where the OS limit is lower.
+        with patch(
+            "aivision_backend.build_info.os",
+            environ={"AIVISION_RELEASE_MANIFEST_BASE64": encoded},
+        ):
             payload = self.client.get("/api/v1/version").json()["data"]
         self.assertEqual(payload["backend"], VALID_BUILD)
         return payload["expected"]

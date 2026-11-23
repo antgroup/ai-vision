@@ -126,14 +126,16 @@ mod tests {
         // Serialize against other HOME-reading tests via the shared env lock,
         // and save+restore HOME so we don't leak state to subsequent tests.
         let _guard = crate::test_sync::env_lock();
-        let saved_home = std::env::var("HOME").ok();
-        std::env::set_var("HOME", "/Users/tester");
-        assert_eq!(expand_home_path("~/demo.jsonl"), "/Users/tester/demo.jsonl");
-        assert_eq!(expand_home_path("/tmp/demo.jsonl"), "/tmp/demo.jsonl");
+        let saved_home = std::env::var_os("HOME");
+        let home = std::path::Path::new("/Users/tester");
+        std::env::set_var("HOME", home);
+        let expanded = expand_home_path("~/demo.jsonl");
         match saved_home {
             Some(h) => std::env::set_var("HOME", h),
             None => std::env::remove_var("HOME"),
         }
+        assert_eq!(expanded, home.join("demo.jsonl").to_string_lossy());
+        assert_eq!(expand_home_path("/tmp/demo.jsonl"), "/tmp/demo.jsonl");
     }
 
     #[test]
