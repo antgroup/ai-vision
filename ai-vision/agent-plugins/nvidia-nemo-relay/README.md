@@ -16,6 +16,8 @@ AI Vision 的 Agent 应用入口推荐对应应用的专用采集插件；Relay 
 
 已验证的 Python 示例环境：Python 3.11+、Relay 0.9.3、LangChain 1.4.3、LangGraph 1.2.12、Deep Agents 0.7.21、langchain-openai 1.6.7。Python 完整示例使用 OpenAI Chat Completions adapter，显式读取 `OPENAI_API_KEY`、`OPENAI_MODEL`、`OPENAI_BASE_URL`。第三方兼容端点需要实际支持所选模型、工具调用和该协议；示例不会替换模型或回退 provider。
 
+Windows 上需要严格的 Relay 生命周期时间顺序时，请使用 Python 3.13。Python 3.12 上的短时 scope 时间戳限制见 [NR-003](../../../KNOWN_ISSUES.md#nr-003windows-上短时-relay-scope-的时间戳可能逆序)。
+
 ## Node.js / TypeScript 自建 Agent
 
 在接入页选择 JavaScript / TypeScript，再选择 **Node.js SDK**。官方包要求 Node.js 24+，带 TypeScript 类型声明；它使用原生 Node 扩展，不适用于浏览器。安装保持在 0.9.x：
