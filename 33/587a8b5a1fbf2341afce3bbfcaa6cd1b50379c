@@ -1,0 +1,31 @@
+.github/workflows/release-images.yml
+  s_7ddb4c6ac82aba::t_a2c1fa3f0d8b38 552,556-560
+deploy/all-in-one/smoke.py
+  s_7ddb4c6ac82aba::t_d45c892630bca7 6,23,25,27-30,338-375,451-453,466-467,509,513
+deploy/tests/native_memory_canary.py
+  s_7ddb4c6ac82aba::t_002720aaf34f2b 1-94
+deploy/tests/seekdb_deploy_smoke.py
+  s_7ddb4c6ac82aba::t_62bb51e1b12b94 14-17,57-58,362-368,416-417,441,868-869,875-876,986-990,1031-1032
+deploy/tests/test_seekdb_smoke.py
+  s_7ddb4c6ac82aba::t_4966fd577564e1 5,8-9,11,75-143
+docs/deployment/en/dev-image-release.md
+  s_7ddb4c6ac82aba::t_57ee3649c3687c 35,75-76
+docs/deployment/zh-CN/dev-image-release.md
+  s_7ddb4c6ac82aba::t_77edcfa8a98f14 35,74
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "33587a8b5a1fbf2341afce3bbfcaa6cd1b50379c",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
