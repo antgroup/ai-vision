@@ -41,6 +41,13 @@ fn run_cchooks_with_wire_payload<const N: usize>(
         .env("CCHOOKS_LOG_DIR", home.join("logs"))
         .env("CCHOOKS_STATE_DIR", home.join("state"));
 
+    // Windows socket providers need the system DLL lookup path in the child.
+    #[cfg(windows)]
+    command.env(
+        "SystemRoot",
+        std::env::var_os("SystemRoot").expect("Windows hook fixtures require SystemRoot"),
+    );
+
     for (key, value) in extra_env {
         command.env(key, value);
     }
@@ -1250,7 +1257,7 @@ fn transcript_ingest_fallback_runs_before_panic_result_handling() {
 }
 
 #[test]
-fn pretooluse_bash_returns_updated_input_control_response() {
+fn pretooluse_bash_follows_platform_control_response_contract() {
     let dir = tempfile::tempdir().expect("tempdir");
     let user_prompt = json!({
         "hook_event_name": "UserPromptSubmit",
@@ -1287,6 +1294,13 @@ fn pretooluse_bash_returns_updated_input_control_response() {
     );
 
     let stdout = String::from_utf8(output.stdout).expect("stdout utf8");
+    if cfg!(windows) {
+        assert!(
+            stdout.is_empty(),
+            "Windows Bash hook must emit no control response"
+        );
+        return;
+    }
     let response: Value = serde_json::from_str(stdout.trim()).expect("hook JSON response");
     let hook_output = &response["hookSpecificOutput"];
     assert_eq!(hook_output["hookEventName"], "PreToolUse");
