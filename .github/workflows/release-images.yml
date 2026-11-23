@@ -549,11 +549,15 @@ jobs:
           SEEKDB_IMAGE=$(jq -r .databases.seekdb release/release-manifest.json)
           AIVISION_SEEKDB_SMOKE_IMAGES_JSON=$(jq -c '.images | {signoz: .["signoz-ob"], gateway: .["antcollector-gw"], backend: .["aivision-be"], agentlens: .agentlens, frontend: .["aivision-fe"]}' release/release-manifest.json)
           python3 deploy/tests/seekdb_deploy_smoke.py \
-            --backend "$BACKEND" --require-pinned-images \
+            --backend "$BACKEND" --require-pinned-images --require-native-memory \
             --aiv "$RUNNER_TEMP/release-cli/aiv" \
             --runtime-base "$RUNNER_TEMP" \
             --out "$RUNNER_TEMP/release-smoke-$BACKEND"
-          jq -e --arg backend "$BACKEND" '.status == "passed" and .backend == $backend and .initial_images.pinned_content_verified == true and .recast_images.pinned_content_verified == true' "$RUNNER_TEMP/release-smoke-$BACKEND/summary.json"
+          jq -e --arg backend "$BACKEND" '
+            .status == "passed" and .backend == $backend and
+            .initial_images.pinned_content_verified == true and .recast_images.pinned_content_verified == true and
+            .initial_memory.hits == 2 and .initial_memory == .recast_memory
+          ' "$RUNNER_TEMP/release-smoke-$BACKEND/summary.json"
       - name: Export only the sanitized passed smoke receipt
         run: |
           python3 scripts/ci/release_candidate.py smoke --directory release \

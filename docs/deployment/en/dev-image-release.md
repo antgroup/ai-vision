@@ -32,7 +32,7 @@ PRs select Linux basic checks by changed paths, including version/release PRs. I
 2. Confirm basic CI passed on the selected source, then build plugins and the matching ordinary CLI.
 3. Build changed product-owned images on Linux amd64/arm64 builders, or verify both architectures reused from a published Release. Record their actual build identities and digests under unique candidate tags.
 4. Assemble checksummed CLI/assets, `release-manifest.json` and both pinned vars files. The manifest binds `source_repository`, `release_tag`, `product_version`, source SHA and original build ID.
-5. Verify anonymous access to all five public candidate image references. Run the full source checks with the staged owned images and the pinned SigNoz precision fixture. Deploy the packaged Linux amd64 CLI and exact release images separately against OceanBase CE and seekdb. Require health, authentication, OTLP ingestion/API readback, recast persistence, image identity and cleanup checks.
+5. Verify anonymous access to all five public candidate image references. Run the full source checks with the staged owned images and the pinned SigNoz precision fixture. Deploy the packaged Linux amd64 CLI and exact release images separately against OceanBase CE and seekdb. Require health, authentication, OTLP ingestion and API readback (including native memory operations), recast persistence, image identity and cleanup checks.
 6. Freeze the exact asset sizes/hashes and both sanitized passed smoke receipts in `candidate-acceptance.json`. Candidate-only runs stop here.
 7. On explicit publication, validate candidate provenance and current remote state, tag the five public packages, publish the versioned Release, then download and compare its actual asset bytes before moving rolling aliases. Stable/RC additionally requires reviewed notes and protected approval.
 
@@ -72,7 +72,8 @@ Select `personal_edition=true` and `publish=false` on a Daily run to add the
 Linux amd64 and arm64 single-container edition with embedded seekdb. The native
 jobs consume the frozen distributed candidate after both database smokes pass.
 Both run actual installs from the candidate files and record packaged image and
-CLI identities and persistent first-use results. The final `release-assets`
+CLI identities and persistent first-use results. Each architecture also checks
+native memory operation readback on the packaged data backend. The final `release-assets`
 and `release-acceptance` artifacts contain the original distributed assets,
 the Personal Edition installers, manifests, archives, and verified receipts.
 Use the final acceptance for promotion and the versioned Release for downloads.

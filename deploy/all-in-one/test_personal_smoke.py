@@ -3,7 +3,7 @@
 from contextlib import redirect_stdout
 import gzip
 import hashlib
-from io import StringIO
+from io import BytesIO, StringIO
 import json
 from pathlib import Path
 import shutil
@@ -11,9 +11,10 @@ import subprocess
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
+from urllib.error import HTTPError
 
 from sample_trace import Platform, main as sample_main, prepare_demo, trace_complete
-from smoke import QualificationError, inspect, read_candidate, read_diagnosis, require_archive_parity
+from smoke import QualificationError, inspect, memory_request, read_candidate, read_diagnosis, require_archive_parity
 
 
 SOURCE = "a" * 40
@@ -121,6 +122,14 @@ class DockerResourceTests(unittest.TestCase):
 
 
 class ReadbackTests(unittest.TestCase):
+    def test_memory_query_preserves_native_capability_error(self):
+        client = Platform(5174)
+        path = "/api/v2/spaces/fixture/labs/memory/observations"
+        error = HTTPError(client.origin + path, 400, "Bad Request", {}, BytesIO(b'{"code":3011}'))
+        with patch.object(client.request, "open", side_effect=error) as send:
+            self.assertEqual(memory_request(client, path), (400, {"code": 3011}))
+        self.assertEqual(send.call_args.args[0].full_url, client.origin + path)
+
     @patch("sample_trace.Platform")
     @patch("sample_trace.getpass.getpass", return_value="sample password")
     @patch("sample_trace.sys.stdin.isatty", return_value=True)

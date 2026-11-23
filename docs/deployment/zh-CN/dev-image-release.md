@@ -32,7 +32,7 @@ PR 按改动路径选择 Linux 基础检查，包括版本和 release PR。集�
 2. 确认所选源码通过基础 CI，再构建插件及配套普通 CLI。
 3. 在 Linux amd64／arm64 构建器上构建变化的自有镜像，或验证从已发布 Release 复用的两个架构。记录实际构建身份和 digest，使用唯一候选 tag。
 4. 生成带校验和的 CLI／制品、`release-manifest.json` 和两份固定变量文件。manifest 绑定 `source_repository`、`release_tag`、`product_version`、源码 SHA 和原始 build ID。
-5. 验证五个公开候选镜像引用均可匿名读取。完整源码检查使用本次构建的自有镜像和固定的 SigNoz 精度测试镜像。制品验收使用打包后的 Linux amd64 CLI 和准确发布镜像，分别部署 OceanBase CE 和 seekdb，验证健康、认证、OTLP 写入和 API 回读、重新部署后的数据持久性、镜像身份及清理。
+5. 验证五个公开候选镜像引用均可匿名读取。完整源码检查使用本次构建的自有镜像和固定的 SigNoz 精度测试镜像。制品验收使用打包后的 Linux amd64 CLI 和准确发布镜像，分别部署 OceanBase CE 和 seekdb，验证健康、认证、OTLP 写入和 API 回读（含原生记忆操作）、重新部署后的数据持久性、镜像身份及清理。
 6. 将准确的制品大小／哈希及两份经过脱敏的成功 smoke 回执冻结到 `candidate-acceptance.json`。仅构建候选的运行在此结束。
 7. 显式发布时，校验候选来源及当前远端状态，为五个公开镜像添加版本标签，再发布带版本号的 Release。下载并比较实际附件字节后移动滚动标签。正式版和 RC 另需已审阅的说明和受保护审批。
 
@@ -71,6 +71,7 @@ gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 运行 Daily 时选择 `personal_edition=true` 和 `publish=false`，即可加入内置
 seekdb 的 Linux amd64 和 arm64 单容器个人版。原生双架构作业使用双库验收
 通过后冻结的分布式候选，实际安装并验证镜像、CLI、首次使用和数据持久化。
+两种架构均使用包内数据后端验证原生记忆操作回读。
 最终的 `release-assets` 与 `release-acceptance` 保留分布式附件，加入个人版
 安装器、清单、压缩包和验收凭证。晋级使用最终凭证，安装下载使用固定版本 Release。
 

@@ -3,6 +3,7 @@
 
 import argparse
 from contextlib import ExitStack
+from functools import partial
 import gzip
 import hashlib
 import json
@@ -19,9 +20,14 @@ import sys
 from tempfile import TemporaryDirectory
 import time
 import uuid
+from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlsplit
+from urllib.request import ProxyHandler, Request, build_opener
 
-from sample_trace import DemoError, Platform, prepare_demo, resource_id, trace_complete, wait_for_trace
+from sample_trace import DemoError, NoRedirects, Platform, prepare_demo, resource_id, trace_complete, wait_for_trace
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests"))
+from native_memory_canary import MemoryCanaryError, NativeMemoryCanary
 
 
 MANIFESTS = {"amd64": "all-in-one-manifest.json", "arm64": "all-in-one-manifest-arm64.json"}
@@ -329,6 +335,44 @@ def read_diagnosis(client, space_id, demo, receipt):
     return record_id
 
 
+def memory_request(client, path, *, body=None, headers=None, origin=None):
+    request = Request(
+        (origin or client.origin) + path,
+        data=json.dumps(body).encode() if body is not None else None,
+        headers={
+            "Accept": "application/json", "Content-Type": "application/json",
+            "Origin": client.origin, "Referer": client.origin + "/", **(headers or {}),
+        },
+    )
+    # The gateway accepts the minted token and does not need the browser's cookies.
+    opener = client.request if origin is None else build_opener(ProxyHandler({}), NoRedirects())
+    try:
+        response = opener.open(request, timeout=30)
+    except HTTPError as error:
+        response = error
+    with response:
+        try:
+            payload = json.load(response)
+        except ValueError:
+            payload = {}
+        return response.status, payload
+
+
+def ingest_memory_canary(client, space_id, otlp):
+    scope = f"/spaces/{space_id}"
+    agent = client.api(scope + "/agents/create", body={"agent_product": "langfuse", "name": "Memory smoke"})
+    agent_id = resource_id(agent["agent_uuid"])
+    key = client.api(scope + "/space-keys", body={"name": "Memory smoke"})
+    minted = client.api(f"{scope}/space-keys/{key['id']}/ingest-token", body={"agent_uuid": agent_id})
+    token = minted.get("token")
+    require(minted.get("agent_uuid") == agent_id and minted.get("agent_product") == "langfuse"
+            and isinstance(token, str) and token, "The memory canary ingest token has the wrong Agent scope.")
+    probe = NativeMemoryCanary(partial(memory_request, client), space_id=space_id,
+                               agent_product="langfuse", agent_uuid=agent_id)
+    probe.ingest(f"http://127.0.0.1:{otlp}", token)
+    return probe
+
+
 def stop_container(name):
     docker("stop", "--time", "120", name, name="Graceful candidate shutdown", timeout=135)
     state = inspect("container", name, ".State")
@@ -404,6 +448,9 @@ def qualify(directory, name, manifest, entries):
                 "The sample command did not link to the expected example.")
         wait_for_trace(client, space_id, demo)
         wait_for_trace(client, space_id, demo, comparison=True)
+        print("Ingesting and reading the native memory canary through the packaged services.", flush=True)
+        memory = ingest_memory_canary(client, space_id, otlp)
+        initial_memory = memory.read()
         receipt = start_diagnosis(client, space_id, demo)
         record_id = read_diagnosis(client, space_id, demo, receipt)
 
@@ -416,6 +463,8 @@ def qualify(directory, name, manifest, entries):
         require(restored.login(email, password).get("user_uuid") == user_id,
                 "The account did not survive named-volume recreation.")
         wait_for_trace(restored, space_id, demo)
+        require(memory.read(request=partial(memory_request, restored)) == initial_memory,
+                "The native memory observation did not survive named-volume recreation.")
         require(read_diagnosis(restored, space_id, demo, receipt) == record_id,
                 "The persisted diagnosis record did not survive named-volume recreation.")
         stop_container(name)
@@ -457,11 +506,11 @@ def main(argv=None):
         with args.receipt.open("x", encoding="utf-8") as stream:
             json.dump(result, stream, indent=2, sort_keys=True)
             stream.write("\n")
-    except (DemoError, QualificationError) as error:
+    except (DemoError, MemoryCanaryError, QualificationError) as error:
         parser.exit(1, f"All-in-One smoke: {error}\n")
     except (AttributeError, KeyError, OSError, TypeError, ValueError, subprocess.TimeoutExpired) as error:
         parser.exit(1, f"All-in-One smoke: {type(error).__name__}.\n")
-    print("All-in-One candidate passed signup, packaged sample command, diagnosis, shutdown and volume recreation.")
+    print("All-in-One candidate passed signup, packaged sample command, native memory, diagnosis, shutdown and volume recreation.")
     return 0
 
 
