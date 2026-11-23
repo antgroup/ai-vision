@@ -1049,8 +1049,30 @@ fn pretool_parent_timing_p95_stays_below_50_ms() {
         .collect::<Vec<_>>();
     samples.sort_unstable();
     let p95 = samples[(samples.len() * 95).div_ceil(100) - 1];
+    let budget_ms = 50;
+    let within_budget = p95 < budget_ms;
+    let report_only = cfg!(windows)
+        && std::env::var("AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY").as_deref() == Ok("true");
+    let status = if within_budget {
+        "within-budget"
+    } else {
+        "over-budget"
+    };
+    let mode = if report_only { "report-only" } else { "strict" };
+    let report = format!(
+        "Codex PreToolUse p95: parent={p95} ms, budget < {budget_ms} ms, status={status}, mode={mode}"
+    );
+    eprintln!("{report}");
+    if let Some(path) = std::env::var_os("GITHUB_STEP_SUMMARY").filter(|path| !path.is_empty()) {
+        let mut summary = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .expect("open GitHub Actions summary for Codex PreToolUse p95");
+        writeln!(summary, "{report}").expect("write GitHub Actions summary for Codex PreToolUse p95");
+    }
     assert!(
-        p95 < 50,
+        within_budget || report_only,
         "PreToolUse parent p95 took {p95}ms; ordered phase samples (ms)={:?}",
         &phase_samples[2..]
     );

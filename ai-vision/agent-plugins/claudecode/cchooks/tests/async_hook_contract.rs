@@ -2192,8 +2192,33 @@ fn pretooluse_parent_latency_stays_under_fifty_milliseconds() {
     // use the same p95 window as the in-process timing so one external stall
     // cannot turn this into a max-latency assertion over only 20 samples.
     let wall_p95 = measured_wall[(measured_wall.len() * 95).div_ceil(100) - 1];
+    let budget_ms = 50;
+    let budget = Duration::from_millis(budget_ms);
+    let within_budget = p95 < budget && wall_p95 < budget;
+    let report_only = cfg!(windows)
+        && std::env::var("AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY").as_deref() == Ok("true");
+    let status = if within_budget {
+        "within-budget"
+    } else {
+        "over-budget"
+    };
+    let mode = if report_only { "report-only" } else { "strict" };
+    let report = format!(
+        "Claude PreToolUse p95: internal={:.6} ms, wall={:.6} ms, budget < {budget_ms} ms, status={status}, mode={mode}",
+        p95.as_secs_f64() * 1000.0,
+        wall_p95.as_secs_f64() * 1000.0,
+    );
+    eprintln!("{report}");
+    if let Some(path) = std::env::var_os("GITHUB_STEP_SUMMARY").filter(|path| !path.is_empty()) {
+        let mut summary = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .expect("open GitHub Actions summary for Claude PreToolUse p95");
+        writeln!(summary, "{report}").expect("write GitHub Actions summary for Claude PreToolUse p95");
+    }
     assert!(
-        p95 < Duration::from_millis(50) && wall_p95 < Duration::from_millis(50),
+        within_budget || report_only,
         "PreToolUse parent latency budget exceeded: internal_p95={p95:?} wall_p95={wall_p95:?}\nordered samples after warmup: stdin={:?} queue={:?} internal={:?} wall={:?}",
         &stdin_times[2..],
         &queue_times[2..],

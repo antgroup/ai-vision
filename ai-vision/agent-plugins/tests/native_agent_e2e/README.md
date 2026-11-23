@@ -299,6 +299,12 @@ readback cases. The [manual Intel macOS Docker workflow](../../../../.github/wor
 runs the same cases on Colima independently of the release. Intel macOS Docker
 qualification is pending. [Known issue DB-003](../../../../KNOWN_ISSUES.md#db-003intel-macos-托管-runner-上的-oceanbase-引导超时)
 
+Windows source acceptance records both PreToolUse benchmarks in the job
+summary and requires all hook functionality and Native runtime cases.
+The [manual Windows performance workflow](../../../../.github/workflows/windows-native-performance.yml)
+enforces both 50 ms budgets independently. Linux and macOS source acceptance
+still enforces those budgets.
+
 CI uses fake models and generated local platform credentials. Successful
 hosted runs establish coverage for the corresponding rows.
 

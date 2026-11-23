@@ -113,6 +113,18 @@ returned MySQL 8001 at the 600-second deadline. Intel macOS Docker remains
 unverified until its gate passes. See the
 [CI evidence](../../../scripts/ci/README.md#test-tiers).
 
+## Qualify Windows hook performance
+
+The Windows release source jobs record Codex and Claude PreToolUse p95.
+Windows hook functionality, native processes, semantic checks, and x64 CLI
+artifact acceptance remain required. Linux and macOS source jobs enforce
+the original p95 thresholds.
+
+After the [manual Windows performance workflow](../../../.github/workflows/windows-native-performance.yml)
+reaches the default branch, dispatch it on the candidate source ref and verify
+the run's commit SHA. The workflow independently enforces the 50 ms budget for
+Codex internal time and Claude internal and process wall time.
+
 ## Qualify the All-in-One Personal Edition
 
 Stable and RC builds include the Linux amd64 and arm64 single-container edition

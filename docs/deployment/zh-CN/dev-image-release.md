@@ -104,6 +104,16 @@ Intel 工作流不发布镜像或 Release。OceanBase 在 Intel macOS 15 的 VZ�
 以及 macOS 26 的 QEMU 对照运行中均在 600 秒后仍返回 MySQL 8001。独立门禁通过前，
 Intel macOS Docker 仍待验收。详见 [CI 证据](../../../scripts/ci/README.md#test-tiers)。
 
+## 验收 Windows 钩子性能
+
+Windows 发布源码检查记录 Codex 和 Claude 的 PreToolUse p95。钩子功能、
+原生进程、语义校验及 Windows x64 CLI 制品冒烟仍是发布必选。Linux 和 macOS
+源码检查继续执行原有的 p95 门槛。
+
+[Windows 性能工作流](../../../.github/workflows/windows-native-performance.yml)进入
+默认分支后，在候选源码所属分支或标签上手动运行，并核对运行记录的提交 SHA。
+该流程独立要求 Codex 内部 p95、Claude 内部和进程端到端 p95 均低于 50 ms。
+
 ## 验收 All-in-One 个人版
 
 正式版和 RC 都包含内嵌 seekdb 的 Linux amd64 和 arm64 单容器个人版。Daily

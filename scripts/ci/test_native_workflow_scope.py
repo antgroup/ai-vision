@@ -73,6 +73,9 @@ def render(value, inputs, needs, temporary):
             return temporary
         if expression in ('steps.codex-contracts.outcome', 'steps.claude-contracts.outcome'):
             return 'success'
+        if 'runner.os' in expression:
+            values = {'inputs.source': inputs['source'], 'runner.os': inputs.get('runner_os', 'Linux')}
+            return json.dumps(evaluate_condition(expression, values))
         if expression.startswith('inputs.'):
             if expression == 'inputs.unit_scope':
                 return inputs.get('unit_scope', 'all')
@@ -95,7 +98,7 @@ def platform_condition(inputs, status, *, cancelled=False, fork=False):
 def evaluate_condition(expression, values, *, cancelled=False, success=True):
     expression = (expression.replace('always()', 'True').replace('cancelled()', repr(cancelled))
                   .replace('success()', repr(success)))
-    expression = re.sub(r'(?:inputs|needs|github|steps)\.[A-Za-z0-9_.-]+',
+    expression = re.sub(r'(?:inputs|needs|github|steps|runner)\.[A-Za-z0-9_.-]+',
                         lambda match: repr(values[match[0]]), expression)
     expression = expression.replace('&&', ' and ').replace('||', ' or ')
     expression = re.sub(r'!(?!=)', ' not ', expression)
@@ -293,6 +296,17 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                     capture_output=True, text=True, check=False, timeout=10,
                 )
                 self.assertEqual(result.returncode == 0, codex == claude == 'success')
+
+    def test_only_windows_source_reports_hook_p95_without_enforcing_it(self):
+        variable = 'AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY'
+        steps = workflow()['jobs']['native-source']['steps']
+        selected = [step for step in steps if variable in step.get('env', {})]
+        self.assertEqual([step['id'] for step in selected], ['codex-contracts', 'claude-contracts'])
+        for step, source, runner_os in itertools.product(selected, (False, True), ('Linux', 'macOS', 'Windows')):
+            inputs = dict(source=source, runner_os=runner_os)
+            with self.subTest(step=step['id'], **inputs):
+                value = render(step['env'][variable], inputs, {}, '')
+                self.assertEqual(json.loads(value), source and runner_os == 'Windows')
 
     def test_source_retains_all_hook_integration_targets(self):
         for units in (False, True):

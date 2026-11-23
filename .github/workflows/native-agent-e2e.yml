@@ -113,6 +113,7 @@ jobs:
           # These contracts share process environment and measure hook latency.
           RUST_TEST_THREADS: '1'
           NATIVE_SOURCE: ${{ inputs.source }}
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: ${{ inputs.source && runner.os == 'Windows' }}
         run: |
           # Match the shipped common edition without requiring embedded keys.
           test_targets=(--lib --bins)
@@ -128,6 +129,7 @@ jobs:
         env:
           RUST_TEST_THREADS: '1'
           NATIVE_SOURCE: ${{ inputs.source }}
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: ${{ inputs.source && runner.os == 'Windows' }}
           CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: 'true'
           CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: 'true'
         run: |

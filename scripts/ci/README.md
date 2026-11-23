@@ -131,6 +131,14 @@ candidate until the separate gate passes. Docker acceptance on macOS ARM64
 requires a physical or suitably configured self-hosted Mac because hosted Apple
 Silicon runners lack nested virtualization. See the [GitHub runner limitations](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#limitations-for-arm64-macos-runners).
 
+The Windows release source jobs exercise Codex and Claude PreToolUse and
+record their p95 in the job summary. Release still requires the Windows hook
+functionality, Native runtime cases, semantic checks, and x64 CLI artifact smoke.
+Run [Windows Native Hook Performance](../../.github/workflows/windows-native-performance.yml)
+on the candidate ref for independent strict performance acceptance. It enforces
+Codex's internal p95 and Claude's internal and process wall p95 below 50 ms.
+Linux and macOS release source jobs enforce their original thresholds.
+
 The diagnostic database gate runs the real `/proc` descendant-cleanup test on
 Linux. On macOS it explicitly deselects that one Linux-only test and records the
 excluded node in `checks.platform_exclusions`. It checks the exact deselection
