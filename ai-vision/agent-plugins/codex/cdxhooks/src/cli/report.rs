@@ -5,6 +5,10 @@ use crate::common::otel::{build_otel_export_request_for_turn, post_otel_to_langf
 use crate::common::transcript::build_turns;
 use crate::hooks::langfuse::LangfuseConfig;
 
+const EXPORT_FAILURE: &str =
+    "Failed to export OTLP data. Check the endpoint, network connection, and credentials.";
+
+// Return fixed CLI diagnostics because config and exporter errors can contain sensitive data.
 pub fn run(
     profile: Option<String>,
     config_path: String,
@@ -12,47 +16,38 @@ pub fn run(
     otel_json: Option<String>,
     shift: bool,
     debug: bool,
-) -> Result<(), String> {
+) -> Result<(), &'static str> {
     // 1. Load config.toml
     if debug {
         eprintln!("[debug] Loading config from '{}'", config_path);
     }
-    let config = Config::load(std::path::Path::new(&config_path))?;
-
-    // 2. Resolve profile → LangfuseConfig
-    let profile_name = profile.as_deref().or(config.default_profile.as_deref());
-    if debug {
-        eprintln!(
-            "[debug] Using profile: {}",
-            profile_name.unwrap_or("<none>")
-        );
-    }
-    let resolved = config.resolve_profile(profile_name)?;
-    if debug {
-        eprintln!("[debug] Langfuse host: {}", resolved.host);
-    }
+    let config = Config::load(std::path::Path::new(&config_path)).map_err(|_| {
+        "Failed to load report configuration. Check --config, file permissions, and TOML syntax."
+    })?;
+    let resolved = config.resolve_profile(profile.as_deref()).map_err(|_| {
+        "Failed to resolve report profile. Check --profile and its credential settings."
+    })?;
     let langfuse_config: LangfuseConfig = resolved.into();
 
     if let Some(otel_path) = otel_json {
-        run_otel_json(&langfuse_config, &profile, &otel_path, shift, debug)
+        run_otel_json(&langfuse_config, &otel_path, shift, debug)
     } else {
         let session_path = session_path.expect("session_path guaranteed by CLI parsing");
-        run_session_path(&langfuse_config, &profile, &session_path, debug)
+        run_session_path(&langfuse_config, &session_path, debug)
     }
 }
 
 /// --session-path mode: parse transcript → build OTel → POST (original flow).
 fn run_session_path(
     langfuse_config: &LangfuseConfig,
-    profile: &Option<String>,
     session_path: &str,
     debug: bool,
-) -> Result<(), String> {
+) -> Result<(), &'static str> {
     if debug {
         eprintln!("[debug] Reading transcript from '{}'", session_path);
     }
     let content = std::fs::read_to_string(session_path)
-        .map_err(|e| format!("Failed to read '{}': {}", session_path, e))?;
+        .map_err(|_| "Failed to read the transcript. Check --session-path and file permissions.")?;
 
     let parsed_lines: Vec<serde_json::Value> = content
         .lines()
@@ -61,12 +56,12 @@ fn run_session_path(
         .collect();
 
     if parsed_lines.is_empty() {
-        return Err(format!("No valid JSONL lines in '{}'", session_path));
+        return Err("No valid JSONL lines in the transcript.");
     }
 
     let turns = build_turns(&parsed_lines);
     if turns.is_empty() {
-        return Err(format!("No turns found in '{}'", session_path));
+        return Err("No turns found in the transcript.");
     }
 
     let session_id =
@@ -75,11 +70,7 @@ fn run_session_path(
 
     let version = env!("CARGO_PKG_VERSION");
 
-    eprintln!(
-        "Reporting {} transcript turns (profile={:?})",
-        turns.len(),
-        profile.as_deref().unwrap_or("default"),
-    );
+    eprintln!("Reporting {} transcript turns", turns.len());
 
     for (i, turn) in turns.iter().enumerate() {
         let turn_number = i + 1;
@@ -99,7 +90,7 @@ fn run_session_path(
                 langfuse_config.host,
             );
         }
-        post_otel_to_langfuse(langfuse_config, &body, &logger)?;
+        post_otel_to_langfuse(langfuse_config, &body, &logger).map_err(|_| EXPORT_FAILURE)?;
         eprintln!("  Turn {}/{} sent", turn_number, turns.len());
     }
 
@@ -110,16 +101,15 @@ fn run_session_path(
 /// --otel-json mode: read pre-built OTLP JSONL → (optional shift) → POST each line.
 fn run_otel_json(
     langfuse_config: &LangfuseConfig,
-    profile: &Option<String>,
     otel_path: &str,
     shift: bool,
     debug: bool,
-) -> Result<(), String> {
+) -> Result<(), &'static str> {
     if debug {
         eprintln!("[debug] Reading OTLP JSONL from '{}'", otel_path);
     }
     let content = std::fs::read_to_string(otel_path)
-        .map_err(|e| format!("Failed to read '{}': {}", otel_path, e))?;
+        .map_err(|_| "Failed to read the OTLP input. Check --otel-json and file permissions.")?;
 
     let mut lines: Vec<serde_json::Value> = content
         .lines()
@@ -128,7 +118,7 @@ fn run_otel_json(
         .collect();
 
     if lines.is_empty() {
-        return Err(format!("No valid JSONL lines in '{}'", otel_path));
+        return Err("No valid JSONL lines in the OTLP input.");
     }
 
     // Apply timestamp shift if requested
@@ -142,23 +132,21 @@ fn run_otel_json(
     let logger = session_logger(&session_id, debug)?;
 
     eprintln!(
-        "Posting {} OTLP request(s) (profile={:?}{})",
+        "Posting {} OTLP request(s){}",
         lines.len(),
-        profile.as_deref().unwrap_or("default"),
-        if shift { ", shifted" } else { "" },
+        if shift { " (shifted)" } else { "" },
     );
 
     for (i, body) in lines.iter().enumerate() {
         if debug {
             eprintln!(
-                "[debug] Request {}/{}: {} spans, posting to {}",
+                "[debug] Request {}/{}: {} spans",
                 i + 1,
                 lines.len(),
                 count_spans(body),
-                langfuse_config.host,
             );
         }
-        post_otel_to_langfuse(langfuse_config, body, &logger)?;
+        post_otel_to_langfuse(langfuse_config, body, &logger).map_err(|_| EXPORT_FAILURE)?;
         eprintln!("  Request {}/{} sent", i + 1, lines.len());
     }
 
@@ -166,12 +154,12 @@ fn run_otel_json(
     Ok(())
 }
 
-fn session_logger(session_id: &str, debug: bool) -> Result<Logger, String> {
+fn session_logger(session_id: &str, debug: bool) -> Result<Logger, &'static str> {
     let log_file = dirs::session_log_file(session_id)
-        .ok_or_else(|| "report session id did not resolve to a session log path".to_string())?;
+        .ok_or("Could not resolve a report session log path.")?;
     if let Some(parent) = log_file.parent() {
         dirs::ensure_private_dir(parent)
-            .map_err(|error| format!("failed to create session log directory: {error}"))?;
+            .map_err(|_| "Failed to create session log directory. Check directory permissions.")?;
     }
     Ok(Logger::new(log_file, debug).with_event("report"))
 }
@@ -223,9 +211,9 @@ fn find_time_range(lines: &[serde_json::Value]) -> Option<(u128, u128)> {
 }
 
 /// Shift all span timestamps so the session ends at "now", preserving relative intervals.
-fn shift_timestamps(lines: &mut [serde_json::Value], debug: bool) -> Result<(), String> {
+fn shift_timestamps(lines: &mut [serde_json::Value], debug: bool) -> Result<(), &'static str> {
     let (min_start, max_end) = find_time_range(lines)
-        .ok_or_else(|| "No valid timestamps found in OTLP data".to_string())?;
+        .ok_or("No valid timestamps found in OTLP data")?;
 
     let duration = max_end - min_start;
     let now_ns = std::time::SystemTime::now()
@@ -330,4 +318,47 @@ fn extract_session_id_from_lines(lines: &[serde_json::Value]) -> Option<String> 
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn report_errors_describe_configuration_and_input_problems() {
+        let directory = tempfile::tempdir().unwrap();
+        let config = directory.path().join("report.config.toml");
+        let missing_input = directory.path().join("missing.jsonl");
+        let run_report = |profile: Option<&str>| {
+            run(
+                profile.map(str::to_string),
+                config.to_string_lossy().into_owned(),
+                Some(missing_input.to_string_lossy().into_owned()),
+                None,
+                false,
+                false,
+            )
+            .unwrap_err()
+        };
+
+        std::fs::write(&config, "fixture-only-config-entry").unwrap();
+        assert!(
+            run_report(None)
+                == "Failed to load report configuration. Check --config, file permissions, and TOML syntax."
+        );
+
+        std::fs::write(
+            &config,
+            "version = 1\n[profiles.local]\nhost = 'https://example.test'\npublic_key = 'fixture-public'\nsecret_key = 'fixture-secret'\n",
+        )
+        .unwrap();
+        assert!(
+            run_report(Some("missing-profile"))
+                == "Failed to resolve report profile. Check --profile and its credential settings."
+        );
+        assert_eq!(
+            run_report(Some("local")),
+            "Failed to read the transcript. Check --session-path and file permissions."
+        );
+    }
 }

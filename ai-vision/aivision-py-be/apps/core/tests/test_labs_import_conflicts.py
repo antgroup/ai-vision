@@ -219,13 +219,55 @@ class LabsImportConflictTests(SpaceKeyTestCase):
         for api in CONFIG_APIS:
             with self.subTest(feature=api.feature):
                 model = api.model
+                code = 3005 if api.feature == "mcp" else 3101
                 self.assertEqual(
                     self._preview(api, ["name"] * 51).status_code, 400
                 )
-                self.assertEqual(self._preview(api, [""]).status_code, 400)
-                for invalid in (None, {}, [{"name": "other", "version": "revision"}]):
+                preview = self._preview(api, [""])
+                self.assertEqual(preview.status_code, 400)
+                self.assertEqual(preview.data, {
+                    "code": code,
+                    "message": "names must contain 1 to 50 valid configuration names",
+                    "data": None,
+                })
+                invalid_overwrites = (
+                    (None, "overwrites must be a list of submitted names and versions"),
+                    ({}, "overwrites must be a list of submitted names and versions"),
+                    ([{"name": "other", "version": "revision"}], "Invalid overwrite confirmation"),
+                )
+                for invalid, message in invalid_overwrites:
                     response = self._write(
                         api, [self._item(api, "docs")], invalid
                     )
                     self.assertEqual(response.status_code, 400, response.data)
+                    self.assertEqual(response.data, {"code": code, "message": message, "data": None})
                 self.assertFalse(model.objects.filter(space=self.space).exists())
+
+    def test_conflict_endpoints_hide_internal_value_errors(self):
+        for api in CONFIG_APIS:
+            code = 3005 if api.feature == "mcp" else 3101
+            module = f"apps.core.views.labs_{api.feature}"
+            with self.subTest(feature=api.feature):
+                with patch(
+                    f"{module}.conflict_matches",
+                    side_effect=ValueError("Fixture storage diagnostic"),
+                ):
+                    response = self._preview(api, ["docs"])
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.data, {
+                    "code": code,
+                    "message": "Failed to check configuration names",
+                    "data": None,
+                })
+                with patch(
+                    f"{module}.ImportWriteGuard",
+                    side_effect=ValueError("Fixture validation diagnostic"),
+                ):
+                    response = self._write(api, [self._item(api, "docs")], [])
+                self.assertEqual(response.status_code, 400)
+                self.assertEqual(response.data, {
+                    "code": code,
+                    "message": "Invalid overwrite confirmation",
+                    "data": None,
+                })
+                self.assertFalse(api.model.objects.filter(space=self.space).exists())

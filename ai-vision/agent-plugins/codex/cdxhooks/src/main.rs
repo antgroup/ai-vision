@@ -68,8 +68,10 @@ fn main() {
             }
         }
         cli::SubCommand::Worker(command) => {
-            if let Err(e) = cli::worker::run(command) {
-                eprintln!("Error: {}", e);
+            if cli::worker::run(command).is_err() {
+                eprintln!(
+                    "Error: Worker operation failed. Check the worker state and its permissions."
+                );
                 std::process::exit(1);
             }
         }
