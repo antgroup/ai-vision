@@ -1,0 +1,29 @@
+deploy/all-in-one/build.py
+  s_ecdc0692ab40f8::t_c352a8bf2d016e 1-314
+deploy/all-in-one/main.go
+  s_ecdc0692ab40f8::t_c352a8bf2d016e 1-397
+deploy/all-in-one/Dockerfile
+  s_ecdc0692ab40f8::t_c352a8bf2d016e 1-26
+deploy/all-in-one/seekdb-owner/main.c
+  s_ecdc0692ab40f8::t_c352a8bf2d016e 1-138
+deploy/all-in-one/README.md
+  s_ecdc0692ab40f8::t_c352a8bf2d016e 1-35
+deploy/all-in-one/main_test.go
+  s_ecdc0692ab40f8::t_c352a8bf2d016e 1-22
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "db016377b7a0bb92cc5a981c26aafb4b58046369",
+  "prompts": {},
+  "sessions": {
+    "s_ecdc0692ab40f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a181b8-d240-7e53-a5f3-51f48e363871",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

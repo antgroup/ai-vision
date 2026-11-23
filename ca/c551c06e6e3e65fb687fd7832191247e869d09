@@ -1,0 +1,125 @@
+.github/workflows/ci.yml
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 136
+.github/workflows/compose-deploy-smoke.yml
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 19-22,30
+scripts/ci/release_candidate.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 15-16,34,45-52
+ai-vision/agent-plugins/scripts/tests/test_onboarding_status.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 12,24
+scripts/ci/release_publish.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 5,337-386,545-546,553-554
+ai-vision/agent-plugins/tests/diagnostics_e2e/test_validate_local.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 431,443,445-447,453-459
+ai-vision/vfe/tests/e2e/clipboard.spec.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 189,192-195
+ai-vision/vfe/tests/modelConnectionNavigationDom.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 5,15
+deploy/tests/test_deploy_smoke.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 320-321,340-349,359-429
+ai-vision/vfe/tests/versionInfoDom.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 5,20
+ai-vision/agent-plugins/scripts/tests/test_onboarding_native.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 6,67-71,77-104,137-139
+ai-vision/vfe/tests/openShellInstallation.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 52-54,86-88,317-319
+ai-vision/vfe/tests/quickDiagnosisDom.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 6,25
+ai-vision/agent-plugins/scripts/tests/test_onboarding_runtime.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 1,3,11,19-34,39-40,47-59,93,95-102
+docs/deployment/en/dev-image-release.md
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 123-124
+scripts/ci/test_release_candidate.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 27-35,43,84-113
+  s_6eed30fd231f9b::t_78103d6fe06b8c 114
+ai-vision/agent-plugins/tests/native_agent_e2e/drivers/hermes.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 18,21,76,81-90,92,145-147,153-163
+ai-vision/vfe/tests/modelConnectionFormDom.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 6,28,1284-1295
+.github/workflows/diagnostics-e2e.yml
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 82
+ai-vision/agent-plugins/pi/observ-pi/test/config.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 28-29,295,311,319
+ai-vision/agent-plugins/scripts/tests/onboarding_test_helpers.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 1-33
+ai-vision/vfe/tests/e2e/privacyEvidence.spec.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 70-73
+ai-vision/agent-plugins/tests/native_agent_e2e/test_hermes_driver.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 8-9,12-13,19,22,159,177,201-269
+  s_6eed30fd231f9b::t_a5a029d1eb31db 270
+ai-vision/vfe/tests/e2e/traceLabs.spec.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 20-21,71-72,236-237
+scripts/ci/native_unit_scope.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 1-72
+scripts/ci/README.md
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 45-69,82-87,131-135,146
+deploy/tests/seekdb_deploy_smoke.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 16-17,58,285-287
+scripts/ci/test_native_unit_scope.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 1-237
+scripts/ci/test_release.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 574-578,588-593,602-605,620,1007-1207
+  s_6eed30fd231f9b::t_44afd2b8702007 1208-1209
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 1355-1357
+.github/workflows/deployment-assets.yml
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 12-15,26-30,32,36,41,49,57,64,76,83
+ai-vision/agent-plugins/tests/framework_e2e/test_browser_platform.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 160,163
+ai-vision/vfe/tests/sandboxConnectionsDom.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 6,30
+ai-vision/vfe/tests/openShellBootstrapDom.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 6,31
+scripts/ci/test_workflow_contracts.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 93-97,170-171,193-194,488-492,504-511
+  s_6eed30fd231f9b::t_48c21660dd1fc2 512
+ai-vision/agent-plugins/tests/framework_e2e/test_signoz_precision.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 5,145-146
+ai-vision/vfe/tests/e2e/skillTrace.spec.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 31-36,49-52
+scripts/ci/test_ci_cost_controls.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 1-282
+ai-vision/agent-plugins/opencode/observ-opencode/scripts/test-config-priority.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 5,23-26,108-109,117,119-120,126,129-130
+ai-vision/agent-plugins/tests/diagnostics_e2e/test_ci_quick_acceptance.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 1-173
+ai-vision/agent-plugins/tests/native_agent_e2e/test_codex_driver.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 21-24
+ai-vision/vfe/tests/openShellInstallationDom.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 6,31
+scripts/ci/plan.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 10-11,297-299,373-384
+ai-vision/vfe/tests/specialistDiagnosisDom.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 6,27
+docs/deployment/zh-CN/dev-image-release.md
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 127-128
+ai-vision/agent-plugins/tests/diagnostics_e2e/validate_local.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 25-26,84-115,144
+ai-vision/agent-plugins/scripts/tests/test_onboarding_privacy.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 90-94
+scripts/ci/test_native_workflow_scope.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 20-21,23-25,43,46-48,69-70,124-125,130-131,133,135,149-150,155-193
+ai-vision/agent-plugins/scripts/connect
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 717-721
+.github/workflows/native-agent-e2e.yml
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 14-17,37-40,79-85,87,91,93,95,99-100,111-118,122,124-125,133-135,140-142,146,156,159
+scripts/ci/deployment_assets_scope.py
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 1-120
+ai-vision/agent-plugins/pi/pireplay/test/config.test.ts
+  s_6eed30fd231f9b::t_e8e4ccc68a450d 41
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cac551c06e6e3e65fb687fd7832191247e869d09",
+  "prompts": {},
+  "sessions": {
+    "s_6eed30fd231f9b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e8db-f00b-79c3-9361-e4ce90d5577f",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

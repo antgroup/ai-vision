@@ -1,0 +1,21 @@
+docs/testing/multimedia-review-20261117.md
+  s_0ba4aa59e34a4f::t_490811111bacb9 1-51
+docs/testing/screenshots/trace-multimedia/source-manifest.json
+  s_0ba4aa59e34a4f::t_dcbf468adac888 1-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "06133f7c4e687057b8b7070a460873f4465f3321",
+  "prompts": {},
+  "sessions": {
+    "s_0ba4aa59e34a4f": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1e88a-287f-7a21-9da2-deabcaee1e73",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

@@ -1,0 +1,136 @@
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_2f5254e8b447ea::t_1448a0a3f81564 4383,4595-4596,4689-4690,4716-4720,4724,4733-4735,4737-4744,4749-4751,4753,4759-4763,4765,4769,4776,4781,4798,4813,4884-4885
+  s_2f5254e8b447ea::t_8072afebfbb5af 4764
+ai-vision/vfe/src/features/model-pricing/ModelPricingContent.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 383-386,627-629,696
+ai-vision/vfe/src/features/model-pricing/presentation.ts
+  s_2f5254e8b447ea::t_1448a0a3f81564 79,120-122,139-147
+ai-vision/aivision-py-be/apps/core/tests/test_official_model_pricing.py
+  s_2f5254e8b447ea::t_cdff1254afce41 1-101
+ai-vision/aivision-py-be/apps/core/tests/test_native_pricing_snapshot.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 7,44,55,64,79
+ai-vision/agent-plugins/langfuse/README.md
+  s_2f5254e8b447ea::t_1448a0a3f81564 200-222
+ai-vision/aivision-py-be/apps/core/trace_query/semantics/usage.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 18-19,107,258,267-273,277-317,699
+ai-vision/agent-plugins/codex/cdxhooks/src/common/runtime_state.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 68
+ai-vision/vfe/tests/e2e/langfuseCosts.spec.ts
+  s_2f5254e8b447ea::t_1448a0a3f81564 256-266
+ai-vision/aivision-py-be/apps/core/services/official_model_pricing.py
+  s_2f5254e8b447ea::t_6b5eeb89cdd05a 1-105
+ai-vision/aivision-py-be/apps/core/views/langfuse_ingest.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 27,624-650,673
+ai-vision/docs/observability/model-pricing.md
+  s_2f5254e8b447ea::t_1448a0a3f81564 179-187,193-206,219-222,226-227,238-241
+ai-vision/agent-plugins/codex/cdxhooks/src/bin/cdxhooks-replay.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 818
+ai-vision/aivision-py-be/apps/core/services/model_pricing.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 24,35,403
+antcollector/conf/antcollectorsignoz/gateway.yaml
+  s_2f5254e8b447ea::t_1448a0a3f81564 8-9,57-58,98
+ai-vision/aivision-py-be/apps/core/views/trace.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 6,12,54-63,351,492
+ai-vision/vfe/tests/reportedCostDom.test.ts
+  s_2f5254e8b447ea::t_1448a0a3f81564 3,13-18,75-76
+ai-vision/vfe/src/features/model-pricing/PricingCurrency.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 16,49,58-66,98-99,107-109
+ai-vision/vfe/src/features/model-pricing/currency.ts
+  s_2f5254e8b447ea::t_1448a0a3f81564 20-24
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/read_model.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 28
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing_subscription.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 5,15-40,42,48,52,62,67-70,72-73,90,93-95,104,106,110,112,115,120,130,140-141,144,150-151,157,159-161,163-167,176,183,186-187,189-207,209-210,212-214,236
+ai-vision/vfe/src/pages/ObservationLinkPage.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 11,27,119-122,129
+ai-vision/vfe/tests/e2e/modelPricing.spec.ts
+  s_2f5254e8b447ea::t_1448a0a3f81564 37,66-72,187-188,527,530-535,580-585,699,719,745,760-761,773-838,847-852,868-874,914-951,1183-1191,1194-1196
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_2f5254e8b447ea::t_1448a0a3f81564 64-68
+antcollector/cmd/app/main.go
+  s_2f5254e8b447ea::t_1448a0a3f81564 25,58-61
+ai-vision/vfe/tests/modelPricing.test.ts
+  s_2f5254e8b447ea::t_1448a0a3f81564 589-603
+ai-vision/agent-plugins/codex/cdxhooks/src/hooks/langfuse/turn_trace_identity.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 24-28,37,41,46,50,53,57,98,512,537
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_2f5254e8b447ea::t_1448a0a3f81564 4383,4595-4596,4689-4690,4716-4720,4724,4733-4735,4737-4744,4749-4751,4753,4759-4763,4765,4776,4781,4798,4813,4884-4885
+  s_2f5254e8b447ea::t_8072afebfbb5af 4764
+ai-vision/agent-plugins/weaver/policies/aivision/traces/base/violations_compatibility_deprecated_genai.rego
+  s_2f5254e8b447ea::t_1448a0a3f81564 447-451,457,468,481,489,500,512
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_2f5254e8b447ea::t_1448a0a3f81564 4372,4584-4585,4678-4679,4705-4709,4713,4722-4724,4726-4733,4738-4739,4742,4748-4752,4754,4758,4765,4770,4787,4802,4873-4874
+  s_2f5254e8b447ea::t_8072afebfbb5af 4753
+ai-vision/aivision-py-be/apps/core/tests/test_dashboard_pricing_compatibility.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 77,100-103
+ai-vision/aivision-py-be/apps/core/tests/test_langfuse_sdk_encoding.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 86-150
+ai-vision/agent-plugins/docs/semconv/spans.yaml
+  s_2f5254e8b447ea::t_1448a0a3f81564 248-249,291-292
+ai-vision/aivision-py-be/apps/core/tests/test_model_pricing_semantics.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 17-25
+ai-vision/agent-plugins/codex/cdxhooks/src/hooks/langfuse/realtime.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 419,441,473,512-563,782,931-934,944-948,962
+ai-vision/vfe/src/components/traces-lf/ObservationDetailPanel/ObservationDetailPanel.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 41,53,92,105-106,121
+ai-vision/agent-plugins/codex/cdxhooks/src/common/otel.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 24-25,2117,2119-2122,2279,2297,2310,2316-2322,2405,2418-2421,3741,5618,5679
+ai-vision/agent-plugins/codex/cdxhooks/src/hooks/resource_context.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 10-12,46-47,54-56,291-329
+  s_2f5254e8b447ea::t_2476bd1b48380a 330-331
+ai-vision/agent-plugins/codex/cdxhooks/src/cli/worker.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 2502,3373
+ai-vision/vfe/src/features/model-pricing/ReportedCost.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 2-6,61-82,84-86
+ai-vision/vfe/src/pages/TraceLinkPage.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 15,29,168-171
+ai-vision/aivision-py-be/apps/core/tests/test_trace_link.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 7,9,26-29,153-227,336-338
+ai-vision/agent-plugins/codex/cdxhooks/src/hooks/langfuse/state.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 1013-1064
+ai-vision/agent-plugins/codex/cdxhooks/tests/transcript_integration.rs
+  s_2f5254e8b447ea::t_1448a0a3f81564 547
+antcollector/cmd/app/billing_test.go
+  s_2f5254e8b447ea::t_c76f01c29a3a60 1-99
+ai-vision/vfe/src/features/model-pricing/PricingSettingsDialog.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 100-104
+ai-vision/vfe/src/features/model-pricing/PricingRuleForm.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 7,91,102,104
+ai-vision/docs/observability/model-pricing-currency.md
+  s_2f5254e8b447ea::t_1448a0a3f81564 17-20,86-89
+  s_2f5254e8b447ea::t_a05d3ec00beaaf 90
+antcollector/README.md
+  s_2f5254e8b447ea::t_1448a0a3f81564 11,16-31
+antcollector/processor/modelbillingprocessor/processor.go
+  s_2f5254e8b447ea::t_a8492bc5b08e07 1-169
+ai-vision/agent-plugins/codex/cdxhooks/config.md
+  s_2f5254e8b447ea::t_1448a0a3f81564 109-117
+ai-vision/aivision-py-be/apps/core/tests/test_dashboard_metrics_projection.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 171-172,178
+ai-vision/aivision-py-be/apps/core/tests/test_native_span_pricing.py
+  s_2f5254e8b447ea::t_1448a0a3f81564 8,49,56,58
+ai-vision/agent-plugins/docs/semconv/attribute_groups.yaml
+  s_2f5254e8b447ea::t_1448a0a3f81564 6-35
+ai-vision/vfe/src/features/model-pricing/CostSummary.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 50-54,57-58,64-66,86-87,92-99,106-133,145,185,241-243,255-257,277-282,308-309,322,329-344,381-388,402-408,427-429,492,512-519,530-533,535-542,548-563,565-575,577-590,592-603
+ai-vision/vfe/src/components/traces/shared/TraceLinkShell.tsx
+  s_2f5254e8b447ea::t_1448a0a3f81564 3-4,9,13,26-32
+ai-vision/vfe/tests/e2e/compactCostSummary.spec.ts
+  s_2f5254e8b447ea::t_1448a0a3f81564 101-216,232,330-332,477-480,545-547,549,573-578,732-734
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3a92a1bc6d30cafab434fcfeed3bacf9b5ab932c",
+  "prompts": {},
+  "sessions": {
+    "s_2f5254e8b447ea": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1c861-1fe5-7443-9616-cecbccffd4e1",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

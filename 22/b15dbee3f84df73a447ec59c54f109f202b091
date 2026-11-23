@@ -1,0 +1,23 @@
+deploy/all-in-one/repack.py
+  s_ecdc0692ab40f8::t_75fedca2c49bac 1-124
+deploy/all-in-one/test_repack.py
+  s_ecdc0692ab40f8::t_75fedca2c49bac 1-103
+deploy/all-in-one/README.md
+  s_ecdc0692ab40f8::t_75fedca2c49bac 20-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "22b15dbee3f84df73a447ec59c54f109f202b091",
+  "prompts": {},
+  "sessions": {
+    "s_ecdc0692ab40f8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a181b8-d240-7e53-a5f3-51f48e363871",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

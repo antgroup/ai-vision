@@ -1,0 +1,282 @@
+ai-vision/agent-plugins/docs/capabilities/D-advanced-semantics.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 42,57
+ai-vision/vfe/src/components/agents/guidance/SetupStepsSection.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,22-32
+skills/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 3-6,10-13,41-43
+aivision-cli/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 363-364,724-727,750-752
+ai-vision/aivision-py-be/apps/core/trace_query/signoz/provider.py
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 811-812,820-833,835,842,913-914,916
+ai-vision/vfe/src/pages/traces-otel/TraceComparePage.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 27,46-47,54-57,98-102,447-449,462,752,766,774,781-789,850-865,935-948,953,955-961,971-972,977,1001-1023,1132,1139,1206-1209,1217-1225,1408,1416-1418,1560,1575
+ai-vision/vfe/src/i18n/locales/zh-CN.json
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 13,410-411,427,4971-4972,4975,4978-4979,5009-5010,5617-5620,5624-5626,5640,5644
+ai-vision/vfe/src/pages/settings/UnifiedKeysSection.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,235-241
+deploy/blueprints/aivision-source.yaml
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 13,567-568
+ai-vision/vfe/src/components/traces-lf/shared/MetadataTree.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,40,42-44,236,238-240
+README.en.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 30,111,115,183,187-190,202
+ai-vision/agent-plugins/codex/capabilities/D2.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 18
+docs/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 24,27,35
+ai-vision/vfe/src/features/plugins/OpenShellBootstrap.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,315
+ai-vision/vfe/tests/frameworkMetrics.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 112-117
+ai-vision/docs/diagnose/validation/model-connections-integration-2026-10-23.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 71
+website/public/translations.js
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 130,159,161,405,434,436
+ai-vision/vfe/tests/onboardingVerification.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,88
+website/public/app.js
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 55,57-59,61-92
+ai-vision/aivision-py-be/apps/core/tests/test_signoz_trace_provider.py
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 2,299-346
+  s_e9b64f95b6f8f0::t_cb9c10494a3a6b 347
+ai-vision/vfe/src/agents/lib/agentQueryCrypto.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 7-8,16-19,35,58-66,71-82,85-127,132-137,139-150,155,158-159,164,184-185,188,192,194,207-209
+ai-vision/agent-plugins/scripts/worktree-setup
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 463,469-470,497-500
+ai-vision/docs/backend/unify-agent-config-to-db.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 45
+ai-vision/vfe/src/components/diagnose/diagnoser/RawTraceVariablePicker.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,1606,1612
+ai-vision/vfe/src/i18n/locales/en-US.json
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 13,409-410,426,4982-4983,4986,4989-4990,5020-5021,5628-5631,5635-5637,5651,5655
+docs/deployment/zh-CN/docker.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 5,29
+ai-vision/agent-plugins/docs/capabilities/B-tool-semantics.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 33,81
+ai-vision/vfe/src/pages/AgentsPage.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,894,898-904
+ai-vision/vfe/src/labs/memory/nativeMemory.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 134-144,149-150
+aivision-cli/deploy/assets-manifest.json
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 5
+ai-vision/docs/multi-dim-filter-status.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 16,33,43,58
+ai-vision/vfe/tests/e2e/traceCompareEvidence.spec.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 210-607
+ai-vision/vfe/src/components/traces/ShareDialog.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,99,104
+ai-vision/vfe/src/components/traces-otel/NativeTraceDetail.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,672,674-680
+AGENTS.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 23
+ai-vision/agent-plugins/weaver/weaver-guard/src/server/dashboard-render.js
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 114-138,140-141,143-145,147-151,153-157
+ai-vision/agent-plugins/METHODOLOGY.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 15,123,127-128,130,182-184,220,253,468,536,577,641,662,704,709,735
+ai-vision/vfe/src/pages/onboarding/useOnboarding.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,95
+website/public/index.html
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 88,93
+ai-vision/vfe/src/components/traces-lf/shared/JsonDetailWidgets.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,434-441,444
+ai-vision/vfe/tests/e2e/clipboard.spec.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-199
+ai-vision/agent-plugins/docs/capabilities/C-llm-semantics.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 35,77,288,346
+ai-vision/vfe/src/features/plugins/OpenShellInstallation.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,216,230-233
+ai-vision/vfe/src/components/traces-otel/api.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 3,31-34
+ai-vision/vfe/src/components/traces/shared/TraceTextContent.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,25,28
+ai-vision/agent-plugins/weaver/weaver-guard/src/server/dashboard-app.js
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 386-396
+ai-vision/vfe/src/components/bizcharts/QueryStateNotice.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 8,16,34-42,51
+ai-vision/vfe/tests/observationTraceProcess.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,299
+docs/deployment/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 3,5
+ai-vision/vfe/src/agents/shared/hooks/useSectionQuery.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 15-17,31,79,93-95,137-142,144,207
+  s_e9b64f95b6f8f0::t_4445e6dcd57d7c 14
+ai-vision/CLAUDE.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 13,39,72,75,113
+ai-vision/vfe/src/labs/skill/SkillDrawer.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,467,472,807,811
+ai-vision/agent-plugins/codex/cdxhooks/CLAUDE.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 11-12,15,19,85,95
+ai-vision/agent-plugins/tests/framework_e2e/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 250
+ai-vision/vfe/src/components/traces-lf/TraceDetailPanel/TraceDetailPanel.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,547-554
+README.ja.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 30,111,115,183,187-190,202
+ai-vision/vfe/src/components/traces-otel/PowerContextMemoryContent.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 14,18,51-74,76-93,95-97,106-121
+agentlens/docs/deployment.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 6
+ai-vision/vfe/src/pages/settings/SettingsPage.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,179-185
+ai-vision/vfe/src/features/model-connections/CopyValue.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,33
+ai-vision/vfe/tests/nativeQueryTransport.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 9-12,23-24,34-40,60-66,82,98,110,127-239
+  s_e9b64f95b6f8f0::t_a5d5a9d05f80b6 240
+docs/deployment/en/docker.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 5,45
+ai-vision/vfe/src/components/labs/shared/CopyableCode.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,26
+ai-vision/agent-plugins/claudecode/cchooks/CLAUDE.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 11-12,17,20,69,72,88,90,101
+ai-vision/vfe/AGENTS.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 71,82,84,93
+README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 31,112,116,197,201-204,216
+ai-vision/vfe/src/features/plugins/PluginWorkspace.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,291,295
+ai-vision/AGENTS.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 35,39,42,85,133,135
+ai-vision/vfe/src/pages/settings/SpaceKeysManagement.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,190-196
+ai-vision/vfe/src/labs/memory/PowerContextRunCard.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 13-16,19-25,30,35,40-48,51-55,57-62,64,66-67,92-103,105-120,137-147,154,160-167,171,176-185,187,189,199-203,207,210,212-220,283,300,304,309
+ai-vision/vfe/tests/dashboardAccessibility.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,37
+ai-vision/vfe/tests/powerContextRun.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 62-93,107-126
+ai-vision/vfe/src/pages/traces-otel/traceCompareData.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 21-24,38-44,73-75,335-354,359-417,479-481,483,487-489,508
+ai-vision/vfe/src/pages/settings/invitationClipboard.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,5
+ai-vision/agent-plugins/openclaw/observ-openclaw/package.json
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 79-83
+ai-vision/vfe/tests/frameworkModuleLoading.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 4,10-13,56-59,78-82,97-100,104-107,276-342,461
+agentlens/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 34
+ai-vision/vfe/src/agents/dashboards/framework/FrameworkDashboard.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 7-10,12-15,365-366,485-486,488-489,491-523,531,534-557,560-567,569-570,573-576,581,587-609,867,869-877,882,887-888,890,892,895-897,906,919-920,1047-1058,1060-1061,1070
+ai-vision/agent-plugins/CLAUDE.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 194-197
+ai-vision/docs/v2/encrypted-query-protocol.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 8,12,18,20,55-56,75,77,80,83,88-95,101,103-105,184-187
+ai-vision/vfe/src/components/traces-otel/TraceDetailPanel/TraceDetailPanel.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,475-482
+deploy/native-packaging/delivery-2026-10-28-amd64.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 42
+ai-vision/vfe/src/pages/DownloadPage.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,167-173,320-326
+ai-vision/agent-plugins/codex/cdxhooks/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 24,37,49-50,154,180,216,226,238
+ai-vision/agent-plugins/codex/cdxhooks-ant-setup.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 3,8,13,18-19,22-23,46,57,79,103,107
+ai-vision/agent-plugins/codex/cdxhooks-common-setup.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 3,7
+ai-vision/vfe/tests/chartSemantics.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 8,49-130
+  s_e9b64f95b6f8f0::t_c7533333fc8f48 131
+ai-vision/vfe/package.json
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 63,118-122
+ai-vision/.codex/skills/ai-vision-backend/SKILL.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 3,18,29,36,74,77,79
+ai-vision/aivision-py-be/AGENTS.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 24,40-41
+ai-vision/agent-plugins/codex/CAPABILITIES.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 271
+ai-vision/vfe/src/components/traces-otel/nativeQueryScheduler.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 5,55-56
+ai-vision/vfe/src/i18n/locales/ja-JP.json
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 13,392-393,409,4982-4983,4986,4989-4990,5020-5021,5628-5631,5635-5637,5651,5655
+ai-vision/vfe/src/components/bizcharts/charts/ChartPanel.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 78,116,808,864,870,965-972,1018
+ai-vision/vfe/src/components/bizcharts/datatable/DataTable.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,247
+ai-vision/agent-plugins/CAPABILITIES.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 192
+aivision-cli/blueprints/aivision-source.yaml
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 13,567-568
+agentlens/docs/configuration.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 256
+CONTRIBUTING.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 36
+deploy/native-packaging/delivery-2026-10-28-amd64-revision2.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 18-19
+website/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 17
+ai-vision/agent-plugins/CONSTITUTION.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 27,236-237
+ai-vision/vfe/src/agents/lib/dashboardQueryAdapter.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 18,23,32-37,201,206,212-216
+ai-vision/agent-plugins/weaver/weaver-guard/src/server/dashboard.js
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 2115,2117-2142,2144-2146,2148-2152,2154-2158,3658-3668
+ai-vision/agent-plugins/AGENTS.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 30,108,121-128,148-149,152,155,163,182-188,193-194,239-241
+ai-vision/vfe/src/agents/lib/dashboardQueryError.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-15
+ai-vision/vfe/tests/frameworkDashboard.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 284,385-457
+  s_e9b64f95b6f8f0::t_389f9f90b45812 458
+ai-vision/vfe/src/components/diagnose/badcase-detail/TraceDetailSections.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,159,161-163
+ai-vision/vfe/src/components/traces-otel/shared/JsonDetailWidgets.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,408-417,420
+ai-vision/docs/v2/frontend-component-layers.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 8
+ai-vision/vfe/tests/frameworkQueries.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 2-3,6,13,17-246,327-329,405,413-416,487-494
+ai-vision/agent-plugins/opencode/observ-opencode/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 329,331,333
+ai-vision/vfe/tests/nativeUiHarness.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 218
+ai-vision/vfe/src/lib/clipboard.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-65
+ai-vision/docs/v2/v2-style-alignment-task.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 29,43,204
+ai-vision/vfe/src/pages/about/AboutPage.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1,143
+ai-vision/package.json
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 20-24
+ai-vision/vfe/tests/dashboardQueryStateDom.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 10-13,38-41
+ai-vision/vfe/src/components/traces-otel/shared/MetadataTree.tsx
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 1-2,40,42-44,280,282-284
+docs/version-info.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 22-24
+ai-vision/scripts/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 3-6,8,10-12,60,65,67-68,85
+README.zh-CN.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 5
+ai-vision/.codex/skills/ai-vision-frontend/SKILL.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 96
+ai-vision/vfe/src/agents/dashboards/framework/frameworkMetrics.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 33-37
+ai-vision/vfe/src/labs/memory/powerContextRun.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 3-6,9-13,34-56,64-69,105-107,111,113,119,137,156
+ai-vision/agent-plugins/claudecode/cchooks/README.md
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 27-28,30-31,33-34,37-38,188,191,194-195,198,202,215,238-240
+ai-vision/vfe/tests/traceCompareData.test.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 201-357
+ai-vision/vfe/src/labs/memory/powerContextSpans.ts
+  s_e9b64f95b6f8f0::t_bba3dc97b37d69 54-84
+ai-vision/vfe/pnpm-lock.yaml
+  s_e9b64f95b6f8f0::t_97b91bf2d6c2d2 41-43,938-941,6275-6276
+docs/superpowers/plans/2026-11-03-cross-repo-public-daily.md
+  s_e9b64f95b6f8f0::t_7fa8a70af64dce 79-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b4d84d4fe359adcf4c733c05a3c2963db7b5e542",
+  "prompts": {},
+  "sessions": {
+    "s_e9b64f95b6f8f0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a1ce77-82ff-7431-a6e8-b8aa6de748b7",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

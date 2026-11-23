@@ -1,0 +1,51 @@
+ai-vision/vfe/tests/modelConnectionNavigationDom.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 5,15
+ai-vision/vfe/tests/openShellInstallationDom.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 6,31
+ai-vision/vfe/tests/e2e/traceLabs.spec.ts
+  s_7ddb4c6ac82aba::t_6560c8597f962d 19-22,70-73,235-238
+ai-vision/vfe/tests/e2e/productGuide.spec.ts
+  s_7ddb4c6ac82aba::t_0879d534862545 1355-1357
+ai-vision/vfe/tests/versionInfoDom.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 5,20
+ai-vision/vfe/tests/openShellBootstrapDom.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 6,31
+scripts/ci/README.md
+  s_7ddb4c6ac82aba::t_b9b5cd9f80206d 57-58
+ai-vision/vfe/tests/e2e/skillTrace.spec.ts
+  s_7ddb4c6ac82aba::t_0879d534862545 49-52
+  s_7ddb4c6ac82aba::t_6d4110fc435c8d 31-36
+ai-vision/vfe/tests/openShellInstallation.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 52-54,86-88,317-319
+ai-vision/agent-plugins/tests/native_agent_e2e/test_codex_driver.py
+  s_7ddb4c6ac82aba::t_b9b5cd9f80206d 21-24
+ai-vision/vfe/tests/modelConnectionFormDom.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 6,28
+  s_7ddb4c6ac82aba::t_0e12cbe447b468 1284-1295
+ai-vision/vfe/tests/quickDiagnosisDom.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 6,25
+ai-vision/vfe/tests/e2e/privacyEvidence.spec.ts
+  s_7ddb4c6ac82aba::t_9a7ba7a0fb6550 70-73
+ai-vision/vfe/tests/sandboxConnectionsDom.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 6,30
+ai-vision/vfe/tests/specialistDiagnosisDom.test.ts
+  s_7ddb4c6ac82aba::t_62eeb45bf11e81 6,27
+ai-vision/vfe/tests/e2e/clipboard.spec.ts
+  s_7ddb4c6ac82aba::t_9a7ba7a0fb6550 189,192-195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "52fc31d99a165c028594f6e5a25479604e3795bb",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.1-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
