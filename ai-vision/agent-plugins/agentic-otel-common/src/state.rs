@@ -163,16 +163,15 @@ impl StateLock {
                         };
                     }
                 }
-                let remaining = deadline.saturating_duration_since(Instant::now());
-                if remaining.is_zero() {
+                let Some(delay) = state_lock_retry_delay(deadline, Instant::now()) else {
                     return StateLock {
                         _file: Some(file),
                         #[cfg(windows)]
                         overlapped: Some(overlapped),
                         acquired: false,
                     };
-                }
-                std::thread::sleep(Duration::from_millis(50).min(remaining));
+                };
+                std::thread::sleep(delay);
             }
         }
 
@@ -185,6 +184,12 @@ impl StateLock {
     pub fn is_acquired(&self) -> bool {
         self.acquired
     }
+}
+
+#[cfg(any(unix, windows))]
+fn state_lock_retry_delay(deadline: Instant, now: Instant) -> Option<Duration> {
+    let remaining = deadline.saturating_duration_since(now);
+    (!remaining.is_zero()).then(|| remaining.min(Duration::from_millis(50)))
 }
 
 /// Atomically replace `destination` with `source` on supported platforms.
@@ -538,6 +543,18 @@ mod tests {
             vec!["turn-1".to_string(), "turn-2".to_string()]
         );
         assert!(get_string_array_field(&obj, "missing").is_empty());
+    }
+
+    #[cfg(any(unix, windows))]
+    #[test]
+    fn state_lock_retry_delay_respects_deadline() {
+        let now = Instant::now();
+        let short = Duration::from_millis(25);
+        let poll = Duration::from_millis(50);
+        assert_eq!(state_lock_retry_delay(now + short, now), Some(short));
+        assert_eq!(state_lock_retry_delay(now + poll * 2, now), Some(poll));
+        assert_eq!(state_lock_retry_delay(now, now), None);
+        assert_eq!(state_lock_retry_delay(now, now + short), None);
     }
 
     #[cfg(unix)]
