@@ -3472,6 +3472,7 @@ fn refresh_postable_turn_cache(
 mod tests {
     use super::*;
     use crate::common::hook::HookEvent;
+    use crate::common::otel::OtelPostError;
     use crate::hooks::langfuse::state::{
         commit_export_success, ALIAS_CYCLE_QUARANTINE_REASON, FACT_CONFLICT_QUARANTINE_REASON,
         MISSING_ALIAS_TARGET_QUARANTINE_REASON, MULTIPLE_PUBLISHED_ROOTS_QUARANTINE_REASON,
@@ -4401,7 +4402,21 @@ mod tests {
                 }]
             }]
         });
-        let (first_host, first_sink) = spawn_http_sink(vec![200, 500]);
+        // Give the multi-MiB durable writes and both HTTP attempts the same
+        // fixture window. The collector must stay up to deliver its HTTP 500.
+        let run_budget = Duration::from_secs(20);
+        let post_timeout = Duration::from_secs(3);
+        let sink_timeout = run_budget + post_timeout;
+        let delivery_budget = || {
+            StopBudget::new(
+                Instant::now(),
+                run_budget,
+                post_timeout,
+                Duration::from_millis(100),
+            )
+        };
+        let (first_host, first_sink) =
+            spawn_http_sink_with_deadline(vec![200, 500], sink_timeout);
         let first_context = test_context(&dir, first_host);
         let mut state = serde_json::json!({});
         let merged_sync_ids = Vec::new();
@@ -4413,7 +4428,7 @@ mod tests {
             "turn-resume",
             "trigger-resume",
             &first_context,
-            ample_budget(),
+            delivery_budget(),
             Some(FinalizerRecoveryDeliveryContext {
                 intent_id: "intent-resume",
                 observed_file_len: 3,
@@ -4424,9 +4439,14 @@ mod tests {
                 merged_subagent_invocation_ids: &merged_invocation_ids,
             }),
         );
-        assert!(matches!(first, FinalizerDeliveryOutcome::Retryable(_)));
-        assert_eq!(first_sink.join().unwrap().len(), 2);
+        assert_eq!(
+            first,
+            FinalizerDeliveryOutcome::Retryable(OtelPostError::HttpStatus(500).to_string())
+        );
+        let first_bodies = first_sink.join().unwrap();
+        assert_eq!(first_bodies.len(), 2);
 
+        let mut state = load_state(&first_context.state_file);
         let plan = state["parent"]["realtime_export"]["delivery_plans"]
             .as_object()
             .unwrap()
@@ -4437,9 +4457,12 @@ mod tests {
         let plan_id = plan["plan_id"].as_str().unwrap().to_string();
         assert_eq!(plan["next_cursor"], 1);
         assert_eq!(plan["chunks"][0]["status"], "accounted");
-        assert!(plan["chunks"][1].get("body").is_some());
+        assert!(
+            plan["chunks"][1]["body"] == first_bodies[1],
+            "the rejected root chunk must be persisted"
+        );
 
-        let (resume_host, resume_sink) = spawn_http_sink(vec![200]);
+        let (resume_host, resume_sink) = spawn_http_sink_with_deadline(vec![200], sink_timeout);
         let resume_context = test_context(&dir, resume_host);
         let resumed = resume_pending_finalizer_delivery(
             &mut state,
@@ -4447,15 +4470,20 @@ mod tests {
             "intent-resume",
             transcript.to_str().unwrap(),
             &resume_context,
-            ample_budget(),
+            delivery_budget(),
         );
         assert_eq!(resumed, PendingFinalizerResume::Completed);
         let resumed_bodies = resume_sink.join().unwrap();
         assert_eq!(resumed_bodies.len(), 1);
+        assert!(
+            resumed_bodies[0] == first_bodies[1],
+            "the retry must send the same root chunk"
+        );
         assert_eq!(
             resumed_bodies[0]["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["spanId"],
             "aaaaaaaaaaaaaaaa"
         );
+        let state = load_state(&resume_context.state_file);
         let resumed_plan = realtime_state::realtime_delivery_plan(&state, "parent", &plan_id)
             .expect("persisted plan must remain readable");
         assert!(resumed_plan.complete);
