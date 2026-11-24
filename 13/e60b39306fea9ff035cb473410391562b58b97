@@ -1,0 +1,21 @@
+ai-vision/agent-plugins/codex/cdxhooks/src/common/otel.rs
+  s_7ddb4c6ac82aba::t_d9b5729f50b45b 4558-4559,4561,4564,4567-4601,4608,4646,4654,4659-4661
+ai-vision/agent-plugins/codex/cdxhooks/src/hooks/langfuse/langfuse_handler.rs
+  s_7ddb4c6ac82aba::t_d9b5729f50b45b 4139-4161,4351-4352,4361,4428,4440,4474,4482
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "13e60b39306fea9ff035cb473410391562b58b97",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
