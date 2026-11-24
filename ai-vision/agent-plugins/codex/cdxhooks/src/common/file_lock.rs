@@ -11,6 +11,8 @@ use std::time::{Duration, Instant};
 
 use crate::common::dirs;
 
+pub(crate) const LOCK_RETRY_INTERVAL: Duration = Duration::from_millis(10);
+
 #[cfg(unix)]
 use std::os::fd::AsRawFd;
 #[cfg(unix)]
@@ -78,6 +80,14 @@ pub(crate) struct ExclusiveFileLock {
 
 impl ExclusiveFileLock {
     pub(crate) fn acquire(path: &Path, timeout: Duration) -> Result<Self, String> {
+        Self::acquire_with_retry_interval(path, timeout, LOCK_RETRY_INTERVAL)
+    }
+
+    pub(crate) fn acquire_with_retry_interval(
+        path: &Path,
+        timeout: Duration,
+        mut retry_interval: Duration,
+    ) -> Result<Self, String> {
         let mut lock = Self::open(path)?;
         let started = Instant::now();
         loop {
@@ -93,7 +103,8 @@ impl ExclusiveFileLock {
                         ));
                     }
                     let remaining = timeout.saturating_sub(started.elapsed());
-                    std::thread::sleep(Duration::from_millis(10).min(remaining));
+                    std::thread::sleep(retry_interval.min(remaining));
+                    retry_interval = (retry_interval * 2).min(LOCK_RETRY_INTERVAL);
                 }
             }
         }

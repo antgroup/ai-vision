@@ -83,6 +83,12 @@ formal release matrix. Review the frozen acceptance before merging. After mergin
 push the matching version tag at the accepted `main` commit. The tag run
 qualifies its own build and then waits for approval in the `release` environment.
 
+Formal releases and their previews package the ARM64 macOS CLI and Rust hooks
+on `macos-26`. The workflow checks the shipped binaries for ARM64 and a declared
+deployment target at or below macOS 11.0 before uploading them. Release-tier
+macOS ARM64 source checks also run on macOS 26, including the Native
+checks and the evidence consumed by Weaver.
+
 ## Qualify Docker on Intel macOS
 
 Formal release requires both Linux database architectures, Linux platform and
@@ -118,8 +124,12 @@ unverified until its gate passes. See the
 
 The Windows release source jobs record Codex and Claude PreToolUse p95.
 Windows hook functionality, native processes, semantic checks, and x64 CLI
-artifact acceptance remain required. Linux and macOS source jobs enforce
-the original p95 thresholds.
+artifact acceptance remain required. Linux release source jobs enforce their
+original thresholds. On macOS release runners, Codex PreToolUse p95 still
+must be below 50 ms. The separate Codex delayed-worker fixture requires the
+parent to return in under 120 ms and the queue to drain. The fixture injects
+150 ms of delay into the worker. Claude PreToolUse internal and process wall
+p95 must both be below 100 ms on these runners.
 
 After the [manual Windows performance workflow](../../../.github/workflows/windows-native-performance.yml)
 reaches the default branch, dispatch it on the candidate source ref and verify

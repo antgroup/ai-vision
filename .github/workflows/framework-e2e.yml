@@ -110,7 +110,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -200,7 +200,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -264,7 +264,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -293,7 +293,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
         sdk: [lf3, lf4, lf5]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 35
@@ -368,7 +368,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
         sdk: [js, js6]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20

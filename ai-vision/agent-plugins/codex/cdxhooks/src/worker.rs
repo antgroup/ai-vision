@@ -1277,7 +1277,15 @@ pub fn pending_count(session_id: &str) -> Result<usize, String> {
 }
 
 fn append_queue(session_id: &str, payload: &Value) -> Result<AppendOutcome, AppendFailure> {
-    let _queue_lock = QueueLock::acquire(session_id).map_err(AppendFailure::Other)?;
+    // A short first retry lets the macOS parent catch a brief worker-held lock
+    // without waiting for a full polling interval. Sustained contention backs off.
+    let retry_interval = if cfg!(target_os = "macos") {
+        Duration::from_millis(1)
+    } else {
+        crate::common::file_lock::LOCK_RETRY_INTERVAL
+    };
+    let _queue_lock = QueueLock::acquire_with_retry_interval(session_id, retry_interval)
+        .map_err(AppendFailure::Other)?;
     let (length, offset) = repair_partial_tail_locked(session_id).map_err(AppendFailure::Other)?;
     let path = queue_path(session_id).map_err(AppendFailure::Other)?;
     let envelope = QueueEnvelope {
@@ -1953,9 +1961,20 @@ struct QueueLock {
 
 impl QueueLock {
     fn acquire(session_id: &str) -> Result<Self, String> {
+        Self::acquire_with_retry_interval(session_id, crate::common::file_lock::LOCK_RETRY_INTERVAL)
+    }
+
+    fn acquire_with_retry_interval(
+        session_id: &str,
+        retry_interval: Duration,
+    ) -> Result<Self, String> {
         let path = dirs::session_worker_queue_lock_file(session_id)
             .ok_or_else(|| "missing session id".to_string())?;
-        let lock = crate::common::file_lock::ExclusiveFileLock::acquire(&path, QUEUE_LOCK_WAIT)?;
+        let lock = crate::common::file_lock::ExclusiveFileLock::acquire_with_retry_interval(
+            &path,
+            QUEUE_LOCK_WAIT,
+            retry_interval,
+        )?;
         Ok(Self { _lock: lock })
     }
 }

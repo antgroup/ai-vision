@@ -10,6 +10,10 @@ on:
   workflow_dispatch:
   workflow_call:
     inputs:
+      use_macos_26_arm64:
+        description: Use the macOS 26 ARM64 runner for release packaging
+        type: boolean
+        default: false
       plugin_dist:
         type: boolean
         default: false
@@ -56,7 +60,7 @@ jobs:
             os: darwin
             arch: arm64
             hook_platform: darwin/arm64
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.hook_platform == 'darwin/arm64' && inputs.use_macos_26_arm64 && 'macos-26' || matrix.runner }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -71,6 +75,7 @@ jobs:
         working-directory: aivision-cli
         env:
           CGO_ENABLED: '0'
+          VERIFY_MACOS_ARM64_BASELINE: ${{ matrix.hook_platform == 'darwin/arm64' && inputs.use_macos_26_arm64 }}
           PRODUCT_VERSION: ${{ inputs.product_version }}
           RELEASE_RUN_NUMBER: ${{ inputs.run_number }}
           RELEASE_CHANNEL: ${{ inputs.channel }}
@@ -109,6 +114,9 @@ jobs:
             aiv LICENSE deploy/kubernetes/README.md deploy/kubernetes/dependencies/*.LICENSE
           tar -xzf "dist/aiv-${{ matrix.os }}-${{ matrix.arch }}.tar.gz" -C dist aiv
           test "$(dist/aiv --version)" = "aiv $PRODUCT_VERSION"
+          if [[ "$VERIFY_MACOS_ARM64_BASELINE" == true ]]; then
+            python3 ../scripts/ci/check_macos_arm64_release.py dist/aiv
+          fi
           rm dist/aiv
       - if: inputs.plugin_dist
         uses: actions/download-artifact@v4
