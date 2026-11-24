@@ -1,0 +1,14 @@
+.github/workflows/windows-native-performance.yml
+  h_1c39a7acc7d677 1,9,13-14,16-21,23,25,27-29,32-39,41-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9bd1d45db1a5326f711ff3c89c38a3b720a33d2d",
+  "prompts": {},
+  "humans": {
+    "h_1c39a7acc7d677": {
+      "author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
