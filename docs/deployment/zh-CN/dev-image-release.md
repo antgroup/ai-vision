@@ -81,7 +81,9 @@ SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运�
 
 正式发布及其预演使用 `macos-26` 打包 macOS ARM64 CLI 和 Rust hook。上传前，
 工作流核验实际交付二进制的 ARM64 架构，并检查其声明的最低 macOS 版本不高于 11.0。正式发布的 macOS ARM64 源码检查
-也在 macOS 26 上运行，其中包括 Native 检查及 Weaver 使用的证据。
+也在 macOS 26 上运行，其中包括 Native 检查及 Weaver 使用的证据。这些源码作业
+共用一个队列，每次只申请一台托管 macOS ARM64 runner。数据库制品 smoke 失败时，
+Actions 记录最后观测到的部署阶段和固定错误类别，原始日志留在 runner 内。
 
 ## 验收 Intel macOS Docker
 

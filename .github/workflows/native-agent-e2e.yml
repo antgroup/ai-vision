@@ -74,6 +74,11 @@ jobs:
       max-parallel: 3
       matrix:
         os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
+    concurrency:
+      group: >-
+        ${{ matrix.os == 'macos-26' && 'aivision-release-macos-arm64' ||
+           format('native-agent-e2e-native-source-{0}-{1}-{2}', github.run_id, github.run_attempt, strategy.job-index) }}
+      queue: max
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:

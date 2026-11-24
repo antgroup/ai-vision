@@ -87,7 +87,10 @@ Formal releases and their previews package the ARM64 macOS CLI and Rust hooks
 on `macos-26`. The workflow checks the shipped binaries for ARM64 and a declared
 deployment target at or below macOS 11.0 before uploading them. Release-tier
 macOS ARM64 source checks also run on macOS 26, including the Native
-checks and the evidence consumed by Weaver.
+checks and the evidence consumed by Weaver. These source jobs share a queue
+so they request one hosted macOS ARM64 runner at a time. A failed packaged
+database smoke reports the last observed deployment phase and fixed error
+categories in Actions. Its runner-local logs stay on the runner.
 
 ## Qualify Docker on Intel macOS
 
