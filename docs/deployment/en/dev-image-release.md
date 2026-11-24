@@ -137,11 +137,17 @@ parent to return in under 120 ms and the queue to drain. The fixture injects
 p95 must both be below 100 ms on these runners. The 1 MiB handoff parent
 latency must be below 100 ms on both Linux and macOS release runners.
 
+The Codex prompt-seed reuse test requires the PreToolUse parent to return in
+under 120 ms on Windows release runners and under 50 ms on Linux and macOS.
+The test checks the hook control response and worker state on all three
+platforms.
+
 After the [manual Windows performance workflow](../../../.github/workflows/windows-native-performance.yml)
 reaches the default branch, dispatch it on the candidate source ref and verify
-the run's commit SHA. The workflow independently requires Codex internal p95
-and Claude internal and process wall p95 below 50 ms. It also requires Claude's
-1 MiB PostToolUse parent latency below 100 ms.
+the run's commit SHA. The workflow independently requires Codex prompt-seed
+parent latency, Codex internal p95, and Claude internal and process wall p95
+below 50 ms. It also requires Claude's 1 MiB PostToolUse parent latency below
+100 ms.
 
 ## Qualify the All-in-One Personal Edition
 

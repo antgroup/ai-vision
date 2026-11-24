@@ -916,9 +916,13 @@ fn prompt_seed_is_reused_by_pretool_control_response() {
     assert!(command.ends_with("echo CANARY_TOOL_INPUT"));
     let pre_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PreToolUse")
         .expect("PreToolUse parent timing");
+    let windows_release_budget = cfg!(windows)
+        && std::env::var("AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET").as_deref() == Ok("true");
+    let budget_ms = if windows_release_budget { 120 } else { 50 };
+    eprintln!("Codex Prompt seed PreToolUse parent={pre_parent_total_ms} ms, budget < {budget_ms} ms");
     assert!(
-        pre_parent_total_ms < 50,
-        "PreToolUse parent fast path took {pre_parent_total_ms}ms"
+        pre_parent_total_ms < budget_ms,
+        "PreToolUse parent fast path took {pre_parent_total_ms}ms (budget < {budget_ms}ms)"
     );
 
     let key = cdxhooks::common::dirs::session_key("session/one").unwrap();

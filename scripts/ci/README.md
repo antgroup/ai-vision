@@ -136,10 +136,14 @@ the parent latency for the Claude PostToolUse 1 MiB queue handoff. These
 latencies are report-only on the Windows release runner. The actual handoff
 must succeed. Windows hook functionality, Native runtime cases, semantic
 checks, and x64 CLI artifact smoke remain mandatory.
+The Codex prompt-seed reuse test requires the PreToolUse parent to return in
+under 120 ms on Windows release runners and under 50 ms on Linux and macOS.
+It checks the hook control response and worker state on all three platforms.
 Run [Windows Native Hook Performance](../../.github/workflows/windows-native-performance.yml)
-on the candidate ref for independent strict performance acceptance. It enforces
-Codex's internal p95 and Claude's internal and process wall p95 below 50 ms,
-plus Claude's 1 MiB PostToolUse parent latency below 100 ms.
+on the candidate ref for independent strict performance acceptance. It requires
+Codex prompt-seed parent latency, Codex internal p95, and Claude internal and
+process wall p95 below 50 ms. It also requires Claude's 1 MiB PostToolUse
+parent latency below 100 ms.
 Linux release source jobs enforce their original thresholds. On macOS release
 runners, the Codex delayed-worker startup test requires the parent to return
 in under 120 ms, ahead of the injected 150 ms delay, and verifies that the

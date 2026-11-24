@@ -117,6 +117,7 @@ jobs:
           RUST_TEST_THREADS: '1'
           AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: ${{ runner.os == 'Windows' }}
           AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY: ${{ runner.os == 'Windows' }}
+          AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET: ${{ runner.os == 'Windows' }}
           AIVISION_MACOS_RELEASE_HOOK_BUDGET: ${{ runner.os == 'macOS' }}
           CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: 'true'
           CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: 'true'

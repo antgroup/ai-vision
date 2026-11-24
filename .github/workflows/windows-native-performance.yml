@@ -20,6 +20,11 @@ jobs:
             target: async_parent_integration
             test: pretool_parent_timing_p95_stays_below_50_ms
             release: false
+          - name: Codex prompt-seed PreToolUse
+            manifest: ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml
+            target: async_parent_integration
+            test: prompt_seed_is_reused_by_pretool_control_response
+            release: false
           - name: Claude PreToolUse p95
             manifest: ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml
             target: async_hook_contract
@@ -45,6 +50,7 @@ jobs:
           RUST_TEST_THREADS: '1'
           AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: 'false'
           AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY: 'false'
+          AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET: 'false'
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"

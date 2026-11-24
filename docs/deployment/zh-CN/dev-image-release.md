@@ -121,10 +121,15 @@ Linux 发布源码检查保留原有门槛。macOS 发布 CI 中，Codex PreTool
 Claude PreToolUse 的内部 p95 和进程端到端 p95 均须低于 100 ms。Linux 和 macOS
 发布源码检查均要求 1 MiB 入队时父进程耗时低于 100 ms。
 
+Codex prompt-seed 复用测试要求 PreToolUse 父进程在 Windows 发布 runner 上
+耗时低于 120 ms，在 Linux 和 macOS 上低于 50 ms。三个平台均校验钩子的控制响应
+和 worker 状态。
+
 [Windows 性能工作流](../../../.github/workflows/windows-native-performance.yml)进入
 默认分支后，在候选源码所属分支或标签上手动运行，并核对运行记录的提交 SHA。
-该流程独立要求 Codex 内部 p95、Claude 内部和进程端到端 p95 均低于 50 ms，
-以及 Claude PostToolUse 的 1 MiB 入队父进程耗时低于 100 ms。
+该流程独立要求 Codex prompt-seed 复用用例的父进程耗时、Codex 内部 p95、
+Claude 内部和进程端到端 p95 均低于 50 ms，以及 Claude PostToolUse 的 1 MiB
+入队父进程耗时低于 100 ms。
 
 ## 验收 All-in-One 个人版
 
