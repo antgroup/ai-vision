@@ -205,7 +205,7 @@ pub enum MaintenanceDisposition {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct QueueEnvelope {
+struct QueueEnvelope<P = Value> {
     queued_at_ns: String,
     #[serde(default)]
     env: BTreeMap<String, String>,
@@ -215,7 +215,7 @@ struct QueueEnvelope {
     transcript_end_offset: Option<u64>,
     #[serde(default)]
     transcript_ingest_receipt: Option<String>,
-    payload: Value,
+    payload: P,
 }
 
 #[derive(Deserialize)]
@@ -2844,7 +2844,7 @@ fn append_queue_with_stop_snapshot(
         turn_seed: turn_seed.clone(),
         transcript_end_offset,
         transcript_ingest_receipt: transcript_ingest_receipt.clone(),
-        payload: payload.clone(),
+        payload,
     };
     let mut record =
         serde_json::to_vec(&envelope).map_err(|error| AppendFailure::Other(error.to_string()))?;

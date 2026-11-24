@@ -49,6 +49,10 @@ def predicate(expression, inputs, outputs=None):
                   **{'steps.unit-scope.outputs.' + key: value for key, value in (outputs or {}).items()},
                   'steps.codex-contracts.outcome': 'success'}
         return evaluate_condition(expression, values)
+    if expression == "inputs.source && inputs.tier == 'release'":
+        return evaluate_condition(expression, {
+            'inputs.source': inputs['source'], 'inputs.tier': inputs['tier'],
+        })
     scoped = re.fullmatch(r"steps\.unit-scope\.outputs\.([a-z_]+) == 'true'", expression)
     if scoped:
         return (outputs or {}).get(scoped[1]) == 'true'
@@ -71,7 +75,8 @@ def render(value, inputs, needs, temporary):
             return inputs['tier']
         if expression == 'runner.temp':
             return temporary
-        if expression in ('steps.codex-contracts.outcome', 'steps.claude-contracts.outcome'):
+        if expression in ('steps.codex-contracts.outcome', 'steps.claude-contracts.outcome',
+                          'steps.hook-latency.outcome'):
             return 'success'
         if 'runner.os' in expression:
             values = {'inputs.source': inputs['source'], 'runner.os': inputs.get('runner_os', 'Linux')}
@@ -140,11 +145,14 @@ def source_commands(inputs):
                 'if len(sys.argv) > 1 and sys.argv[1] == "scripts/ci/native_unit_scope.py":\n'
                 '    os.execv(sys.executable, [sys.executable, *sys.argv[1:]])\n'
                 'with open(os.environ["COMMAND_LOG"], "a") as output:\n'
-                '    output.write(json.dumps([Path(sys.argv[0]).name,*sys.argv[1:]])+"\\n")\n')
+                '    output.write(json.dumps([Path(sys.argv[0]).name,*sys.argv[1:]])+"\\n")\n'
+                'if Path(sys.argv[0]).name == "cargo" and "--nocapture" in sys.argv:\n'
+                '    print("test result: ok. 1 passed; 0 failed; 0 ignored;")\n')
             shim.chmod(0o700)
         env = dict(os.environ, COMMAND_LOG=str(log),
                    PATH=directory + os.pathsep + os.environ['PATH'],
-                   GITHUB_OUTPUT=str(temporary/'output'), GITHUB_STEP_SUMMARY=str(temporary/'summary'))
+                   GITHUB_OUTPUT=str(temporary/'output'), GITHUB_STEP_SUMMARY=str(temporary/'summary'),
+                   RUNNER_TEMP=directory)
         selected = []
         outputs = {}
         for step in job['steps']:
@@ -270,7 +278,8 @@ class NativeWorkflowScopeTests(unittest.TestCase):
         rust_steps = [step for step in job['steps']
                       if step.get('id') in ('codex-contracts', 'claude-contracts')]
         self.assertEqual(len(rust_steps), 2)
-        gate = next(step for step in job['steps'] if step.get('name') == 'Require both release Rust contract suites')
+        gate = next(step for step in job['steps']
+                    if step.get('name') == 'Require the release Rust and performance checks')
         for tier, source in itertools.product(('pr', 'daily', 'release'), (False, True)):
             values = {'inputs.source': source, 'inputs.tier': tier}
             keep_running = source and tier == 'release'
@@ -286,27 +295,59 @@ class NativeWorkflowScopeTests(unittest.TestCase):
         self.assertEqual(gate['env'], {
             'CODEX_CONTRACTS': '${{ steps.codex-contracts.outcome }}',
             'CLAUDE_CONTRACTS': '${{ steps.claude-contracts.outcome }}',
+            'HOOK_LATENCY': '${{ steps.hook-latency.outcome }}',
         })
         statuses = ('success', 'failure', 'cancelled', 'skipped', '')
-        for codex, claude in itertools.product(statuses, repeat=2):
-            with self.subTest(codex=codex, claude=claude):
+        for codex, claude, benchmark in itertools.product(statuses, repeat=3):
+            with self.subTest(codex=codex, claude=claude, benchmark=benchmark):
                 result = subprocess.run(
                     ['bash', '-e', '-c', gate['run']],
-                    env=dict(os.environ, CODEX_CONTRACTS=codex, CLAUDE_CONTRACTS=claude),
+                    env=dict(os.environ, CODEX_CONTRACTS=codex, CLAUDE_CONTRACTS=claude,
+                             HOOK_LATENCY=benchmark),
                     capture_output=True, text=True, check=False, timeout=10,
                 )
-                self.assertEqual(result.returncode == 0, codex == claude == 'success')
+                self.assertEqual(result.returncode == 0, codex == claude == benchmark == 'success')
 
     def test_only_windows_source_reports_hook_p95_without_enforcing_it(self):
         variable = 'AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY'
         steps = workflow()['jobs']['native-source']['steps']
         selected = [step for step in steps if variable in step.get('env', {})]
-        self.assertEqual([step['id'] for step in selected], ['codex-contracts', 'claude-contracts'])
-        for step, source, runner_os in itertools.product(selected, (False, True), ('Linux', 'macOS', 'Windows')):
-            inputs = dict(source=source, runner_os=runner_os)
-            with self.subTest(step=step['id'], **inputs):
-                value = render(step['env'][variable], inputs, {}, '')
-                self.assertEqual(json.loads(value), source and runner_os == 'Windows')
+        self.assertEqual([step['id'] for step in selected], ['hook-latency'])
+        step, = selected
+        for tier, source, runner_os in itertools.product(
+            ('pr', 'daily', 'release'), (False, True), ('Linux', 'macOS', 'Windows'),
+        ):
+            inputs = dict(tier=tier, source=source, runner_os=runner_os)
+            with self.subTest(**inputs):
+                self.assertEqual(predicate(step['if'], inputs), source and tier == 'release')
+                self.assertEqual(json.loads(render(step['env'][variable], inputs, {}, '')),
+                                 runner_os == 'Windows')
+
+    def test_release_measures_hook_latency_before_the_remaining_rust_suites(self):
+        _, commands = source_commands(dict(tier='release', units=False, source=True, platform=False))
+        benchmarks = [
+            ('codex/cdxhooks', 'async_parent_integration', [
+                'pretool_parent_timing_p95_stays_below_50_ms',
+            ]),
+            ('claudecode/cchooks', 'async_hook_contract', [
+                'pretooluse_parent_latency_stays_under_fifty_milliseconds',
+                'large_posttool_payload_handoff_stays_below_parent_budget',
+            ]),
+        ]
+        full_suites = [command for command in commands if '--all-targets' in command]
+        self.assertEqual(len(full_suites), 2)
+        for (crate, target, tests), full in zip(benchmarks, full_suites):
+            manifest = f'ai-vision/agent-plugins/{crate}/Cargo.toml'
+            self.assertIn(manifest, full)
+            expected_filters = ['--', '--exact']
+            for test in tests:
+                early, = [command for command in commands
+                          if command[-4:] == [test, '--', '--exact', '--nocapture'] and manifest in command]
+                self.assertEqual(early[-6:], ['--test', target, test, '--', '--exact', '--nocapture'])
+                self.assertLess(commands.index(early), commands.index(full_suites[0]))
+                self.assertEqual('--release' in early, crate == 'claudecode/cchooks')
+                expected_filters.extend(['--skip', test])
+            self.assertEqual(full[-len(expected_filters):], expected_filters)
 
     def test_source_retains_all_hook_integration_targets(self):
         for units in (False, True):

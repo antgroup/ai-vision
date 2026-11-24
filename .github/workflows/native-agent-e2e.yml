@@ -104,6 +104,34 @@ jobs:
         run: |
           python -m pip install -r ai-vision/agent-plugins/tests/native_agent_e2e/requirements.txt
           python -m pip install opentelemetry-api==1.45.2 opentelemetry-sdk==1.45.2 opentelemetry-exporter-otlp-proto-http==1.45.2
+      - name: Measure release hook latency before other hook tests
+        id: hook-latency
+        if: inputs.source && inputs.tier == 'release'
+        continue-on-error: true
+        env:
+          RUST_TEST_THREADS: '1'
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: ${{ runner.os == 'Windows' }}
+          CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: 'true'
+          CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: 'true'
+        run: |
+          set -euo pipefail
+          benchmark() {
+            local manifest="$1" target="$2" name="$3"
+            shift 3
+            local log="$RUNNER_TEMP/$name.log"
+            cargo test --locked --manifest-path "$manifest" --no-default-features --features common \
+              --jobs 2 "$@" --test "$target" "$name" -- --exact --nocapture 2>&1 | tee "$log" &&
+              grep -Eq '^test result: ok\. 1 passed; 0 failed; 0 ignored;' "$log"
+          }
+          result=0
+          benchmark ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml async_parent_integration \
+            pretool_parent_timing_p95_stays_below_50_ms || result=$?
+          benchmark ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml async_hook_contract \
+            pretooluse_parent_latency_stays_under_fifty_milliseconds --release || result=$?
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY=false benchmark \
+            ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml async_hook_contract \
+            large_posttool_payload_handoff_stays_below_parent_budget --release || result=$?
+          exit "$result"
       - name: Codex production common-edition contracts
         id: codex-contracts
         if: steps.unit-scope.outputs.codex == 'true'
@@ -113,13 +141,17 @@ jobs:
           # These contracts share process environment and measure hook latency.
           RUST_TEST_THREADS: '1'
           NATIVE_SOURCE: ${{ inputs.source }}
-          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: ${{ inputs.source && runner.os == 'Windows' }}
+          NATIVE_TIER: ${{ inputs.tier }}
         run: |
           # Match the shipped common edition without requiring embedded keys.
           test_targets=(--lib --bins)
+          test_filters=()
           if [ "$NATIVE_SOURCE" = true ]; then test_targets=(--all-targets --no-fail-fast); fi
+          if [ "$NATIVE_SOURCE" = true ] && [ "$NATIVE_TIER" = release ]; then
+            test_filters=(-- --exact --skip pretool_parent_timing_p95_stays_below_50_ms)
+          fi
           cargo build --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common --bins --jobs 2
-          cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2
+          cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2 "${test_filters[@]}"
       - name: Claude production common-edition contracts
         id: claude-contracts
         if: >-
@@ -129,19 +161,25 @@ jobs:
         env:
           RUST_TEST_THREADS: '1'
           NATIVE_SOURCE: ${{ inputs.source }}
-          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: ${{ inputs.source && runner.os == 'Windows' }}
+          NATIVE_TIER: ${{ inputs.tier }}
           CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: 'true'
           CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: 'true'
         run: |
           test_targets=(--lib --bins)
           cargo_profile=()
+          test_filters=()
           if [ "$NATIVE_SOURCE" = true ]; then
             test_targets=(--all-targets --no-fail-fast)
             # The latency tests exercise the same optimization as the shipped hook.
             cargo_profile=(--release)
           fi
+          if [ "$NATIVE_SOURCE" = true ] && [ "$NATIVE_TIER" = release ]; then
+            test_filters=(-- --exact
+              --skip pretooluse_parent_latency_stays_under_fifty_milliseconds
+              --skip large_posttool_payload_handoff_stays_below_parent_budget)
+          fi
           cargo build --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${cargo_profile[@]}" --bins --jobs 2
-          cargo test --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${cargo_profile[@]}" "${test_targets[@]}" --jobs 2
+          cargo test --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${cargo_profile[@]}" "${test_targets[@]}" --jobs 2 "${test_filters[@]}"
       - name: Shared state-lock deadline contract
         if: inputs.source
         run: >-
@@ -224,15 +262,16 @@ jobs:
             ${{ runner.temp }}/hermes-compression/report.json
           if-no-files-found: error
           retention-days: 7
-      - name: Require both release Rust contract suites
+      - name: Require the release Rust and performance checks
         if: >-
           !cancelled() && inputs.source && inputs.tier == 'release'
         env:
           CODEX_CONTRACTS: ${{ steps.codex-contracts.outcome }}
           CLAUDE_CONTRACTS: ${{ steps.claude-contracts.outcome }}
+          HOOK_LATENCY: ${{ steps.hook-latency.outcome }}
         run: |
-          if [[ "$CODEX_CONTRACTS" != success || "$CLAUDE_CONTRACTS" != success ]]; then
-            echo "::error::Release Rust contract results: Codex=$CODEX_CONTRACTS Claude=$CLAUDE_CONTRACTS"
+          if [[ "$CODEX_CONTRACTS" != success || "$CLAUDE_CONTRACTS" != success || "$HOOK_LATENCY" != success ]]; then
+            echo "::error::Release Rust contract results: Codex=$CODEX_CONTRACTS Claude=$CLAUDE_CONTRACTS hook latency=$HOOK_LATENCY"
             exit 1
           fi
 
