@@ -1,0 +1,21 @@
+.github/workflows/windows-native-performance.yml
+  s_7ddb4c6ac82aba::t_18d516cd919826 1,7,10,14-19,21,23-28,31-39,42-143
+.github/scripts/diagnostics-quick-task-deadline-evidence.patch
+  s_7ddb4c6ac82aba::t_18d516cd919826 1-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3927de83ed7f203bd1e7f764ca512f4edb5a1a4f",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
