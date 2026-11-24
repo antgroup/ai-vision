@@ -111,6 +111,11 @@ jobs:
       max-parallel: 3
       matrix:
         os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
+    concurrency:
+      group: >-
+        ${{ matrix.os == 'macos-26' && 'aivision-release-macos-arm64' ||
+           format('framework-e2e-frontend-{0}-{1}-{2}', github.run_id, github.run_attempt, strategy.job-index) }}
+      queue: max
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -201,6 +206,11 @@ jobs:
       max-parallel: 3
       matrix:
         os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
+    concurrency:
+      group: >-
+        ${{ matrix.os == 'macos-26' && 'aivision-release-macos-arm64' ||
+           format('framework-e2e-backend-contracts-{0}-{1}-{2}', github.run_id, github.run_attempt, strategy.job-index) }}
+      queue: max
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -265,6 +275,11 @@ jobs:
       max-parallel: 3
       matrix:
         os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26"]' || '["ubuntu-24.04"]') }}
+    concurrency:
+      group: >-
+        ${{ matrix.os == 'macos-26' && 'aivision-release-macos-arm64' ||
+           format('framework-e2e-cli-{0}-{1}-{2}', github.run_id, github.run_attempt, strategy.job-index) }}
+      queue: max
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     defaults:
@@ -295,6 +310,11 @@ jobs:
       matrix:
         os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
         sdk: [lf3, lf4, lf5]
+    concurrency:
+      group: >-
+        ${{ matrix.os == 'macos-26' && 'aivision-release-macos-arm64' ||
+           format('framework-e2e-contracts-{0}-{1}-{2}', github.run_id, github.run_attempt, strategy.job-index) }}
+      queue: max
     runs-on: ${{ matrix.os }}
     timeout-minutes: 35
     steps:
@@ -370,6 +390,11 @@ jobs:
       matrix:
         os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
         sdk: [js, js6]
+    concurrency:
+      group: >-
+        ${{ matrix.os == 'macos-26' && 'aivision-release-macos-arm64' ||
+           format('framework-e2e-js-contracts-{0}-{1}-{2}', github.run_id, github.run_attempt, strategy.job-index) }}
+      queue: max
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     defaults:

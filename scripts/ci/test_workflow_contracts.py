@@ -844,6 +844,27 @@ class CallerContractTests(unittest.TestCase):
                         else:
                             self.assertEqual(platforms, ["ubuntu-24.04"])
 
+    def test_release_macos_source_jobs_share_one_non_canceling_queue(self):
+        found = set()
+        for filename in ("ci.yml", "framework-e2e.yml", "diagnostics-e2e.yml", "native-agent-e2e.yml"):
+            for job, definition in workflow(filename)["jobs"].items():
+                platforms = definition.get("strategy", {}).get("matrix", {}).get("os", "")
+                if "macos-26" not in platforms:
+                    continue
+                with self.subTest(workflow=filename, job=job):
+                    self.assertEqual(definition["runs-on"], "${{ matrix.os }}")
+                    concurrency = definition["concurrency"]
+                    self.assertEqual(concurrency["queue"], "max")
+                    self.assertIs(concurrency.get("cancel-in-progress", False), False)
+                    self.assertIn("matrix.os == 'macos-26' && 'aivision-release-macos-arm64'", concurrency["group"])
+                    fallback = f"{Path(filename).stem}-{job}-{{0}}-{{1}}-{{2}}"
+                    self.assertIn(
+                        f"format('{fallback}', github.run_id, github.run_attempt, strategy.job-index)",
+                        concurrency["group"],
+                    )
+                    found.add(filename)
+        self.assertEqual(found, {"ci.yml", "framework-e2e.yml", "diagnostics-e2e.yml", "native-agent-e2e.yml"})
+
     def test_intel_docker_is_opt_in_and_reuses_strict_selected_gates(self):
         ci = workflow("ci.yml")
         families = {

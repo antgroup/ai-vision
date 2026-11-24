@@ -312,6 +312,8 @@ class NativeWorkflowScopeTests(unittest.TestCase):
         steps = workflow()['jobs']['native-source']['steps']
         for variable, selected_os in (
             ('AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY', 'Windows'),
+            ('AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY', 'Windows'),
+            ('AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET', 'Windows'),
             ('AIVISION_MACOS_RELEASE_HOOK_BUDGET', 'macOS'),
         ):
             selected = [step for step in steps if variable in step.get('env', {})]
@@ -325,6 +327,25 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                     self.assertEqual(predicate(step['if'], inputs), source and tier == 'release')
                     self.assertEqual(json.loads(render(step['env'][variable], inputs, {}, '')),
                                      runner_os == selected_os)
+
+    def test_windows_manual_performance_keeps_the_strict_hook_limits(self):
+        document = yaml.safe_load((WORKFLOW.parent / 'windows-native-performance.yml').read_text())
+        self.assertEqual(set(document.get('on', document.get(True))), {'workflow_dispatch'})
+        job = document['jobs']['performance']
+        self.assertEqual(job['runs-on'], 'windows-2025')
+        rows = job['strategy']['matrix']['include']
+        self.assertEqual({row['test'] for row in rows}, {
+            'pretool_parent_timing_p95_stays_below_50_ms',
+            'prompt_seed_is_reused_by_pretool_control_response',
+            'pretooluse_parent_latency_stays_under_fifty_milliseconds',
+            'large_posttool_payload_handoff_stays_below_parent_budget',
+        })
+        large, = [row for row in rows if row['test'] == 'large_posttool_payload_handoff_stays_below_parent_budget']
+        self.assertIs(large['release'], True)
+        benchmark, = [step for step in job['steps'] if 'TEST_NAME' in step.get('env', {})]
+        self.assertEqual(benchmark['env']['AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY'], 'false')
+        self.assertEqual(benchmark['env']['AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY'], 'false')
+        self.assertEqual(benchmark['env']['AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET'], 'false')
 
     def test_release_measures_hook_latency_before_the_remaining_rust_suites(self):
         _, commands = source_commands(dict(tier='release', units=False, source=True, platform=False))
