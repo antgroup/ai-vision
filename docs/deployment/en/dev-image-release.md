@@ -118,8 +118,12 @@ unverified until its gate passes. See the
 
 The Windows release source jobs record Codex and Claude PreToolUse p95.
 Windows hook functionality, native processes, semantic checks, and x64 CLI
-artifact acceptance remain required. Linux and macOS source jobs enforce
-the original p95 thresholds.
+artifact acceptance remain required. Linux release source jobs enforce their
+original thresholds. On macOS release runners, Codex PreToolUse p95 still
+must be below 50 ms. The separate Codex delayed-worker fixture requires the
+parent to return in under 120 ms and the queue to drain. The fixture injects
+150 ms of delay into the worker. Claude PreToolUse internal and process wall
+p95 must both be below 100 ms on these runners.
 
 After the [manual Windows performance workflow](../../../.github/workflows/windows-native-performance.yml)
 reaches the default branch, dispatch it on the candidate source ref and verify

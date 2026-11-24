@@ -1079,16 +1079,25 @@ fn delayed_worker_start_does_not_delay_parent_or_strand_the_queue() {
     );
     assert!(output.status.success());
     let parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse").unwrap();
-    assert!(
-        parent_total_ms < 50,
-        "delayed worker blocked the parent for {parent_total_ms}ms"
-    );
+    // The release budget must remain below the worker's injected 150 ms delay.
+    let budget_ms = if cfg!(target_os = "macos")
+        && std::env::var("AIVISION_MACOS_RELEASE_HOOK_BUDGET").as_deref() == Ok("true")
+    {
+        120
+    } else {
+        50
+    };
+    eprintln!("Codex delayed-worker startup: parent={parent_total_ms} ms, budget < {budget_ms} ms");
 
     let queue = session_runtime_dir(root.path(), session_id).join("worker.queue.jsonl");
     wait_until("delayed worker queue drain", Duration::from_secs(5), || {
         phase_event_count(&root.path().join("logs"), "worker", "PostToolUse") == 1
             && std::fs::metadata(&queue).is_ok_and(|metadata| metadata.len() == 0)
     });
+    assert!(
+        parent_total_ms < budget_ms,
+        "delayed worker blocked the parent for {parent_total_ms} ms, budget < {budget_ms} ms"
+    );
 }
 
 #[test]

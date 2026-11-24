@@ -137,7 +137,11 @@ functionality, Native runtime cases, semantic checks, and x64 CLI artifact smoke
 Run [Windows Native Hook Performance](../../.github/workflows/windows-native-performance.yml)
 on the candidate ref for independent strict performance acceptance. It enforces
 Codex's internal p95 and Claude's internal and process wall p95 below 50 ms.
-Linux and macOS release source jobs enforce their original thresholds.
+Linux release source jobs enforce their original thresholds. On macOS release
+runners, the Codex delayed-worker startup test requires the parent to return
+in under 120 ms, ahead of the injected 150 ms delay, and verifies that the
+queue drains. Claude PreToolUse requires internal and process wall p95 below
+100 ms. Codex PreToolUse p95 remains strictly below 50 ms.
 
 The diagnostic database gate runs the real `/proc` descendant-cleanup test on
 Linux. On macOS it explicitly deselects that one Linux-only test and records the

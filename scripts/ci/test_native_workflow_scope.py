@@ -308,20 +308,23 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode == 0, codex == claude == benchmark == 'success')
 
-    def test_only_windows_source_reports_hook_p95_without_enforcing_it(self):
-        variable = 'AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY'
+    def test_release_source_scopes_hook_performance_budgets_by_os(self):
         steps = workflow()['jobs']['native-source']['steps']
-        selected = [step for step in steps if variable in step.get('env', {})]
-        self.assertEqual([step['id'] for step in selected], ['hook-latency'])
-        step, = selected
-        for tier, source, runner_os in itertools.product(
-            ('pr', 'daily', 'release'), (False, True), ('Linux', 'macOS', 'Windows'),
+        for variable, selected_os in (
+            ('AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY', 'Windows'),
+            ('AIVISION_MACOS_RELEASE_HOOK_BUDGET', 'macOS'),
         ):
-            inputs = dict(tier=tier, source=source, runner_os=runner_os)
-            with self.subTest(**inputs):
-                self.assertEqual(predicate(step['if'], inputs), source and tier == 'release')
-                self.assertEqual(json.loads(render(step['env'][variable], inputs, {}, '')),
-                                 runner_os == 'Windows')
+            selected = [step for step in steps if variable in step.get('env', {})]
+            self.assertEqual([step['id'] for step in selected], ['hook-latency'])
+            step, = selected
+            for tier, source, runner_os in itertools.product(
+                ('pr', 'daily', 'release'), (False, True), ('Linux', 'macOS', 'Windows'),
+            ):
+                inputs = dict(tier=tier, source=source, runner_os=runner_os)
+                with self.subTest(variable=variable, **inputs):
+                    self.assertEqual(predicate(step['if'], inputs), source and tier == 'release')
+                    self.assertEqual(json.loads(render(step['env'][variable], inputs, {}, '')),
+                                     runner_os == selected_os)
 
     def test_release_measures_hook_latency_before_the_remaining_rust_suites(self):
         _, commands = source_commands(dict(tier='release', units=False, source=True, platform=False))
