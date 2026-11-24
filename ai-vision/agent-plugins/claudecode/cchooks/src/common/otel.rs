@@ -4567,34 +4567,41 @@ fn infer_tool_name_from_result(result: &serde_json::Value) -> Option<String> {
 }
 
 #[cfg(test)]
+pub(crate) fn consume_test_http_request(stream: &mut std::net::TcpStream) {
+    use std::io::{BufRead, BufReader, Read};
+
+    stream.set_nonblocking(false).expect("set blocking test stream");
+    stream
+        .set_read_timeout(Some(std::time::Duration::from_secs(1)))
+        .expect("set read timeout");
+    let mut reader = BufReader::new(stream);
+    let mut content_length = 0;
+    loop {
+        let mut line = String::new();
+        assert!(reader.read_line(&mut line).expect("read request header") > 0);
+        if line == "\r\n" {
+            break;
+        }
+        if let Some((name, value)) = line.split_once(':') {
+            if name.eq_ignore_ascii_case("content-length") {
+                content_length = value.trim().parse().expect("request Content-Length");
+            }
+        }
+    }
+    let consumed = std::io::copy(&mut reader.take(content_length), &mut std::io::sink())
+        .expect("read request body");
+    assert_eq!(consumed, content_length, "request body must be complete");
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::common::transcript::*;
     use agentic_otel_common::days_from_epoch;
     use serde_json::{json, Value};
-    use std::io::{BufRead, BufReader, Read, Write};
+    use std::io::{Read, Write};
     use std::net::{TcpListener, TcpStream};
     use std::thread;
-
-    fn consume_http_request(stream: &mut TcpStream) {
-        let mut reader = BufReader::new(stream);
-        let mut content_length = 0;
-        loop {
-            let mut line = String::new();
-            assert!(reader.read_line(&mut line).expect("read request header") > 0);
-            if line == "\r\n" {
-                break;
-            }
-            if let Some((name, value)) = line.split_once(':') {
-                if name.eq_ignore_ascii_case("content-length") {
-                    content_length = value.trim().parse().expect("request Content-Length");
-                }
-            }
-        }
-        let consumed = std::io::copy(&mut reader.take(content_length), &mut std::io::sink())
-            .expect("read request body");
-        assert_eq!(consumed, content_length, "request body must be complete");
-    }
 
     fn spawn_http_response(status: u16, body: &str, delay: std::time::Duration) -> String {
         let listener = TcpListener::bind("127.0.0.1:0").expect("bind test server");
@@ -4602,10 +4609,7 @@ mod tests {
         let body = body.to_string();
         thread::spawn(move || {
             let (mut stream, _) = listener.accept().expect("accept test request");
-            stream
-                .set_read_timeout(Some(std::time::Duration::from_secs(1)))
-                .expect("set read timeout");
-            consume_http_request(&mut stream);
+            consume_test_http_request(&mut stream);
             thread::sleep(delay);
             let reason = match status {
                 200 => "OK",
@@ -4630,10 +4634,7 @@ mod tests {
         thread::spawn(move || {
             for status in statuses {
                 let (mut stream, _) = listener.accept().expect("accept test request");
-                stream
-                    .set_read_timeout(Some(std::time::Duration::from_secs(1)))
-                    .expect("set read timeout");
-                consume_http_request(&mut stream);
+                consume_test_http_request(&mut stream);
                 let reason = if (200..300).contains(&status) {
                     "OK"
                 } else {

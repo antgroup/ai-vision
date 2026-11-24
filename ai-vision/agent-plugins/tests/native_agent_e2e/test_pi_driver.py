@@ -48,7 +48,9 @@ assert observer['tracesConfig']['endpoint'] == 'http://127.0.0.1:3333/v1/traces'
 assert observer['metricsConfig']['endpoint'] == 'http://127.0.0.1:3333/v1/metrics'
 assert observer['otelExporter']['metricsTemporalityPreference'] == 'delta'
 assert observer['eventsConfig']['endpoint'] == 'http://127.0.0.1:3333/v1/logs'
-assert '-e' in sys.argv and sys.argv[sys.argv.index('-e')+1].endswith('observ-pi/index.js')
+assert '-e' in sys.argv
+extension = Path(sys.argv[sys.argv.index('-e') + 1])
+assert extension.parts[-2:] == ('observ-pi', 'index.js')
 for line in sys.stdin:
     value=json.loads(line)
     command=value['type']

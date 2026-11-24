@@ -60,8 +60,10 @@ test('host attachment mapping exports verified bytes and rejects symlinks and ch
   const original = join(dir, 'original');
   const link = join(dir, 'link');
   const changed = join(dir, 'changed');
+  const changedDigest = join(dir, 'changed-digest');
   writeFileSync(original, data);
   writeFileSync(changed, 'unexpected length');
+  writeFileSync(changedDigest, Buffer.alloc(data.length, 1));
   symlinkSync(original, link);
   const received = [];
   const server = createServer((req, res) => {
@@ -71,7 +73,13 @@ test('host attachment mapping exports verified bytes and rejects symlinks and ch
   });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   try {
-    for (const [path, expected] of [[original, 'image'], [link, 'aivision_media_error'], [changed, 'aivision_media_error']]) {
+    const cases = [
+      ['original file', original, 'image'],
+      ['symbolic link', link, 'aivision_media_error'],
+      ['changed size', changed, 'aivision_media_error'],
+      ['changed digest', changedDigest, 'aivision_media_error'],
+    ];
+    for (const [label, path, expected] of cases) {
       const ctx = new Context();
       ctx.provide('attachments', { imageHostPath: () => path });
       const fiber = ctx.plugin(observDsh, {
@@ -97,7 +105,7 @@ test('host attachment mapping exports verified bytes and rejects symlinks and ch
       assert.ok(turn, 'the production HTTP exporter flushed the turn');
       const raw = turn.attributes.find(attr => attr.key === 'gen_ai.input.messages').value.stringValue;
       const part = JSON.parse(raw)[0].content[0];
-      assert.equal(part.type, expected);
+      assert.equal(part.type, expected, label);
       if (expected === 'image') assert.deepEqual(Buffer.from(part.source.data, 'base64'), data);
       assert.equal(raw.includes(dir), false, 'host paths never enter telemetry');
     }

@@ -11,6 +11,7 @@ on:
       - 'ai-vision/agent-plugins/agentic-otel-common/**'
       - 'ai-vision/agent-plugins/tests/native_agent_e2e/windows_codex_onboarding.py'
       - 'ai-vision/agent-plugins/tests/native_agent_e2e/capture.py'
+      - 'ai-vision/agent-plugins/tests/native_agent_e2e/loopback_http.py'
       - 'ai-vision/agent-plugins/tests/native_agent_e2e/requirements.txt'
 
 permissions:

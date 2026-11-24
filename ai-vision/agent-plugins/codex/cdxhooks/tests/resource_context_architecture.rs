@@ -1,10 +1,12 @@
 use std::path::{Path, PathBuf};
 
-fn manifest_source(relative: &str) -> String {
-    std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(relative)).unwrap()
+fn manifest_source(relative: impl AsRef<Path>) -> String {
+    std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join(relative))
+        .unwrap()
+        .replace("\r\n", "\n")
 }
 
-fn production_source(relative: &str) -> String {
+fn production_source(relative: impl AsRef<Path>) -> String {
     let source = manifest_source(relative);
     source
         .split_once("#[cfg(test)]\nmod tests")
@@ -112,25 +114,23 @@ fn stop_and_worker_have_no_git_discovery_fallback() {
 
 #[test]
 fn production_vcs_writes_are_owned_only_by_resource_context() {
-    let source_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut sources = Vec::new();
-    rust_sources(&source_root, &mut sources);
+    rust_sources(&manifest.join("src"), &mut sources);
+    let owners = [
+        Path::new("src/hooks/resource_context.rs"),
+        Path::new("src/hooks/langfuse/state.rs"),
+    ];
     for path in sources {
-        let relative = path.strip_prefix(env!("CARGO_MANIFEST_DIR")).unwrap();
-        let relative = relative
-            .to_string_lossy()
-            .trim_start_matches('/')
-            .to_string();
-        if matches!(
-            relative.as_str(),
-            "src/hooks/resource_context.rs" | "src/hooks/langfuse/state.rs"
-        ) {
+        let relative = path.strip_prefix(manifest).unwrap();
+        if owners.contains(&relative) {
             continue;
         }
-        let source = production_source(&relative);
+        let source = production_source(relative);
         assert!(
             !source.contains("set_vcs_in_state(") && !source.contains("[\"vcs\"] ="),
-            "{relative} must not write session VCS state"
+            "{} must not write session VCS state",
+            relative.display()
         );
     }
 }

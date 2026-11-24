@@ -84,7 +84,8 @@ fn legacy_spool_producers_are_test_only_compatibility_fixtures() {
     let source = std::fs::read_to_string(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src/common/spool.rs"),
     )
-    .unwrap();
+    .unwrap()
+    .replace("\r\n", "\n");
     for producer in [
         "pub fn enqueue(",
         "pub fn enqueue_transcript(",

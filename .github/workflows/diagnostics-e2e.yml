@@ -27,6 +27,10 @@ on:
         description: Owned fake34 and Quick Rule API
         type: boolean
         default: false
+      intel_docker:
+        description: Select Intel macOS runners for the Docker jobs
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       tier:
@@ -117,8 +121,8 @@ jobs:
       max-parallel: 3
       matrix:
         os: >-
-          ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","ubuntu-24.04-arm","macos-15-intel"]'
-          || inputs.tier == 'daily' && '["ubuntu-24.04","ubuntu-24.04-arm"]'
+          ${{ fromJSON(inputs.intel_docker && '["macos-15-intel"]'
+          || (inputs.tier == 'release' || inputs.tier == 'daily') && '["ubuntu-24.04","ubuntu-24.04-arm"]'
           || '["ubuntu-24.04"]') }}
         backend: [oceanbase, seekdb]
     runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
@@ -190,7 +194,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15-intel"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.intel_docker && '["macos-15-intel"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
     timeout-minutes: 120
     permissions:
@@ -252,22 +256,23 @@ jobs:
           set -euo pipefail
           docker buildx version
           builder="aiv-diagnostics-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-${RANDOM}-${RANDOM}"
+          python scripts/ci/buildx_cleanup.py verify-absent "$builder"
           builder_created=false
           container=
           cleanup() {
-            code=$?
+            local code=$1
             trap - EXIT
             if [ -n "$container" ] && ! docker rm --force "$container" >/dev/null; then
               echo '::error::Failed to remove the job-owned export container' >&2
               if [ "$code" -eq 0 ]; then code=1; fi
             fi
-            if [ "$builder_created" = true ] && ! docker buildx rm --force "$builder" >/dev/null; then
-              echo '::error::Failed to remove the job-owned Buildx builder' >&2
+            if [ "$builder_created" = true ] && ! python scripts/ci/buildx_cleanup.py clean "$builder"; then
               if [ "$code" -eq 0 ]; then code=1; fi
             fi
-            exit "$code"
+            return "$code"
           }
-          trap cleanup EXIT
+          trap 'cleanup "$?"' EXIT
+          # Without a node override, Buildx refuses to change an existing builder.
           docker buildx create --name "$builder" --driver docker-container \
             --driver-opt network=host \
             --buildkitd-flags '--allow-insecure-entitlement network.host' >/dev/null
@@ -284,10 +289,8 @@ jobs:
             -f ai-vision/agent-plugins/tests/diagnostics_e2e/fixtures/PlatformCLI.Dockerfile \
             -t aivision-diagnostics-docker-cli:local \
             ai-vision/agent-plugins/tests/diagnostics_e2e/fixtures
-          docker buildx rm --force "$builder" >/dev/null
-          builder_created=false
+          cleanup 0
           docker image inspect aivision-diagnostics-codex:ci aivision-diagnostics-docker-cli:local >/dev/null
-          trap - EXIT
       - name: Run actual owned fake34 and scoped Quick Rule API
         shell: bash
         run: |

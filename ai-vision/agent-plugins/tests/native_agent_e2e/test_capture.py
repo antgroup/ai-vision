@@ -1,6 +1,6 @@
 import gzip
 import http.client
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from io import BytesIO
 from unittest.mock import Mock, patch
 import httpx
@@ -14,6 +14,7 @@ from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTrace
 from opentelemetry.proto.collector.logs.v1.logs_service_pb2 import ExportLogsServiceResponse
 from opentelemetry.proto.collector.metrics.v1.metrics_service_pb2 import ExportMetricsServiceRequest, ExportMetricsServiceResponse
 from capture import Capture, decode_export, read_body, MAX_BODY
+from loopback_http import LoopbackHTTPServer
 
 
 class ForwardCollector:
@@ -38,7 +39,7 @@ class ForwardCollector:
                 self.end_headers()
                 self.wfile.write(b"{}")
 
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server = LoopbackHTTPServer(Handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.url = f"http://127.0.0.1:{self.server.server_port}"
@@ -178,7 +179,10 @@ class CaptureTests(unittest.TestCase):
                 read_body(BytesIO(body), headers)
 
     def test_native_node_chunked_export_is_decoded_without_content_length(self):
-        with Capture() as capture:
+        with (
+            patch("socket.getfqdn", side_effect=AssertionError("Loopback bind must not use DNS")),
+            Capture() as capture,
+        ):
             from urllib.parse import urlparse
             url = urlparse(capture.url)
             client = http.client.HTTPConnection(url.hostname, url.port, timeout=5)

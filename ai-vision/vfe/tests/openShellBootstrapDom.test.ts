@@ -180,6 +180,11 @@ const tick = () =>
   new Promise((done) => {
     setTimeout(done, 15)
   })
+async function waitFor(predicate: () => boolean, description: string) {
+  const deadline = Date.now() + 2_000
+  while (!predicate() && Date.now() < deadline) await act(tick)
+  assert.ok(predicate(), description)
+}
 async function mount(
   file: string,
   exported: string,
@@ -724,8 +729,9 @@ test("a successful enable POST cannot claim a default before binding readback co
   }
 })
 
-test("bootstrap resume is GET-only, preserves the restored snapshot after first detail failure, and never recovers credentials", async () => {
+test("bootstrap resume is GET-only, preserves the restored snapshot after first detail failure, and never recovers credentials", async (context) => {
   requireComponent()
+  context.mock.timers.enable({ apis: ["setInterval"] })
   let reads = 0
   let writes = 0
   const running = {
@@ -754,15 +760,19 @@ test("bootstrap resume is GET-only, preserves the restored snapshot after first 
   })
   try {
     await click(button(view.container, "View installation progress"))
-    assert.match(view.container.textContent!, /last result is preserved/)
-    await act(async () => {
-      await new Promise((done) => {
-        setTimeout(done, 2200)
-      })
-      await tick()
+    await waitFor(
+      () => /last result is preserved/.test(view.container.textContent!),
+      "the first failed detail read displays a warning"
+    )
+    assert.equal(reads, 1)
+    await act(() => {
+      context.mock.timers.tick(2_000)
     })
+    await waitFor(
+      () => /Space connection saved/.test(view.container.textContent!),
+      "automatic polling displays the refreshed connection"
+    )
     assert.equal(reads, 2)
-    assert.match(view.container.textContent!, /Space connection saved/)
     await click(button(view.container, "Close"))
     await click(button(view.container, "View installation progress"))
     assert.equal(writes, 0)

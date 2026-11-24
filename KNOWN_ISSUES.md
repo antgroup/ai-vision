@@ -2,7 +2,7 @@
 
 本文帮助使用者选择接入方式、理解遥测数据的限制，也说明贡献者可以从哪里着手改进。以下条目包括平台读取边界、原生 Agent 接入限制，以及 provider 与第三方 SDK / 框架的兼容性；适用范围以各条目列出的版本和接入路径为准。AI Vision 对已接收数据的读取、去重和空间隔离问题，仍属于平台需要修复的问题。
 
-更新日期：2026-10-30。
+更新日期：2026-11-24。
 
 | 编号 | 当前限制 | 使用时的影响 | 建议 |
 | --- | --- | --- | --- |
@@ -19,8 +19,10 @@
 | [PV-002](#pv-002nvidia-api-的超时与响应未确认) | NVIDIA API 的部分 GLM、DeepSeek、Nemotron 请求返回 504 或超过单次请求超时 | 调用可能执行失败，响应和用量无法确认 | 按物理请求控制频率，保留失败与未知用量；不能将失败当作质量 BAD 或零消耗。 |
 | [NR-001](#nr-001otlphttp-503-导出没有原生重试) | NeMo Relay 0.9.3 的 OTLP/HTTP exporter 不重试 HTTP 503 | 业务可以完成，但该批遥测可能未送达 | 监控导出失败并处理 flush/shutdown 异常；可靠交付需要另行确认。 |
 | [NR-002](#nr-002框架-middleware-的-managed-streaming--ttft-边界) | Relay 0.9.3 的框架 streaming 记录和原生取消收尾有限制 | 取消后的用量可能未知；提前停止消费时，原生 task 收尾可能晚于请求根结束 | 使用 request-owned 清理适配器，保留原始状态和时间；完整流式记录与取消耗时需分别确认。 |
+| [NR-003](#nr-003windows-上短时-relay-scope-的时间戳可能逆序) | Windows Python 3.12 上的 Relay 0.9.3 可能记录结束早于开始 | 短时 scope 的原始时间和耗时可能失真 | Windows 上需要严格时间顺序时使用 Python 3.13。 |
 | [DB-001](#db-001seekdb-1400-镜像的密码初始化未执行) | 固定 seekdb 1.4.0.0 镜像的 `ROOT_PASSWORD` 初始化未执行 | 数据库已启动，但配置密码无法连接，空密码仍可连接 | 验证实际认证行为；临时测试实例显式初始化密码，更新镜像后重新确认。 |
 | [DB-002](#db-002seekdb-1400-的遗留解锁记录阻塞部分表结构升级) | seekdb 1.4.0.0 standalone 实例的原表 ALTER 在创建 DDL 任务前反复发生锁冲突 | 可选的存储指标辅助列无法完成升级，继续使用有界兼容读取 | 保留锁与 DDL 诊断，跟踪上游 #2207 / #2183；修复内核尚未在本场景验证。 |
+| [DB-003](#db-003intel-macos-托管-runner-上的-oceanbase-引导超时) | Intel macOS 托管 runner 上的 OceanBase 冷启动卡在集群引导 | Intel macOS Docker 尚未通过验收 | 通过独立流程复测真实启动与 SQL，发布继续要求 Linux 双库验收。 |
 
 ## 平台读取边界
 
@@ -200,6 +202,12 @@ Deep Agents 的官方 `task` 与 `researcher` 是同一 orchestrator 下的 sibl
 
 依据：[LangChain middleware](https://github.com/NVIDIA/NeMo-Relay/blob/52ea6c06d940342c8b20281389335bf60b70b6e0/python/nemo_relay/integrations/langchain/middleware.py#L52)、[Deep Agents helper](https://github.com/NVIDIA/NeMo-Relay/blob/52ea6c06d940342c8b20281389335bf60b70b6e0/python/nemo_relay/integrations/deepagents/__init__.py)、[native task 取消 guard](https://github.com/NVIDIA/NeMo-Relay/blob/52ea6c06d940342c8b20281389335bf60b70b6e0/crates/core/src/api/tool.rs#L718)、[Python 子任务取消](https://github.com/NVIDIA/NeMo-Relay/blob/52ea6c06d940342c8b20281389335bf60b70b6e0/crates/python/src/py_callable.rs#L123)、[Python / Tokio 取消桥接](https://github.com/NVIDIA/NeMo-Relay/blob/52ea6c06d940342c8b20281389335bf60b70b6e0/crates/python/src/py_api/mod.rs#L209)、[全局 flush barrier](https://github.com/NVIDIA/NeMo-Relay/blob/52ea6c06d940342c8b20281389335bf60b70b6e0/crates/core/src/api/runtime/subscriber_dispatcher.rs#L952)、[官方 LangChain 接入范围](https://docs.nvidia.com/nemo/relay/supported-integrations/langchain#verify-the-integration)。
 
+#### NR-003：Windows 上短时 Relay scope 的时间戳可能逆序
+
+**现状与影响。** 在 Windows 上，Relay 0.9.3 的原生 scope 起点使用高精度系统时钟。Python 3.12 的框架回调用较粗的系统时钟采样结束时间，并把该值传给 SDK。对于很短的 scope，导出的结束时间可能早于开始时间，原始耗时和时间顺序因此可能失真。
+
+**使用建议与验收。** Windows 上需要严格验证 Relay 生命周期时间顺序时，使用 Python 3.13。同一 SDK 和依赖的 Windows 对照中，Python 3.12.10 有两项时间顺序断言失败，Python 3.13.17 原样通过全部 14 项。发布级 Windows CI 用 3.13 运行 Relay 独立生命周期和导出回归，其余框架检查继续使用 3.12。[Python 3.12 对照](https://github.com/antgroup/ai-vision/actions/runs/45229045170/job/137883294696) · [Python 3.13 对照](https://github.com/antgroup/ai-vision/actions/runs/45229045170/job/137883294611) · [CPython 时钟变更](https://docs.python.org/3.13/whatsnew/3.13.html#time)
+
 ## 数据库镜像兼容问题
 
 ### DB-001：seekdb 1.4.0.0 镜像的密码初始化未执行
@@ -223,6 +231,12 @@ Deep Agents 的官方 `task` 与 `researcher` 是同一 orchestrator 下的 sibl
 **当前决策。** 本轮候选实现将这两个指标辅助列作为可选优化；列尚未就绪时保留原有的有界兼容读取，继续执行源数据、单行和响应字节限制，不返回不完整的成功结果。兼容路径不承诺达到新辅助列路径的性能，超出资源边界仍会明确失败；服务可用不代表辅助列升级完成。OceanBase CE 4.4.2.1 已完成本轮预算内查询、高并发拒绝、混合读写及维护关闭回退复测，详见[高负载 VM 报告](docs/testing/trace-query-memory-stress-20261030.md)。这些结果不扩展到长期内存增长或原始 OOM 场景；seekdb 的该项升级与性能验收保持待完成。
 
 **使用建议与修复状态。** 保留脱敏的锁状态、DDL trace 与数据库版本信息，跟踪 [修复 PR #2183](https://github.com/oceanbase/seekdb/pull/2183)。截至本条更新时，该 PR 尚未合并，本轮也未用修复内核验证 standalone ALTER 或受影响原表恢复。没有本场景已验证的通用操作绕过方案；延长超时、直接修改内部锁记录或仅重启服务不能作为已验证修复。
+
+### DB-003：Intel macOS 托管 runner 上的 OceanBase 引导超时
+
+**现状与影响。** 同一固定的 OceanBase CE Linux amd64 镜像，在 GitHub 托管 Intel macOS 15 的 VZ、QEMU 和 Intel macOS 26 的 QEMU 上均未完成引导。Observer 可连接后，SQL 等待约 600 秒仍返回 `8001`。这些运行未观察到容器重启或 OOM。Intel 上的 seekdb 已通过 SQL 事务检查，后续 Django 和 AgentLens 全量测试分别超时。证据限定于上述托管环境。 [VZ 探针](https://github.com/antgroup/ai-vision/actions/runs/45219265697/job/137848768935) · [macOS 15 QEMU](https://github.com/antgroup/ai-vision/actions/runs/45231711684/job/137892704669) · [macOS 26 QEMU](https://github.com/antgroup/ai-vision/actions/runs/45236390465/job/137909170764)
+
+**当前验收。** Intel macOS Docker 通过独立手动流程跟踪，当前没有通过记录。正式发布要求 Linux 双库全量验收、个人版双架构、Windows x64 以及 macOS 原生与 CLI 检查。需要确认 Intel macOS Docker 部署时，使用同一候选镜像的固定摘要复测冷启动、数据库和实际 OTLP/API 读回。 [Intel macOS Docker 验证流程](.github/workflows/intel-macos-docker.yml)
 
 ## 接入与贡献约定
 

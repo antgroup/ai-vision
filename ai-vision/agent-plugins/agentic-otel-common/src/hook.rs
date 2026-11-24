@@ -540,9 +540,8 @@ mod tests {
 
     #[test]
     fn test_expand_home_path_tilde() {
-        std::env::set_var("HOME", "/Users/testuser");
         let result = expand_home_path("~/documents/file.txt");
-        assert_eq!(result, "/Users/testuser/documents/file.txt");
+        assert_eq!(result, home_dir().join("documents/file.txt").to_string_lossy());
     }
 
     #[test]

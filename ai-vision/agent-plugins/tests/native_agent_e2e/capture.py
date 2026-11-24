@@ -4,7 +4,7 @@ from __future__ import annotations
 import base64
 from copy import deepcopy
 import gzip
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from io import BytesIO
 import json
 import threading
@@ -16,6 +16,8 @@ from google.protobuf.message import DecodeError
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest, ExportTraceServiceResponse
 from opentelemetry.proto.collector.logs.v1.logs_service_pb2 import ExportLogsServiceRequest, ExportLogsServiceResponse
 from opentelemetry.proto.collector.metrics.v1.metrics_service_pb2 import ExportMetricsServiceRequest, ExportMetricsServiceResponse
+
+from loopback_http import LoopbackHTTPServer
 
 REQUESTS = {"traces": ExportTraceServiceRequest, "logs": ExportLogsServiceRequest, "metrics": ExportMetricsServiceRequest}
 RESPONSES = {"traces": ExportTraceServiceResponse, "logs": ExportLogsServiceResponse, "metrics": ExportMetricsServiceResponse}
@@ -266,7 +268,7 @@ class Capture:
                 self.end_headers()
                 self.wfile.write(response_body)
 
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server = LoopbackHTTPServer(Handler)
         self.server.daemon_threads = True
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()

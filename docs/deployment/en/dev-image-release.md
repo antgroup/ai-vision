@@ -14,7 +14,7 @@ Native compilation is available through an [optional candidate workflow](../../.
 | Manual `dev`, default `publish=false` | Current default branch; `VERSION-dev.YYYYMMDD.RUN_NUMBER[.ATTEMPT]` | Frozen development candidate; no Release or product aliases |
 | Manual trial alias | Selected pushed branch; unique non-version alias and selected candidate channel | Candidate assets only; publication is rejected before version-tag writes |
 | Qualified Daily/Dev promotion | Exact successful candidate run/attempt, still at the current default-branch head | Versioned prerelease and rolling entry using the original frozen assets |
-| Manual `release_preview=true` | Selected branch and exact `VERSION` | Full formal-release matrix and frozen artifacts with publication disabled |
+| Manual `release_preview=true` | Selected branch and exact `VERSION` | Formal release qualification and frozen artifacts with publication disabled |
 | Push of a `v*` tag | Tag matches `VERSION` and is reachable from the default branch | Reviewed stable Release or RC prerelease after protected approval |
 
 An explicit `publish=true` manual Daily/Dev run still publishes after the same source/artifact gates. The separate promotion path is useful when a candidate must be reviewed before publication; it does not rebuild.
@@ -79,9 +79,52 @@ describes the full-coverage conditions.
 Run the image workflow on the proposed release branch with `release_preview=true`
 and `publish=false`. Leave the Daily date, revision, and channel settings at
 their defaults. The run uses the exact `VERSION`, pinned SigNoz dependency and
-full Release matrix. Review the frozen acceptance before merging. After merging,
+formal release matrix. Review the frozen acceptance before merging. After merging,
 push the matching version tag at the accepted `main` commit. The tag run
 qualifies its own build and then waits for approval in the `release` environment.
+
+## Qualify Docker on Intel macOS
+
+Formal release requires both Linux database architectures, Linux platform and
+packaged deployment smoke, and the existing portable macOS and Windows checks.
+Use the separate manual [Intel macOS Docker](../../../.github/workflows/intel-macos-docker.yml)
+gate for Docker-backed Intel Mac database, framework SDK, diagnostics and native
+Agent coverage. Its success qualifies those source checks for the selected
+candidate. Packaged deployment acceptance covers Linux amd64.
+
+Run from a checkout of the candidate source after the workflow reaches the default
+branch. Set `SOURCE_REF` to a branch or tag at the manifest's `source_sha` and
+`MANIFEST` to that candidate's verified `release-manifest.json` from **Release images**.
+Pass the full manifest. The workflow checks its source SHA against the checkout
+and uses the same pinned source fixtures as formal CI, including the SigNoz
+precision fixture.
+
+```bash
+SOURCE_REF=...
+MANIFEST=release-manifest.json
+test "$(git rev-parse "${SOURCE_REF}^{commit}")" = "$(jq -er '.source_sha' "$MANIFEST")" &&
+  gh workflow run intel-macos-docker.yml -R antgroup/ai-vision \
+    --ref "$SOURCE_REF" -F "release_manifest=@$MANIFEST"
+```
+
+Check the Actions run SHA against the manifest and record its result with the
+candidate's evidence. The Intel gate publishes no images or releases. OceanBase
+on the tested Intel macOS 15 VZ and QEMU runners and the macOS 26 QEMU control
+returned MySQL 8001 at the 600-second deadline. Intel macOS Docker remains
+unverified until its gate passes. See the
+[CI evidence](../../../scripts/ci/README.md#test-tiers).
+
+## Qualify Windows hook performance
+
+The Windows release source jobs record Codex and Claude PreToolUse p95.
+Windows hook functionality, native processes, semantic checks, and x64 CLI
+artifact acceptance remain required. Linux and macOS source jobs enforce
+the original p95 thresholds.
+
+After the [manual Windows performance workflow](../../../.github/workflows/windows-native-performance.yml)
+reaches the default branch, dispatch it on the candidate source ref and verify
+the run's commit SHA. The workflow independently enforces the 50 ms budget for
+Codex internal time and Claude internal and process wall time.
 
 ## Qualify the All-in-One Personal Edition
 

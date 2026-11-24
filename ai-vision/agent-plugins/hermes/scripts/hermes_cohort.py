@@ -85,8 +85,9 @@ def _private_json(path: Path, value: dict[str, Any]) -> None:
     fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     temporary = Path(temporary_name)
     try:
-        os.fchmod(fd, 0o600)
         with os.fdopen(fd, "wb") as handle:
+            if os.name == "posix":
+                os.fchmod(handle.fileno(), 0o600)
             handle.write(content)
             handle.flush()
             os.fsync(handle.fileno())

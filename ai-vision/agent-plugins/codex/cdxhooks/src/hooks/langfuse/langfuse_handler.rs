@@ -60,6 +60,37 @@ const STOP_TERMINAL_POLL_INTERVAL_MS: u64 = 500;
 const STOP_RECOVERY_TRANSCRIPT_SCAN_MAX_BYTES: usize = 256 * 1024;
 
 #[cfg(test)]
+struct ChildFixturePolling {
+    publish_on_retry: Option<Box<dyn FnOnce()>>,
+}
+
+#[cfg(test)]
+thread_local! {
+    static CHILD_FIXTURE_POLLING: std::cell::RefCell<Option<ChildFixturePolling>> = const {
+        std::cell::RefCell::new(None)
+    };
+}
+
+#[cfg(test)]
+pub(crate) struct ChildFixturePollingGuard(Option<ChildFixturePolling>);
+
+#[cfg(test)]
+impl Drop for ChildFixturePollingGuard {
+    fn drop(&mut self) {
+        let _ = CHILD_FIXTURE_POLLING.with(|polling| polling.replace(self.0.take()));
+    }
+}
+
+#[cfg(test)]
+pub(crate) fn child_fixture_polling(
+    publish_on_retry: Option<Box<dyn FnOnce()>>,
+) -> ChildFixturePollingGuard {
+    let previous = CHILD_FIXTURE_POLLING
+        .with(|polling| polling.replace(Some(ChildFixturePolling { publish_on_retry })));
+    ChildFixturePollingGuard(previous)
+}
+
+#[cfg(test)]
 static TEST_TURN_SUCCESS_CHECKPOINT_FAILURES: std::sync::OnceLock<
     std::sync::Mutex<std::collections::HashSet<String>>,
 > = std::sync::OnceLock::new();
@@ -2938,6 +2969,15 @@ pub(crate) fn merge_child_sessions_into_body(
         if remaining <= retry_delay {
             return ChildMergeOutcome::BudgetExhausted;
         }
+        #[cfg(test)]
+        if let Some(publish) = CHILD_FIXTURE_POLLING.with(|polling| {
+            polling
+                .borrow_mut()
+                .as_mut()
+                .and_then(|fixture| fixture.publish_on_retry.take())
+        }) {
+            publish();
+        }
         std::thread::sleep(retry_delay);
     }
 
@@ -3031,6 +3071,16 @@ fn wait_for_file_stable_with_budget(
     if remaining < minimum_stability_window {
         return Err(());
     }
+    // Keep the real stability samples and Stop budget. Give fixture tests
+    // more time for their polling threads to be scheduled by hosted runners.
+    #[cfg(test)]
+    let max_wait_ms = CHILD_FIXTURE_POLLING.with(|polling| {
+        if polling.borrow().is_some() {
+            max_wait_ms.max(1_500)
+        } else {
+            max_wait_ms
+        }
+    });
     let capped_wait = std::cmp::min(remaining, std::time::Duration::from_millis(max_wait_ms));
     let capped_wait_ms = capped_wait.as_millis().min(u64::MAX as u128) as u64;
     let stable = wait_for_file_stable(path, poll_interval_ms, capped_wait_ms);
@@ -3422,6 +3472,7 @@ fn refresh_postable_turn_cache(
 mod tests {
     use super::*;
     use crate::common::hook::HookEvent;
+    use crate::common::otel::OtelPostError;
     use crate::hooks::langfuse::state::{
         commit_export_success, ALIAS_CYCLE_QUARANTINE_REASON, FACT_CONFLICT_QUARANTINE_REASON,
         MISSING_ALIAS_TARGET_QUARANTINE_REASON, MULTIPLE_PUBLISHED_ROOTS_QUARANTINE_REASON,
@@ -4351,7 +4402,21 @@ mod tests {
                 }]
             }]
         });
-        let (first_host, first_sink) = spawn_http_sink(vec![200, 500]);
+        // Give the multi-MiB durable writes and both HTTP attempts the same
+        // fixture window. The collector must stay up to deliver its HTTP 500.
+        let run_budget = Duration::from_secs(20);
+        let post_timeout = Duration::from_secs(3);
+        let sink_timeout = run_budget + post_timeout;
+        let delivery_budget = || {
+            StopBudget::new(
+                Instant::now(),
+                run_budget,
+                post_timeout,
+                Duration::from_millis(100),
+            )
+        };
+        let (first_host, first_sink) =
+            spawn_http_sink_with_deadline(vec![200, 500], sink_timeout);
         let first_context = test_context(&dir, first_host);
         let mut state = serde_json::json!({});
         let merged_sync_ids = Vec::new();
@@ -4363,7 +4428,7 @@ mod tests {
             "turn-resume",
             "trigger-resume",
             &first_context,
-            ample_budget(),
+            delivery_budget(),
             Some(FinalizerRecoveryDeliveryContext {
                 intent_id: "intent-resume",
                 observed_file_len: 3,
@@ -4374,9 +4439,14 @@ mod tests {
                 merged_subagent_invocation_ids: &merged_invocation_ids,
             }),
         );
-        assert!(matches!(first, FinalizerDeliveryOutcome::Retryable(_)));
-        assert_eq!(first_sink.join().unwrap().len(), 2);
+        assert_eq!(
+            first,
+            FinalizerDeliveryOutcome::Retryable(OtelPostError::HttpStatus(500).to_string())
+        );
+        let first_bodies = first_sink.join().unwrap();
+        assert_eq!(first_bodies.len(), 2);
 
+        let mut state = load_state(&first_context.state_file);
         let plan = state["parent"]["realtime_export"]["delivery_plans"]
             .as_object()
             .unwrap()
@@ -4387,9 +4457,12 @@ mod tests {
         let plan_id = plan["plan_id"].as_str().unwrap().to_string();
         assert_eq!(plan["next_cursor"], 1);
         assert_eq!(plan["chunks"][0]["status"], "accounted");
-        assert!(plan["chunks"][1].get("body").is_some());
+        assert!(
+            plan["chunks"][1]["body"] == first_bodies[1],
+            "the rejected root chunk must be persisted"
+        );
 
-        let (resume_host, resume_sink) = spawn_http_sink(vec![200]);
+        let (resume_host, resume_sink) = spawn_http_sink_with_deadline(vec![200], sink_timeout);
         let resume_context = test_context(&dir, resume_host);
         let resumed = resume_pending_finalizer_delivery(
             &mut state,
@@ -4397,15 +4470,20 @@ mod tests {
             "intent-resume",
             transcript.to_str().unwrap(),
             &resume_context,
-            ample_budget(),
+            delivery_budget(),
         );
         assert_eq!(resumed, PendingFinalizerResume::Completed);
         let resumed_bodies = resume_sink.join().unwrap();
         assert_eq!(resumed_bodies.len(), 1);
+        assert!(
+            resumed_bodies[0] == first_bodies[1],
+            "the retry must send the same root chunk"
+        );
         assert_eq!(
             resumed_bodies[0]["resourceSpans"][0]["scopeSpans"][0]["spans"][0]["spanId"],
             "aaaaaaaaaaaaaaaa"
         );
+        let state = load_state(&resume_context.state_file);
         let resumed_plan = realtime_state::realtime_delivery_plan(&state, "parent", &plan_id)
             .expect("persisted plan must remain readable");
         assert!(resumed_plan.complete);
@@ -4971,8 +5049,12 @@ mod tests {
             file.flush().unwrap();
         });
 
-        let (host, sink) = spawn_http_sink(vec![200, 200]);
+        let (host, sink) = spawn_http_sink_with_deadline(
+            vec![200, 200],
+            Duration::from_millis(STOP_TERMINAL_POLL_MAX_MS),
+        );
         let context = test_context(&dir, host);
+        let stop_budget = context.stop_budget.unwrap().total_budget();
         let started = Instant::now();
         let mut payload = stop_payload(&transcript_path);
         payload["target_turn_id"] = serde_json::json!("turn-2");
@@ -4983,9 +5065,21 @@ mod tests {
         writer.join().unwrap();
 
         assert_single_turn_bodies(&sink.join().unwrap(), &["Turn 1", "Turn 2"]);
+        let log = std::fs::read_to_string(dir.path().join("test.log")).unwrap();
         assert!(
-            elapsed >= Duration::from_millis(2_500) && elapsed < Duration::from_secs(5),
-            "terminal polling should return early, elapsed={elapsed:?}"
+            log.contains("Transcript terminal not visible; poll="),
+            "Stop should poll while the target turn is still open"
+        );
+        assert!(
+            log.lines().any(|line| {
+                line.contains("Transcript terminal poll finished after")
+                    && line.ends_with("target_terminal_seen=true")
+            }),
+            "Stop should observe the target terminal marker during polling"
+        );
+        assert!(
+            elapsed < stop_budget,
+            "Stop should finish before exhausting its budget, elapsed={elapsed:?}"
         );
         let state = load_state(&context.state_file);
         let transcript_len = std::fs::metadata(&transcript_path).unwrap().len() as i64;
@@ -5067,15 +5161,21 @@ mod tests {
         let outcome = LangfuseHandler::new()
             .handle_stop_with_outcome(&HookEvent::Stop, &payload, &context)
             .unwrap();
+        let elapsed = started.elapsed();
 
         assert!(
             matches!(outcome, StopDispatchOutcome::Deferred(ref reason) if reason.contains("target turn awaiting terminal")),
             "unexpected bounded poll outcome: {outcome:?}"
         );
         assert!(
-            started.elapsed() >= Duration::from_secs(9)
-                && started.elapsed() < Duration::from_secs(12),
-            "target polling must be bounded"
+            elapsed >= Duration::from_secs(9) && elapsed < Duration::from_secs(12),
+            "target polling elapsed {elapsed:?}, expected at least 9s and less than 12s\n{}",
+            std::fs::read_to_string(dir.path().join("test.log"))
+                .unwrap_or_default()
+                .lines()
+                .filter(|line| line.contains("Transcript terminal"))
+                .collect::<Vec<_>>()
+                .join("\n")
         );
         assert_single_turn_bodies(&sink.join().unwrap(), &["Turn 1"]);
         let state = load_state(&context.state_file);
@@ -5301,6 +5401,7 @@ mod tests {
 
     #[test]
     fn test_direct_stop_merges_accounted_realtime_spawn_then_checkpoints_idempotently() {
+        let _fixture_polling = child_fixture_polling(None);
         let dir = tempfile::tempdir().unwrap();
         let transcript_path = dir.path().join("rollout-parent-v2.jsonl");
         let child_path = dir.path().join("rollout-child-v2.jsonl");
@@ -5526,6 +5627,7 @@ mod tests {
             include_str!("../../../tests/fixtures/codex_collab_tool_call_same_turn_child.jsonl"),
         )
         .unwrap();
+        let _fixture_polling = child_fixture_polling(None);
         crate::cli::worker::run_subagent_recovery_with_context(
             "parent-collab",
             &record,
@@ -6817,6 +6919,7 @@ mod tests {
             .filter_map(|line| serde_json::from_str(line).ok())
             .collect();
         let parent_turns = build_turns(&parent_messages);
+        let _fixture_polling = child_fixture_polling(None);
         let result = merge_child_sessions_into_body(
             &mut body,
             &parent_turns,
@@ -6872,6 +6975,7 @@ mod tests {
             None,
         );
         let logger = crate::common::logger::Logger::new(dir.path().join("native.log"), true);
+        let _fixture_polling = child_fixture_polling(None);
 
         let outcome = merge_child_sessions_into_body(
             &mut body,
@@ -7161,6 +7265,7 @@ mod tests {
             None,
         );
         let logger = crate::common::logger::Logger::new(dir.path().join("followup.log"), true);
+        let _fixture_polling = child_fixture_polling(None);
         let result = merge_child_sessions_into_body(
             &mut body,
             std::slice::from_ref(&current_turn),
@@ -7203,6 +7308,7 @@ mod tests {
 
     #[test]
     fn test_parent_correlation_ignores_trailing_pending_turn() {
+        let _fixture_polling = child_fixture_polling(None);
         let dir = tempfile::tempdir().unwrap();
         let parent_path = dir.path().join("parent.jsonl");
         let child_path = dir.path().join("child.jsonl");
@@ -7406,12 +7512,10 @@ mod tests {
             serde_json::json!({"timestamp":"2026-07-10T00:00:00.500Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"parent-turn","last_agent_message":"done"}}),
         ];
         let parent_turn = build_turns(&parent_messages).remove(0);
-        let writer_dir = child_dir.clone();
-        let writer = std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(80));
-            std::fs::create_dir_all(&writer_dir).unwrap();
+        let _fixture_polling = child_fixture_polling(Some(Box::new(move || {
+            std::fs::create_dir_all(&child_dir).unwrap();
             std::fs::write(
-                writer_dir.join("child.jsonl"),
+                child_dir.join("child.jsonl"),
                 r#"{"timestamp":"2026-07-10T00:00:00Z","type":"session_meta","payload":{"id":"late-child","parent_thread_id":"parent","source":{"subagent":{"thread_spawn":{"parent_thread_id":"parent"}}}}}
 {"timestamp":"2026-07-10T00:00:01Z","type":"event_msg","payload":{"type":"task_started","turn_id":"child-turn"}}
 {"timestamp":"2026-07-10T00:00:02Z","type":"event_msg","payload":{"type":"agent_message","phase":"final_answer","message":"done"}}
@@ -7419,7 +7523,7 @@ mod tests {
 "#,
             )
             .unwrap();
-        });
+        })));
         let mut body = build_otel_export_request_for_turn(
             &parent_turn,
             1,
@@ -7447,7 +7551,14 @@ mod tests {
         let ChildMergeOutcome::Completed(result) = result else {
             panic!("ample test budget must complete child merge");
         };
-        writer.join().unwrap();
+        let log = std::fs::read_to_string(dir.path().join("retry.log")).unwrap();
+        let (_, retries) = log
+            .split_once("Child transcript discovery attempt=0: requested=1 found=0")
+            .expect("the first scan must miss the late child fixture");
+        assert!(retries.lines().any(|line| {
+            line.contains("Child transcript discovery attempt=")
+                && line.contains("requested=1 found=1 exact=0")
+        }));
 
         assert_eq!(result.merged_sync_ids, vec!["late-child"]);
         assert!(result.deferred_sync_ids.is_empty());

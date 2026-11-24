@@ -208,7 +208,10 @@ class FakeProviderTests(unittest.TestCase):
                 self.assertEqual(provider.requests[0]["usage_reported"], has_usage)
 
     def test_cancellation_holds_the_agent_stream_but_finishes_auxiliary_calls(self):
-        with FakeProvider(self.path, "cancel") as provider:
+        with (
+            patch("socket.getfqdn", side_effect=AssertionError("Loopback bind must not use DNS")),
+            FakeProvider(self.path, "cancel") as provider,
+        ):
             start = time.monotonic()
             request = Request(provider.url + "/chat/completions", json.dumps({
                 "model": "native-e2e-chat", "stream": True,

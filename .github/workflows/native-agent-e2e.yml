@@ -27,6 +27,10 @@ on:
         description: Owned native platform fake49
         type: boolean
         default: false
+      intel_docker:
+        description: Use an Intel macOS host for the Linux Docker platform tests
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       tier:
@@ -100,35 +104,88 @@ jobs:
         run: |
           python -m pip install -r ai-vision/agent-plugins/tests/native_agent_e2e/requirements.txt
           python -m pip install opentelemetry-api==1.45.2 opentelemetry-sdk==1.45.2 opentelemetry-exporter-otlp-proto-http==1.45.2
+      - name: Measure release hook latency before other hook tests
+        id: hook-latency
+        if: inputs.source && inputs.tier == 'release'
+        continue-on-error: true
+        env:
+          RUST_TEST_THREADS: '1'
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: ${{ runner.os == 'Windows' }}
+          CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: 'true'
+          CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: 'true'
+        run: |
+          set -euo pipefail
+          benchmark() {
+            local manifest="$1" target="$2" name="$3"
+            shift 3
+            local log="$RUNNER_TEMP/$name.log"
+            cargo test --locked --manifest-path "$manifest" --no-default-features --features common \
+              --jobs 2 "$@" --test "$target" "$name" -- --exact --nocapture 2>&1 | tee "$log" &&
+              grep -Eq '^test result: ok\. 1 passed; 0 failed; 0 ignored;' "$log"
+          }
+          result=0
+          benchmark ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml async_parent_integration \
+            pretool_parent_timing_p95_stays_below_50_ms || result=$?
+          benchmark ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml async_hook_contract \
+            pretooluse_parent_latency_stays_under_fifty_milliseconds --release || result=$?
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY=false benchmark \
+            ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml async_hook_contract \
+            large_posttool_payload_handoff_stays_below_parent_budget --release || result=$?
+          exit "$result"
       - name: Codex production common-edition contracts
+        id: codex-contracts
         if: steps.unit-scope.outputs.codex == 'true'
+        # Collect the independent runtime evidence before requiring both statuses.
+        continue-on-error: ${{ inputs.source && inputs.tier == 'release' }}
         env:
           # These contracts share process environment and measure hook latency.
           RUST_TEST_THREADS: '1'
           NATIVE_SOURCE: ${{ inputs.source }}
+          NATIVE_TIER: ${{ inputs.tier }}
         run: |
           # Match the shipped common edition without requiring embedded keys.
           test_targets=(--lib --bins)
-          if [ "$NATIVE_SOURCE" = true ]; then test_targets=(--all-targets); fi
+          test_filters=()
+          if [ "$NATIVE_SOURCE" = true ]; then test_targets=(--all-targets --no-fail-fast); fi
+          if [ "$NATIVE_SOURCE" = true ] && [ "$NATIVE_TIER" = release ]; then
+            test_filters=(-- --exact --skip pretool_parent_timing_p95_stays_below_50_ms)
+          fi
           cargo build --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common --bins --jobs 2
-          cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2
+          cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2 "${test_filters[@]}"
       - name: Claude production common-edition contracts
-        if: steps.unit-scope.outputs.claudecode == 'true'
+        id: claude-contracts
+        if: >-
+          !cancelled() && steps.unit-scope.outputs.claudecode == 'true' &&
+          (success() || (inputs.source && steps.codex-contracts.outcome == 'failure'))
+        continue-on-error: ${{ inputs.source && inputs.tier == 'release' }}
         env:
           RUST_TEST_THREADS: '1'
           NATIVE_SOURCE: ${{ inputs.source }}
+          NATIVE_TIER: ${{ inputs.tier }}
           CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: 'true'
           CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: 'true'
         run: |
           test_targets=(--lib --bins)
           cargo_profile=()
+          test_filters=()
           if [ "$NATIVE_SOURCE" = true ]; then
-            test_targets=(--all-targets)
+            test_targets=(--all-targets --no-fail-fast)
             # The latency tests exercise the same optimization as the shipped hook.
             cargo_profile=(--release)
           fi
+          if [ "$NATIVE_SOURCE" = true ] && [ "$NATIVE_TIER" = release ]; then
+            test_filters=(-- --exact
+              --skip pretooluse_parent_latency_stays_under_fifty_milliseconds
+              --skip large_posttool_payload_handoff_stays_below_parent_budget)
+          fi
           cargo build --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${cargo_profile[@]}" --bins --jobs 2
-          cargo test --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${cargo_profile[@]}" "${test_targets[@]}" --jobs 2
+          cargo test --locked --manifest-path ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml --no-default-features --features common "${cargo_profile[@]}" "${test_targets[@]}" --jobs 2 "${test_filters[@]}"
+      - name: Shared state-lock deadline contract
+        if: inputs.source
+        run: >-
+          cargo test --locked --manifest-path ai-vision/agent-plugins/agentic-otel-common/Cargo.toml
+          --target-dir ai-vision/agent-plugins/codex/cdxhooks/target
+          --lib state::tests::state_lock_retry_delay_respects_deadline --jobs 2 -- --exact
       - name: Native production onboarding contracts
         if: steps.unit-scope.outputs.onboarding == 'true'
         run: make -C ai-vision/agent-plugins test-onboarding PLUGIN_PYTHON=python
@@ -157,7 +214,7 @@ jobs:
         if: steps.unit-scope.outputs.hermes == 'true'
         working-directory: ai-vision/agent-plugins/hermes
         run: >-
-          python -m unittest -v tests.test_config tests.test_config_migration tests.test_normalize
+          python -m unittest -v tests.test_config tests.test_config_migration tests.test_cohort tests.test_normalize
           tests.test_privacy tests.test_semantic_state tests.test_hook_adapters tests.test_native_usage
           tests.test_execution_usage tests.test_auxiliary_hooks tests.test_telemetry tests.test_privacy_boundary
           tests.test_protocol_spike tests.test_diagnostics tests.test_security_config tests.test_common_schema_alignment
@@ -205,6 +262,18 @@ jobs:
             ${{ runner.temp }}/hermes-compression/report.json
           if-no-files-found: error
           retention-days: 7
+      - name: Require the release Rust and performance checks
+        if: >-
+          !cancelled() && inputs.source && inputs.tier == 'release'
+        env:
+          CODEX_CONTRACTS: ${{ steps.codex-contracts.outcome }}
+          CLAUDE_CONTRACTS: ${{ steps.claude-contracts.outcome }}
+          HOOK_LATENCY: ${{ steps.hook-latency.outcome }}
+        run: |
+          if [[ "$CODEX_CONTRACTS" != success || "$CLAUDE_CONTRACTS" != success || "$HOOK_LATENCY" != success ]]; then
+            echo "::error::Release Rust contract results: Codex=$CODEX_CONTRACTS Claude=$CLAUDE_CONTRACTS hook latency=$HOOK_LATENCY"
+            exit 1
+          fi
 
   native-semantics:
     if: inputs.source
@@ -266,7 +335,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15-intel"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.intel_docker && '["macos-15-intel"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os == 'ubuntu-24.04' && github.event_name != 'pull_request' && vars.AIVISION_E2E_DOCKER_LINUX_RUNNER || matrix.os }}
     timeout-minutes: 90
     permissions:

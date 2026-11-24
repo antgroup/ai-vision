@@ -90,12 +90,11 @@ The owned diagnostics platform's fixed `codex-read-only` Quick smoke requires a 
 The framework, diagnostics, native-agent, and deployment workflows are reusable suites with manual entry points. They no longer independently trigger on the same PR. The duplicate frontend runs and native database matrix have been removed; the framework database suite owns the shared Django database tests, while diagnostics retains its distinct AgentLens transaction and migration tests.
 
 When selected in the PR tier, the framework and diagnostic database jobs run
-both OceanBase and seekdb on Linux x64 (`ubuntu-24.04`). Daily adds Linux ARM64
-(`ubuntu-24.04-arm`), and release runs both Linux architectures plus macOS Intel.
-Keep ARM64 out of the PR tier until the new database cases pass against real
-services. For a targeted manual run, choose `tier=daily` and `database=true` in
-the relevant suite and turn off its other selectors. Each selected architecture
-must pass the suite's existing gate.
+both OceanBase and seekdb on Linux x64 (`ubuntu-24.04`). Daily and formal release
+require both Linux architectures, with ARM64 on `ubuntu-24.04-arm`. For a
+targeted Linux run, choose `tier=daily` and `database=true` in the relevant suite
+and turn off its other selectors. Each selected architecture must pass the suite's
+existing gate.
 
 The two database helpers accept `--platform linux/amd64|linux/arm64`, defaulting
 to amd64 for existing callers. Workflows pass the matrix platform to both pull
@@ -109,11 +108,36 @@ child pin; other platform suites and their pins are unchanged. Each architecture
 must be qualified with its own results; earlier runs of the old seekdb image do
 not qualify the new pin. Matrix addition is not a claim of a successful hosted run.
 
-macOS ARM64 source/CLI checks remain in the existing release matrices. Hosted
-Apple Silicon runners do not support nested virtualization, so the Colima-based
-database jobs remain on Mac Intel. Linux ARM64 database results do not establish
-macOS ARM64 Docker deployment acceptance; that requires a suitable physical or
-self-hosted Mac. See the [GitHub runner limitations](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#limitations-for-arm64-macos-runners).
+Formal release retains portable macOS source and CLI checks. The separate manual
+[Intel macOS Docker](../../.github/workflows/intel-macos-docker.yml) workflow runs
+on `macos-15-intel`. It requires both database suites, the full framework SDK
+Docker matrix, diagnostics fake34/Quick API, and native fake49 platform checks.
+Every selected check must succeed. Formal release continues to require all Linux
+database and platform checks, including the Linux SDK/browser suite.
+
+To run the Intel gate, match the workflow ref to the candidate's source SHA and
+pass the full verified `release-manifest.json` from that candidate. The workflow
+checks the manifest's source SHA against the checkout and uses the same public
+image projection and pinned SigNoz precision fixture as release source CI. Follow the
+[dispatch recipe](../../docs/deployment/en/dev-image-release.md#qualify-docker-on-intel-macos).
+
+The hosted OceanBase container on Intel macOS 15 reached Observer's first
+connection but returned MySQL error 8001 at the 600-second SQL readiness deadline
+under [VZ](https://github.com/antgroup/ai-vision/actions/runs/45219265697/job/137848768935)
+and [QEMU](https://github.com/antgroup/ai-vision/actions/runs/45231711684/job/137892704669).
+The [macOS 26 Intel QEMU control](https://github.com/antgroup/ai-vision/actions/runs/45236390465/job/137909170764)
+reproduced that timeout. Report Intel macOS Docker as unverified for the
+candidate until the separate gate passes. Docker acceptance on macOS ARM64
+requires a physical or suitably configured self-hosted Mac because hosted Apple
+Silicon runners lack nested virtualization. See the [GitHub runner limitations](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#limitations-for-arm64-macos-runners).
+
+The Windows release source jobs exercise Codex and Claude PreToolUse and
+record their p95 in the job summary. Release still requires the Windows hook
+functionality, Native runtime cases, semantic checks, and x64 CLI artifact smoke.
+Run [Windows Native Hook Performance](../../.github/workflows/windows-native-performance.yml)
+on the candidate ref for independent strict performance acceptance. It enforces
+Codex's internal p95 and Claude's internal and process wall p95 below 50 ms.
+Linux and macOS release source jobs enforce their original thresholds.
 
 The diagnostic database gate runs the real `/proc` descendant-cleanup test on
 Linux. On macOS it explicitly deselects that one Linux-only test and records the

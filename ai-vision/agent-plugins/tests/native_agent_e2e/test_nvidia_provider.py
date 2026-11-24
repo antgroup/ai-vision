@@ -26,32 +26,48 @@ class NvidiaBoundaryTests(unittest.TestCase):
         self.assertEqual(budget.attempts,20)
 
     def test_pending_catalog_http_is_closed_and_retained_on_absolute_deadline(self):
-        stopped=threading.Event()
+        entered = threading.Event()
+        finished = threading.Event()
+        stopped = threading.Event()
+
         class PendingRequest:
             def __enter__(self):
-                if not stopped.wait(3): raise AssertionError('forwarder failed to close')
-                raise httpx.ReadTimeout('controlled pending upstream')
+                entered.set()
+                try:
+                    if not stopped.wait(3):
+                        raise AssertionError('forwarder failed to close')
+                    raise httpx.ReadTimeout('controlled pending upstream')
+                finally:
+                    finished.set()
+
             def __exit__(self,*args): pass
+
         class Client:
             def stream(self,*args,**kwargs): return PendingRequest()
             def close(self): stopped.set()
-        real_client=httpx.Client
-        with patch('nvidia_provider.httpx.Client',return_value=Client()):
-            with NvidiaProvider('private-key',RateBudget(),timeout=.2) as provider:
-                with real_client(timeout=2,trust_env=False) as caller:
-                    try: caller.get(provider.url+'/models')
-                    except httpx.RemoteProtocolError: pass
-            self.assertTrue(stopped.is_set())
-            self.assertFalse(provider.thread.is_alive())
-            self.assertFalse(provider.timer.is_alive())
-            self.assertEqual(len(provider.requests),1)
-            row=provider.requests[0]
-            self.assertEqual(row['method'],'GET')
-            self.assertEqual(row['error'],'ReadTimeout')
-            self.assertFalse(row.get('completed',False))
-            self.assertFalse(row.get('shutdown_pending',False))
-            self.assertGreaterEqual(row['http_ended_ns'],row['http_started_ns'])
-            self.assertIsNone(provider.key)
+
+        # Client setup can load certificates. Finish it before starting the
+        # provider clock so the deadline measures an actual pending request.
+        with httpx.Client(timeout=3, trust_env=False) as caller:
+            with patch('nvidia_provider.httpx.Client', return_value=Client()):
+                with NvidiaProvider('private-key', RateBudget(), timeout=1) as provider:
+                    try:
+                        caller.get(provider.url + '/models')
+                    except httpx.RemoteProtocolError:
+                        pass
+        self.assertTrue(entered.is_set(), 'upstream request never entered')
+        self.assertTrue(stopped.is_set(), 'deadline did not close the upstream client')
+        self.assertTrue(finished.is_set(), 'pending upstream request never ended')
+        self.assertFalse(provider.thread.is_alive())
+        self.assertFalse(provider.timer.is_alive())
+        self.assertEqual(len(provider.requests), 1)
+        row = provider.requests[0]
+        self.assertEqual(row['method'], 'GET')
+        self.assertEqual(row['error'], 'ReadTimeout')
+        self.assertFalse(row.get('completed', False))
+        self.assertFalse(row.get('shutdown_pending', False))
+        self.assertGreaterEqual(row['http_ended_ns'], row['http_started_ns'])
+        self.assertIsNone(provider.key)
 
     def test_non_object_sse_is_rejected_without_losing_bounded_evidence(self):
         ledger=StreamLedger()

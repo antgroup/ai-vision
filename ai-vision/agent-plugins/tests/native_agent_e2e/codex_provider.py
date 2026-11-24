@@ -6,7 +6,7 @@ or successful completion for an incomplete upstream stream.
 """
 from __future__ import annotations
 
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 import threading
 import time
@@ -14,6 +14,8 @@ from urllib.parse import urlsplit
 import uuid
 
 import httpx
+
+from loopback_http import LoopbackHTTPServer
 
 MAX_BODY = 8 * 1024 * 1024
 
@@ -356,7 +358,7 @@ class CodexProvider:
                     with owner.lock:
                         if "upstream" in locals(): owner.responses.discard(upstream)
                         owner.workers.discard(threading.current_thread())
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server = LoopbackHTTPServer(Handler)
         self.server.daemon_threads = True
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()

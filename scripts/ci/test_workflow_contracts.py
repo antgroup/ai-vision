@@ -346,8 +346,9 @@ class WorkflowGateTests(unittest.TestCase):
             declarations = triggers(document)["workflow_call"]["inputs"]
             inputs = {key: (True if declaration["type"] == "boolean" else declaration.get("default", ""))
                       for key, declaration in declarations.items() if key != "tier"}
-            if "browser_only" in inputs:
-                inputs["browser_only"] = False
+            for opt_in in ("browser_only", "intel_docker"):
+                if opt_in in inputs:
+                    inputs[opt_in] = False
             inputs["tier"] = "pr"
             gate = document["jobs"]["result"]
             step = gate["steps"][0]
@@ -432,6 +433,17 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("Unknown test tier", result.stderr)
 
+    def test_framework_gate_rejects_conflicting_platform_modes(self):
+        document = workflow("framework-e2e.yml")
+        declarations = triggers(document)["workflow_call"]["inputs"]
+        inputs = {key: definition["default"] for key, definition in declarations.items() if key != "tier"}
+        inputs.update(tier="release", platform=True, intel_docker=True, browser_only=True)
+        gate = document["jobs"]["result"]
+        needs = {job: {"result": "skipped"} for job in gate["needs"]}
+        result, _ = run_step(gate["steps"][0], inputs=inputs, needs=needs)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("Intel Docker and browser-only are mutually exclusive for platform checks", result.stderr)
+
     def test_daily_sdk_smoke_requires_both_live_platform_gates(self):
         document = workflow("framework-e2e.yml")
         declarations = triggers(document)["workflow_call"]["inputs"]
@@ -450,7 +462,8 @@ class WorkflowGateTests(unittest.TestCase):
                                      needs={**needs, job: {"result": "skipped"}})
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(job, result.stderr)
-        for override in ({"tier": "release"}, {"browser_only": True}, {"sdk_coverage": "unknown"}):
+        for override in ({"tier": "release"}, {"browser_only": True}, {"intel_docker": True},
+                         {"sdk_coverage": "unknown"}):
             with self.subTest(override=override):
                 result, _ = run_step(gate["steps"][0], inputs={**inputs, **override}, needs=needs)
                 self.assertNotEqual(result.returncode, 0)
@@ -686,8 +699,9 @@ class CallerContractTests(unittest.TestCase):
                 self.assertEqual(inputs.pop("tier"), tier)
                 self.assertEqual(inputs.pop("public_platform_images"), "")
                 self.assertNotIn("public_platform_images", triggers(called)["workflow_dispatch"]["inputs"])
-                if "browser_only" in inputs:
-                    self.assertIs(inputs.pop("browser_only"), False)
+                for opt_in in ("browser_only", "intel_docker"):
+                    if opt_in in inputs:
+                        self.assertIs(inputs.pop(opt_in), False)
                 if "sdk_coverage" in inputs:
                     self.assertEqual(inputs.pop("sdk_coverage"), "full")
                     self.assertEqual(declarations["sdk_coverage"]["type"], "string")
@@ -794,29 +808,172 @@ class CallerContractTests(unittest.TestCase):
                         self.assertEqual(matrix, {"shard": [1, 2, 3, 4]})
                         self.assertEqual(definition["strategy"]["max-parallel"], 2)
                         continue
+                    if job in {"docker-platform", "docker-database", "owned-database", "owned-platform-quick"}:
+                        # Docker runner routing is tested separately from source platform coverage.
+                        continue
                     match = re.fullmatch(
                         r"\$\{\{ fromJSON\(inputs\.tier == 'release' && '([^']+)'"
-                        r"(?: \|\| inputs\.tier == 'daily' && '([^']+)')? \|\| '([^']+)'\) \}\}",
+                        r" \|\| '([^']+)'\) \}\}",
                         matrix["os"],
                     )
                     self.assertIsNotNone(match, (family, job))
-                    release, daily, default = match.groups()
-                    platforms = json.loads({"release": release, "daily": daily or default, "pr": default}[tier])
+                    release, default = match.groups()
+                    platforms = json.loads(release if tier == "release" else default)
                     with self.subTest(tier=tier, family=family, job=job):
                         self.assertIn("ubuntu-24.04", platforms)
                         if tier == "release":
                             self.assertTrue(any(platform.startswith("macos-") for platform in platforms))
-                            if job in {"docker-database", "owned-database"}:
-                                self.assertEqual(platforms, ["ubuntu-24.04", "ubuntu-24.04-arm", "macos-15-intel"])
                             if job in {"frontend", "backend-contracts", "contracts", "js-contracts", "portable-contracts", "native-source"}:
                                 self.assertIn("windows-2025", platforms)
                         else:
-                            expected = ["ubuntu-24.04"]
-                            if tier == "daily" and job in {"docker-database", "owned-database"}:
-                                expected.append("ubuntu-24.04-arm")
-                            self.assertEqual(platforms, expected)
-                        if "backend" in matrix:
-                            self.assertEqual(set(matrix["backend"]), {"oceanbase", "seekdb"})
+                            self.assertEqual(platforms, ["ubuntu-24.04"])
+
+    def test_intel_docker_is_opt_in_and_reuses_strict_selected_gates(self):
+        ci = workflow("ci.yml")
+        families = {
+            "framework": {"docker-database", "docker-platform"},
+            "diagnostics": {"owned-database", "owned-platform-quick"},
+            "native": {"docker-platform"},
+        }
+        for family, required in families.items():
+            caller = ci["jobs"][family]
+            self.assertNotIn("intel_docker", caller["with"])
+            called = workflow(Path(caller["uses"]).name)
+            declarations = triggers(called)["workflow_call"]["inputs"]
+            self.assertEqual(declarations["intel_docker"]["type"], "boolean")
+            self.assertIs(declarations["intel_docker"]["default"], False)
+            self.assertNotIn("intel_docker", triggers(called)["workflow_dispatch"]["inputs"])
+            jobs = called["jobs"]
+            for job in required:
+                with self.subTest(family=family, job=job):
+                    matrix = jobs[job]["strategy"]["matrix"]
+                    match = re.fullmatch(
+                        r"\$\{\{ fromJSON\(inputs\.intel_docker && '([^']+)'"
+                        r"(?: \|\| \(inputs\.tier == 'release' \|\| inputs\.tier == 'daily'\) && '([^']+)')?"
+                        r" \|\| '([^']+)'\) \}\}",
+                        matrix["os"],
+                    )
+                    self.assertIsNotNone(match, matrix["os"])
+                    intel, linux_extended, linux_default = match.groups()
+                    self.assertEqual(json.loads(intel), ["macos-15-intel"])
+                    self.assertEqual(json.loads(linux_default), ["ubuntu-24.04"])
+                    if job.endswith("-database"):
+                        self.assertEqual(json.loads(linux_extended), ["ubuntu-24.04", "ubuntu-24.04-arm"])
+                        self.assertEqual(matrix["backend"], ["oceanbase", "seekdb"])
+                    else:
+                        self.assertIsNone(linux_extended)
+            if family == "framework":
+                self.assertIn("inputs.platform && !inputs.intel_docker", jobs["browser-platform"]["if"])
+            gate = jobs["result"]
+            step = gate["steps"][0]
+            inputs = {key: definition["default"] for key, definition in declarations.items() if key != "tier"}
+            inputs.update(tier="release", intel_docker=True, platform=True)
+            if family != "native":
+                inputs["database"] = True
+            selected = json.loads(render(step["env"]["SELECTED_JSON"], inputs=inputs))
+            self.assertEqual({job for job, value in selected.items() if value}, required)
+            needs = {job: {"result": "success" if job in required else "skipped"} for job in gate["needs"]}
+            result, _ = run_step(step, inputs=inputs, needs=needs)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            for job in required:
+                with self.subTest(family=family, job=job):
+                    result, _ = run_step(step, inputs=inputs, needs={**needs, job: {"result": "skipped"}})
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(job, result.stderr)
+
+    def test_intel_docker_wrapper_is_manual_read_only_and_requires_all_suites(self):
+        document = workflow("intel-macos-docker.yml")
+        self.assertEqual(set(triggers(document)), {"workflow_dispatch"})
+        declarations = triggers(document)["workflow_dispatch"]["inputs"]
+        self.assertEqual(set(declarations), {"release_manifest"})
+        self.assertEqual(declarations["release_manifest"]["type"], "string")
+        self.assertIs(declarations["release_manifest"]["required"], True)
+        self.assertEqual(document["permissions"], {"contents": "read", "packages": "read"})
+        jobs = document["jobs"]
+        fixture_step = jobs["inputs"]["steps"][-1]["id"]
+        self.assertEqual(jobs["inputs"]["outputs"], {
+            "public_platform_images": f"${{{{ steps.{fixture_step}.outputs.public_platform_images }}}}",
+        })
+        families = {
+            "framework": ("framework-e2e.yml", {"database": True}),
+            "diagnostics": ("diagnostics-e2e.yml", {"database": True}),
+            "native": ("native-agent-e2e.yml", {"units": False, "source": False}),
+        }
+        self.assertEqual(set(jobs), {"inputs", "result", *families})
+        for family, (filename, selectors) in families.items():
+            with self.subTest(family=family):
+                self.assertEqual(jobs[family]["needs"], "inputs")
+                self.assertEqual(jobs[family]["uses"], f"./.github/workflows/{filename}")
+                self.assertEqual(jobs[family]["with"], {
+                    "tier": "release", "intel_docker": True, "platform": True,
+                    "public_platform_images": "${{ needs.inputs.outputs.public_platform_images }}", **selectors,
+                })
+        for job in jobs.values():
+            self.assertNotIn("permissions", job)
+            self.assertFalse(job.get("continue-on-error", False))
+            self.assertNotIn("secrets", job)
+        gate = jobs["result"]
+        self.assertEqual(gate["if"], "always()")
+        self.assertEqual(set(gate["needs"]), {"inputs", *families})
+        good = {job: {"result": "success"} for job in gate["needs"]}
+        step = gate["steps"][0]
+        result, _ = run_step(step, needs=good)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for job in gate["needs"]:
+            for status in ("failure", "skipped", "cancelled", None):
+                with self.subTest(job=job, status=status):
+                    needs = {**good, job: {"result": status}}
+                    if status is None:
+                        needs.pop(job)
+                    result, _ = run_step(step, needs=needs)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(job, result.stderr)
+
+    def test_intel_docker_wrapper_only_projects_fixtures_from_the_checked_out_candidate(self):
+        from public_registry import PUBLIC_REPOSITORY, product_image_repositories, source_fixtures
+
+        step = workflow("intel-macos-docker.yml")["jobs"]["inputs"]["steps"][-1]
+        sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+        images = {role: f"{repo}@sha256:{index:064x}"
+                  for index, (role, repo) in enumerate(product_image_repositories().items(), 1)}
+        manifest = {
+            "source_repository": PUBLIC_REPOSITORY,
+            "source_sha": sha,
+            "images": images,
+            "databases": {"oceanbase": "oceanbase/oceanbase-ce@sha256:" + "a" * 64},
+        }
+        expected = source_fixtures(manifest)
+
+        def run_manifest(raw):
+            with tempfile.TemporaryDirectory(prefix="aivision-intel-fixtures-") as directory:
+                output = Path(directory) / "output"
+                env = dict(os.environ, GITHUB_SHA=sha, GITHUB_OUTPUT=str(output))
+                env.update({key: render(value, inputs={"release_manifest": raw})
+                            for key, value in step["env"].items()})
+                result = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", step["run"]],
+                                        cwd=ROOT, env=env, capture_output=True, text=True, timeout=10)
+                return result, output.read_text() if output.exists() else ""
+
+        result, output = run_manifest(json.dumps(manifest, indent=2))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        name, data = output.strip().split("=", 1)
+        self.assertEqual(name, "public_platform_images")
+        self.assertEqual(json.loads(data), expected)
+        for case, invalid in {
+            "empty": "",
+            "malformed": "{",
+            "array": json.dumps([]),
+            "missing source SHA": json.dumps({}),
+            "bare fixture map": json.dumps(expected),
+            "stale SHA": json.dumps({**manifest, "source_sha": "0" * 40}),
+            "wrong source repository": json.dumps({**manifest, "source_repository": "example/ai-vision"}),
+            "mutable image": json.dumps({**manifest, "images": {**images, "aivision-fe": images["aivision-fe"].split("@")[0] + ":latest"}}),
+            "wrong image repository": json.dumps({**manifest, "images": {**images, "aivision-fe": "example.invalid/fixture@sha256:" + "a" * 64}}),
+        }.items():
+            with self.subTest(case=case):
+                result, output = run_manifest(invalid)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(output, "")
 
     def test_database_architecture_reaches_helpers_and_keeps_release_image_pins(self):
         from release_assets import DATABASES
@@ -940,9 +1097,13 @@ class OwnedBuilderContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             state_path, calls_path = root / 'docker-state.json', root / 'docker-calls.jsonl'
+            calls_path.touch()
             state_path.write_text(json.dumps({'selected': 'user-selected',
                 'builders': {'user-selected': 'existing-user-cache'},
-                'images': {'user-image': 'existing-user-image'}, 'containers': {}, 'buildx_installed': not macos}))
+                'images': {'user-image': 'existing-user-image'},
+                'containers': {'user-container': 'user-image'}, 'volumes': ['user-volume'],
+                'buildx_installed': not macos}))
+            (root / 'python').symlink_to(sys.executable)
             docker = root / 'docker'
             docker.write_text('#!' + sys.executable + '\n' + '''
 import json, os, pathlib, sys
@@ -955,10 +1116,24 @@ def save(): state_path.write_text(json.dumps(state))
 if args[0] == 'buildx' and not state['buildx_installed']: raise SystemExit(127)
 if args[:2] == ['buildx', 'version']:
     print('buildx fixture')
+elif args[:2] == ['buildx', 'ls']:
+    assert args[2:] == ['--format', '{{.Name}}']
+    print(*state['builders'], sep=chr(10))
+elif args[:2] == ['container', 'ls']:
+    assert args[2:] == ['--all', '--format', '{{.Names}}']
+    print(*state['containers'], sep=chr(10))
+elif args[:2] == ['volume', 'ls']:
+    assert args[2:] == ['--format', '{{.Name}}']
+    print(*state['volumes'], sep=chr(10))
 elif args[:2] == ['buildx', 'create']:
-    if os.environ['CREATE_FAILURE'] == '1': raise SystemExit(29)
     name = args[args.index('--name') + 1]
+    assert '--node' not in args and '--append' not in args
     assert name not in state['builders']
+    if os.environ['CREATE_FAILURE'] == '1':
+        # Simulate another job claiming the name after the read-only precheck.
+        state['builders'][name] = 'concurrent-user-cache'
+        save()
+        raise SystemExit(29)
     state['builders'][name] = 'owned-cache'
     if '--use' in args: state['selected'] = name
     save()
@@ -966,6 +1141,12 @@ elif args[:2] == ['buildx', 'build']:
     builder = args[args.index('--builder') + 1]
     assert state['builders'][builder] == 'owned-cache'
     image = args[args.index('-t') + 1]
+    container = 'buildx_buildkit_' + builder + '0'
+    volume = container + '_state'
+    state['containers'][container] = 'owned-builder-container'
+    if volume not in state['volumes']:
+        state['volumes'].append(volume)
+    save()
     if os.environ['FAIL_BUILD'] and os.environ['FAIL_BUILD'] in image: raise SystemExit(23)
     if '--load' in args:
         state['images'][image] = 'loaded-' + image
@@ -975,6 +1156,9 @@ elif args[:2] == ['buildx', 'rm']:
     assert name != 'user-selected' and state['builders'][name] == 'owned-cache'
     if os.environ['CLEANUP_FAILURE'] == '1': raise SystemExit(17)
     del state['builders'][name]
+    container = 'buildx_buildkit_' + name + '0'
+    del state['containers'][container]
+    state['volumes'].remove(container + '_state')
     save()
 elif args[0] == 'create':
     assert args[-1] in state['images']
@@ -1029,7 +1213,8 @@ path.write_text(json.dumps(state))
         self.assertEqual(state['images']['user-image'], 'existing-user-image')
         self.assertEqual(set(state['images']), {'user-image', 'aivision-diagnostics-codex:ci',
                                                'aivision-diagnostics-docker-cli:local'})
-        self.assertEqual(state['containers'], {})
+        self.assertEqual(state['containers'], {'user-container': 'user-image'})
+        self.assertEqual(state['volumes'], ['user-volume'])
         create = next(args for args in calls if args[:2] == ['buildx', 'create'])
         name = create[create.index('--name') + 1]
         self.assertTrue(name.startswith('aiv-diagnostics-123-2-'))
@@ -1058,20 +1243,26 @@ path.write_text(json.dumps(state))
                 self.assertEqual(state['selected'], 'user-selected')
 
     def test_cleanup_failure_blocks_success_without_masking_an_earlier_build_failure(self):
-        for fail_build, expected in (('', 17), ('codex', 23)):
+        for fail_build, expected in (('', 1), ('codex', 23)):
             with self.subTest(fail_build=fail_build):
                 completed, calls, state = self.execute_build(fail_build=fail_build, cleanup_failure=True)
                 self.assertEqual(completed.returncode, expected, completed.stderr)
-                self.assertIn('Failed to remove the job-owned Buildx builder', completed.stderr)
+                self.assertIn('Could not remove job-owned Buildx resources', completed.stderr)
                 self.assertEqual(state['selected'], 'user-selected')
                 self.assertFalse(any(args[:2] == ['image', 'inspect'] for args in calls))
 
     def test_failed_create_never_removes_or_changes_an_existing_builder(self):
         completed, calls, state = self.execute_build(create_failure=True)
         self.assertEqual(completed.returncode, 29, completed.stderr)
-        self.assertFalse(any(args[:2] == ['buildx', 'rm'] for args in calls))
-        self.assertEqual(state['builders'], {'user-selected': 'existing-user-cache'})
+        self.assertFalse(any(args[0] == 'rm' or args[1:2] == ['rm'] for args in calls))
+        create = next(args for args in calls if args[:2] == ['buildx', 'create'])
+        name = create[create.index('--name') + 1]
+        self.assertEqual(state['builders'], {
+            'user-selected': 'existing-user-cache', name: 'concurrent-user-cache',
+        })
         self.assertEqual(state['selected'], 'user-selected')
+        self.assertEqual(state['containers'], {'user-container': 'user-image'})
+        self.assertEqual(state['volumes'], ['user-volume'])
 
     def test_macos_installs_the_plugin_before_running_the_owned_builder_shell(self):
         completed, calls, state = self.execute_build(macos=True)

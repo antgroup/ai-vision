@@ -233,11 +233,11 @@ pub fn enqueue_and_wake(
 
 /// Start the sole consumer for an already-persisted queue, if none is live.
 pub fn wake_session(session_id: &str, logger: &Logger) -> Result<bool, String> {
-    let executable = std::env::current_exe().map_err(|error| error.to_string())?;
     let Some(owner) = SessionOwner::try_acquire(session_id)? else {
         logger.debug("worker queue wake coalesced: consumer=existing");
         return Ok(false);
     };
+    let executable = std::env::current_exe().map_err(|error| error.to_string())?;
     let token = match claim_start_marker(session_id)? {
         StartClaim::Existing => {
             logger.debug("worker queue wake coalesced: consumer=starting");
@@ -1278,7 +1278,7 @@ pub fn pending_count(session_id: &str) -> Result<usize, String> {
 
 fn append_queue(session_id: &str, payload: &Value) -> Result<AppendOutcome, AppendFailure> {
     let _queue_lock = QueueLock::acquire(session_id).map_err(AppendFailure::Other)?;
-    repair_partial_tail_locked(session_id).map_err(AppendFailure::Other)?;
+    let (length, offset) = repair_partial_tail_locked(session_id).map_err(AppendFailure::Other)?;
     let path = queue_path(session_id).map_err(AppendFailure::Other)?;
     let envelope = QueueEnvelope {
         queued_at_ns: unix_nanos().to_string(),
@@ -1290,18 +1290,13 @@ fn append_queue(session_id: &str, payload: &Value) -> Result<AppendOutcome, Appe
         serde_json::to_vec(&envelope).map_err(|error| AppendFailure::Other(error.to_string()))?;
     record.push(b'\n');
     let max_bytes = queue_max_bytes();
-    let length = std::fs::metadata(&path)
-        .map(|value| value.len())
-        .unwrap_or(0);
-    let mut offset = read_offset(session_id).map_err(AppendFailure::Other)?;
-    if offset > length {
-        offset = 0;
-        write_offset(session_id, 0).map_err(AppendFailure::Other)?;
-    }
     let pending_bytes = length.saturating_sub(offset);
     let record_bytes = record.len() as u64;
-    let (pending_items, duplicate) =
-        pending_queue_summary_locked(session_id, payload).map_err(AppendFailure::Other)?;
+    let (pending_items, duplicate) = if pending_bytes == 0 {
+        (0, false)
+    } else {
+        pending_queue_summary_locked(&path, offset, payload).map_err(AppendFailure::Other)?
+    };
     if duplicate {
         return Ok(AppendOutcome::Coalesced);
     }
@@ -1332,16 +1327,15 @@ fn append_queue(session_id: &str, payload: &Value) -> Result<AppendOutcome, Appe
 }
 
 fn pending_queue_summary_locked(
-    session_id: &str,
+    path: &Path,
+    offset: u64,
     candidate: &Value,
 ) -> Result<(usize, bool), String> {
-    let path = queue_path(session_id)?;
-    let mut file = match File::open(&path) {
+    let mut file = match File::open(path) {
         Ok(file) => file,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok((0, false)),
         Err(error) => return Err(format!("{}: {error}", path.display())),
     };
-    let offset = read_offset(session_id)?;
     file.seek(SeekFrom::Start(offset))
         .map_err(|error| format!("{}: {error}", path.display()))?;
     let candidate_key = coalescing_key(candidate);
@@ -1710,7 +1704,8 @@ fn max_durable_attempts() -> u32 {
         .unwrap_or(DEFAULT_MAX_DURABLE_ATTEMPTS)
 }
 
-fn repair_partial_tail_locked(session_id: &str) -> Result<(), String> {
+/// Return the repaired length and checkpoint under the same queue lock.
+fn repair_partial_tail_locked(session_id: &str) -> Result<(u64, u64), String> {
     const CHUNK: u64 = 8 * 1024;
     let path = queue_path(session_id)?;
     let mut options = OpenOptions::new();
@@ -1726,7 +1721,7 @@ fn repair_partial_tail_locked(session_id: &str) -> Result<(), String> {
             if read_offset(session_id)? != 0 {
                 write_offset(session_id, 0)?;
             }
-            return Ok(());
+            return Ok((0, 0));
         }
         Err(error) => return Err(format!("{}: {error}", path.display())),
     };
@@ -1734,15 +1729,13 @@ fn repair_partial_tail_locked(session_id: &str) -> Result<(), String> {
         .metadata()
         .map_err(|error| format!("{}: {error}", path.display()))?
         .len();
-    if length == 0 {
-        if read_offset(session_id)? != 0 {
-            write_offset(session_id, 0)?;
-        }
-        return Ok(());
-    }
-    let offset = read_offset(session_id)?;
+    let mut offset = read_offset(session_id)?;
     if offset > length {
         write_offset(session_id, 0)?;
+        offset = 0;
+    }
+    if length == 0 {
+        return Ok((0, 0));
     }
     file.seek(SeekFrom::End(-1))
         .map_err(|error| format!("{}: {error}", path.display()))?;
@@ -1750,7 +1743,7 @@ fn repair_partial_tail_locked(session_id: &str) -> Result<(), String> {
     file.read_exact(&mut last)
         .map_err(|error| format!("{}: {error}", path.display()))?;
     if last[0] == b'\n' {
-        return Ok(());
+        return Ok((length, offset));
     }
 
     let mut end = length;
@@ -1768,13 +1761,14 @@ fn repair_partial_tail_locked(session_id: &str) -> Result<(), String> {
         }
         end = start;
     }
-    let offset = read_offset(session_id)?;
     if offset > repaired_length {
         write_offset(session_id, repaired_length)?;
+        offset = repaired_length;
     }
     file.set_len(repaired_length)
         .and_then(|_| file.sync_data())
-        .map_err(|error| format!("{}: {error}", path.display()))
+        .map_err(|error| format!("{}: {error}", path.display()))?;
+    Ok((repaired_length, offset))
 }
 
 fn read_offset(session_id: &str) -> Result<u64, String> {

@@ -118,19 +118,21 @@ class NativeDockerTests(unittest.TestCase):
     def test_ci_tiers_keep_native_coverage_and_share_database_contracts(self):
         root=Path(__file__).resolve().parents[4]
         content=(root/'.github/workflows/native-agent-e2e.yml').read_text()
-        jobs=yaml.safe_load(content)['jobs']
-        release_platforms={
-            'native-source':['ubuntu-24.04','macos-15','windows-2025'],
-            'docker-platform':['ubuntu-24.04','macos-15-intel'],
-        }
-        for job,platforms in release_platforms.items():
-            matrix=jobs[job]['strategy']['matrix']['os']
-            match=re.fullmatch(r"\$\{\{ fromJSON\(inputs\.tier == 'release' && '([^']+)' \|\| '([^']+)'\) \}\}",matrix)
-            self.assertIsNotNone(match,job)
-            for tier in ('pr','daily','release'):
-                with self.subTest(job=job,tier=tier):
-                    actual=json.loads(match[1 if tier=='release' else 2])
-                    self.assertEqual(actual,platforms if tier=='release' else ['ubuntu-24.04'])
+        document=yaml.safe_load(content)
+        jobs=document['jobs']
+        matrix=jobs['native-source']['strategy']['matrix']['os']
+        source=re.fullmatch(r"\$\{\{ fromJSON\(inputs\.tier == 'release' && '([^']+)' \|\| '([^']+)'\) \}\}",matrix)
+        self.assertIsNotNone(source)
+        self.assertEqual(json.loads(source[1]),['ubuntu-24.04','macos-15','windows-2025'])
+        self.assertEqual(json.loads(source[2]),['ubuntu-24.04'])
+        triggers=document.get('on',document.get(True))
+        intel=triggers['workflow_call']['inputs']['intel_docker']
+        self.assertEqual(intel['type'],'boolean')
+        self.assertIs(intel['default'],False)
+        self.assertNotIn('intel_docker',triggers['workflow_dispatch']['inputs'])
+        docker=jobs['docker-platform']['strategy']['matrix']['os']
+        self.assertEqual(docker,
+            "${{ fromJSON(inputs.intel_docker && '[\"macos-15-intel\"]' || '[\"ubuntu-24.04\"]') }}")
         self.assertNotIn('docker-database',jobs)
         self.assertNotIn('tests/framework_e2e/docker_database.py',content)
         framework=yaml.safe_load((root/'.github/workflows/framework-e2e.yml').read_text())['jobs']

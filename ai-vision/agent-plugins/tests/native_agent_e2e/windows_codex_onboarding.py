@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import hashlib
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 from pathlib import Path
 import secrets
@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 from uuid import uuid4
 
 from capture import REQUESTS, decode_export, read_body
+from loopback_http import LoopbackHTTPServer
 
 
 PUBLIC = '/api/public/onboarding'
@@ -172,7 +173,7 @@ class SourceOnboardingServer:
                 else:
                     self.respond(b'', 'application/x-protobuf')
 
-        self._server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        self._server = LoopbackHTTPServer(Handler)
         self.endpoint = f'http://127.0.0.1:{self._server.server_port}'
         self._thread = threading.Thread(target=self._server.serve_forever, kwargs={'poll_interval': 0.05}, daemon=True)
         self._thread.start()

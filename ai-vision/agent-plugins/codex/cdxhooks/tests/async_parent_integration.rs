@@ -914,7 +914,8 @@ fn prompt_seed_is_reused_by_pretool_control_response() {
         .unwrap();
     assert!(command.contains(&format!("TRACEPARENT='00-{trace_id}-")));
     assert!(command.ends_with("echo CANARY_TOOL_INPUT"));
-    let pre_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PreToolUse").unwrap();
+    let pre_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PreToolUse")
+        .expect("PreToolUse parent timing");
     assert!(
         pre_parent_total_ms < 50,
         "PreToolUse parent fast path took {pre_parent_total_ms}ms"
@@ -981,10 +982,11 @@ fn post_parent_returns_without_waiting_for_remote_work() {
         elapsed < Duration::from_secs(1),
         "debug binary did not return promptly: {elapsed:?}"
     );
-    let parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse").unwrap();
+    let post_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse")
+        .expect("PostToolUse parent timing");
     assert!(
-        parent_total_ms < 50,
-        "parent fast path took {parent_total_ms}ms"
+        post_parent_total_ms < 50,
+        "parent fast path took {post_parent_total_ms}ms"
     );
 }
 
@@ -992,10 +994,11 @@ fn post_parent_returns_without_waiting_for_remote_work() {
 fn pretool_parent_timing_p95_stays_below_50_ms() {
     let _guard = serialize_hook_performance_test();
     let root = tempfile::tempdir().unwrap();
+    let session_id = "p95-session";
     for index in 0..22 {
         let payload = json!({
             "hook_event_name": "PreToolUse",
-            "session_id": "p95-session",
+            "session_id": session_id,
             "tool_name": "Bash",
             "tool_use_id": format!("tool-{index}"),
             "tool_input": {"command": "true"}
@@ -1008,14 +1011,50 @@ fn pretool_parent_timing_p95_stays_below_50_ms() {
         );
     }
 
-    let samples = parent_total_samples_ms(&root.path().join("logs"), "PreToolUse");
-    assert_eq!(samples.len(), 22);
-    // Cold process launch is covered separately. This p95 measures the normal
-    // same-session append/coalesce path after two warm-up hooks.
-    let mut samples = samples.into_iter().skip(2).collect::<Vec<_>>();
+    let records = parent_phase_records(&root.path().join("logs"), "PreToolUse");
+    assert_eq!(records.len(), 22);
+    assert!(
+        records.iter().all(|record| record["outcome"] == "queued"),
+        "each hook must accept its unique event into the durable queue"
+    );
+    // Keep the real consumer and exclude the first two invocations from p95.
+    let phase_samples = records[2..]
+        .iter()
+        .map(|record| &record["elapsed_ms"])
+        .collect::<Vec<_>>();
+    let mut samples = phase_samples
+        .iter()
+        .map(|phases| phases["total"].as_u64().expect("parent total milliseconds"))
+        .collect::<Vec<_>>();
     samples.sort_unstable();
     let p95 = samples[(samples.len() * 95).div_ceil(100) - 1];
-    assert!(p95 < 50, "PreToolUse parent p95 took {p95}ms");
+    let budget_ms = 50;
+    let within_budget = p95 < budget_ms;
+    let report_only = cfg!(windows)
+        && std::env::var("AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY").as_deref() == Ok("true");
+    let status = if within_budget {
+        "within-budget"
+    } else {
+        "over-budget"
+    };
+    let mode = if report_only { "report-only" } else { "strict" };
+    let report = format!(
+        "Codex PreToolUse p95: parent={p95} ms, budget < {budget_ms} ms, status={status}, mode={mode}"
+    );
+    eprintln!("{report}");
+    if let Some(path) = std::env::var_os("GITHUB_STEP_SUMMARY").filter(|path| !path.is_empty()) {
+        let mut summary = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .expect("open GitHub Actions summary for Codex PreToolUse p95");
+        writeln!(summary, "{report}").expect("write GitHub Actions summary for Codex PreToolUse p95");
+    }
+    assert!(
+        within_budget || report_only,
+        "PreToolUse parent p95 took {p95}ms; ordered phase samples (ms)={:?}",
+        phase_samples
+    );
     std::thread::sleep(Duration::from_millis(200));
 }
 
@@ -1164,10 +1203,11 @@ fn one_second_collector_does_not_delay_post_parent() {
         elapsed < Duration::from_millis(250),
         "PostToolUse parent waited for slow collector: {elapsed:?}"
     );
-    let parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse").unwrap();
+    let post_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse")
+        .expect("PostToolUse parent timing");
     assert!(
-        parent_total_ms < 50,
-        "PostToolUse parent phase took {parent_total_ms}ms"
+        post_parent_total_ms < 50,
+        "PostToolUse parent phase took {post_parent_total_ms}ms"
     );
     if let Err(error) = accepted_rx.recv_timeout(Duration::from_secs(3)) {
         panic!(
@@ -1652,7 +1692,9 @@ fn production_parent_worker_quarantines_poison_and_keeps_later_turn_live() {
 }
 
 fn parent_total_ms(root: &Path, event: &str) -> Option<u64> {
-    parent_total_samples_ms(root, event).into_iter().next()
+    parent_phase_records(root, event)
+        .iter()
+        .find_map(|record| record["elapsed_ms"]["total"].as_u64())
 }
 
 fn phase_event_count(root: &Path, component: &str, event: &str) -> usize {
@@ -1682,7 +1724,7 @@ fn worker_process_ids(root: &Path) -> std::collections::BTreeSet<u32> {
         .collect()
 }
 
-fn parent_total_samples_ms(root: &Path, event: &str) -> Vec<u64> {
+fn parent_phase_records(root: &Path, event: &str) -> Vec<Value> {
     walk_text(root)
         .lines()
         .filter_map(|line| {
@@ -1690,7 +1732,7 @@ fn parent_total_samples_ms(root: &Path, event: &str) -> Vec<u64> {
             (record["kind"] == "cdxhooks.phase_timing"
                 && record["component"] == "parent"
                 && record["event"] == event)
-                .then(|| record["elapsed_ms"]["total"].as_u64())?
+                .then_some(record)
         })
         .collect()
 }

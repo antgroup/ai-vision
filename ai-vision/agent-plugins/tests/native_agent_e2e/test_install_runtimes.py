@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -159,6 +160,53 @@ class InstallerTests(unittest.TestCase):
             runtime = json.loads(path.read_text())['dsh01']
             self.assertEqual(runtime, ['synthetic-node', str(out.resolve() / 'dsh01/node_modules/@deepseek-ai/dsh/bin/dsh.js')])
             self.assertEqual(json.loads((out / 'dsh01/dsh-pins.json').read_text())['@deepseek-ai/dsh-session'], '0.1.7-rc.2')
+
+    def test_windows_dsh_install_uses_private_appdata_for_npm(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            out = root / 'runtimes'
+            destination = out / 'dsh02'
+            home = destination / 'install-home'
+            upstream = '@deepseek-ai/dsh'
+            version = installer.VERSIONS['dsh02']
+            windows = SimpleNamespace(name='nt', environ={
+                'Path': 'synthetic-system-path',
+                'Home': 'host-home',
+                'UserProfile': 'host-profile',
+                'AppData': 'host-roaming',
+                'localAppData': 'host-local',
+                'Node_Auth_Token': 'host-registry-token',
+                'Npm_Config_UserConfig': 'host-npm-config',
+            })
+
+            def execute(argv, *, env, **kwargs):
+                environment = {key.upper(): value for key, value in env.items()}
+                self.assertEqual(environment['HOME'], str(home))
+                self.assertEqual(environment['USERPROFILE'], str(home))
+                self.assertEqual(environment.get('APPDATA'), str(home / 'AppData/Roaming'))
+                self.assertEqual(environment.get('LOCALAPPDATA'), str(home / 'AppData/Local'))
+                self.assertTrue(Path(environment['APPDATA']).is_dir())
+                self.assertTrue(Path(environment['LOCALAPPDATA']).is_dir())
+                self.assertNotIn('NODE_AUTH_TOKEN', environment)
+                self.assertEqual(Path(environment['NPM_CONFIG_USERCONFIG']), home / '.npmrc')
+                self.assertEqual((home / '.npmrc').read_text(encoding='utf-8'), '')
+                if argv[1] == 'view':
+                    return subprocess.CompletedProcess(argv, 0, stdout='{}')
+                self.assertEqual(argv[1], 'install')
+                package = destination / 'node_modules' / upstream
+                package.mkdir(parents=True)
+                (package / 'package.json').write_text(json.dumps({'version': version, 'bin': {'dsh': 'cli.js'}}))
+                lock = {'packages': {'node_modules/' + upstream: {'version': version}}}
+                (destination / 'package-lock.json').write_text(json.dumps(lock))
+                return subprocess.CompletedProcess(argv, 0)
+
+            with (
+                patch.object(installer, 'os', windows),
+                patch.object(installer.shutil, 'which', side_effect=lambda name: 'synthetic-' + name),
+                patch.object(installer.subprocess, 'run', side_effect=execute) as run,
+            ):
+                installer.install(root / 'repo', out, ['dsh02'])
+            self.assertEqual([call.args[0][1] for call in run.call_args_list], ['view', 'install'])
 
     def test_dsh_tree_validation_rejects_nested_newer_runtime_package(self):
         with tempfile.TemporaryDirectory() as temporary:

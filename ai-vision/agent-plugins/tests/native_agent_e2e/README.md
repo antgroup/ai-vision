@@ -292,12 +292,21 @@ arbitrary response messages.
 
 ## CI scope
 
-`native-agent-e2e.yml` schedules the 49 collector cases and plugin/unit checks on
-Linux, macOS and Windows. A separate Linux/macOS Intel Colima matrix deploys the
-real six-service local platform and runs all 49 ingestion/readback cases. CI
-uses fake models and generated local platform credentials; it does not accept
-an external platform endpoint or NVIDIA key. Matrix configuration is coverage
-intent, and successful hosted runs are required before claiming a tested OS.
+`native-agent-e2e.yml` schedules the release source matrix with 49 collector
+cases and plugin/unit checks on Linux, macOS and Windows. The required Docker
+job deploys the six-service platform on Linux and runs all 49 ingestion and
+readback cases. The [manual Intel macOS Docker workflow](../../../../.github/workflows/intel-macos-docker.yml)
+runs the same cases on Colima independently of the release. Intel macOS Docker
+qualification is pending. [Known issue DB-003](../../../../KNOWN_ISSUES.md#db-003intel-macos-托管-runner-上的-oceanbase-引导超时)
+
+Windows source acceptance records both PreToolUse benchmarks in the job
+summary and requires all hook functionality and Native runtime cases.
+The [manual Windows performance workflow](../../../../.github/workflows/windows-native-performance.yml)
+enforces both 50 ms budgets independently. Linux and macOS source acceptance
+still enforces those budgets.
+
+CI uses fake models and generated local platform credentials. Successful
+hosted runs establish coverage for the corresponding rows.
 
 For the selected DSH pins, a successful source matrix retains
 `passed_with_known_limitations` with 42 fully verified cases and seven bounded
@@ -318,9 +327,9 @@ evaluation error cannot satisfy the gate even if the validator exits zero.
 Locally, put the repository's `weaver-guard` binary on `PATH` and run
 `make semantics OUT=/private/path/completed-fake49 SEMANTICS_OUT=/private/path/fresh-semantics`.
 
-Fork pull requests run the source matrix. The Docker platform job requires
-private GHCR package access and runs for same-repository PRs or manual dispatch;
-a skipped Docker job does not establish platform acceptance.
+Fork pull requests run the source checks selected for their changes. Docker
+platform jobs require pinned fixtures and run on trusted workflow invocations.
+A platform acceptance record requires a successful Docker job for that platform.
 
 An explicit local NVIDIA smoke can use `make live MODEL=... TARGETS=...` and,
 when needed, `PROXY=http://127.0.0.1:13659`. Its key is supplied only through the

@@ -156,11 +156,12 @@ class BrowserPlatformTests(unittest.TestCase):
                 self.assertNotIn('NVIDIA_API_KEY=', ' '.join(command['argv']))
 
     def test_browser_command_uses_dedicated_config_and_private_auth(self):
+        auth_socket = Path('/private/auth.sock')
         env = browser.browser_environment({'AIVISION_BROWSER_AUTH_FILE': 'stale'},
-                                          Path('/safe/manifest.json'), Path('/private/auth.sock'),
+                                          Path('/safe/manifest.json'), auth_socket,
                                           Path('/safe/browser'), 'http://127.0.0.1:41966', 'http://127.0.0.1:8000')
         self.assertNotIn('AIVISION_BROWSER_AUTH_FILE', env)
-        self.assertEqual(env['AIVISION_BROWSER_AUTH_SOCKET'], '/private/auth.sock')
+        self.assertEqual(env['AIVISION_BROWSER_AUTH_SOCKET'], str(auth_socket))
         self.assertEqual(env['VITE_DEV_API_TARGET'], 'http://127.0.0.1:8000')
         self.assertEqual(env['VITE_DEV_API_PRESERVE_HOST'], '1')
         self.assertEqual(env['AIVISION_BROWSER_OUTPUT_DIR'], str(Path('/safe/browser')))

@@ -6,7 +6,7 @@ reads the fixture file, so a broken tool loop cannot accidentally pass.
 from __future__ import annotations
 
 import json
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 import re
 import threading
@@ -14,6 +14,8 @@ import time
 
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage
+
+from loopback_http import LoopbackHTTPServer
 
 
 # Hermes's official output-cap continuation user message.
@@ -262,7 +264,7 @@ class FakeProvider:
                 except (BrokenPipeError, ConnectionResetError):
                     row["client_disconnected"] = True
 
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.server = LoopbackHTTPServer(Handler)
         self.server.daemon_threads = True
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()

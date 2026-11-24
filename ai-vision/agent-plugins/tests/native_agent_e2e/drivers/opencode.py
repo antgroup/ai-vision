@@ -102,6 +102,7 @@ def _invoke(argv: list[str], env: dict[str, str], workspace: Path, timeout: int,
     reader.start()
     output: list[str] = []
     timed_out = cancelled = False
+    live_at_timeout = False
     deadline = time.monotonic() + timeout
     stopped = False
     try:
@@ -111,6 +112,7 @@ def _invoke(argv: list[str], env: dict[str, str], workspace: Path, timeout: int,
             if not stop_reader.is_set() and time.monotonic() >= deadline:
                 timed_out = True
                 if not stopped:
+                    live_at_timeout = process.poll() is None
                     stopped = True
                     _stop(process, job=job, grace_seconds=.5)
                 reader.join(timeout=.5)
@@ -144,7 +146,12 @@ def _invoke(argv: list[str], env: dict[str, str], workspace: Path, timeout: int,
         finally:
             stop_reader.set()
             reader.join(timeout=.5)
-    return process.returncode, "".join(output), timed_out, cancelled
+    code = process.returncode
+    # Windows Job cleanup can yield zero. Preserve the genuine status when
+    # the parent already exited and an inherited pipe caused the timeout.
+    if live_at_timeout and code == 0:
+        code = 1
+    return code, "".join(output), timed_out, cancelled
 
 
 @contextmanager
@@ -406,6 +413,8 @@ def run_case(context: CaseContext) -> AgentResult:
                 time.sleep(2.25)
     output = "".join(outputs)
     answers = "\n".join(answer["text"] for answer in final_answers)
+    if timed_out and code == 0:
+        code = 1
     # Native output stays in memory; the caller owns credential-aware evidence
     # sanitization before it persists logs from live forwarding cases.
     return AgentResult(code, session_id, version, answers if context.mode == "nvidia" else output + ("\n" + answers if answers else ""), {"timed_out": timed_out, "cancelled": cancelled,

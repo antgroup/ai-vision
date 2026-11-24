@@ -148,6 +148,7 @@ class OnboardingHttpTest(unittest.TestCase):
                          ['/redirect', '/redirect-base/openapi/v1/ingest-tokens'])
 
     def test_exporter_bypasses_only_its_loopback_target_and_preserves_parent(self):
+        bypass_names = ('NO_PROXY', 'no_proxy')
         for agent, prefix in [('codex', 'CDXHOOKS'), ('claude-code', 'CCHOOKS'), ('kimi', 'KIMI')]:
             for endpoint in ('http://127.0.0.2:4318', 'http://localhost:4318', 'http://[::1]:4318'):
                 with self.subTest(agent=agent, endpoint=endpoint), \
@@ -159,7 +160,10 @@ class OnboardingHttpTest(unittest.TestCase):
                                            {'token': 'fixture'})
                     host = runtime.urllib.parse.urlsplit(endpoint).hostname
                     self.assertEqual(env['NO_PROXY'], env['no_proxy'])
-                    expected = {'one.test', 'two.test', host}
+                    # Windows folds environment names to uppercase. Preserve
+                    # the aliases and values actually present on this host.
+                    expected = {before[name] for name in bypass_names if before.get(name)}
+                    expected.add(host)
                     if ':' in host:
                         # ureq matches http::Uri::host(), which retains IPv6 brackets.
                         expected.add(f'[{host}]')
@@ -168,12 +172,14 @@ class OnboardingHttpTest(unittest.TestCase):
                     self.assertEqual(dict(os.environ), before)
                     self.assertEqual(env[prefix + '_COLLECTION_MODE'], 'full')
         with mock.patch.dict(os.environ, SOCKS_ENV, clear=True):
+            before = dict(os.environ)
+            expected = {name: before[name] for name in bypass_names if name in before}
             for endpoint in ('http://vision.invalid', 'http://localhost.example', 'http://127.0.0.1.example',
                              'http://10.0.0.1:4318'):
                 env = runtime.hook_env({'agent': 'codex', 'product': 'Fixture',
                                         'config_dir': '/fixture', 'endpoint': endpoint}, {'token': 'fixture'})
-                self.assertEqual(env['NO_PROXY'], '')
-                self.assertEqual(env['no_proxy'], '')
+                self.assertEqual({name: env[name] for name in bypass_names if name in env}, expected)
+                self.assertEqual(dict(os.environ), before)
 
     def test_credential_network_failure_is_actionable_and_redacted(self):
         secret = 'fixture-secret-never-print'

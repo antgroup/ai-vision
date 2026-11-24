@@ -229,18 +229,20 @@ def commit_config(plan: ConfigPlan) -> ConfigCommit | None:
     assert plan.destination is not None and plan.content is not None
     destination = plan.destination
     destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-    temporary_fd, temporary_name = tempfile.mkstemp(
-        prefix=".observ-hermes.json.", dir=destination.parent
-    )
-    temporary = Path(temporary_name)
     operation_directory = Path(
         tempfile.mkdtemp(prefix=".observ-hermes-config-commit-", dir=destination.parent)
     )
+    temporary = None
     destination_created = False
     legacy_moved = False
     try:
-        os.fchmod(temporary_fd, 0o600)
+        temporary_fd, temporary_name = tempfile.mkstemp(
+            prefix=".observ-hermes.json.", dir=destination.parent
+        )
+        temporary = Path(temporary_name)
         with os.fdopen(temporary_fd, "wb") as handle:
+            if os.name == "posix":
+                os.fchmod(handle.fileno(), 0o600)
             handle.write(plan.content)
             handle.flush()
             os.fsync(handle.fileno())
@@ -310,7 +312,8 @@ def commit_config(plan: ConfigPlan) -> ConfigCommit | None:
         shutil.rmtree(operation_directory, ignore_errors=True)
         return commit
     finally:
-        temporary.unlink(missing_ok=True)
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def rollback_config_commit(commit: ConfigCommit | None) -> None:
@@ -341,8 +344,9 @@ def _write_transaction(destination: Path, commit: ConfigCommit | None) -> None:
     fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
     temporary = Path(temporary_name)
     try:
-        os.fchmod(fd, 0o600)
         with os.fdopen(fd, "wb") as handle:
+            if os.name == "posix":
+                os.fchmod(handle.fileno(), 0o600)
             handle.write(content)
         os.replace(temporary, path)
         if os.name == "posix":

@@ -1001,6 +1001,11 @@ mod tests {
     }
 
     fn read_request(stream: &mut TcpStream) -> Value {
+        // Accepted sockets may inherit the listener's nonblocking mode.
+        stream.set_nonblocking(false).expect("set blocking test stream");
+        stream
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .expect("set read timeout");
         let mut bytes = Vec::new();
         let mut buffer = [0_u8; 4096];
         let header_end = loop {

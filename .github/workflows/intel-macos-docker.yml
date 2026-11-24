@@ -1,0 +1,108 @@
+name: Intel macOS Docker
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_manifest:
+        description: Verified release-manifest.json for the selected source commit
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: intel-macos-docker-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  inputs:
+    name: Resolve candidate platform fixtures
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      public_platform_images: ${{ steps.fixtures.outputs.public_platform_images }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Bind the verified candidate manifest to the checkout
+        id: fixtures
+        env:
+          RELEASE_MANIFEST: ${{ inputs.release_manifest }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          PYTHONPATH=scripts/ci python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from public_registry import source_fixtures
+
+          try:
+              manifest = json.loads(os.environ['RELEASE_MANIFEST'])
+              if not isinstance(manifest, dict) or manifest.get('source_sha') != os.environ['GITHUB_SHA']:
+                  raise ValueError('manifest source_sha must match the workflow checkout')
+              fixtures = source_fixtures(manifest)
+          except (KeyError, TypeError, ValueError) as error:
+              raise SystemExit(f'Invalid public release manifest: {error}') from None
+          with Path(os.environ['GITHUB_OUTPUT']).open('a', encoding='utf-8') as outputs:
+              outputs.write('public_platform_images=' + json.dumps(fixtures, separators=(',', ':')) + '\n')
+          PY
+
+  framework:
+    needs: inputs
+    uses: ./.github/workflows/framework-e2e.yml
+    with:
+      tier: release
+      intel_docker: true
+      database: true
+      platform: true
+      public_platform_images: ${{ needs.inputs.outputs.public_platform_images }}
+
+  diagnostics:
+    needs: inputs
+    uses: ./.github/workflows/diagnostics-e2e.yml
+    with:
+      tier: release
+      intel_docker: true
+      database: true
+      platform: true
+      public_platform_images: ${{ needs.inputs.outputs.public_platform_images }}
+
+  native:
+    needs: inputs
+    uses: ./.github/workflows/native-agent-e2e.yml
+    with:
+      tier: release
+      intel_docker: true
+      units: false
+      source: false
+      platform: true
+      public_platform_images: ${{ needs.inputs.outputs.public_platform_images }}
+
+  result:
+    name: Intel macOS Docker checks passed
+    if: always()
+    needs: [inputs, framework, diagnostics, native]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require successful input and all three suites
+        env:
+          RESULTS_JSON: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+
+          results = json.loads(os.environ['RESULTS_JSON'])
+          failures = []
+          for job in ('inputs', 'framework', 'diagnostics', 'native'):
+              result = results.get(job, {}).get('result', 'missing')
+              if result != 'success':
+                  failures.append(f'{job}: required check {result}')
+          if failures:
+              raise SystemExit('\n'.join(failures))
+          PY

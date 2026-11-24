@@ -6,7 +6,6 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
-#[cfg(unix)]
 use sha2::{Digest, Sha256};
 
 fn performance_test_lock() -> &'static Mutex<()> {
@@ -41,6 +40,13 @@ fn run_cchooks_with_wire_payload<const N: usize>(
         .env("CCHOOKS_REALTIME_EXPORT", "false")
         .env("CCHOOKS_LOG_DIR", home.join("logs"))
         .env("CCHOOKS_STATE_DIR", home.join("state"));
+
+    // Windows socket providers need the system DLL lookup path in the child.
+    #[cfg(windows)]
+    command.env(
+        "SystemRoot",
+        std::env::var_os("SystemRoot").expect("Windows hook fixtures require SystemRoot"),
+    );
 
     for (key, value) in extra_env {
         command.env(key, value);
@@ -151,24 +157,29 @@ fn exported_spans(body: &Value) -> Vec<&Value> {
 }
 
 fn parent_total_from_log(path: &std::path::Path, event: &str) -> Duration {
-    const MARKER: &str = "\"component\":\"parent\",\"phase\":\"total\",\"elapsed_ms\":";
     let contents = std::fs::read_to_string(path).expect("read per-session hook log");
+    parent_phase_samples_from_log(&contents, event, "total")
+        .pop()
+        .expect("parent total timing log")
+}
+
+fn parent_phase_samples_from_log(contents: &str, event: &str, phase: &str) -> Vec<Duration> {
+    let marker = format!("\"component\":\"parent\",\"phase\":\"{phase}\",\"elapsed_ms\":");
     let event_tag = format!(" [{event}] ");
-    let line = contents
+    contents
         .lines()
-        .rev()
-        .find(|line| line.contains(&event_tag) && line.contains(MARKER))
-        .expect("parent total timing log");
-    let millis = line
-        .split_once(MARKER)
-        .expect("parent total marker")
-        .1
-        .chars()
-        .take_while(char::is_ascii_digit)
-        .collect::<String>()
-        .parse::<u64>()
-        .expect("parent total milliseconds");
-    Duration::from_millis(millis)
+        .filter(|line| line.contains(&event_tag))
+        .filter_map(|line| line.split_once(marker.as_str()))
+        .map(|(_, elapsed)| {
+            let millis = elapsed
+                .chars()
+                .take_while(char::is_ascii_digit)
+                .collect::<String>()
+                .parse::<u64>()
+                .expect("parent phase milliseconds");
+            Duration::from_millis(millis)
+        })
+        .collect()
 }
 
 fn worker_status(home: &std::path::Path, session_id: &str) -> Value {
@@ -354,7 +365,6 @@ fn worker_process_ids(root: &std::path::Path) -> std::collections::BTreeSet<u32>
         .collect()
 }
 
-#[cfg(unix)]
 fn session_runtime_dir(root: &std::path::Path, session_id: &str) -> std::path::PathBuf {
     let digest = Sha256::digest(session_id.as_bytes());
     let suffix = digest[..8]
@@ -1252,7 +1262,7 @@ fn transcript_ingest_fallback_runs_before_panic_result_handling() {
 }
 
 #[test]
-fn pretooluse_bash_returns_updated_input_control_response() {
+fn pretooluse_bash_follows_platform_control_response_contract() {
     let dir = tempfile::tempdir().expect("tempdir");
     let user_prompt = json!({
         "hook_event_name": "UserPromptSubmit",
@@ -1289,6 +1299,13 @@ fn pretooluse_bash_returns_updated_input_control_response() {
     );
 
     let stdout = String::from_utf8(output.stdout).expect("stdout utf8");
+    if cfg!(windows) {
+        assert!(
+            stdout.is_empty(),
+            "Windows Bash hook must emit no control response"
+        );
+        return;
+    }
     let response: Value = serde_json::from_str(stdout.trim()).expect("hook JSON response");
     let hook_output = &response["hookSpecificOutput"];
     assert_eq!(hook_output["hookEventName"], "PreToolUse");
@@ -1334,8 +1351,8 @@ fn worker_handoff_uses_session_queue_instead_of_per_event_stdin() {
     let file_lock_source = include_str!("../src/common/file_lock.rs");
     let dirs_source = include_str!("../src/common/dirs.rs");
     let spawn_start = worker_source
-        .find("pub fn spawn_detached_raw")
-        .expect("raw worker handoff");
+        .find("pub fn spawn_detached_parsed")
+        .expect("parsed worker handoff");
     let spawn_end = worker_source[spawn_start..]
         .find("pub fn write_stop_intent")
         .map(|offset| spawn_start + offset)
@@ -1649,7 +1666,7 @@ fn tool_hook_runtime_contract_moves_http_out_of_parent_handlers() {
 
 #[test]
 fn pretooluse_control_response_uses_the_tool_context_platform_gate() {
-    let main_source = include_str!("../src/main.rs");
+    let main_source = include_str!("../src/main.rs").replace("\r\n", "\n");
     assert!(
         main_source.contains(
             "#[cfg(all(feature = \"tool_context\", not(windows)))]\n    if matches!(event, HookEvent::PreToolUse)"
@@ -1887,8 +1904,8 @@ fn segmented_timing_contract_covers_parent_and_worker_boundaries() {
     let otel_source = include_str!("../src/common/otel.rs");
     let state_source = include_str!("../src/hooks/langfuse/state.rs");
     let domain_source = include_str!("../src/hooks/langfuse/domain_state.rs");
-    let sources =
-        format!("{main_source}\n{worker_source}\n{otel_source}\n{state_source}\n{domain_source}");
+    let sources = format!("{main_source}\n{worker_source}\n{otel_source}\n{state_source}\n{domain_source}")
+        .replace("\r\n", "\n");
     for phase in [
         "stdin",
         "queue",
@@ -2117,7 +2134,6 @@ fn pretooluse_parent_latency_stays_under_fifty_milliseconds() {
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
     let dir = tempfile::tempdir().expect("tempdir");
-    let mut internal_samples = Vec::new();
     let mut wall_samples = Vec::new();
     for index in 0..22 {
         let session_id = "session-parent-latency";
@@ -2128,37 +2144,86 @@ fn pretooluse_parent_latency_stays_under_fifty_milliseconds() {
             "tool_name": "Read",
             "tool_use_id": format!("toolu_parent_latency_{index}"),
             "tool_input": {"file_path": "Cargo.toml"}
-        });
+        })
+        .to_string();
         let started = Instant::now();
-        let output =
-            run_cchooks_with_env(dir.path(), payload, [("CCHOOKS_DEBUG", "true".to_string())]);
+        let output = run_cchooks_with_wire_payload(
+            dir.path(),
+            payload.as_bytes(),
+            [("CCHOOKS_DEBUG", "true".to_string())],
+        );
         let elapsed = started.elapsed();
         assert!(
             output.status.success(),
             "PreToolUse parent must fail open: stderr={}",
             String::from_utf8_lossy(&output.stderr)
         );
-        // Exclude two cold-start/security-inspection warmups from the hook p95.
-        if index >= 2 {
-            wall_samples.push(elapsed);
-            internal_samples.push(parent_total_from_log(
-                &dir.path()
-                    .join("logs")
-                    .join("cchooks_session-parent-latency.log"),
-                "PreToolUse",
-            ));
-        }
+        wall_samples.push(elapsed);
     }
+    let log = dir
+        .path()
+        .join("logs")
+        .join("cchooks_session-parent-latency.log");
+    let contents = std::fs::read_to_string(log).expect("read PreToolUse timing log");
+    let stdin_times = parent_phase_samples_from_log(&contents, "PreToolUse", "stdin");
+    let queue_times = parent_phase_samples_from_log(&contents, "PreToolUse", "queue");
+    let internal_times = parent_phase_samples_from_log(&contents, "PreToolUse", "total");
+    assert_eq!(stdin_times.len(), 22, "one stdin sample per invocation");
+    assert_eq!(queue_times.len(), 22, "one queue sample per invocation");
+    assert_eq!(internal_times.len(), 22, "one total sample per invocation");
+    assert_eq!(
+        contents
+            .lines()
+            .filter(|line| {
+                line.contains(" [PreToolUse] ") && line.contains("worker queue handoff accepted:")
+            })
+            .count(),
+        22,
+        "each invocation must enqueue its unique tool event"
+    );
+
+    // Exclude two cold-start/security-inspection warmups from the hook p95.
+    let mut internal_samples = internal_times[2..].to_vec();
+    let mut measured_wall = wall_samples[2..].to_vec();
     internal_samples.sort_unstable();
-    wall_samples.sort_unstable();
+    measured_wall.sort_unstable();
     let p95 = internal_samples[(internal_samples.len() * 95).div_ceil(100) - 1];
     // Process wall time includes host scheduling and endpoint-security scans;
     // use the same p95 window as the in-process timing so one external stall
     // cannot turn this into a max-latency assertion over only 20 samples.
-    let wall_p95 = wall_samples[(wall_samples.len() * 95).div_ceil(100) - 1];
+    let wall_p95 = measured_wall[(measured_wall.len() * 95).div_ceil(100) - 1];
+    let budget_ms = 50;
+    let budget = Duration::from_millis(budget_ms);
+    let within_budget = p95 < budget && wall_p95 < budget;
+    let report_only = cfg!(windows)
+        && std::env::var("AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY").as_deref() == Ok("true");
+    let status = if within_budget {
+        "within-budget"
+    } else {
+        "over-budget"
+    };
+    let mode = if report_only { "report-only" } else { "strict" };
+    let report = format!(
+        "Claude PreToolUse p95: internal={:.6} ms, wall={:.6} ms, budget < {budget_ms} ms, status={status}, mode={mode}",
+        p95.as_secs_f64() * 1000.0,
+        wall_p95.as_secs_f64() * 1000.0,
+    );
+    eprintln!("{report}");
+    if let Some(path) = std::env::var_os("GITHUB_STEP_SUMMARY").filter(|path| !path.is_empty()) {
+        let mut summary = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .expect("open GitHub Actions summary for Claude PreToolUse p95");
+        writeln!(summary, "{report}").expect("write GitHub Actions summary for Claude PreToolUse p95");
+    }
     assert!(
-        p95 < Duration::from_millis(50) && wall_p95 < Duration::from_millis(50),
-        "PreToolUse parent latency budget exceeded: internal_p95={p95:?} wall_p95={wall_p95:?} internal_samples={internal_samples:?} wall_samples={wall_samples:?}"
+        within_budget || report_only,
+        "PreToolUse parent latency budget exceeded: internal_p95={p95:?} wall_p95={wall_p95:?}\nordered samples after warmup: stdin={:?} queue={:?} internal={:?} wall={:?}",
+        &stdin_times[2..],
+        &queue_times[2..],
+        &internal_times[2..],
+        &wall_samples[2..],
     );
 }
 
@@ -2219,10 +2284,14 @@ fn large_posttool_payload_handoff_stays_below_parent_budget() {
     );
     // The parent total covers stdin read, parsing and durable handoff. Keep
     // process launch and exit wall time as diagnostics for hosted-runner stalls.
-    let parent = parent_total_from_log(&log, "PostToolUse");
+    let parent = parent_phase_samples_from_log(&contents, "PostToolUse", "total")
+        .pop()
+        .expect("parent total timing log");
+    let stdin = parent_phase_samples_from_log(&contents, "PostToolUse", "stdin");
+    let queue = parent_phase_samples_from_log(&contents, "PostToolUse", "queue");
     eprintln!("large PostToolUse parent={parent:?} wall={wall:?}");
     assert!(
         parent < Duration::from_millis(100),
-        "large payload handoff exceeded parent budget: parent={parent:?} wall={wall:?}"
+        "large payload handoff exceeded parent budget: parent={parent:?} wall={wall:?} stdin={stdin:?} queue={queue:?}"
     );
 }
