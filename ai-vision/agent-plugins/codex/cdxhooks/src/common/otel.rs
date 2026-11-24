@@ -4555,24 +4555,57 @@ mod tests {
     use crate::common::transcript::TurnTrigger;
     use crate::common::transcript::{AssistantMessage, CollabAgentEvent, ToolCall, Turn};
 
-    fn spawn_http_response(status: u16, body: &str) -> String {
-        use std::io::{Read, Write};
+    fn spawn_http_response(status: u16, body: &str) -> (String, std::thread::JoinHandle<()>) {
+        use std::io::{self, BufRead, BufReader, Read, Write};
         use std::net::TcpListener;
+        use std::time::{Duration, Instant};
 
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
         let address = listener.local_addr().unwrap();
         let body = body.to_string();
-        std::thread::spawn(move || {
-            let (mut stream, _) = listener.accept().unwrap();
-            let mut request = [0_u8; 4096];
-            let _ = stream.read(&mut request);
+        let server = std::thread::spawn(move || {
+            let timeout = Duration::from_secs(2);
+            let deadline = Instant::now() + timeout;
+            let mut stream = loop {
+                match listener.accept() {
+                    Ok((stream, _)) => break stream,
+                    Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                        assert!(Instant::now() < deadline, "no HTTP test request arrived");
+                        std::thread::sleep(Duration::from_millis(5));
+                    }
+                    Err(error) => panic!("accept HTTP test request: {error}"),
+                }
+            };
+            stream.set_nonblocking(false).unwrap();
+            stream.set_read_timeout(Some(timeout)).unwrap();
+            stream.set_write_timeout(Some(timeout)).unwrap();
+
+            let mut reader = BufReader::new(&mut stream);
+            let mut line = String::new();
+            let mut content_length = None;
+            loop {
+                line.clear();
+                assert_ne!(reader.read_line(&mut line).unwrap(), 0, "incomplete HTTP headers");
+                if line == "\r\n" {
+                    break;
+                }
+                if let Some((name, value)) = line.split_once(':') {
+                    if name.eq_ignore_ascii_case("content-length") {
+                        assert!(content_length.replace(value.trim().parse::<u64>().unwrap()).is_none());
+                    }
+                }
+            }
+            let content_length = content_length.expect("HTTP test request must specify Content-Length");
+            let drained = io::copy(&mut reader.take(content_length), &mut io::sink()).unwrap();
+            assert_eq!(drained, content_length, "incomplete HTTP request body");
             let response = format!(
                 "HTTP/1.1 {status} OK\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
                 body.len()
             );
             stream.write_all(response.as_bytes()).unwrap();
         });
-        format!("http://{address}")
+        (format!("http://{address}"), server)
     }
 
     #[test]
@@ -4610,7 +4643,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let log_path = dir.path().join("lifecycle.log");
         let logger = crate::common::logger::Logger::new(log_path.clone(), true);
-        let host = spawn_http_response(200, "ok");
+        let (host, server) = spawn_http_response(200, "ok");
         let config = LangfuseConfig {
             public_key: None,
             secret_key: None,
@@ -4618,13 +4651,14 @@ mod tests {
             headers: None,
         };
 
-        post_otel_to_langfuse_once_classified(
+        let response = post_otel_to_langfuse_once_classified(
             &config,
             &json!({"resourceSpans": []}),
             &logger,
             std::time::Duration::from_secs(1),
-        )
-        .unwrap();
+        );
+        server.join().unwrap();
+        response.unwrap();
 
         let log = std::fs::read_to_string(log_path).unwrap();
         let lifecycle = log
