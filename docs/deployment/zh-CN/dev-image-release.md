@@ -112,15 +112,19 @@ Intel macOS Docker 仍待验收。详见 [CI 证据](../../../scripts/ci/README.
 
 ## 验收 Windows 钩子性能
 
-Windows 发布源码检查记录 Codex 和 Claude 的 PreToolUse p95。钩子功能、
-原生进程、语义校验及 Windows x64 CLI 制品冒烟仍是发布必选。Linux 发布源码检查
-保留原有门槛。macOS 发布 CI 中，Codex PreToolUse p95 仍须低于 50 ms。Codex
-延迟启动用例向 worker 注入 150 ms 延迟，要求父进程在 120 ms 内返回并验证队列排空。
-Claude PreToolUse 的内部 p95 和进程端到端 p95 均须低于 100 ms。
+Windows 发布源码检查记录 Codex 和 Claude 的 PreToolUse p95，以及 Claude
+PostToolUse 将 1 MiB 数据交给队列时的父进程耗时。这几项耗时仅作记录，实际入队
+必须成功。钩子功能、原生进程、语义校验及 Windows x64 CLI 制品冒烟仍是发布必选。
+Linux 发布源码检查保留原有门槛。macOS 发布 CI 中，Codex PreToolUse p95
+仍须低于 50 ms。Codex 延迟启动用例向 worker 注入 150 ms 延迟，要求父进程
+在 120 ms 内返回并验证队列排空。
+Claude PreToolUse 的内部 p95 和进程端到端 p95 均须低于 100 ms。Linux 和 macOS
+发布源码检查均要求 1 MiB 入队时父进程耗时低于 100 ms。
 
 [Windows 性能工作流](../../../.github/workflows/windows-native-performance.yml)进入
 默认分支后，在候选源码所属分支或标签上手动运行，并核对运行记录的提交 SHA。
-该流程独立要求 Codex 内部 p95、Claude 内部和进程端到端 p95 均低于 50 ms。
+该流程独立要求 Codex 内部 p95、Claude 内部和进程端到端 p95 均低于 50 ms，
+以及 Claude PostToolUse 的 1 MiB 入队父进程耗时低于 100 ms。
 
 ## 验收 All-in-One 个人版
 

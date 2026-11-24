@@ -2296,8 +2296,15 @@ fn large_posttool_payload_handoff_stays_below_parent_budget() {
     let stdin = parent_phase_samples_from_log(&contents, "PostToolUse", "stdin");
     let queue = parent_phase_samples_from_log(&contents, "PostToolUse", "queue");
     eprintln!("large PostToolUse parent={parent:?} wall={wall:?}");
+    let report_only = cfg!(windows)
+        && std::env::var("AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY").as_deref() == Ok("true");
+    if report_only {
+        eprintln!(
+            "Windows hosted large PostToolUse timing: target=100ms parent={parent:?} wall={wall:?} stdin={stdin:?} queue={queue:?}"
+        );
+    }
     assert!(
-        parent < Duration::from_millis(100),
+        report_only || parent < Duration::from_millis(100),
         "large payload handoff exceeded parent budget: parent={parent:?} wall={wall:?} stdin={stdin:?} queue={queue:?}"
     );
 }

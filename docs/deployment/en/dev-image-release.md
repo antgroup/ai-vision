@@ -125,19 +125,23 @@ unverified until its gate passes. See the
 
 ## Qualify Windows hook performance
 
-The Windows release source jobs record Codex and Claude PreToolUse p95.
-Windows hook functionality, native processes, semantic checks, and x64 CLI
-artifact acceptance remain required. Linux release source jobs enforce their
-original thresholds. On macOS release runners, Codex PreToolUse p95 still
-must be below 50 ms. The separate Codex delayed-worker fixture requires the
+The Windows release source jobs record Codex and Claude PreToolUse p95 and
+the parent latency for the Claude PostToolUse 1 MiB queue handoff. These
+latencies are report-only on the Windows release runner. The actual handoff
+must succeed. Windows hook functionality, native processes, semantic checks,
+and x64 CLI artifact acceptance remain required. Linux release source jobs
+enforce their original thresholds. On macOS release runners, Codex PreToolUse
+p95 must be below 50 ms. The separate Codex delayed-worker fixture requires the
 parent to return in under 120 ms and the queue to drain. The fixture injects
 150 ms of delay into the worker. Claude PreToolUse internal and process wall
-p95 must both be below 100 ms on these runners.
+p95 must both be below 100 ms on these runners. The 1 MiB handoff parent
+latency must be below 100 ms on both Linux and macOS release runners.
 
 After the [manual Windows performance workflow](../../../.github/workflows/windows-native-performance.yml)
 reaches the default branch, dispatch it on the candidate source ref and verify
-the run's commit SHA. The workflow independently enforces the 50 ms budget for
-Codex internal time and Claude internal and process wall time.
+the run's commit SHA. The workflow independently requires Codex internal p95
+and Claude internal and process wall p95 below 50 ms. It also requires Claude's
+1 MiB PostToolUse parent latency below 100 ms.
 
 ## Qualify the All-in-One Personal Edition
 
