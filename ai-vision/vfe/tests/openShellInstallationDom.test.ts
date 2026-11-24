@@ -243,6 +243,14 @@ function button(container: HTMLElement, text: string) {
     (item) => item.textContent === text
   )
 }
+async function waitForProgressFailure(container: HTMLElement) {
+  const warningText = () =>
+    container.querySelector("[role=dialog] [role=alert] p")?.textContent ?? ""
+  const warning = /last result is preserved/
+  const deadline = Date.now() + 2_000
+  while (!warning.test(warningText()) && Date.now() < deadline) await act(tick)
+  assert.match(warningText(), warning)
+}
 
 const configuration = {
   label: "Operator installation",
@@ -523,7 +531,7 @@ test("Space switch discards delayed preparation and progress fetch failure prese
   )
   try {
     await click(button(view.container, "View installation progress"))
-    assert.match(view.container.textContent!, /last result is preserved/)
+    await waitForProgressFailure(view.container)
     assert.match(view.container.textContent!, /Installed; provider not ready/)
     assert.doesNotMatch(view.container.textContent!, /must-not-render/)
     await click(button(view.container, "Check again"))
@@ -678,9 +686,9 @@ test("restored running progress recovers automatically after its first detail GE
   )
   try {
     await click(button(view.container, "View installation progress"))
+    await waitForProgressFailure(view.container)
     assert.equal(reads, 1)
     assert.match(view.container.textContent!, /Installation in progress/)
-    assert.match(view.container.textContent!, /last result is preserved/)
     await act(async () => {
       await new Promise((done) => {
         setTimeout(done, 2300)

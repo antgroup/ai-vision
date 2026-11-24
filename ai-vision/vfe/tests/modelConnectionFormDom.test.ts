@@ -1095,15 +1095,27 @@ test("validation failures and incomplete results are distinct and localized in a
         status = nextStatus!
         reason = nextReason
         await click(page.dom, "spaceSettings.models.validation.run")
+        const expectedStatus = `${t("spaceSettings.models.validation.basicDiagnosis")} · ${t(`spaceSettings.models.validation.${status}`)}`
+        const expectedReason = reason
+          ? t(`spaceSettings.models.validation.reasons.${reason}`)
+          : null
+        await waitFor(
+          () => {
+            const summary = page.dom.window.document.querySelector(
+              "[role=dialog] [data-testid=model-validation-summary]"
+            )
+            const paragraphs = Array.from(summary?.querySelectorAll("p") ?? [])
+            return (
+              paragraphs[0]?.textContent === expectedStatus &&
+              (!expectedReason ||
+                paragraphs.some((p) => p.textContent === expectedReason)) &&
+              !button(page.dom, "spaceSettings.models.validation.run").disabled
+            )
+          },
+          `the ${language} validation renders ${status} (${reason ?? "no reason"})`
+        )
         const text =
           page.dom.window.document.querySelector("[role=dialog]")!.textContent!
-        assert.ok(text.includes(t(`spaceSettings.models.validation.${status}`)))
-        if (reason)
-          assert.ok(
-            text.includes(
-              t(`spaceSettings.models.validation.reasons.${reason}`)
-            )
-          )
         assert.equal(text.includes("spaceSettings.models.validation."), false)
       }
     } finally {
