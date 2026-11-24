@@ -1,0 +1,19 @@
+.github/workflows/release-images.yml
+  s_7ddb4c6ac82aba::t_ac8b89ed0c7c64 1-4,9-10,12,16,18-21,23,26-33,35,37-43,45-48,50-188
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b05a592feede578c810fad7aed72845ae144ebd7",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
