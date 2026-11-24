@@ -1,0 +1,21 @@
+.github/workflows/windows-native-performance.yml
+  s_7ddb4c6ac82aba::t_67feae84f0794b 27-29,40-41
+.github/scripts/windows-claude-large-handoff.patch
+  s_7ddb4c6ac82aba::t_67feae84f0794b 2,5,12,16,19,110,116,119,122,125,130,133,142,148,170,175,181,184,190,193
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9b5bd3e0ee893c678c8acc14637df150da6ea6d3",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
