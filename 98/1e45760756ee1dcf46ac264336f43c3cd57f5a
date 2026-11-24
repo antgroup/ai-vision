@@ -1,0 +1,21 @@
+.github/scripts/windows-finalizer-fixture.patch
+  s_7ddb4c6ac82aba::t_5d5d653ac9ab46 2,5,29,32,35,38,55,58,61
+.github/workflows/windows-native-performance.yml
+  s_7ddb4c6ac82aba::t_5d5d653ac9ab46 42-43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "981e45760756ee1dcf46ac264336f43c3cd57f5a",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
