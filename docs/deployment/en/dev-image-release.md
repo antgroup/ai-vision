@@ -83,6 +83,10 @@ formal release matrix. Review the frozen acceptance before merging. After mergin
 push the matching version tag at the accepted `main` commit. The tag run
 qualifies its own build and then waits for approval in the `release` environment.
 
+Formal releases and their previews package the ARM64 macOS CLI and Rust hooks
+on `macos-26`. The workflow checks the shipped binaries for ARM64 and a declared
+deployment target at or below macOS 11.0 before uploading them.
+
 ## Qualify Docker on Intel macOS
 
 Formal release requires both Linux database architectures, Linux platform and

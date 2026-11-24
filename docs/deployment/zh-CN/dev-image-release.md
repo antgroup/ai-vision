@@ -79,6 +79,9 @@ SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运�
 依赖和正式发布矩阵验收。核对冻结回执后合入 `main`，在对应提交推送匹配
 版本的标签。标签运行验收该次构建，通过后在 `release` 环境等待审批。
 
+正式发布及其预演使用 `macos-26` 打包 macOS ARM64 CLI 和 Rust hook。上传前，
+工作流核验实际交付二进制的 ARM64 架构，并检查其声明的最低 macOS 版本不高于 11.0。
+
 ## 验收 Intel macOS Docker
 
 正式发布必选双架构 Linux 数据库、Linux 平台和制品部署 smoke，以及现有的 macOS

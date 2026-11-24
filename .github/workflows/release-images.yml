@@ -190,6 +190,8 @@ jobs:
   plugins:
     needs: [prepare]
     uses: ./.github/workflows/release-plugins.yml
+    with:
+      use_macos_26_arm64: ${{ needs.prepare.outputs.tier == 'release' }}
     permissions:
       contents: read
 
@@ -197,6 +199,7 @@ jobs:
     needs: [prepare, plugins]
     uses: ./.github/workflows/release-cli.yml
     with:
+      use_macos_26_arm64: ${{ needs.prepare.outputs.tier == 'release' }}
       plugin_dist: true
       product_version: ${{ needs.prepare.outputs.product_version }}
       run_number: ${{ needs.prepare.outputs.run_number }}
