@@ -73,7 +73,7 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:
@@ -321,7 +321,7 @@ jobs:
           # retains its native-source directory below the artifact root.
           inputs=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-ubuntu-24.04-${{ github.run_attempt }}/native-source")
           if [ "$TEST_TIER" = release ]; then
-            inputs+=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-macos-15-${{ github.run_attempt }}/native-source")
+            inputs+=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-macos-26-${{ github.run_attempt }}/native-source")
             inputs+=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-windows-2025-${{ github.run_attempt }}/native-source")
           fi
           python ai-vision/agent-plugins/tests/native_agent_e2e/weaver_gate.py \

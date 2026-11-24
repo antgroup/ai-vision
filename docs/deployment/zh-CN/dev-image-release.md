@@ -80,7 +80,8 @@ SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运�
 版本的标签。标签运行验收该次构建，通过后在 `release` 环境等待审批。
 
 正式发布及其预演使用 `macos-26` 打包 macOS ARM64 CLI 和 Rust hook。上传前，
-工作流核验实际交付二进制的 ARM64 架构，并检查其声明的最低 macOS 版本不高于 11.0。
+工作流核验实际交付二进制的 ARM64 架构，并检查其声明的最低 macOS 版本不高于 11.0。正式发布的 macOS ARM64 源码检查
+也在 macOS 26 上运行，其中包括 Native 检查及 Weaver 使用的证据。
 
 ## 验收 Intel macOS Docker
 

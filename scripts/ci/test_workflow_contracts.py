@@ -1048,7 +1048,7 @@ class ArtifactContractTests(unittest.TestCase):
         step = next(step for step in jobs["native-semantics"]["steps"]
                     if "weaver_gate.py" in step.get("run", ""))
         for tier in ("pr", "daily", "release"):
-            platforms = ["ubuntu-24.04"] + (["macos-15", "windows-2025"] if tier == "release" else [])
+            platforms = ["ubuntu-24.04"] + (["macos-26", "windows-2025"] if tier == "release" else [])
             for attempt in (1, 2):
                 with self.subTest(tier=tier, attempt=attempt), tempfile.TemporaryDirectory() as directory:
                     root = Path(directory)
