@@ -308,26 +308,53 @@ class NativeWorkflowScopeTests(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode == 0, codex == claude == benchmark == 'success')
 
-    def test_only_windows_source_reports_hook_p95_without_enforcing_it(self):
-        variable = 'AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY'
+    def test_release_source_scopes_hook_performance_budgets_by_os(self):
         steps = workflow()['jobs']['native-source']['steps']
-        selected = [step for step in steps if variable in step.get('env', {})]
-        self.assertEqual([step['id'] for step in selected], ['hook-latency'])
-        step, = selected
-        for tier, source, runner_os in itertools.product(
-            ('pr', 'daily', 'release'), (False, True), ('Linux', 'macOS', 'Windows'),
+        for variable, selected_os in (
+            ('AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY', 'Windows'),
+            ('AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY', 'Windows'),
+            ('AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET', 'Windows'),
+            ('AIVISION_MACOS_RELEASE_HOOK_BUDGET', 'macOS'),
         ):
-            inputs = dict(tier=tier, source=source, runner_os=runner_os)
-            with self.subTest(**inputs):
-                self.assertEqual(predicate(step['if'], inputs), source and tier == 'release')
-                self.assertEqual(json.loads(render(step['env'][variable], inputs, {}, '')),
-                                 runner_os == 'Windows')
+            selected = [step for step in steps if variable in step.get('env', {})]
+            self.assertEqual([step['id'] for step in selected], ['hook-latency'])
+            step, = selected
+            for tier, source, runner_os in itertools.product(
+                ('pr', 'daily', 'release'), (False, True), ('Linux', 'macOS', 'Windows'),
+            ):
+                inputs = dict(tier=tier, source=source, runner_os=runner_os)
+                with self.subTest(variable=variable, **inputs):
+                    self.assertEqual(predicate(step['if'], inputs), source and tier == 'release')
+                    self.assertEqual(json.loads(render(step['env'][variable], inputs, {}, '')),
+                                     runner_os == selected_os)
+
+    def test_windows_manual_performance_keeps_the_strict_hook_limits(self):
+        document = yaml.safe_load((WORKFLOW.parent / 'windows-native-performance.yml').read_text())
+        self.assertEqual(set(document.get('on', document.get(True))), {'workflow_dispatch'})
+        job = document['jobs']['performance']
+        self.assertEqual(job['runs-on'], 'windows-2025')
+        rows = job['strategy']['matrix']['include']
+        self.assertEqual({row['test'] for row in rows}, {
+            'pretool_parent_timing_p95_stays_below_50_ms',
+            'prompt_seed_is_reused_by_pretool_control_response',
+            'pretooluse_parent_latency_stays_under_fifty_milliseconds',
+            'large_posttool_payload_handoff_stays_below_parent_budget',
+        })
+        large, = [row for row in rows if row['test'] == 'large_posttool_payload_handoff_stays_below_parent_budget']
+        self.assertIs(large['release'], True)
+        benchmark, = [step for step in job['steps'] if 'TEST_NAME' in step.get('env', {})]
+        self.assertEqual(benchmark['env']['AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY'], 'false')
+        self.assertEqual(benchmark['env']['AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY'], 'false')
+        self.assertEqual(benchmark['env']['AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET'], 'false')
 
     def test_release_measures_hook_latency_before_the_remaining_rust_suites(self):
         _, commands = source_commands(dict(tier='release', units=False, source=True, platform=False))
         benchmarks = [
             ('codex/cdxhooks', 'async_parent_integration', [
                 'pretool_parent_timing_p95_stays_below_50_ms',
+                'prompt_seed_is_reused_by_pretool_control_response',
+                'delayed_worker_start_does_not_delay_parent_or_strand_the_queue',
+                'one_second_collector_does_not_delay_post_parent',
             ]),
             ('claudecode/cchooks', 'async_hook_contract', [
                 'pretooluse_parent_latency_stays_under_fifty_milliseconds',

@@ -916,9 +916,13 @@ fn prompt_seed_is_reused_by_pretool_control_response() {
     assert!(command.ends_with("echo CANARY_TOOL_INPUT"));
     let pre_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PreToolUse")
         .expect("PreToolUse parent timing");
+    let windows_release_budget = cfg!(windows)
+        && std::env::var("AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET").as_deref() == Ok("true");
+    let budget_ms = if windows_release_budget { 200 } else { 50 };
+    eprintln!("Codex Prompt seed PreToolUse parent={pre_parent_total_ms} ms, budget < {budget_ms} ms");
     assert!(
-        pre_parent_total_ms < 50,
-        "PreToolUse parent fast path took {pre_parent_total_ms}ms"
+        pre_parent_total_ms < budget_ms,
+        "PreToolUse parent fast path took {pre_parent_total_ms}ms (budget < {budget_ms}ms)"
     );
 
     let key = cdxhooks::common::dirs::session_key("session/one").unwrap();
@@ -1079,16 +1083,25 @@ fn delayed_worker_start_does_not_delay_parent_or_strand_the_queue() {
     );
     assert!(output.status.success());
     let parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse").unwrap();
-    assert!(
-        parent_total_ms < 50,
-        "delayed worker blocked the parent for {parent_total_ms}ms"
-    );
+    // The release budget must remain below the worker's injected 150 ms delay.
+    let budget_ms = if cfg!(target_os = "macos")
+        && std::env::var("AIVISION_MACOS_RELEASE_HOOK_BUDGET").as_deref() == Ok("true")
+    {
+        120
+    } else {
+        50
+    };
+    eprintln!("Codex delayed-worker startup: parent={parent_total_ms} ms, budget < {budget_ms} ms");
 
     let queue = session_runtime_dir(root.path(), session_id).join("worker.queue.jsonl");
     wait_until("delayed worker queue drain", Duration::from_secs(5), || {
         phase_event_count(&root.path().join("logs"), "worker", "PostToolUse") == 1
             && std::fs::metadata(&queue).is_ok_and(|metadata| metadata.len() == 0)
     });
+    assert!(
+        parent_total_ms < budget_ms,
+        "delayed worker blocked the parent for {parent_total_ms} ms, budget < {budget_ms} ms"
+    );
 }
 
 #[test]
@@ -1149,29 +1162,6 @@ fn one_second_collector_does_not_delay_post_parent() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.set_nonblocking(true).unwrap();
     let base_url = format!("http://{}", listener.local_addr().unwrap());
-    let (accepted_tx, accepted_rx) = mpsc::channel();
-    let server = std::thread::spawn(move || {
-        let deadline = Instant::now() + Duration::from_secs(3);
-        loop {
-            match listener.accept() {
-                Ok((mut stream, _)) => {
-                    accepted_tx.send(()).unwrap();
-                    std::thread::sleep(Duration::from_secs(1));
-                    let _ = stream.write_all(
-                        b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
-                    );
-                    return true;
-                }
-                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                    if Instant::now() >= deadline {
-                        return false;
-                    }
-                    std::thread::sleep(Duration::from_millis(10));
-                }
-                Err(_) => return false,
-            }
-        }
-    });
 
     let pre = json!({
         "hook_event_name": "PreToolUse",
@@ -1195,9 +1185,48 @@ fn one_second_collector_does_not_delay_post_parent() {
         "tool_input": {"command": "true"},
         "tool_response": {"output": "ok"}
     });
-    let started = Instant::now();
-    let output = run_hook_with_base_url(root.path(), &post, &base_url);
-    let elapsed = started.elapsed();
+    // Bind before PreToolUse so the worker gets the collector address. Start
+    // the accept budget for PostToolUse after the setup hook has returned.
+    let slow_collector = move || -> Result<Instant, String> {
+        let deadline = Instant::now() + Duration::from_secs(8);
+        let mut stream = loop {
+            match listener.accept() {
+                Ok((stream, _)) => break stream,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    if Instant::now() >= deadline {
+                        return Err("timed out accepting the PostToolUse request".into());
+                    }
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                Err(error) => return Err(format!("accept failed: {error}")),
+            }
+        };
+        stream
+            .set_nonblocking(false)
+            .map_err(|error| format!("configure collector connection: {error}"))?;
+        stream
+            .set_write_timeout(Some(Duration::from_secs(2)))
+            .map_err(|error| format!("configure collector response timeout: {error}"))?;
+        let body = read_http_json_body(&mut stream).ok_or("expected an HTTP JSON request")?;
+        if otlp_spans(&[body]).is_empty() {
+            return Err("expected OTLP trace spans".into());
+        }
+        std::thread::sleep(Duration::from_secs(1));
+        let response_started = Instant::now();
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}")
+            .map_err(|error| format!("send slow collector response: {error}"))?;
+        Ok(response_started)
+    };
+    let (output, parent_returned, elapsed, collector) = std::thread::scope(|scope| {
+        let server = scope.spawn(slow_collector);
+        let started = Instant::now();
+        let output = run_hook_with_base_url(root.path(), &post, &base_url);
+        let parent_returned = Instant::now();
+        let collector = server.join().expect("slow collector thread panicked");
+        let elapsed = parent_returned.duration_since(started);
+        (output, parent_returned, elapsed, collector)
+    });
     assert!(output.status.success());
     assert!(
         elapsed < Duration::from_millis(250),
@@ -1209,13 +1238,16 @@ fn one_second_collector_does_not_delay_post_parent() {
         post_parent_total_ms < 50,
         "PostToolUse parent phase took {post_parent_total_ms}ms"
     );
-    if let Err(error) = accepted_rx.recv_timeout(Duration::from_secs(3)) {
+    let response_started = collector.unwrap_or_else(|error| {
         panic!(
-            "detached worker never reached the slow collector: {error}; logs={}",
+            "detached worker did not complete the slow collector exchange: {error}; logs={}",
             walk_text(&root.path().join("logs"))
-        );
-    }
-    assert!(server.join().unwrap());
+        )
+    });
+    assert!(
+        parent_returned < response_started,
+        "PostToolUse parent returned after the slow collector responded"
+    );
 }
 
 #[test]

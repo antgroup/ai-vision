@@ -79,6 +79,12 @@ SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运�
 依赖和正式发布矩阵验收。核对冻结回执后合入 `main`，在对应提交推送匹配
 版本的标签。标签运行验收该次构建，通过后在 `release` 环境等待审批。
 
+正式发布及其预演使用 `macos-26` 打包 macOS ARM64 CLI 和 Rust hook。上传前，
+工作流核验实际交付二进制的 ARM64 架构，并检查其声明的最低 macOS 版本不高于 11.0。正式发布的 macOS ARM64 源码检查
+也在 macOS 26 上运行，其中包括 Native 检查及 Weaver 使用的证据。这些源码作业
+共用一个队列，每次只申请一台托管 macOS ARM64 runner。数据库制品 smoke 失败时，
+Actions 记录最后观测到的部署阶段和固定错误类别，原始日志留在 runner 内。
+
 ## 验收 Intel macOS Docker
 
 正式发布必选双架构 Linux 数据库、Linux 平台和制品部署 smoke，以及现有的 macOS
@@ -106,13 +112,24 @@ Intel macOS Docker 仍待验收。详见 [CI 证据](../../../scripts/ci/README.
 
 ## 验收 Windows 钩子性能
 
-Windows 发布源码检查记录 Codex 和 Claude 的 PreToolUse p95。钩子功能、
-原生进程、语义校验及 Windows x64 CLI 制品冒烟仍是发布必选。Linux 和 macOS
-源码检查继续执行原有的 p95 门槛。
+Windows 发布源码检查记录 Codex 和 Claude 的 PreToolUse p95，以及 Claude
+PostToolUse 将 1 MiB 数据交给队列时的父进程耗时。这几项耗时仅作记录，实际入队
+必须成功。钩子功能、原生进程、语义校验及 Windows x64 CLI 制品冒烟仍是发布必选。
+Linux 发布源码检查保留原有门槛。macOS 发布 CI 中，Codex PreToolUse p95
+仍须低于 50 ms。Codex 延迟启动用例向 worker 注入 150 ms 延迟，要求父进程
+在 120 ms 内返回并验证队列排空。
+Claude PreToolUse 的内部 p95 和进程端到端 p95 均须低于 100 ms。Linux 和 macOS
+发布源码检查均要求 1 MiB 入队时父进程耗时低于 100 ms。
+
+Codex prompt-seed 复用测试要求 PreToolUse 父进程在 Windows 发布 runner 上
+耗时低于 200 ms，在 Linux 和 macOS 上低于 50 ms。三个平台均校验钩子的控制响应
+和 worker 状态。
 
 [Windows 性能工作流](../../../.github/workflows/windows-native-performance.yml)进入
 默认分支后，在候选源码所属分支或标签上手动运行，并核对运行记录的提交 SHA。
-该流程独立要求 Codex 内部 p95、Claude 内部和进程端到端 p95 均低于 50 ms。
+该流程独立要求 Codex prompt-seed 复用用例的父进程耗时、Codex 内部 p95、
+Claude 内部和进程端到端 p95 均低于 50 ms，以及 Claude PostToolUse 的 1 MiB
+入队父进程耗时低于 100 ms。
 
 ## 验收 All-in-One 个人版
 
