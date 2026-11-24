@@ -1,0 +1,21 @@
+ai-vision/agent-plugins/codex/cdxhooks/src/common/file_lock.rs
+  s_7ddb4c6ac82aba::t_3f56dc8ad5df44 14-15,83-90,106-107
+ai-vision/agent-plugins/codex/cdxhooks/src/worker.rs
+  s_7ddb4c6ac82aba::t_3f56dc8ad5df44 1280-1288,1964-1970,1973-1977
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "101255e1ab1591a33a93aa940eb16ca6d73670aa",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
