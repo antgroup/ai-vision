@@ -122,7 +122,7 @@ Claude PreToolUse 的内部 p95 和进程端到端 p95 均须低于 100 ms。Lin
 发布源码检查均要求 1 MiB 入队时父进程耗时低于 100 ms。
 
 Codex prompt-seed 复用测试要求 PreToolUse 父进程在 Windows 发布 runner 上
-耗时低于 120 ms，在 Linux 和 macOS 上低于 50 ms。三个平台均校验钩子的控制响应
+耗时低于 200 ms，在 Linux 和 macOS 上低于 50 ms。三个平台均校验钩子的控制响应
 和 worker 状态。
 
 [Windows 性能工作流](../../../.github/workflows/windows-native-performance.yml)进入

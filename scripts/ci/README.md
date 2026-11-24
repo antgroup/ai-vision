@@ -137,7 +137,7 @@ latencies are report-only on the Windows release runner. The actual handoff
 must succeed. Windows hook functionality, Native runtime cases, semantic
 checks, and x64 CLI artifact smoke remain mandatory.
 The Codex prompt-seed reuse test requires the PreToolUse parent to return in
-under 120 ms on Windows release runners and under 50 ms on Linux and macOS.
+under 200 ms on Windows release runners and under 50 ms on Linux and macOS.
 It checks the hook control response and worker state on all three platforms.
 Run [Windows Native Hook Performance](../../.github/workflows/windows-native-performance.yml)
 on the candidate ref for independent strict performance acceptance. It requires

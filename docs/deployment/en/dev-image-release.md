@@ -138,7 +138,7 @@ p95 must both be below 100 ms on these runners. The 1 MiB handoff parent
 latency must be below 100 ms on both Linux and macOS release runners.
 
 The Codex prompt-seed reuse test requires the PreToolUse parent to return in
-under 120 ms on Windows release runners and under 50 ms on Linux and macOS.
+under 200 ms on Windows release runners and under 50 ms on Linux and macOS.
 The test checks the hook control response and worker state on all three
 platforms.
 

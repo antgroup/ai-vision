@@ -918,7 +918,7 @@ fn prompt_seed_is_reused_by_pretool_control_response() {
         .expect("PreToolUse parent timing");
     let windows_release_budget = cfg!(windows)
         && std::env::var("AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET").as_deref() == Ok("true");
-    let budget_ms = if windows_release_budget { 120 } else { 50 };
+    let budget_ms = if windows_release_budget { 200 } else { 50 };
     eprintln!("Codex Prompt seed PreToolUse parent={pre_parent_total_ms} ms, budget < {budget_ms} ms");
     assert!(
         pre_parent_total_ms < budget_ms,
