@@ -1641,9 +1641,23 @@ mod tests {
 
         let held_lock = agentic_otel_common::state::StateLock::acquire(&state_file, 100);
         assert!(held_lock.is_acquired());
+        let log_path = dir.path().join("subagent.log");
         let release = std::thread::spawn(move || {
-            std::thread::sleep(std::time::Duration::from_millis(600));
+            // Hold the lock through the first Busy result even on a delayed runner.
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            let retried = loop {
+                if std::fs::read_to_string(&log_path)
+                    .is_ok_and(|log| log.contains("lock busy; retrying"))
+                {
+                    break true;
+                }
+                if std::time::Instant::now() >= deadline {
+                    break false;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            };
             drop(held_lock);
+            retried
         });
         let mut context = test_context(&dir, "http://127.0.0.1:9/v1/traces".to_string());
         context.state_file = state_file.clone();
@@ -1653,10 +1667,12 @@ mod tests {
             complete: true,
         };
 
-        SubagentHandler::new()
-            .finalize_agent_export(session_id, &progress, &context)
-            .expect("finalizer should retry after lock release");
-        release.join().expect("release lock");
+        let finalized = SubagentHandler::new().finalize_agent_export(session_id, &progress, &context);
+        assert!(
+            release.join().expect("release lock"),
+            "finalizer should report lock contention before release"
+        );
+        finalized.expect("finalizer should retry after lock release");
 
         let saved: Value =
             serde_json::from_slice(&std::fs::read(&state_file).expect("read finalized state"))
@@ -1665,9 +1681,6 @@ mod tests {
         let saved_record = &saved_registry.agents["agent-retry"];
         assert!(saved_record.processed);
         assert_eq!(saved_record.exported_turn_ids, vec!["turn-accepted"]);
-        assert!(std::fs::read_to_string(dir.path().join("subagent.log"))
-            .expect("read log")
-            .contains("lock busy; retrying"));
     }
 
     #[test]
