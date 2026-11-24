@@ -328,6 +328,9 @@ class NativeWorkflowScopeTests(unittest.TestCase):
         benchmarks = [
             ('codex/cdxhooks', 'async_parent_integration', [
                 'pretool_parent_timing_p95_stays_below_50_ms',
+                'prompt_seed_is_reused_by_pretool_control_response',
+                'delayed_worker_start_does_not_delay_parent_or_strand_the_queue',
+                'one_second_collector_does_not_delay_post_parent',
             ]),
             ('claudecode/cchooks', 'async_hook_contract', [
                 'pretooluse_parent_latency_stays_under_fifty_milliseconds',

@@ -1149,29 +1149,6 @@ fn one_second_collector_does_not_delay_post_parent() {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     listener.set_nonblocking(true).unwrap();
     let base_url = format!("http://{}", listener.local_addr().unwrap());
-    let (accepted_tx, accepted_rx) = mpsc::channel();
-    let server = std::thread::spawn(move || {
-        let deadline = Instant::now() + Duration::from_secs(3);
-        loop {
-            match listener.accept() {
-                Ok((mut stream, _)) => {
-                    accepted_tx.send(()).unwrap();
-                    std::thread::sleep(Duration::from_secs(1));
-                    let _ = stream.write_all(
-                        b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}",
-                    );
-                    return true;
-                }
-                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                    if Instant::now() >= deadline {
-                        return false;
-                    }
-                    std::thread::sleep(Duration::from_millis(10));
-                }
-                Err(_) => return false,
-            }
-        }
-    });
 
     let pre = json!({
         "hook_event_name": "PreToolUse",
@@ -1195,9 +1172,48 @@ fn one_second_collector_does_not_delay_post_parent() {
         "tool_input": {"command": "true"},
         "tool_response": {"output": "ok"}
     });
-    let started = Instant::now();
-    let output = run_hook_with_base_url(root.path(), &post, &base_url);
-    let elapsed = started.elapsed();
+    // Bind before PreToolUse so the worker gets the collector address. Start
+    // the accept budget for PostToolUse after the setup hook has returned.
+    let slow_collector = move || -> Result<Instant, String> {
+        let deadline = Instant::now() + Duration::from_secs(8);
+        let mut stream = loop {
+            match listener.accept() {
+                Ok((stream, _)) => break stream,
+                Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                    if Instant::now() >= deadline {
+                        return Err("timed out accepting the PostToolUse request".into());
+                    }
+                    std::thread::sleep(Duration::from_millis(10));
+                }
+                Err(error) => return Err(format!("accept failed: {error}")),
+            }
+        };
+        stream
+            .set_nonblocking(false)
+            .map_err(|error| format!("configure collector connection: {error}"))?;
+        stream
+            .set_write_timeout(Some(Duration::from_secs(2)))
+            .map_err(|error| format!("configure collector response timeout: {error}"))?;
+        let body = read_http_json_body(&mut stream).ok_or("expected an HTTP JSON request")?;
+        if otlp_spans(&[body]).is_empty() {
+            return Err("expected OTLP trace spans".into());
+        }
+        std::thread::sleep(Duration::from_secs(1));
+        let response_started = Instant::now();
+        stream
+            .write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}")
+            .map_err(|error| format!("send slow collector response: {error}"))?;
+        Ok(response_started)
+    };
+    let (output, parent_returned, elapsed, collector) = std::thread::scope(|scope| {
+        let server = scope.spawn(slow_collector);
+        let started = Instant::now();
+        let output = run_hook_with_base_url(root.path(), &post, &base_url);
+        let parent_returned = Instant::now();
+        let collector = server.join().expect("slow collector thread panicked");
+        let elapsed = parent_returned.duration_since(started);
+        (output, parent_returned, elapsed, collector)
+    });
     assert!(output.status.success());
     assert!(
         elapsed < Duration::from_millis(250),
@@ -1209,13 +1225,16 @@ fn one_second_collector_does_not_delay_post_parent() {
         post_parent_total_ms < 50,
         "PostToolUse parent phase took {post_parent_total_ms}ms"
     );
-    if let Err(error) = accepted_rx.recv_timeout(Duration::from_secs(3)) {
+    let response_started = collector.unwrap_or_else(|error| {
         panic!(
-            "detached worker never reached the slow collector: {error}; logs={}",
+            "detached worker did not complete the slow collector exchange: {error}; logs={}",
             walk_text(&root.path().join("logs"))
-        );
-    }
-    assert!(server.join().unwrap());
+        )
+    });
+    assert!(
+        parent_returned < response_started,
+        "PostToolUse parent returned after the slow collector responded"
+    );
 }
 
 #[test]
