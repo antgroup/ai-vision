@@ -1,0 +1,22 @@
+.github/scripts/instrument-macos-codex-queue.py
+  s_7ddb4c6ac82aba::t_cc33c87d39f48d 1-223
+.github/workflows/windows-native-performance.yml
+  s_7ddb4c6ac82aba::t_cc33c87d39f48d 1,9,178-211
+  s_7ddb4c6ac82aba::t_06b4d1ac7dcc9a 212-223
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "5af7b7e5a9024239e4e1aa7c88c88d0dd2dbe409",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
