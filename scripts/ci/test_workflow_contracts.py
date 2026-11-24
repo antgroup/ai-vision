@@ -794,6 +794,22 @@ class CallerContractTests(unittest.TestCase):
                 self.assertEqual(set(jobs[name]["needs"]), {"frontend", "frontend-browser"})
                 self.assertIn(frontend_guard, jobs[name]["if"])
 
+    def test_windows_relay_runtime_applies_to_the_full_collector_matrix(self):
+        steps = workflow("framework-e2e.yml")["jobs"]["contracts"]["steps"]
+        named = {step["name"]: step for step in steps if "name" in step}
+        setup = next(step for step in steps if step.get("id") == "windows-relay-python")
+        self.assertEqual(setup["with"], {"python-version": "3.13", "update-environment": False})
+        lifecycle = named["Relay lifecycle and exporter regressions on Windows"]
+        collector = named["Relay RAG scenarios and official SDK export on Windows"]
+        self.assertEqual(collector["if"], lifecycle["if"])
+        self.assertEqual(collector["if"], "runner.os == 'Windows' && matrix.sdk != 'lf5'")
+        self.assertEqual(collector["env"]["RELAY_PYTHON"], "${{ steps.windows-relay-python.outputs.python-path }}")
+        self.assertIn("& $env:RELAY_PYTHON ai-vision/agent-plugins/tests/framework_e2e/suite.py", collector["run"])
+        self.assertIn("--sdks nemo-relay", collector["run"])
+        standard = named["Fake-model RAG scenarios and official SDK export (runner-local)"]
+        self.assertIn("(matrix.sdk == 'lf5' || runner.os == 'Windows') && 'langfuse' || 'langfuse nemo-relay'", standard["run"])
+        self.assertTrue(standard["run"].startswith("python "))
+
     def test_daily_is_linux_and_release_retains_cross_platform_coverage(self):
         ci = workflow("ci.yml")
         for tier in ("pr", "daily", "release"):

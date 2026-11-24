@@ -311,7 +311,7 @@ jobs:
       - name: Relay lifecycle and exporter regressions
         if: runner.os != 'Windows' && matrix.sdk != 'lf5'
         run: python -m unittest discover -s ai-vision/agent-plugins/nvidia-nemo-relay/tests -p "test_*.py"
-      - name: Set up Python 3.13 for Windows Relay lifecycle tests
+      - name: Set up Python 3.13 for Windows Relay tests
         if: runner.os == 'Windows' && matrix.sdk != 'lf5'
         id: windows-relay-python
         uses: actions/setup-python@v5
@@ -330,17 +330,34 @@ jobs:
           & $env:RELAY_PYTHON -m unittest discover -s ai-vision/agent-plugins/nvidia-nemo-relay/tests -p 'test_*.py'
       - name: Python onboarding snippets and complete examples
         run: python -m unittest discover -s ai-vision/agent-plugins/langfuse/tests -p "test_onboarding_examples.py"
-      - name: All fake-model RAG scenarios and official SDK export (runner-local)
+      - name: Fake-model RAG scenarios and official SDK export (runner-local)
         run: >-
           python ai-vision/agent-plugins/tests/framework_e2e/suite.py
           --mode collector --out artifacts/framework-collector --repo .
-          --sdks ${{ matrix.sdk == 'lf5' && 'langfuse' || 'langfuse nemo-relay' }}
+          --sdks ${{ (matrix.sdk == 'lf5' || runner.os == 'Windows') && 'langfuse' || 'langfuse nemo-relay' }}
+      - name: Relay RAG scenarios and official SDK export on Windows
+        if: runner.os == 'Windows' && matrix.sdk != 'lf5'
+        shell: pwsh
+        env:
+          RELAY_PYTHON: ${{ steps.windows-relay-python.outputs.python-path }}
+        run: |
+          & $env:RELAY_PYTHON ai-vision/agent-plugins/tests/framework_e2e/suite.py `
+            --mode collector --out artifacts/framework-relay-collector --repo . --sdks nemo-relay
+          exit $LASTEXITCODE
       - name: Preserve runner-local SDK reconciliation evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: framework-collector-${{ matrix.os }}-${{ matrix.sdk }}-${{ github.run_attempt }}
           path: artifacts/framework-collector
+          if-no-files-found: error
+          retention-days: 7
+      - name: Preserve Windows Relay reconciliation evidence
+        if: always() && runner.os == 'Windows' && matrix.sdk != 'lf5'
+        uses: actions/upload-artifact@v4
+        with:
+          name: framework-relay-collector-${{ matrix.os }}-${{ matrix.sdk }}-${{ github.run_attempt }}
+          path: artifacts/framework-relay-collector
           if-no-files-found: error
           retention-days: 7
 

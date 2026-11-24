@@ -1439,6 +1439,17 @@ test("validation HTTP errors are safe, legacy results stay unverified, and retry
         return response
       },
     })
+    const document = page.dom.window.document
+    const alertText = () =>
+      document.querySelector("[role=dialog] [role=alert]")?.textContent
+    const summaryStatus = () =>
+      document.querySelector(
+        "[role=dialog] [data-testid=model-validation-summary] p"
+      )?.textContent
+    const expectedStatus = (status: string) =>
+      `${t("spaceSettings.models.validation.basicDiagnosis")} · ${t(`spaceSettings.models.validation.${status}`)}`
+    const runReady = () =>
+      !button(page.dom, "spaceSettings.models.validation.run").disabled
     try {
       await click(page.dom, "spaceSettings.models.test")
       for (const [error, reason] of [
@@ -1455,30 +1466,30 @@ test("validation HTTP errors are safe, legacy results stay unverified, and retry
       ] as const) {
         response = error
         await click(page.dom, "spaceSettings.models.validation.run")
-        assert.equal(
-          page.dom.window.document.querySelector("[role=alert]")?.textContent,
-          t(`spaceSettings.models.validation.reasons.${reason}`)
+        await waitFor(
+          () =>
+            alertText() ===
+              t(`spaceSettings.models.validation.reasons.${reason}`) &&
+            runReady(),
+          `the ${language} validation displays ${reason}`
         )
         assert.equal(
-          page.dom.window.document.body.textContent?.includes(
-            "private upstream"
-          ),
+          document.body.textContent?.includes("private upstream"),
           false
         )
       }
       fail = false
       response = { ...connection, status: "available" }
       await click(page.dom, "spaceSettings.models.validation.run")
-      assert.equal(
-        page.dom.window.document.querySelector("[role=alert]")?.textContent,
-        t("spaceSettings.models.validation.reasons.invalid_validation_result")
-      )
-      assert.ok(
-        page.dom.window.document
-          .querySelector("[role=dialog]")
-          ?.textContent?.includes(
-            t("spaceSettings.models.validation.unverified")
-          )
+      await waitFor(
+        () =>
+          alertText() ===
+            t(
+              "spaceSettings.models.validation.reasons.invalid_validation_result"
+            ) &&
+          summaryStatus() === expectedStatus("unverified") &&
+          runReady(),
+        `the ${language} legacy result remains unverified`
       )
       response = {
         ...connection,
@@ -1486,10 +1497,12 @@ test("validation HTTP errors are safe, legacy results stay unverified, and retry
         diagnosticValidation: validationReport,
       }
       await click(page.dom, "spaceSettings.models.validation.run")
-      assert.ok(
-        page.dom.window.document
-          .querySelector("[role=dialog]")
-          ?.textContent?.includes(t("spaceSettings.models.validation.passed"))
+      await waitFor(
+        () =>
+          summaryStatus() === expectedStatus("passed") &&
+          alertText() === undefined &&
+          runReady(),
+        `the ${language} retry renders a passed report and clears the error`
       )
     } finally {
       await page.close()
@@ -1566,7 +1579,21 @@ test("editing keeps the current model and requires a fresh key after changing en
       "replacement-key"
     )
     await click(page.dom, "common.save")
+    await waitFor(
+      () =>
+        Array.from(
+          page.dom.window.document.querySelectorAll("button:not(:disabled)")
+        ).some(
+          (candidate) =>
+            candidate.textContent === t("modelConnections.saveWithImpact")
+        ),
+      "the reference check enables the save confirmation"
+    )
     await click(page.dom, "modelConnections.saveWithImpact")
+    await waitFor(
+      () => page.calls.length > 0,
+      "the edit sends an update request"
+    )
     assert.deepEqual(page.calls[0], [
       "space-1",
       "connection-1",
