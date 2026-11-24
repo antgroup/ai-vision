@@ -93,8 +93,8 @@ python ai-vision/agent-plugins/tests/framework_e2e/suite.py \
 各后端与 SDK 矩阵独立运行，避免某个单测失败遮蔽其他环境的结果。
 Docker 平台任务等待前端源码检查通过；整套 CI 通过仍要求全部任务成功。
 
-Windows 的 LF3、LF4 行用单独的 Python 3.13 解释器执行 Relay 生命周期和导出回归，
-保留原有断言。同一行中的业务、Langfuse 和场景导出继续使用 Python 3.12。
+Windows 的 LF3、LF4 行用单独的 Python 3.13 解释器执行 Relay 生命周期和 22 项 RAG 场景导出验证，
+保留原有断言。同一行中的业务单测、Langfuse 回归和 22 项 Langfuse 场景导出使用 Python 3.12。
 时间戳差异与对照证据见 [NR-003](../../../../KNOWN_ISSUES.md#nr-003windows-上短时-relay-scope-的时间戳可能逆序)。
 
 `sdk_coverage=full` 是默认配置，正式 Release 使用完整矩阵。Daily 可以显式选择

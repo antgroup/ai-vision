@@ -5132,6 +5132,54 @@ mod tests {
         assert!(offset < transcript.len() as i64);
     }
 
+    // Leave room for the fixture's HTTP export and durable checkpoint after
+    // the 10-second transcript wait.
+    const TARGET_POLL_TEST_WORK_BUDGET: Duration = Duration::from_secs(20);
+
+    fn assert_bounded_nonterminal_poll(log: &str, elapsed: Duration) {
+        let mut poll_count = 0;
+        let mut total_wait_ms = 0;
+        for line in log.lines() {
+            let Some((_, attempt)) = line.split_once("Transcript terminal not visible; poll=")
+            else {
+                continue;
+            };
+            let (ordinal, wait) = attempt.split_once(" waiting ").expect("poll log");
+            let ordinal: u32 = ordinal.parse().expect("poll ordinal");
+            let wait_ms: u64 = wait
+                .strip_suffix("ms")
+                .expect("poll delay unit")
+                .parse()
+                .expect("poll delay");
+            poll_count += 1;
+            assert_eq!(ordinal, poll_count, "poll sequence: {line}");
+            assert!(wait_ms <= 500, "poll delay exceeds 500ms: {line}");
+            total_wait_ms += wait_ms;
+        }
+        assert!(
+            (2..=20).contains(&poll_count) && total_wait_ms <= 10_000,
+            "expected repeated polls within the 10s window, got {poll_count} polls and {total_wait_ms}ms of requested waits"
+        );
+        assert!(
+            elapsed >= Duration::from_secs(9),
+            "target polling returned too early after {elapsed:?}"
+        );
+        // A deadline reached while calculating the final delay can end the
+        // loop without a completion log. The test still requires Deferred.
+        if let Some(line) = log
+            .lines()
+            .rev()
+            .find(|line| line.contains("Transcript terminal poll finished after "))
+        {
+            assert!(
+                line.ends_with(&format!(
+                    "Transcript terminal poll finished after {poll_count} checks: target_terminal_seen=false"
+                )),
+                "unexpected terminal poll result: {line}"
+            );
+        }
+    }
+
     #[test]
     fn target_turn_poll_is_bounded_and_exports_complete_prefix() {
         let dir = tempfile::tempdir().unwrap();
@@ -5146,18 +5194,20 @@ mod tests {
 {"timestamp":"2026-07-13T00:00:02.200Z","type":"event_msg","payload":{"type":"agent_message","phase":"final_answer","message":"two"}}
 "#;
         std::fs::write(&transcript_path, transcript).unwrap();
-        let (host, sink) = spawn_http_sink_with_deadline(vec![200], Duration::from_secs(12));
+        let (host, sink) = spawn_http_sink_with_deadline(
+            vec![200],
+            TARGET_POLL_TEST_WORK_BUDGET + Duration::from_secs(1),
+        );
         let mut context = test_context(&dir, host);
         context.stop_budget = Some(StopBudget::new(
             Instant::now(),
-            Duration::from_secs(12),
+            TARGET_POLL_TEST_WORK_BUDGET,
             Duration::from_secs(1),
             Duration::from_millis(100),
         ));
         let mut payload = stop_payload(&transcript_path);
         payload["target_turn_id"] = serde_json::json!("turn-2");
         let started = Instant::now();
-
         let outcome = LangfuseHandler::new()
             .handle_stop_with_outcome(&HookEvent::Stop, &payload, &context)
             .unwrap();
@@ -5167,16 +5217,8 @@ mod tests {
             matches!(outcome, StopDispatchOutcome::Deferred(ref reason) if reason.contains("target turn awaiting terminal")),
             "unexpected bounded poll outcome: {outcome:?}"
         );
-        assert!(
-            elapsed >= Duration::from_secs(9) && elapsed < Duration::from_secs(12),
-            "target polling elapsed {elapsed:?}, expected at least 9s and less than 12s\n{}",
-            std::fs::read_to_string(dir.path().join("test.log"))
-                .unwrap_or_default()
-                .lines()
-                .filter(|line| line.contains("Transcript terminal"))
-                .collect::<Vec<_>>()
-                .join("\n")
-        );
+        let log = std::fs::read_to_string(dir.path().join("test.log")).expect("poll log");
+        assert_bounded_nonterminal_poll(&log, elapsed);
         assert_single_turn_bodies(&sink.join().unwrap(), &["Turn 1"]);
         let state = load_state(&context.state_file);
         assert_eq!(state["parent"]["turn_count"], serde_json::json!(1));
@@ -5199,9 +5241,11 @@ mod tests {
             .unwrap();
         assert!(first.completed_export());
 
+        let poll_log = dir.path().join("target-poll.log");
+        context.logger = context.logger.clone().with_log_file(poll_log.clone());
         context.stop_budget = Some(StopBudget::new(
             Instant::now(),
-            Duration::from_secs(12),
+            TARGET_POLL_TEST_WORK_BUDGET,
             Duration::from_secs(1),
             Duration::from_millis(100),
         ));
@@ -5211,14 +5255,13 @@ mod tests {
         let second = LangfuseHandler::new()
             .handle_stop_with_outcome(&HookEvent::Stop, &payload, &context)
             .unwrap();
+        let elapsed = started.elapsed();
 
         assert!(
             matches!(second, StopDispatchOutcome::Deferred(ref reason) if reason.contains("target turn awaiting terminal: turn-2"))
         );
-        assert!(
-            started.elapsed() >= Duration::from_secs(9)
-                && started.elapsed() < Duration::from_secs(12)
-        );
+        let log = std::fs::read_to_string(poll_log).expect("poll log");
+        assert_bounded_nonterminal_poll(&log, elapsed);
         assert_single_turn_bodies(&sink.join().unwrap(), &["Turn 1"]);
         let state = load_state(&context.state_file);
         assert_eq!(state["parent"]["offset"], transcript.len() as i64);

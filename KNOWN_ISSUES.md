@@ -206,7 +206,7 @@ Deep Agents 的官方 `task` 与 `researcher` 是同一 orchestrator 下的 sibl
 
 **现状与影响。** 在 Windows 上，Relay 0.9.3 的原生 scope 起点使用高精度系统时钟。Python 3.12 的框架回调用较粗的系统时钟采样结束时间，并把该值传给 SDK。对于很短的 scope，导出的结束时间可能早于开始时间，原始耗时和时间顺序因此可能失真。
 
-**使用建议与验收。** Windows 上需要严格验证 Relay 生命周期时间顺序时，使用 Python 3.13。同一 SDK 和依赖的 Windows 对照中，Python 3.12.10 有两项时间顺序断言失败，Python 3.13.17 原样通过全部 14 项。发布级 Windows CI 用 3.13 运行 Relay 独立生命周期和导出回归，其余框架检查继续使用 3.12。[Python 3.12 对照](https://github.com/antgroup/ai-vision/actions/runs/45229045170/job/137883294696) · [Python 3.13 对照](https://github.com/antgroup/ai-vision/actions/runs/45229045170/job/137883294611) · [CPython 时钟变更](https://docs.python.org/3.13/whatsnew/3.13.html#time)
+**使用建议与验收。** Windows 上需要严格验证 Relay 时间顺序时，使用 Python 3.13。同一 SDK 和依赖的 Windows 对照中，Python 3.12.10 有两项时间顺序断言失败，Python 3.13.17 原样通过全部 14 项。发布级 Windows CI 用 3.13 运行 Relay 生命周期、RAG 场景及导出验证，其余框架检查继续使用 3.12。[Python 3.12 对照](https://github.com/antgroup/ai-vision/actions/runs/45229045170/job/137883294696) · [Python 3.13 对照](https://github.com/antgroup/ai-vision/actions/runs/45229045170/job/137883294611) · [CPython 时钟变更](https://docs.python.org/3.13/whatsnew/3.13.html#time)
 
 ## 数据库镜像兼容问题
 
