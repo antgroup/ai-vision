@@ -1,0 +1,19 @@
+.github/workflows/windows-native-performance.yml
+  s_7ddb4c6ac82aba::t_aa1e444fe48520 1,7,10-11,16,18,22,25,31,33-38,40-43,46-77,79-128
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "0cfd74abd7f16399d8903d5f16d42263335faa74",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

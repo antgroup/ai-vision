@@ -1,0 +1,21 @@
+.github/scripts/diagnostics-codex-native-failure-evidence.patch
+  s_7ddb4c6ac82aba::t_3fa3314bbdfa81 1-27
+.github/workflows/windows-native-performance.yml
+  s_7ddb4c6ac82aba::t_c4ec2bbbcd7b1e 1,7,10,14,16-19,21,23-32,37-43,50,52-60,62-63,66-104,106-139
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8e17aba51ac8bab7b468e64c4033e96d891b8188",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}

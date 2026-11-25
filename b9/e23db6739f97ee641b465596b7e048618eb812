@@ -1,0 +1,34 @@
+scripts/ci/test_native_workflow_scope.py
+  s_7ddb4c6ac82aba::t_2ac8dcc7294a85 315
+  s_7ddb4c6ac82aba::t_895088c68dc322 330-346
+scripts/ci/README.md
+  s_7ddb4c6ac82aba::t_f8a22c54c67089 134-138,141-142,147-148
+ai-vision/agent-plugins/claudecode/cchooks/tests/async_hook_contract.rs
+  s_7ddb4c6ac82aba::t_2ac8dcc7294a85 2299-2305,2307
+docs/deployment/zh-CN/dev-image-release.md
+  s_7ddb4c6ac82aba::t_ee152fbb9054c1 119-120
+  s_7ddb4c6ac82aba::t_f8a22c54c67089 115-118,121-122,126-127
+.github/workflows/native-agent-e2e.yml
+  s_7ddb4c6ac82aba::t_2ac8dcc7294a85 119
+.github/workflows/windows-native-performance.yml
+  s_7ddb4c6ac82aba::t_f8a22c54c67089 10-11,18,23,28-32,47,57
+docs/deployment/en/dev-image-release.md
+  s_7ddb4c6ac82aba::t_f8a22c54c67089 128-132,137-138,142-144
+  s_7ddb4c6ac82aba::t_ee152fbb9054c1 133-134
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b9e23db6739f97ee641b465596b7e048618eb812",
+  "prompts": {},
+  "sessions": {
+    "s_7ddb4c6ac82aba": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a19bdb-09f9-7682-b884-ac6f9aac7e8b",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
