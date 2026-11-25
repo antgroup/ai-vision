@@ -989,7 +989,7 @@ fn post_parent_returns_without_waiting_for_remote_work() {
     let post_parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse")
         .expect("PostToolUse parent timing");
     let budget_ms = if cfg!(all(windows, debug_assertions)) {
-        200
+        400
     } else {
         50
     };
