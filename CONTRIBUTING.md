@@ -6,7 +6,7 @@ Contributions through usage feedback, issues, reproductions, documentation, test
 
 - Usage questions or defects: check existing [issues](https://github.com/antgroup/ai-vision/issues), then use the [bug report form](https://github.com/antgroup/ai-vision/issues/new?template=1-bug-report.yml) to describe the scenario, minimal reproduction, expected and actual results, environment, and actual version. If the version cannot be determined, write `unknown` and explain why.
 - Feature requests: use the [feature request form](https://github.com/antgroup/ai-vision/issues/new?template=2-feature-request.yml) to explain the use case and desired outcome. Blank issues remain available for questions and other feedback; reporting does not commit you to implementing a fix.
-- Focused fixes, tests, and documentation corrections: submit a focused PR and link any existing issue. An RFC is not required first.
+- Focused fixes, tests, and documentation corrections: use or open a related issue, then submit a focused PR. An RFC is not required first.
 - Cross-component protocols, public contracts, major architecture changes, or governance changes: align on scope and tradeoffs in an issue or RFC first. See the [RFC index](docs/rfcs/README.md) for process proposals. Existing [AgentLens ADRs](agentlens/docs/adr/README.md) retain their structure.
 
 Follow the [Code of Conduct](CODE_OF_CONDUCT.md). Redact public materials: do not include credentials, personal information, private traces, or complete business prompts. Use the [security reporting guide](SECURITY.md) for vulnerabilities and the conduct guide for private incident reports. Recipients and contact routes are [pending confirmation](GOVERNANCE.md#pending-owner-and-contact-confirmations); do not post incident or exploit details in public issues.
@@ -37,7 +37,7 @@ User tutorials are published on the [AI Vision documentation site](https://aivis
 
 ## Branches and PRs
 
-Use the repository's default branch as the baseline and PR target unless maintainers designate another branch. During the public CI trial, that branch is `ci`. The naming convention below follows [lightweight Gitflow](docs/rfcs/0002-versioning-and-releases.md#lightweight-gitflow). The switch to `develop` as the ordinary PR target is a separate migration.
+Use the repository's default branch as the baseline and PR target unless maintainers designate another branch. The naming convention below follows [lightweight Gitflow](docs/rfcs/0002-versioning-and-releases.md#lightweight-gitflow).
 
 ### Name the branch and PR
 
@@ -59,13 +59,13 @@ The PR check validates the current source branch name and title. If an open PR h
 
 Keep each PR focused on one clear problem. Do not include unrelated refactoring, dependencies, or lockfile updates. Use the four [PR template](.github/PULL_REQUEST_TEMPLATE.md) sections: **Problem and impact**, **Validation**, **Screenshots and interaction**, and **Compatibility and unverified scope**. Larger changes may start as draft PRs. Merging requires review by a relevant maintainer other than the author; changes spanning components need confirmation from the relevant maintainers.
 
-Reviewers follow [REVIEW.md](REVIEW.md), separating required fixes from non-blocking suggestions. For an RFC, start with the [proposal template](docs/rfcs/TEMPLATE.md); authorized decision makers can use the [decision-comment example](docs/rfcs/decision-comment.md). An implementation PR links its RFC or specific ADR record and states the scope delivered and remaining work. A separate tracking issue is optional.
+Reviewers follow [REVIEW.md](REVIEW.md), separating required fixes from non-blocking suggestions. For an RFC, start with the [proposal template](docs/rfcs/TEMPLATE.md). Authorized decision makers can use the [decision-comment example](docs/rfcs/decision-comment.md). A PR implementing an RFC or ADR links that record and its tracking issue, and states the scope delivered and remaining work.
 
 ## Create an issue or PR
 
 Use the [issue forms](https://github.com/antgroup/ai-vision/issues/new/choose) on the web. For CLI or API submissions, mirror the required fields in the [bug form](.github/ISSUE_TEMPLATE/1-bug-report.yml) or [feature form](.github/ISSUE_TEMPLATE/2-feature-request.yml) as Markdown headings. Use a specific title, verify any version and reproduction information, and state what is unknown. Optional fields can be omitted. Follow the [security policy](SECURITY.md) when reporting a vulnerability.
 
-For a PR, start from the [four-section template](.github/PULL_REQUEST_TEMPLATE.md). Link related work when available. Use `Refs #123` for related or partially addressed work and `Closes #123` only for a PR to the default branch that fully resolves that issue. Small changes can use short natural sentences. For example, a docs change can report the paths and links checked, state that the change affects documentation only, and identify whether any example commands were actually run.
+For every PR, reference at least one existing issue in this repository in the [PR body](.github/PULL_REQUEST_TEMPLATE.md). Use `Refs #123` for related or partially addressed work, including PRs to non-default branches. Use `Closes #123` when a PR to the default branch fully resolves that issue. Release and backmerge PRs can reuse the relevant tracking issue, even after it closes. Small changes can use short natural sentences. For example, a docs change can report the paths and links checked and indicate whether example commands were run.
 
 When using an agent, review the proposed branch name, title, and actual Markdown before submission. Every command, result, screenshot, link, and version in the body should come from evidence the author can verify. Write down any blocked check and its reason. Use the same title and body file for preflight and submission. For example, from a correctly named branch:
 
@@ -76,6 +76,21 @@ python3 scripts/ci/pr_evidence.py --body-file /tmp/pr.md \
   --branch "$(git branch --show-current)" --title "$pr_title"
 gh pr create --base "<target branch>" --title "$pr_title" --body-file /tmp/pr.md
 ```
+
+### Use slash commands
+
+Post one command as a new comment in the Conversation tab of an issue or PR. Start the comment with `/`. Assignment, label, and issue triage commands require Triage access or higher. LGTM requires Write access or higher, and Git tags require Maintain or Admin.
+
+| Command | Effect |
+|---|---|
+| `/assign` or `/assign @login` | Assign yourself or the specified eligible GitHub user. |
+| `/unassign` or `/unassign @login` | Remove that assignment. |
+| `/label bug` or `/unlabel bug` | Add or remove an existing repository label. The label name can contain spaces. |
+| `/lgtm`, `/lgtm <full-commit-sha>`, or `/lgtm cancel` | Record or withdraw an advisory review signal for the current PR commit. Supply the SHA to require that exact revision. The PR author cannot give LGTM to their own PR. |
+| `/triage close`, `/triage close not-planned`, or `/triage reopen` | Close an issue as completed, close it as not planned, or reopen it. |
+| `/tag <name> <full-commit-sha>` | Create a lightweight Git tag for a commit on the default branch or `develop`. |
+
+Submit required PR approvals through GitHub. Use the [release procedure](docs/deployment/en/dev-image-release.md#rehearse-a-formal-release-before-tagging) for product release tags. See the [CI guide](scripts/ci/README.md#slash-command-workflow) for activation and workflow behavior.
 
 ## Validation and screenshots
 
@@ -95,7 +110,7 @@ Distinguish manual execution from CI, passing from failing, and unexecuted from 
 
 Attachments and CI artifacts must be accessible to reviewers and redacted before upload. Do not commit temporary logs, screenshots, or recordings by default. Archive evidence or rerun checks as needed when links expire.
 
-The PR check also confirms that the four body sections exist and contain content. It does not authenticate test results, inspect screenshot content, or establish that evidence is sufficient. Workflows and their current runs determine which automated checks actually ran. Maintainers judge the materials and reproduce behavior when needed. See [PR check documentation](scripts/ci/README.md) for activation and limitations.
+The PR check verifies the issue reference and confirms that the four body sections exist and contain content. Maintainers check that the issue covers the change, judge the evidence, and reproduce behavior when needed. See the [PR check documentation](scripts/ci/README.md) for activation and limitations.
 
 ## Compatibility and versions
 

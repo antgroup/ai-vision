@@ -2,17 +2,29 @@
 
 During project bootstrap, use ordinary Markdown to record validation and screenshots. The [PR template](../../.github/PULL_REQUEST_TEMPLATE.md) has four required level-two headings: `Problem and impact`, `Validation`, `Screenshots and interaction`, and `Compatibility and unverified scope`. Fill each section with actual information. Documentation-only changes can record link and diff checks; explain when there is no visual impact.
 
-[pr-evidence.yml](../../.github/workflows/pr-evidence.yml) checks the [Gitflow branch and PR title convention](../../CONTRIBUTING.md#name-the-branch-and-pr) and checks that each of the four body sections appears once with actual content. Results appear in the `PR material completeness` job and Actions summary. No JSON declaration, run/job ID, or Git tree fingerprint is required. Maintainers assess the diff and verify that the evidence covers the tested SHA, environment, and behavior. Include failures, unrun checks, and environment limits in the PR.
+[pr-evidence.yml](../../.github/workflows/pr-evidence.yml) checks the [Gitflow branch and PR title convention](../../CONTRIBUTING.md#name-the-branch-and-pr), the four body sections, and the PR's issue references. Use a standalone `Refs #123`, `Issue: #123`, or closing-keyword line such as `Closes #123`, or include a full issue URL in the visible PR body. At least one reference must identify an existing issue in the target repository. Open and closed issues qualify. Include the reference in the body even if the Development sidebar already shows the issue.
+
+Results appear in the `PR material completeness` job and Actions summary. Maintainers assess the relevance of the linked issue and verify that evidence covers the tested SHA, environment, and behavior. Include failures, unrun checks, and environment limits in the PR.
 
 ## Security and initial setup
 
-The workflow runs on `pull_request` with only `contents: read`. It checks out the event's `base.sha` and runs the checker already present in that target revision. It reads the title, branch and body as data from `GITHUB_EVENT_PATH`. It does not interpolate PR content into shell commands, execute body commands, or download attachments. Fork PRs follow GitHub's approval and read-only permission rules.
+The workflow runs on `pull_request` with read-only access to contents, issues, and pull requests. It checks out the event's `base.sha` and runs the checkers already present in that target revision. The naming and evidence checker reads `GITHUB_EVENT_PATH`. The issue checker fetches the current PR body for the event's head commit and target branch, then verifies references against the target repository's Issues API. Fork PRs follow GitHub's approval and read-only permission rules.
 
-If the base does not yet contain a checker, the job displays a bootstrap notice and skips validation. A PR changing the checker runs the old policy in this job; exercise the new policy in the metadata CI suite or locally. After the policy reaches the target branch, verify with a compliant PR, a bad branch or title, a corrected title or body on the same commit, and a fork PR before making the check required on a protected branch.
+A PR introducing or updating a checker runs the policy from its target revision. The job shows a bootstrap notice for a checker that is absent from that revision. Exercise the proposed policy in the metadata CI suite or locally.
 
-A title or body edit triggers the metadata check without triggering the separate source CI workflow. Results apply to the event snapshot. Automated edits made with the repository's `GITHUB_TOKEN` may not trigger a new run, so review the current title, source branch, body, and checks before merging.
+After the workflow and both checkers reach each target branch, verify a compliant PR, a PR with no issue or an invalid reference, a corrected body on the same commit, and a fork PR. Refresh checks on open PRs with a body edit or a new commit so their results include the issue validation. To block merges, configure the `PR material completeness` check from GitHub Actions as a [required status check](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#require-status-checks-to-pass-before-merging) in the branch ruleset. Review changes to the metadata workflow itself as part of code review.
 
-The workflow checks PR metadata. It does not restrict branch creation or pushes, enforce protections or approvals, verify branch ancestry, or configure merge methods. Ordinary PRs still use the default branch unless a maintainer directs them elsewhere. Special release, hotfix, and backmerge routes have repository and target checks; the migration to `develop` for ordinary PRs and Daily builds remains separate.
+A title or body edit triggers the metadata check without triggering the separate source CI workflow. Automated edits made with the repository's `GITHUB_TOKEN` may not trigger a new run, so review the current title, source branch, body, and checks before merging.
+
+Branch rulesets and maintainer reviews govern merge requirements. The metadata checker also validates the repository and target for special release, hotfix, and backmerge routes.
+
+## Slash command workflow
+
+[slash-commands.yml](../../.github/workflows/slash-commands.yml) must be present on the default branch for GitHub to dispatch `issue_comment` events. See the [command reference](../../CONTRIBUTING.md#use-slash-commands). The workflow reads new issue and PR Conversation comments as input and checks the commenter's current repository permission before applying the command. It runs trusted repository code, including when a comment is on a fork PR. Post a fresh command to retry a failed operation.
+
+The bot records `/lgtm` and `/lgtm cancel` as advisory review comments tied to the PR head when the command runs. Use `/lgtm <full-commit-sha>` to require the reviewed commit to still be the head. A new commit needs its own review signal. GitHub approving reviews and branch rules govern approval and merging.
+
+The `/tag` job has separate `contents: write` permission. It checks that a maintainer or administrator issued the command and that the exact commit is reachable from the default branch or `develop`. It creates a lightweight ref and preserves existing tags. Product tags matching `v*`, `dev`, `daily`, `latest`, or `candidate-*` are reserved for the [release workflow](../../docs/deployment/en/dev-image-release.md). Tags created with `GITHUB_TOKEN` are repository refs and do not trigger tag-push workflows. [GitHub token behavior](https://docs.github.com/en/actions/concepts/security/github_token#when-github_token-triggers-workflow-runs).
 
 ## Local validation
 
@@ -26,7 +38,7 @@ python3 scripts/ci/pr_evidence.py --body-file /tmp/pr.md \
 python3 scripts/ci/pr_evidence.py --event /tmp/pr-event.json --summary /tmp/pr-summary.md
 ```
 
-Use `--body-file` alone for a body-only preflight, or supply `--branch` and `--title` together to check an ordinary PR's names as well. Use `--event` for the full policy, including release and bot context. Use a GitHub PR event payload for that mode. Output contains fixed diagnostics and does not echo PR text or branch names.
+Use `--body-file` alone for a body-only preflight, or supply `--branch` and `--title` together to check an ordinary PR's names as well. Pass a GitHub PR event payload to `--event` to check naming and evidence in release and bot contexts. The Actions job verifies the issue separately through `pr_issue.py`.
 
 ## Test tiers
 

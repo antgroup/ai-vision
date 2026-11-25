@@ -7,7 +7,11 @@ Review pasted text and attachments for credentials, private URLs, and customer d
 
 ## Problem and impact
 
-<!-- State the observed problem or user need, what changes, and who or what is affected. Link the issue or accepted design if one exists. Use `Closes #123` only when a PR to the default branch fully resolves the issue. Disclose substantive AI assistance when used. -->
+<!--
+Add a line such as `Refs #123` with an existing issue number from this repository.
+Use `Closes #123` when a PR to the default branch fully resolves the issue.
+State the observed problem or user need, what changes, and who or what is affected. Link the accepted design when applicable. Disclose substantive AI assistance when used.
+-->
 
 ## Validation
 

@@ -1,0 +1,63 @@
+name: Slash commands
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  conversation:
+    name: Issue and PR commands
+    # Submit a new comment to retry an operation. Replaying old comments can
+    # undo newer changes or apply an LGTM to a different revision.
+    if: >-
+      github.run_attempt == '1' &&
+      github.event.comment.user.type == 'User' &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) &&
+      (startsWith(github.event.comment.body, '/assign') ||
+       startsWith(github.event.comment.body, '/unassign') ||
+       startsWith(github.event.comment.body, '/label') ||
+       startsWith(github.event.comment.body, '/unlabel') ||
+       startsWith(github.event.comment.body, '/lgtm') ||
+       startsWith(github.event.comment.body, '/triage'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      # For issue_comment, github.sha is the trusted default-branch commit.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: scripts/ci
+      - name: Apply conversation command
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/slash_commands.py --event "$GITHUB_EVENT_PATH"
+
+  tag:
+    name: Git tag command
+    if: >-
+      github.run_attempt == '1' &&
+      github.event.comment.user.type == 'User' &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association) &&
+      startsWith(github.event.comment.body, '/tag')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    permissions:
+      contents: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          sparse-checkout: scripts/ci
+      - name: Create Git tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/ci/slash_commands.py --event "$GITHUB_EVENT_PATH" --tag-job
