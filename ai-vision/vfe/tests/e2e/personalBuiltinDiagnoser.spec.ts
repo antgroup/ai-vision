@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test"
-import type { DiagnoserDTO } from "../../src/components/diagnose/types"
+import type { DiagnoserDTO, JobDTO } from "../../src/components/diagnose/types"
 import { mcpPage, prepare, uiText } from "./traceLabs.fixtures"
 
 const now = "2026-11-17T02:00:00Z"
@@ -37,10 +37,14 @@ const latencyRule: DiagnoserDTO = {
   gmt_modified: now,
 }
 
-async function preparePersonalSpace(page: Page, permissions: string[]) {
+async function prepareSpace(
+  page: Page,
+  permissions: string[],
+  { language = "zh-CN", type = 1 } = {}
+) {
   await page.setViewportSize({ width: 390, height: 844 })
-  await prepare(page, "zh-CN")
-  await mcpPage(page)
+  await prepare(page, language)
+  await mcpPage(page, { navigate: false })
   await page.route("**/api/v1/spaces", (route) =>
     route.fulfill({
       json: {
@@ -50,8 +54,8 @@ async function preparePersonalSpace(page: Page, permissions: string[]) {
           items: [
             {
               space_id: "space-a",
-              name: "个人空间",
-              type: 1,
+              name: "QA space",
+              type,
               scope: 1,
               description: null,
               creator_name: "Reviewer",
@@ -65,7 +69,7 @@ async function preparePersonalSpace(page: Page, permissions: string[]) {
               gmt_create: now,
               role: 1,
               permissions,
-              collaboration_enabled: false,
+              collaboration_enabled: type === 2,
             },
           ],
         },
@@ -79,7 +83,7 @@ const routeUrl = "/diagnosers?spaceId=space-a&agent=Codex&agent_uuid=agent"
 test("a personal-space preset exposes its active rule details on a narrow screen", async ({
   page,
 }, info) => {
-  await preparePersonalSpace(page, ["diagnosis.read"])
+  await prepareSpace(page, ["diagnosis.read"])
   const diagnoseRequests: { method: string; url: URL }[] = []
   await page.route("**/api/v1/spaces/space-a/diagnose/**", (route) => {
     const request = route.request()
@@ -148,7 +152,7 @@ test("a personal-space preset exposes its active rule details on a narrow screen
 test("a personal-space manager can restore a threshold and copy its rule", async ({
   page,
 }, info) => {
-  await preparePersonalSpace(page, ["diagnosis.read", "diagnosis.manage"])
+  await prepareSpace(page, ["diagnosis.read", "diagnosis.manage"])
   let preset = structuredClone(latencyRule)
   let copy: DiagnoserDTO | undefined
   const writes: { method: string; agent: string | null; body: unknown }[] = []
@@ -248,4 +252,136 @@ test("a personal-space manager can restore a threshold and copy its rule", async
     },
     { method: "POST", agent: "agent", body: { name: copyName } },
   ])
+})
+
+const jobRoute = "/diagnose-jobs?spaceId=space-a&agent=Codex&agent_uuid=agent"
+const schedule: JobDTO = {
+  uuid: "built-in-schedule",
+  space_uuid: "space-a",
+  agent_uuid: "agent",
+  name: "Scheduled diagnosis",
+  description: "",
+  trigger_type: "schedule",
+  schedule_cron: "0 * * * *",
+  status: "enabled",
+  dataset_uuid: "fixture-dataset",
+  diagnoser_uuids: [],
+  spec: { managed_by: "aivision.personal_diagnosis" },
+  creator: "AI Vision",
+  modifier: "AI Vision",
+  gmt_create: now,
+  gmt_modified: now,
+}
+
+function mockJobs(page: Page, response: () => JobDTO[] | Promise<JobDTO[]>) {
+  return page.route("**/api/v1/spaces/space-a/diagnose/**", async (route) => {
+    const path = new URL(route.request().url()).pathname
+    const items = path.endsWith("/jobs") ? await response() : []
+    return route.fulfill({
+      json: { code: 0, data: { items, total: items.length } },
+    })
+  })
+}
+
+for (const language of ["zh-CN", "en-US", "ja-JP"]) {
+  test(`an empty personal diagnosis list makes no schedule promise in ${language}`, async ({
+    page,
+  }, info) => {
+    await prepareSpace(page, ["diagnosis.read"], { language })
+    await mockJobs(page, () => [])
+    await page.goto(jobRoute)
+    const empty = page.getByText(
+      uiText(language, "diagnose.job.personalEmptyHint")
+    )
+    await expect(empty).toBeVisible()
+    await expect(
+      page.getByText(uiText(language, "diagnose.job.personalScheduleHint"))
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole("button", {
+        name: uiText(language, "diagnose.job.createCta"),
+      })
+    ).toBeDisabled()
+    await page.screenshot({
+      path: info.outputPath("personal-diagnosis-empty.png"),
+      animations: "disabled",
+    })
+  })
+}
+
+test("the personal schedule notice follows an enabled managed job across result-page changes", async ({
+  page,
+}, info) => {
+  await prepareSpace(page, ["diagnosis.read"])
+  let finishJobs!: (jobs: JobDTO[]) => void
+  const pending = new Promise<JobDTO[]>((resolve) => {
+    finishJobs = resolve
+  })
+  let jobs: JobDTO[] | Promise<JobDTO[]> = pending
+  await mockJobs(page, () => jobs)
+  const requested = page.waitForRequest(
+    "**/api/v1/spaces/space-a/diagnose/jobs?**"
+  )
+  await page.goto(jobRoute)
+  await requested
+  const hint = page.getByText(
+    uiText("zh-CN", "diagnose.job.personalScheduleHint")
+  )
+  await expect(hint).toHaveCount(0)
+  await expect(
+    page.getByText(uiText("zh-CN", "diagnose.job.personalEmptyHint"))
+  ).toHaveCount(0)
+  // Give the enabled platform job its own page, after unscheduled jobs.
+  const manualJobs = Array.from({ length: 20 }, (_, index) => ({
+    ...schedule,
+    uuid: `manual-${index}`,
+    name: `Run manually ${index}`,
+    trigger_type: "manual" as const,
+    schedule_cron: null,
+    spec: {},
+  }))
+  finishJobs([...manualJobs, schedule])
+  await expect(hint).toBeVisible()
+  await expect(page.getByText(schedule.name, { exact: true })).toHaveCount(0)
+  await page.getByRole("link", { name: "2", exact: true }).click()
+  await expect(page.getByText(schedule.name, { exact: true })).toBeVisible()
+  await expect(hint).toBeVisible()
+  await page
+    .getByPlaceholder(uiText("zh-CN", "diagnose.job.searchPlaceholder"))
+    .fill("no match")
+  await expect(
+    page.getByText(uiText("zh-CN", "diagnose.job.noMatch"))
+  ).toBeVisible()
+  await expect(hint).toBeVisible()
+  await page.screenshot({
+    path: info.outputPath("personal-diagnosis-active.png"),
+    animations: "disabled",
+  })
+
+  jobs = [
+    { ...schedule, status: "disabled" },
+    { ...schedule, uuid: "custom-schedule", name: "Custom schedule", spec: {} },
+  ]
+  await page.reload()
+  await expect(page.getByText(schedule.name, { exact: true })).toBeVisible()
+  await expect(hint).toHaveCount(0)
+})
+
+test("a Team schedule has no personal notice and keeps its job management action", async ({
+  page,
+}) => {
+  await prepareSpace(page, ["diagnosis.read", "diagnosis.job.manage"], {
+    type: 2,
+  })
+  await mockJobs(page, () => [schedule])
+  await page.goto(jobRoute)
+  await expect(page.getByText(schedule.name, { exact: true })).toBeVisible()
+  await expect(
+    page.getByText(uiText("zh-CN", "diagnose.job.personalScheduleHint"))
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole("button", {
+      name: uiText("zh-CN", "diagnose.job.createCta"),
+    })
+  ).toBeEnabled()
 })

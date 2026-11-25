@@ -180,6 +180,19 @@ export function JobPage() {
   })
 
   const jobs = useMemo(() => jobsQuery.data?.items ?? [], [jobsQuery.data])
+  const hasPersonalSchedule =
+    isPersonal &&
+    !noBuiltinDiagnosers &&
+    jobsQuery.isSuccess &&
+    jobs.some(
+      (job) =>
+        job.space_uuid === spaceId &&
+        job.agent_uuid === agentUuid &&
+        job.status === "enabled" &&
+        job.trigger_type === "schedule" &&
+        Boolean(job.schedule_cron?.trim()) &&
+        isPlatformManagedJob(job)
+    )
   const diagnosers: Diagnoser[] = useMemo(() => {
     return (diagnosersQuery.data?.items ?? []).map((dto) =>
       toDiagnoser(dto, undefined, t)
@@ -356,7 +369,7 @@ export function JobPage() {
           </Alert>
         )}
 
-        {isPersonal && !noBuiltinDiagnosers && (
+        {hasPersonalSchedule && (
           <Alert>
             <Info />
             <AlertDescription>
