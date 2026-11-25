@@ -15,23 +15,19 @@ const connectCommand =
   "aiv connect codex --base-url 'https://vision.example.test' --space-id 'space-test' --agent-uuid 'agent-test' --installation-token 'test-ticket'"
 const unixCheck =
   'export PATH="$HOME/.local/bin:$PATH"\ncommand -v aiv && aiv --version'
-const pluginHosts = {
-  "claude-code": "claude",
-  codex: "codex",
-  kimi: "kimi",
-  opencode: "opencode",
-  openclaw: "openclaw",
-  pi: "pi",
-  dsh: "dsh",
-} as const
 const checkCommand = (host: string) =>
   `${unixCheck}\ncommand -v ${host} && ${host} --version`
-const windowsAivCheck = [
-  "Get-Command aiv | Select-Object -ExpandProperty Source",
-  "aiv --version",
-].join("\n")
-const windowsCheck = (host: string) =>
-  `${windowsAivCheck}\nGet-Command ${host} | Select-Object -ExpandProperty Source\n${host} --version`
+const windowsCheck = (host?: string) =>
+  [
+    "Get-Command aiv | Select-Object -ExpandProperty Source",
+    "aiv --version",
+    ...(host
+      ? [
+          `Get-Command ${host} | Select-Object -ExpandProperty Source`,
+          `${host} --version`,
+        ]
+      : []),
+  ].join("\n")
 
 // An already saved guide has no new CLI installation metadata.
 const savedGuide: ConfigGuideV2 = {
@@ -74,13 +70,13 @@ const savedGuide: ConfigGuideV2 = {
 }
 
 const knownPlugins = [
-  ["claude-code", "Claude Code"],
-  ["codex", "Codex"],
-  ["kimi", "Kimi CLI"],
-  ["opencode", "OpenCode"],
-  ["openclaw", "OpenClaw"],
-  ["pi", "Pi"],
-  ["dsh", "DSH"],
+  ["claude-code", "Claude Code", "claude"],
+  ["codex", "Codex", "codex"],
+  ["kimi", "Kimi CLI", "kimi"],
+  ["opencode", "OpenCode", "opencode"],
+  ["openclaw", "OpenClaw", "openclaw"],
+  ["pi", "Pi", "pi"],
+  ["dsh", "DSH", "dsh"],
 ] as const
 
 // Published Chinese guide fields, as saved before the UI supported other locales.
@@ -384,11 +380,10 @@ test("saved plugin guides show CLI installation and copyable PATH checks before 
   }
 })
 
-for (const [pluginKey, agentName] of knownPlugins) {
+for (const [pluginKey, agentName, host] of knownPlugins) {
   test(`${pluginKey} shows aiv + host checks, ready copy and troubleshooting`, async () => {
     const ui = await fixture()
     try {
-      const host = pluginHosts[pluginKey]
       const command = checkCommand(host)
       await ui.render(false, builtinGuide(pluginKey, agentName), { agentName })
       const code = [...ui.element.querySelectorAll("code")].find(
@@ -566,7 +561,7 @@ test("a Windows browser falls back to the aiv-only PowerShell check", async () =
   try {
     await ui.render(false, builtinGuide("unknown-agent", "Unknown Agent"))
     const text = ui.element.textContent || ""
-    assert.ok(text.includes(windowsAivCheck))
+    assert.ok(text.includes(windowsCheck()))
     assert.ok(text.includes(ui.t("agentAccess.cliInstall.readyWindows")))
     assert.equal(text.includes("Get-Command unknown-agent"), false)
   } finally {
