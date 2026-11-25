@@ -19,14 +19,9 @@ const checkCommand = (host: string) =>
   `${unixCheck}\ncommand -v ${host} && ${host} --version`
 const windowsCheck = (host?: string) =>
   [
-    "Get-Command aiv | Select-Object -ExpandProperty Source",
+    "Get-Command aiv",
     "aiv --version",
-    ...(host
-      ? [
-          `Get-Command ${host} | Select-Object -ExpandProperty Source`,
-          `${host} --version`,
-        ]
-      : []),
+    ...(host ? [`Get-Command ${host}`, `${host} --version`] : []),
   ].join("\n")
 
 // An already saved guide has no new CLI installation metadata.

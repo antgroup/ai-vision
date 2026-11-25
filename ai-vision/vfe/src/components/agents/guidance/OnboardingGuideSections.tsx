@@ -8,10 +8,7 @@ import { PLUGIN_HOSTS } from "./pluginHosts"
 
 const AIV_CHECK =
   'export PATH="$HOME/.local/bin:$PATH"\ncommand -v aiv && aiv --version'
-const WINDOWS_AIV_CHECK = [
-  "Get-Command aiv | Select-Object -ExpandProperty Source",
-  "aiv --version",
-].join("\n")
+const WINDOWS_AIV_CHECK = ["Get-Command aiv", "aiv --version"].join("\n")
 const HOST_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]*$/
 
 interface Props {
@@ -44,7 +41,7 @@ export function OnboardingGuideSections({
     ? `${AIV_CHECK}\ncommand -v ${host} && ${host} --version`
     : AIV_CHECK
   const windowsCheckCommand = host
-    ? `${WINDOWS_AIV_CHECK}\nGet-Command ${host} | Select-Object -ExpandProperty Source\n${host} --version`
+    ? `${WINDOWS_AIV_CHECK}\nGet-Command ${host}\n${host} --version`
     : WINDOWS_AIV_CHECK
   const agentLabel = agentName || agentProduct || guide.plugin_key || host
   const readyText = host
