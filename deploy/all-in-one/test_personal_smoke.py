@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 import shutil
 import subprocess
+import tarfile
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
@@ -25,6 +26,53 @@ INSTALLER_PATH = Path(__file__).with_name("install-all-in-one.py")
 INSTALLER_SPEC = importlib.util.spec_from_file_location("personal_installer", INSTALLER_PATH)
 installer = importlib.util.module_from_spec(INSTALLER_SPEC)
 INSTALLER_SPEC.loader.exec_module(installer)
+
+
+class InstallerImageIdentityTests(unittest.TestCase):
+    target = "linux/arm64"
+    runtime_id = "sha256:" + "d" * 64
+    config = b'{"os":"linux","architecture":"arm64"}'
+    digest = hashlib.sha256(config).hexdigest()
+    config_path = f"blobs/sha256/{digest}"
+    manifest = {"image_tag": "aiv-all-in-one:fixture", "image_id": "sha256:" + digest, "platform": target}
+
+    def docker_save(self, manifest_path=None, content=None):
+        data = BytesIO()
+        layout = json.dumps([{"Config": manifest_path or self.config_path}]).encode()
+        with tarfile.open(fileobj=data, mode="w") as archive:
+            for name, raw in ((self.config_path, content or self.config), ("manifest.json", layout)):
+                entry = tarfile.TarInfo(name)
+                entry.size = len(raw)
+                archive.addfile(entry, BytesIO(raw))
+        data.seek(0)
+        return data
+
+    def test_config_id_uses_classic_fast_path(self):
+        inspected = f"{self.manifest['image_id']} {self.target}"
+        with patch.object(installer, "output", return_value=inspected), patch.object(installer.subprocess, "Popen") as save:
+            self.assertEqual(installer.verified_image(self.manifest), self.manifest["image_id"])
+            save.assert_not_called()
+
+    def test_reload_can_reuse_a_previously_verified_immutable_id(self):
+        inspected = f"{self.runtime_id} {self.target}"
+        with patch.object(installer, "output", return_value=inspected), patch.object(installer.subprocess, "Popen") as save:
+            self.assertEqual(installer.verified_image(self.manifest, known_id=self.runtime_id), self.runtime_id)
+            save.assert_not_called()
+
+    def test_containerd_verifies_the_config_and_uses_the_immutable_engine_id(self):
+        with patch.object(installer, "output", return_value=f"{self.runtime_id} {self.target}"), \
+             patch.object(installer.subprocess, "Popen") as save:
+            process = save.return_value.__enter__.return_value
+            process.stdout = self.docker_save()
+            process.wait.return_value = 0
+            self.assertEqual(installer.verified_image(self.manifest), self.runtime_id)
+            save.assert_called_once_with(["docker", "image", "save", self.runtime_id], stdout=subprocess.PIPE)
+
+    def test_rejects_export_with_wrong_config_reference_or_contents(self):
+        for stream in (self.docker_save(manifest_path="other.json"), self.docker_save(content=b"other config")):
+            with self.subTest(stream=stream):
+                self.assertFalse(installer.saved_image_matches(stream, self.manifest["image_id"], self.target))
+        self.assertFalse(installer.saved_image_matches(self.docker_save(), self.manifest["image_id"], "linux/amd64"))
 
 
 class CandidateTests(unittest.TestCase):
