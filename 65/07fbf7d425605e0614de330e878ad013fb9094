@@ -1,0 +1,16 @@
+ai-vision/vfe/src/components/agents/guidance/OnboardingGuideSections.tsx
+  h_300a4f369432d5 11,44
+ai-vision/vfe/tests/cliOnboarding.test.ts
+  h_300a4f369432d5 22,24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6507fbf7d425605e0614de330e878ad013fb9094",
+  "prompts": {},
+  "humans": {
+    "h_300a4f369432d5": {
+      "author": "laochou.sc <laochou.sc@digital-engine.com>"
+    }
+  }
+}
