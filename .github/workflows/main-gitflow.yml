@@ -1,0 +1,55 @@
+name: Main Gitflow gate
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited, ready_for_review]
+
+permissions: {}
+
+jobs:
+  route:
+    name: Main Gitflow route
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Validate the pull request source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+
+          try:
+              event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text(encoding="utf-8"))
+              pull_request = event["pull_request"]
+              base = pull_request["base"]
+              head = pull_request["head"]
+              repository_id = int(os.environ["GITHUB_REPOSITORY_ID"])
+              repository_ids = (
+                  event["repository"]["id"], base["repo"]["id"], head["repo"]["id"]
+              )
+              branch = head["ref"]
+          except (KeyError, OSError, TypeError, ValueError):
+              raise SystemExit("The pull request source could not be verified.")
+
+          version_part = r"(?:0|[1-9][0-9]*)"
+          release_branch = re.compile(rf"(?:release|hotfix)/{version_part}[.]{version_part}[.]{version_part}")
+
+          if (
+              os.environ.get("GITHUB_EVENT_NAME") != "pull_request_target"
+              or base.get("ref") != "main"
+              or repository_id <= 0
+              or any(type(value) is not int or value != repository_id for value in repository_ids)
+              or not isinstance(branch, str)
+              or not release_branch.fullmatch(branch)
+          ):
+              raise SystemExit(
+                  "Main accepts pull requests from this repository's "
+                  "release/<version> or hotfix/<version> branches."
+              )
+
+          print("The pull request source meets the main Gitflow policy.")
+          PY
