@@ -232,15 +232,16 @@ class ThirdPartyOnboardingTests(SpaceKeyTestCase):
                 for section in guide["sections"]
                 if section["type"] == "setup_steps"
             )
-            self.assertEqual(set(steps["platforms"]), {"macOS/Linux"})
-            command = steps["platforms"]["macOS/Linux"]["modes"]["cli"]["steps"][0]["command"]
-            self.assertIn(f"aiv connect {guide['plugin_key']}", command)
-            self.assertIn("--base-url '{baseUrl}'", command)
-            self.assertIn("--space-id '{spaceId}'", command)
-            self.assertIn("--agent-uuid '{agentUuid}'", command)
-            self.assertIn("--installation-token '{installationToken}'", command)
-            self.assertNotIn("install.sh", command)
-            self.assertNotIn("Invoke-WebRequest", command)
+            self.assertEqual(set(steps["platforms"]), {"macOS/Linux", "Windows"})
+            for platform in ("macOS/Linux", "Windows"):
+                command = steps["platforms"][platform]["modes"]["cli"]["steps"][0]["command"]
+                self.assertIn(f"aiv connect {guide['plugin_key']}", command)
+                self.assertIn("--base-url '{baseUrl}'", command)
+                self.assertIn("--space-id '{spaceId}'", command)
+                self.assertIn("--agent-uuid '{agentUuid}'", command)
+                self.assertIn("--installation-token '{installationToken}'", command)
+                self.assertNotIn("install.sh", command)
+                self.assertNotIn("Invoke-WebRequest", command)
             self.assertNotIn("SpaceKey", str(guide))
             self.assertEqual(kind.category, "CUSTOM")
             self.assertIn(kind.display_scope, {"ALL", "HIDDEN"})
@@ -272,13 +273,15 @@ class ThirdPartyOnboardingTests(SpaceKeyTestCase):
         ):
             if kind.setup_mode != "CLI":
                 continue
-            command = next(
+            platforms = next(
                 section
                 for section in kind.config_guide["sections"]
                 if section["type"] == "setup_steps"
-            )["platforms"]["macOS/Linux"]["modes"]["cli"]["steps"][0]["command"]
-            self.assertIn("--base-url 'http://127.0.0.1:8001'", command)
-            self.assertNotIn("{baseUrl}", command)
+            )["platforms"]
+            for platform in ("macOS/Linux", "Windows"):
+                command = platforms[platform]["modes"]["cli"]["steps"][0]["command"]
+                self.assertIn("--base-url 'http://127.0.0.1:8001'", command)
+                self.assertNotIn("{baseUrl}", command)
 
     @override_settings(
         AIVISION_INGEST_SECRET="test-signing-secret-at-least-32-characters",

@@ -40,6 +40,7 @@ export type GuideSection =
 export interface ConfigGuideV2 {
   schema: "v2"
   plugin_key?: string
+  host?: string
   native_relay_onboarding?: {
     enabled: boolean
     hermes_version?: string

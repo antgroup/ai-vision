@@ -96,10 +96,13 @@ export function localizeGuideSections(
           steps: section.steps.map(translate),
         }
       case "setup_steps": {
-        // Saved catalog guides can still contain the old Windows installer tab.
+        // New generated guides carry host metadata and publish a real Windows
+        // install tab. Older saved guides only have the legacy Windows
+        // installer tab, which must stay hidden.
         const platforms = Object.entries(section.platforms).filter(
           ([platform, { modes }]) => {
             if (!builtinPlugin || platform !== "Windows") return true
+            if (guide.host) return true
 
             const steps = modes.cli?.steps
             const legacyConnectTab =

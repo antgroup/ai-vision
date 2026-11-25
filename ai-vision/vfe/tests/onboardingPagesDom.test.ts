@@ -624,7 +624,10 @@ for (const mode of ["missing", "rejected"] as const) {
         snippet.parentElement?.querySelector('[role="alert"]')?.textContent,
         page.text("hermesOnboarding.copyFailed")
       )
-      assert.equal(snippet.textContent, "hermes --version\nhermes doctor")
+      assert.equal(
+        snippet.textContent,
+        "command -v hermes && hermes --version\nhermes doctor"
+      )
       assert.deepEqual(page.copiedTexts, [])
       page.setClipboard("available")
       await act(async () => copy.click())
@@ -709,8 +712,22 @@ test("Hermes native onboarding stays in its application dialog and copies one au
       page.document.querySelector(
         `pre[aria-label="${page.text("hermesOnboarding.checkEnvironment")}"]`
       )?.textContent ?? ""
-    assert.equal(environmentCheck, "hermes --version\nhermes doctor")
+    assert.equal(
+      environmentCheck,
+      "command -v hermes && hermes --version\nhermes doctor"
+    )
     assert.equal(environmentCheck.includes("\\n"), false)
+    assert.equal(environmentCheck.includes("command -v aiv"), false)
+    const hermesReady = page.text("hermesOnboarding.environmentReady", {
+      hermes: "0.22.5",
+      relay: ">=0.10,<0.11",
+    })
+    assert.ok(page.document.body.textContent?.includes(hermesReady))
+    const hermesTroubleshooting = page.text(
+      "hermesOnboarding.environmentTroubleshooting",
+      { hermes: "0.22.5", relay: ">=0.10,<0.11" }
+    )
+    assert.ok(page.document.body.textContent?.includes(hermesTroubleshooting))
     const copyCheck = page.document.querySelector<HTMLButtonElement>(
       `button[aria-label="${page.text("common.copy")} ${page.text("hermesOnboarding.checkEnvironment")}"]`
     )

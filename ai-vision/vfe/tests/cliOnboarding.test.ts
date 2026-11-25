@@ -15,7 +15,23 @@ const connectCommand =
   "aiv connect codex --base-url 'https://vision.example.test' --space-id 'space-test' --agent-uuid 'agent-test' --installation-token 'test-ticket'"
 const unixCheck =
   'export PATH="$HOME/.local/bin:$PATH"\ncommand -v aiv && aiv --version'
-const windowsCheck = "Get-Command aiv\naiv --version"
+const pluginHosts = {
+  "claude-code": "claude",
+  codex: "codex",
+  kimi: "kimi",
+  opencode: "opencode",
+  openclaw: "openclaw",
+  pi: "pi",
+  dsh: "dsh",
+} as const
+const checkCommand = (host: string) =>
+  `${unixCheck}\ncommand -v ${host} && ${host} --version`
+const windowsAivCheck = [
+  "Get-Command aiv | Select-Object -ExpandProperty Source",
+  "aiv --version",
+].join("\n")
+const windowsCheck = (host: string) =>
+  `${windowsAivCheck}\nGet-Command ${host} | Select-Object -ExpandProperty Source\n${host} --version`
 
 // An already saved guide has no new CLI installation metadata.
 const savedGuide: ConfigGuideV2 = {
@@ -349,7 +365,7 @@ test("saved plugin guides show CLI installation and copyable PATH checks before 
       "existing guides must expose CLI installation before token generation"
     )
     const check = [...ui.element.querySelectorAll("code")].find(
-      (code) => code.textContent === unixCheck
+      (code) => code.textContent === checkCommand("codex")
     )
     assert.ok(
       check,
@@ -362,7 +378,96 @@ test("saved plugin guides show CLI installation and copyable PATH checks before 
     await act(async () =>
       copy.dispatchEvent(new ui.window.MouseEvent("click", { bubbles: true }))
     )
-    assert.deepEqual(ui.copied, [unixCheck])
+    assert.deepEqual(ui.copied, [checkCommand("codex")])
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+for (const [pluginKey, agentName] of knownPlugins) {
+  test(`${pluginKey} shows aiv + host checks, ready copy and troubleshooting`, async () => {
+    const ui = await fixture()
+    try {
+      const host = pluginHosts[pluginKey]
+      const command = checkCommand(host)
+      await ui.render(false, builtinGuide(pluginKey, agentName), { agentName })
+      const code = [...ui.element.querySelectorAll("code")].find(
+        (element) => element.textContent === command
+      )
+      assert.ok(code, `${pluginKey}: aiv + ${host} check`)
+      const ready = ui.t("agentAccess.cliInstall.readyWithHost", { host })
+      assert.ok(
+        [...ui.element.querySelectorAll("p")].some(
+          (paragraph) => paragraph.textContent === ready
+        ),
+        `${pluginKey}: ready copy uses ${host}`
+      )
+      const troubleshooting = ui.t("agentAccess.cliInstall.hostNotFound", {
+        host,
+        agent: agentName,
+      })
+      assert.ok(
+        [...ui.element.querySelectorAll("p")].some(
+          (paragraph) => paragraph.textContent === troubleshooting
+        ),
+        `${pluginKey}: troubleshooting uses ${host}`
+      )
+      const copy = code.parentElement?.querySelector("button")
+      assert.ok(copy)
+      await act(async () =>
+        copy.dispatchEvent(new ui.window.MouseEvent("click", { bubbles: true }))
+      )
+      assert.deepEqual(ui.copied, [command])
+    } finally {
+      await ui.cleanup()
+    }
+  })
+}
+
+test("a generated guide host overrides the fallback map", async () => {
+  const ui = await fixture()
+  try {
+    const guide = { ...builtinGuide("codex", "Codex"), host: "codex-custom" }
+    await ui.render(false, guide)
+    const command = checkCommand("codex-custom")
+    assert.ok(
+      [...ui.element.querySelectorAll("code")].some(
+        (code) => code.textContent === command
+      )
+    )
+    const ready = ui.t("agentAccess.cliInstall.readyWithHost", {
+      host: "codex-custom",
+    })
+    assert.ok(ui.element.textContent?.includes(ready))
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("unknown plugin keys keep the aiv-only check and ready copy", async () => {
+  const ui = await fixture()
+  try {
+    await ui.render(false, builtinGuide("unknown-agent", "Unknown Agent"))
+    const commands = [...ui.element.querySelectorAll("code")].map(
+      (code) => code.textContent
+    )
+    assert.ok(commands.includes(unixCheck))
+    assert.equal(
+      commands.some((command) => command?.includes("command -v unknown-agent")),
+      false
+    )
+    assert.ok(
+      ui.element.textContent?.includes(ui.t("agentAccess.cliInstall.ready"))
+    )
+    assert.equal(
+      ui.element.textContent?.includes(
+        ui.t("agentAccess.cliInstall.hostNotFound", {
+          host: "unknown-agent",
+          agent: "Unknown Agent",
+        })
+      ),
+      false
+    )
   } finally {
     await ui.cleanup()
   }
@@ -377,14 +482,16 @@ test("issuing a plugin command preserves both CLI preparation and the original c
       (code) => code.textContent
     )
     assert.ok(
-      commands.includes(unixCheck),
+      commands.includes(checkCommand("codex")),
       "CLI preparation stays visible after authorization"
     )
     assert.ok(
       commands.includes(connectCommand),
       "connection origin, scope and token are preserved"
     )
-    assert.ok(commands.indexOf(unixCheck) < commands.indexOf(connectCommand))
+    assert.ok(
+      commands.indexOf(checkCommand("codex")) < commands.indexOf(connectCommand)
+    )
     assert.ok(
       ui.element.querySelector(
         'a[href="https://aivision.mintlify.site/zh-CN/guides/install-cli"]'
@@ -395,7 +502,7 @@ test("issuing a plugin command preserves both CLI preparation and the original c
   }
 })
 
-test("a Windows browser shows supported Agent host commands even with a legacy guide", async () => {
+test("a Windows browser shows the PowerShell check even with a legacy guide", async () => {
   const ui = await fixture("en-US", "Windows")
   try {
     await ui.render(false)
@@ -404,19 +511,92 @@ test("a Windows browser shows supported Agent host commands even with a legacy g
     const platforms = [...ui.element.querySelectorAll('[role="tab"]')].map(
       (tab) => tab.textContent?.trim()
     )
-    assert.deepEqual(platforms, ["macOS/Linux", "macOS/Linux"])
-    assert.match(ui.element.textContent || "", /Windows.*query an existing/)
+    assert.deepEqual(platforms, ["macOS/Linux", "Windows", "macOS/Linux"])
+    assert.match(ui.element.textContent || "", /PowerShell 7/)
     const commands = [...ui.element.querySelectorAll("code")].map(
       (code) => code.textContent
     )
-    assert.ok(commands.includes(unixCheck))
+    assert.equal(commands.includes(checkCommand("codex")), false)
+    assert.ok(commands.includes(windowsCheck("codex")))
     assert.ok(commands.includes(connectCommand))
-    assert.equal(commands.includes(windowsCheck), false)
     assert.ok(
       ui.element.querySelector(
         'a[href="https://aivision.mintlify.site/en/guides/install-cli"]'
       )
     )
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("a Windows browser uses PowerShell ready, path and troubleshooting copy", async () => {
+  const ui = await fixture("en-US", "Windows")
+  try {
+    await ui.render(false, builtinGuide("codex", "Codex"), {
+      agentName: "Codex",
+    })
+    const text = ui.element.textContent || ""
+    assert.ok(
+      text.includes(
+        ui.t("agentAccess.cliInstall.readyWithHostWindows", { host: "codex" })
+      )
+    )
+    assert.ok(text.includes(ui.t("agentAccess.cliInstall.pathHintWindows")))
+    assert.ok(
+      text.includes(
+        ui.t("agentAccess.cliInstall.hostNotFoundWindows", {
+          host: "codex",
+          agent: "Codex",
+        })
+      )
+    )
+    assert.equal(
+      text.includes(
+        ui.t("agentAccess.cliInstall.readyWithHost", { host: "codex" })
+      ),
+      false
+    )
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("a Windows browser falls back to the aiv-only PowerShell check", async () => {
+  const ui = await fixture("en-US", "Windows")
+  try {
+    await ui.render(false, builtinGuide("unknown-agent", "Unknown Agent"))
+    const text = ui.element.textContent || ""
+    assert.ok(text.includes(windowsAivCheck))
+    assert.ok(text.includes(ui.t("agentAccess.cliInstall.readyWindows")))
+    assert.equal(text.includes("Get-Command unknown-agent"), false)
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("a generated guide host keeps its Windows install tab", async () => {
+  const ui = await fixture()
+  const guide = structuredClone(builtinGuide("codex", "Codex"))
+  const setup = guide.sections.find((section) => section.type === "setup_steps")
+  assert.ok(setup && setup.type === "setup_steps")
+  setup.platforms.Windows = {
+    modes: {
+      cli: {
+        label: "原生安装",
+        steps: [{ title: "安装插件", command: connectCommand }],
+      },
+    },
+  }
+  const windowsTabCount = () =>
+    [...ui.element.querySelectorAll('[role="tab"]')].filter(
+      (tab) => tab.textContent?.trim() === "Windows"
+    ).length
+  try {
+    await ui.render(true, guide)
+    assert.equal(windowsTabCount(), 1)
+    guide.host = "codex"
+    await ui.render(true, guide)
+    assert.equal(windowsTabCount(), 2)
   } finally {
     await ui.cleanup()
   }

@@ -2637,11 +2637,17 @@
     },
     "cliInstall": {
       "title": "Install and check the aiv CLI first",
-      "description": "Install the aiv CLI and collection plugin on the macOS or Linux host running the Agent. The Windows CLI can query an existing deployment.",
+      "description": "Install the aiv CLI and collection plugin on the host running the Agent. On Windows, use PowerShell 7.",
       "guide": "Open the aiv CLI installation guide",
       "check": "After installation, check the path and version in the same terminal you will use to connect",
       "pathHint": "On macOS / Linux, the default directory is ~/.local/bin. The export in the check command applies to the current terminal; add it to ~/.zshrc (zsh) or your active Bash startup file, then verify in a new terminal. For a custom directory, use the export command printed by the installer.",
-      "ready": "Once you see the aiv path and version, generate and run the installation command below. If you see command not found: aiv, install the CLI or fix PATH first."
+      "pathHintWindows": "On Windows, the default directory is `%LOCALAPPDATA%\\AI Vision\\bin`, and the installer adds it to your user PATH; open a new PowerShell terminal to verify. For a custom directory, add it to PATH manually.",
+      "ready": "Once you see the aiv path and version, generate and run the installation command below. If you see command not found: aiv, install the CLI or fix PATH first.",
+      "readyWindows": "Once you see the aiv path and version, generate and run the installation command below. If PowerShell reports that the term 'aiv' is not recognized as a cmdlet, function, script file, or operable program, install the CLI or fix PATH first.",
+      "readyWithHost": "Once you see the aiv and {{host}} paths and versions, generate and run the installation command below. If you see command not found: aiv or command not found: {{host}}, install the missing component or fix PATH first.",
+      "readyWithHostWindows": "Once you see the aiv and {{host}} paths and versions, generate and run the installation command below. If PowerShell reports that the term 'aiv' or '{{host}}' is not recognized as a cmdlet, function, script file, or operable program, install the missing component or fix PATH first.",
+      "hostNotFound": "If `command -v {{host}}` prints nothing, reports command not found: {{host}}, or `{{host}} --version` fails, the connection preflight will fail. Install {{agent}}, make sure {{host}} runs, and add its directory to PATH before generating the installation command. If the preflight still reports {{host}} not found, recheck PATH in the same terminal that runs the connection command.",
+      "hostNotFoundWindows": "If `Get-Command {{host}}` fails, reports that {{host}} is not recognized, or `{{host}} --version` fails, the connection preflight will fail. Install {{agent}}, make sure {{host}} runs, and add its directory to PATH before generating the installation command. If the preflight still reports {{host}} not found, recheck PATH in the same PowerShell terminal that runs the connection command."
     },
     "pluginDescription": "Install the collection plugin on the machine running the Agent to send task data to the current AI Vision space",
     "builtInGroup": "Agent Framework",
@@ -5915,6 +5921,8 @@
     "description": "Send model, tool, and context-compaction records through NeMo Relay built into Hermes. No AI Vision plugin is needed.",
     "requirements": "Environment: Hermes Agent {{hermes}} · nemo-relay {{relay}}.",
     "checkEnvironment": "Check the Hermes environment (macOS / Linux shell)",
+    "environmentReady": "Once `hermes --version` matches Hermes Agent {{hermes}} and `hermes doctor` passes, generate and merge the configuration below.",
+    "environmentTroubleshooting": "If you see command not found: hermes, install Hermes Agent {{hermes}} and fix PATH first. If `hermes --version` is lower than {{hermes}}, upgrade Hermes Agent. If `hermes doctor` reports that nemo-relay does not satisfy {{relay}}, upgrade the Relay plugin.",
     "createFirst": "Create or restore the Hermes collection project in this Space using the button below, then generate its reporting configuration.",
     "authorization": "1. Generate reporting authorization",
     "identity": "Space: {{space}} · Agent UUID: {{agent}}",

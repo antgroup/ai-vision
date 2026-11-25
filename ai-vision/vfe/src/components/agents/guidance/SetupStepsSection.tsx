@@ -82,8 +82,6 @@ export function SetupStepsSection({ section }: Props) {
     }
   }
 
-  const currentSteps = platformConfig?.modes[activeMode]?.steps || []
-
   return (
     <div className="space-y-3">
       <h4 className="flex items-center gap-1.5 text-sm font-medium text-foreground">
@@ -130,7 +128,9 @@ export function SetupStepsSection({ section }: Props) {
             )}
 
             <div className="space-y-3">
-              {currentSteps.map((step, stepIndex) => (
+              {(
+                section.platforms[platform]?.modes[activeMode]?.steps || []
+              ).map((step, stepIndex) => (
                 <StepCommand
                   key={`${platform}-${activeMode}-${stepIndex}`}
                   step={step}

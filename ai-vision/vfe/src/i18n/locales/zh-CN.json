@@ -2637,11 +2637,17 @@
     },
     "cliInstall": {
       "title": "先安装并检查 aiv CLI",
-      "description": "请在实际运行 Agent 的 macOS 或 Linux 主机上安装 aiv CLI 和采集插件。Windows 版 CLI 可查询已有平台。",
+      "description": "请在实际运行 Agent 的主机上安装 aiv CLI 和采集插件。Windows 使用 PowerShell 7。",
       "guide": "打开 aiv CLI 安装指南",
       "check": "安装后，在将要执行接入命令的同一个终端中检查路径与版本",
       "pathHint": "macOS / Linux 默认安装到 ~/.local/bin。检查命令中的 export 只对当前终端生效；请将它加入 ~/.zshrc（zsh）或实际使用的 Bash 启动文件，再打开新终端验证。自定义安装目录请使用安装器输出的 export 命令。",
-      "ready": "确认看到 aiv 的路径和版本后，再生成并执行下方安装命令。若提示 command not found: aiv，请先完成 CLI 安装或修正 PATH。"
+      "pathHintWindows": "Windows 默认安装到 `%LOCALAPPDATA%\\AI Vision\\bin`，安装器会把该目录加入当前用户 PATH；安装后请打开新的 PowerShell 终端验证。自定义目录请手动加入 PATH。",
+      "ready": "确认看到 aiv 的路径和版本后，再生成并执行下方安装命令。若提示 command not found: aiv，请先完成 CLI 安装或修正 PATH。",
+      "readyWindows": "确认看到 aiv 的路径和版本后，再生成并执行下方安装命令。若提示无法将“aiv”项识别为 cmdlet、函数、脚本文件或可运行程序的名称，请先完成 CLI 安装或修正 PATH。",
+      "readyWithHost": "确认看到 aiv、{{host}} 的路径和版本后，再生成并执行下方安装命令。若提示 command not found: aiv 或 command not found: {{host}}，请先完成组件安装或修正 PATH。",
+      "readyWithHostWindows": "确认看到 aiv、{{host}} 的路径和版本后，再生成并执行下方安装命令。若提示无法将“aiv”或“{{host}}”项识别为 cmdlet、函数、脚本文件或可运行程序的名称，请先完成组件安装或修正 PATH。",
+      "hostNotFound": "若 `command -v {{host}}` 没有输出、提示 command not found: {{host}}，或 `{{host}} --version` 报错，接入预检会失败。请先完成 {{agent}} 安装、确认 {{host}} 可以运行，并把其所在目录加入 PATH，再生成安装命令。若预检仍报 {{host}} not found，请在执行接入命令的同一个终端中重新检查 PATH。",
+      "hostNotFoundWindows": "若 `Get-Command {{host}}` 报错、无法识别 {{host}}，或 `{{host}} --version` 报错，接入预检会失败。请先完成 {{agent}} 安装、确认 {{host}} 可以运行，并把其所在目录加入 PATH，再生成安装命令。若预检仍报 {{host}} not found，请在执行接入命令的同一个 PowerShell 终端中重新检查 PATH。"
     },
     "pluginDescription": "在 Agent 所在机器安装采集插件，任务数据上报到当前 AI Vision 空间",
     "builtInGroup": "Agent 开发框架",
@@ -5912,6 +5918,8 @@
     "description": "通过 Hermes 内置的 NeMo Relay 上报模型、工具和上下文压缩记录，无需安装 AI Vision 插件。",
     "requirements": "适用环境：Hermes Agent {{hermes}} · nemo-relay {{relay}}。",
     "checkEnvironment": "检查 Hermes 环境（macOS / Linux Shell）",
+    "environmentReady": "确认 `hermes --version` 符合适用环境 Hermes Agent {{hermes}}，且 `hermes doctor` 通过后，再生成并合并下方配置。",
+    "environmentTroubleshooting": "若提示 command not found: hermes，请先安装 Hermes Agent {{hermes}} 并修正 PATH；若 `hermes --version` 低于 {{hermes}}，请升级 Hermes Agent；若 `hermes doctor` 报 nemo-relay 不满足 {{relay}}，请升级 Relay 插件。",
     "createFirst": "先使用下方按钮创建或恢复当前空间的 Hermes 采集项目，再生成上报配置。",
     "authorization": "1. 生成上报授权",
     "identity": "空间：{{space}} · Agent UUID：{{agent}}",
