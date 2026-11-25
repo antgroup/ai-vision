@@ -1,0 +1,63 @@
+CONTRIBUTING.md
+  s_a5245aba9fb40b::t_ac4c82c37f59bc 93
+  s_a5245aba9fb40b::t_1709f03320e44a 40,62,88
+  s_a5245aba9fb40b::t_35e2343a63eb1d 82,91
+  s_a5245aba9fb40b::t_35bb3321909d09 89
+  s_a5245aba9fb40b::t_e9bf6a893f90f4 9,68,80-81,83-87,92,94,113
+  s_a5245aba9fb40b::t_453bac11ac0166 90
+.github/PULL_REQUEST_TEMPLATE.md
+  s_a5245aba9fb40b::t_e9bf6a893f90f4 10-14
+scripts/ci/README.md
+  s_a5245aba9fb40b::t_6d865812ddd2fa 11,17,23
+  s_a5245aba9fb40b::t_ac4c82c37f59bc 15
+  s_a5245aba9fb40b::t_35bb3321909d09 25
+  s_a5245aba9fb40b::t_686786cea59e17 27
+  s_a5245aba9fb40b::t_5fb6243e4d385a 5-7,13,18-21,41
+  s_a5245aba9fb40b::t_68437bdad482a7 12,14,16
+scripts/ci/slash_commands.py
+  s_a5245aba9fb40b::t_30fba3216c6584 180-181
+  s_a5245aba9fb40b::t_47979d48b415ce 12,25-29,31-32,45,123-125,132-133,204
+  s_a5245aba9fb40b::t_1b52e20763d77b 212-215
+  s_a5245aba9fb40b::t_59143ecfe005a0 90-92,96,103-106,138-139,141,144,177,205-207,209,211
+  s_a5245aba9fb40b::t_dfcfcec863424b 185-191
+  s_a5245aba9fb40b::t_37434307582f0c 183
+  s_a5245aba9fb40b::t_90b6febbef0bd3 93,142-143,145,208,210
+  s_a5245aba9fb40b::t_c2a609d5f18626 1-11,13-24,30,33-44,46-89,94-95,97-102,107-122,126-131,134-137,140,146-176,178-179,182,184,192-203,216-233
+.github/workflows/slash-commands.yml
+  s_a5245aba9fb40b::t_d5e5fd31dce791 1-11,14,16,18-22,24-44,46,48-63
+  s_a5245aba9fb40b::t_eb0eb9e3a37840 12-13,15,23,45
+  s_a5245aba9fb40b::t_c0419e06bf9d64 17,47
+scripts/ci/test_pr_issue.py
+  s_a5245aba9fb40b::t_c09513184ea4f1 1-13,16-17,27,32-39,41-90,117-120
+  s_a5245aba9fb40b::t_b6986822509a38 96-97,102-103,109-110,115-116
+  s_a5245aba9fb40b::t_917f45320b6699 14-15,18-26,28-31,40,91-95,98-101,104-108,111-114
+.github/workflows/pr-evidence.yml
+  s_a5245aba9fb40b::t_fdbd04bce21370 9,44-54,58-62
+  s_a5245aba9fb40b::t_17201c9c3dc7c9 10,22-23
+scripts/ci/test_slash_commands.py
+  s_a5245aba9fb40b::t_15638f9332c6fa 151-165
+  s_a5245aba9fb40b::t_43b773a3e953b7 25,44-45,143-149
+  s_a5245aba9fb40b::t_8ac04faf77a6ac 52-53,221,228-235,283
+  s_a5245aba9fb40b::t_f30d430b7dfc66 1,4-5,17,22,24,30-35,38,47-51,54,87-112,176,178,180,183,185,188,196,198-199,201,204-214,217,219-220,222-227,236-282,284-288
+  s_a5245aba9fb40b::t_78afacffceddc2 2-3,6-16,18-21,23,26-29,36-37,39-43,46,55-86,113-142,150,166-175,177,179,181-182,184,186-187,189-195,197,200,202-203,215-216,218,289-292
+scripts/ci/pr_issue.py
+  s_a5245aba9fb40b::t_d902e2f0d10cd6 1-12,14-40,42-47,63,65-66,88-89,91-103,106-132
+  s_a5245aba9fb40b::t_c4b6429a217ec0 13,41,104-105
+  s_a5245aba9fb40b::t_84bed3a20cbddd 48-62,64,67-87,90
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ddb1a9cf2bde8095b04efe7adf0ad58534f00555",
+  "prompts": {},
+  "sessions": {
+    "s_a5245aba9fb40b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a2128f-754e-7832-a878-86199f231c19",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
