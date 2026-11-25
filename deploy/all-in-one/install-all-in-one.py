@@ -434,15 +434,60 @@ def preflight(args, target):
     return major is not None and int(major[1]) >= 23
 
 
+def saved_image_matches(stream, expected, target):
+    """Read only the Docker export metadata and the expected image config."""
+    digest = expected.split(":", 1)[1]
+    config_paths = {f"{digest}.json", f"blobs/sha256/{digest}"}
+    metadata = {}
+    with tarfile.open(fileobj=stream, mode="r|") as archive:
+        for entry in archive:
+            if entry.name not in config_paths and entry.name != "manifest.json":
+                continue
+            if not entry.isreg() or entry.size > 1024 * 1024 or entry.name in metadata:
+                raise ValueError("Invalid image metadata in Docker save output.")
+            metadata[entry.name] = archive.extractfile(entry).read()
+
+    images = json.loads(metadata.get("manifest.json", b"[]"))
+    if not isinstance(images, list) or len(images) != 1 or not isinstance(images[0], dict):
+        return False
+    path = images[0].get("Config")
+    if not isinstance(path, str) or path not in config_paths or path not in metadata:
+        return False
+    raw_config = metadata[path]
+    if hashlib.sha256(raw_config).hexdigest() != digest:
+        return False
+    config = json.loads(raw_config)
+    return f"{config['os']}/{config['architecture']}" == target
+
+
+def verified_image(manifest, reference=None, *, known_id=None):
+    expected, target = manifest["image_id"], manifest["platform"]
+    image_id, actual_platform = output(
+        "docker", "image", "inspect", "--format", "{{.Id}} {{.Os}}/{{.Architecture}}",
+        reference or manifest["image_tag"],
+    ).split()
+    if actual_platform == target and image_id in (expected, known_id):
+        return image_id
+    if actual_platform == target and re.fullmatch(r"sha256:" + SHA256.pattern, image_id):
+        # The containerd image store exposes the OCI descriptor in .Id. Bind
+        # that immutable ID to the published config rather than trusting a tag.
+        command = ["docker", "image", "save", image_id]
+        with subprocess.Popen(command, stdout=subprocess.PIPE) as process:
+            matches = saved_image_matches(process.stdout, expected, target)
+            # Finish reading any tar padding before checking the export status.
+            for _ in iter(lambda: process.stdout.read(1024 * 1024), b""):
+                pass
+            if process.wait() == 0 and matches:
+                return image_id
+    raise ValueError("The Docker image does not match the manifest identity and platform.")
+
+
 def local_image(manifest):
     image_tag = manifest["image_tag"]
     known_tags = output("docker", "image", "ls", "--format", "{{.Repository}}:{{.Tag}}").splitlines()
     if image_tag not in known_tags:
-        return False
-    image_ref = "{{.Id}} {{.Os}}/{{.Architecture}}"
-    if output("docker", "image", "inspect", "--format", image_ref, image_tag) != f"{manifest['image_id']} {manifest['platform']}":
-        raise ValueError(f"Docker image tag {image_tag} already points to different bytes.")
-    return True
+        return None
+    return verified_image(manifest)
 
 
 def check_resources(name, manifest):
@@ -453,20 +498,18 @@ def check_resources(name, manifest):
     return network_labels, volume_labels
 
 
-def install(args, manifest, archive, labels):
+def install(args, manifest, archive, labels, image=None):
     name = args.name
     network, volume = name + "-network", name + "-data"
     network_labels, volume_labels = labels
     target = manifest["platform"]
 
-    image = manifest["image_id"]
-    image_tag = manifest["image_tag"]
-    image_ref = "{{.Id}} {{.Os}}/{{.Architecture}}"
     if archive is not None:
         print(f"Loading {archive.name} into Docker...", flush=True)
         subprocess.run(["docker", "load", "--input", str(archive)], check=True)
-    if output("docker", "image", "inspect", "--format", image_ref, image_tag) != f"{image} {target}":
-        raise ValueError("The loaded Docker image does not match the manifest identity and platform.")
+        image = verified_image(manifest, known_id=image)
+    elif image is None:
+        image = verified_image(manifest)
 
     prepare_resource("network", network, network_labels)
     prepare_resource("volume", volume, volume_labels)
@@ -517,8 +560,8 @@ def deploy(args, folder, tag, manifest, assets, zstd_supported):
         selected = image_archive(folder, manifest, assets if tag else None, args.archive_format, zstd_supported)
         archive = cached_image_archive(args.cache_dir, tag, *selected) if tag else folder / selected[0]
     else:
-        print(f"Using verified local image {manifest['image_id']}.", flush=True)
-    install(args, manifest, archive, labels)
+        print(f"Using verified local image {loaded}.", flush=True)
+    install(args, manifest, archive, labels, image=loaded)
 
 
 def sample_instance(name):

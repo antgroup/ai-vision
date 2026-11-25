@@ -2,7 +2,7 @@
 
 [Deployment guides](../README.md) · [简体中文](../zh-CN/dev-image-release.md) | English
 
-[`Release images`](../../../.github/workflows/release-images.yml) builds and qualifies a fixed product candidate. Manual runs default to **`publish=false`**. They retain reviewable assets and acceptance without creating a product Release or moving product aliases. The standard public channel uses source-compatible service images and the ordinary CLI. Its GitHub repository is `antgroup/ai-vision`. The current product target is `0.6.0`; check the Releases page for available downloads.
+[`Release images`](../../../.github/workflows/release-images.yml) builds and qualifies a fixed product candidate. Manual runs default to **`publish=false`**. They retain reviewable assets and acceptance without creating a product Release or moving product aliases. The standard public channel uses source-compatible service images and the ordinary CLI. Its GitHub repository is `antgroup/ai-vision`. The current product target is `0.6.1`; check the Releases page for available downloads.
 
 Native compilation is available through an [optional candidate workflow](../../../.github/workflows/native-candidate.yml). The [temporary private Skills delivery](../../../deploy/native-packaging/release-contract.md) retains its own source-exclusion and access gates. User-facing Skills remain in `ob-labs/ai-vision-skills`. The nightly schedule remains paused.
 

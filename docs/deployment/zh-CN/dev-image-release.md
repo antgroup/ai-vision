@@ -2,7 +2,7 @@
 
 [部署文档](../README.md) · 简体中文 | [English](../en/dev-image-release.md)
 
-[`Release images`](../../../.github/workflows/release-images.yml) 构建并验收固定的产品候选版。手动运行默认 **`publish=false`**，保留可审阅的制品和验收记录，不创建产品 Release，也不移动滚动标签。标准公开渠道使用源码兼容的服务镜像和普通 CLI，GitHub 仓库为 `antgroup/ai-vision`。当前产品目标为 `0.6.0`，实际可下载版本以 Releases 页面为准。
+[`Release images`](../../../.github/workflows/release-images.yml) 构建并验收固定的产品候选版。手动运行默认 **`publish=false`**，保留可审阅的制品和验收记录，不创建产品 Release，也不移动滚动标签。标准公开渠道使用源码兼容的服务镜像和普通 CLI，GitHub 仓库为 `antgroup/ai-vision`。当前产品目标为 `0.6.1`，实际可下载版本以 Releases 页面为准。
 
 native 编译由[可选候选工作流](../../../.github/workflows/native-candidate.yml)负责。[临时私有 Skills 交付](../../../deploy/native-packaging/release-contract.md)保留自己的源码排除和访问门禁。用户 Skills 继续维护在 `ob-labs/ai-vision-skills`。定时 Daily 继续暂停。
 
