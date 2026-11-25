@@ -746,15 +746,14 @@ test("the delete dialog has an accessible title and description while references
       )?.textContent,
       t("spaceSettings.models.checkingReferences")
     )
-    await act(async () => {
-      resolveReferences([])
-      await tick()
-    })
-    assert.equal(
-      page.dom.window.document.querySelector(
-        "[data-slot=alert-dialog-description]"
-      )?.textContent,
-      t("spaceSettings.models.deleteDescription", { name: "Production" })
+    await act(async () => resolveReferences([]))
+    await waitFor(
+      () =>
+        page.dom.window.document.querySelector(
+          "[data-slot=alert-dialog-description]"
+        )?.textContent ===
+        t("spaceSettings.models.deleteDescription", { name: "Production" }),
+      "delete confirmation renders after references resolve"
     )
   } finally {
     await page.close()
@@ -770,16 +769,14 @@ test("a failed reference lookup cannot become a zero-reference delete confirmati
   })
   try {
     await click(page.dom, "Delete Production")
-    const body = page.dom.window.document.body.textContent!
-    assert.match(
-      body,
-      new RegExp(
-        t("modelConnections.referencesFailed").replace(
-          /[.*+?^${}()|[\]\\]/g,
-          "\\$&"
-        )
-      )
+    await waitFor(
+      () =>
+        page.dom.window.document.querySelector(
+          "[data-slot=alert-dialog-description]"
+        )?.textContent === t("modelConnections.referencesFailed"),
+      "delete dialog renders the localized reference error"
     )
+    const body = page.dom.window.document.body.textContent!
     assert.equal(
       body.includes(
         t("spaceSettings.models.deleteDescription", { name: "Production" })
@@ -813,11 +810,17 @@ test("editing shared configuration waits for references and blocks saving if the
       button(page.dom, "modelConnections.saveWithImpact").disabled,
       true
     )
-    assert.ok(
-      page.dom.window.document.body.textContent?.includes(
-        t("modelConnections.referencesFailed")
-      )
+    await waitFor(
+      () =>
+        page.dom.window.document.querySelector('[role="alert"]')
+          ?.textContent === t("modelConnections.referencesFailed"),
+      "impact review renders the localized reference error"
     )
+    assert.equal(
+      button(page.dom, "modelConnections.saveWithImpact").disabled,
+      true
+    )
+    assert.equal(page.calls.length, 0)
     assert.doesNotMatch(
       page.dom.window.document.body.textContent!,
       /private reference response/
