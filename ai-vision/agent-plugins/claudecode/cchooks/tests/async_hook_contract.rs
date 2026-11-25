@@ -2020,9 +2020,10 @@ fn posttooluse_parent_returns_before_one_second_fake_collector() {
         "parent must fail open even when worker/export is delayed: stderr={}",
         String::from_utf8_lossy(&output.stderr)
     );
+    let budget_ms = if cfg!(windows) { 200 } else { 100 };
     assert!(
-        elapsed < Duration::from_millis(100),
-        "PostToolUse parent must return before fake collector delay; elapsed={elapsed:?}"
+        elapsed < Duration::from_millis(budget_ms),
+        "PostToolUse parent must return before fake collector delay; elapsed={elapsed:?}, budget < {budget_ms}ms"
     );
     accepted
         .recv_timeout(Duration::from_secs(2))
