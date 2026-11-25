@@ -1,5 +1,5 @@
 {
-  "product_version": "0.6.0",
+  "product_version": "0.6.1",
   "signoz": {
     "image": "ghcr.io/ob-labs/signoz-ob@sha256:16d1879ce86938e6ca2b6599cdff08d4258c9b0dc937e1463be1eb5ff8580725",
     "source_sha": "2c8d08c745492bb49ebe2c7f573e20c3dd6b5d59",
