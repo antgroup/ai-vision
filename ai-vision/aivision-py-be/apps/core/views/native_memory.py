@@ -141,6 +141,7 @@ def native_memory_calls(spans, agent_product=""):
         searches = stages.get(key, [])
         evidence, category, execution = None, None, "unknown"
         search_duration = None
+        search_failed = False
         if len(searches) == 1:
             search = searches[0]
             sa = search.get("attributes") or {}
@@ -163,6 +164,8 @@ def native_memory_calls(spans, agent_product=""):
                     )
                 category = "search"
                 count = sa.get("powercontext.memory.search.result_count")
+                search_status = native_outcome(search)
+                search_failed = status == "error" or search_status == "error"
                 member_ids = {identity(member) for member in members}
                 path_error = any(
                     native_outcome(node) == "error"
@@ -171,7 +174,7 @@ def native_memory_calls(spans, agent_product=""):
                 )
                 if (
                     status == "ok"
-                    and native_outcome(search) == "ok"
+                    and search_status == "ok"
                     and not path_error
                     and type(count) is int
                     and count >= 0
@@ -207,6 +210,7 @@ def native_memory_calls(spans, agent_product=""):
                 "evidence": evidence,
                 "isMemory": True,
                 "nativeCategory": category,
+                "nativeSearchFailed": search_failed,
                 "searchDurationMs": search_duration,
                 "transport": "http",
                 "executionState": execution,

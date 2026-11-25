@@ -494,6 +494,11 @@ def _category_of(call: dict, declared: object, tool_name: str) -> str | None:
     return None
 
 
+def _has_known_native_search_outcome(call: dict) -> bool:
+    # A reported failure contributes an attempt without a returned result.
+    return call["evidence"] is not None or call.get("nativeSearchFailed", False)
+
+
 def _scan_memory_window(
     spans: list[dict], declared_by_server: dict[str, dict], agent_product: str = ""
 ) -> dict:
@@ -526,7 +531,9 @@ def _scan_memory_window(
         memory_servers.setdefault(call['serverId'], None)
 
     native_results_complete = all(
-        call['evidence'] is not None for call in native_calls if call['nativeCategory'] == 'search'
+        _has_known_native_search_outcome(call)
+        for call in native_calls
+        if call["nativeCategory"] == "search"
     )
     entries: dict[str, dict] = {}
     search_durations: list[int] = []
@@ -715,7 +722,9 @@ def _scan_memory_window(
         all_search_result_calls += len(search_results)
         all_search_content_calls += content_calls
         native_search_complete = all(
-            call['evidence'] is not None for call in search_calls if call.get('transport') == 'http'
+            _has_known_native_search_outcome(call)
+            for call in search_calls
+            if "nativeCategory" in call
         )
         recent = sorted(server_calls, key=lambda call: -call["startMs"])[
             :MAX_RECENT_CALLS

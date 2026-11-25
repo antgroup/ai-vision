@@ -80,6 +80,34 @@ class NativeMemoryTests(SimpleTestCase):
         self.assertEqual(result["searchCalls"], 1)
         self.assertIsNone(result["searchHitRate"])
 
+    def test_explicit_failed_search_counts_without_claiming_a_result(self):
+        for failed_span in [0, -1]:
+            with self.subTest(failed_span=failed_span):
+                failed = source()
+                for entry in failed:
+                    entry["trace_id"] = "failed"
+                failed[-1]["attributes"].pop("powercontext.memory.search.result_count")
+                failed[failed_span]["status"] = {"code": "ERROR"}
+                result = _scan_memory_window(source(3) + failed, {})
+                for stats in (result["overview"], result["servers"][0]["memoryStats"]):
+                    self.assertEqual(stats["searchCalls"], 2)
+                    self.assertEqual(stats["searchResultCalls"], 1)
+                    self.assertEqual(stats["searchHitCalls"], 1)
+                    self.assertEqual(stats["searchHitRate"], 0.5)
+                    self.assertEqual(stats["totalHits"], 3)
+
+    def test_failed_search_still_hides_rate_if_another_result_is_unknown(self):
+        failed = source()
+        failed[0]["status"] = {"code": "ERROR"}
+        failed[-1]["attributes"].pop("powercontext.memory.search.result_count")
+        unknown = source()
+        for entry in unknown:
+            entry["trace_id"] = "unknown"
+        unknown[-1]["attributes"].pop("powercontext.memory.search.result_count")
+        result = _scan_memory_window(failed + unknown, {})
+        self.assertIsNone(result["overview"]["searchHitRate"])
+        self.assertIsNone(result["servers"][0]["memoryStats"]["searchHitRate"])
+
     def test_skipped_search_is_not_zero_hit_search(self):
         for key, value in [
             ("powercontext.memory.search.memory_present", False),
