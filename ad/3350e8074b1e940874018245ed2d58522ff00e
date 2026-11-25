@@ -1,0 +1,14 @@
+ai-vision/vfe/tests/cliOnboarding.test.ts
+  h_300a4f369432d5 20-30,73-79,383,564
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ad3350e8074b1e940874018245ed2d58522ff00e",
+  "prompts": {},
+  "humans": {
+    "h_300a4f369432d5": {
+      "author": "laochou.sc <laochou.sc@digital-engine.com>"
+    }
+  }
+}
