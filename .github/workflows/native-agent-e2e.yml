@@ -73,7 +73,12 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-15","windows-2025"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(inputs.tier == 'release' && '["ubuntu-24.04","macos-26","windows-2025"]' || '["ubuntu-24.04"]') }}
+    concurrency:
+      group: >-
+        ${{ matrix.os == 'macos-26' && 'aivision-release-macos-arm64' ||
+           format('native-agent-e2e-native-source-{0}-{1}-{2}', github.run_id, github.run_attempt, strategy.job-index) }}
+      queue: max
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     defaults:
@@ -111,6 +116,9 @@ jobs:
         env:
           RUST_TEST_THREADS: '1'
           AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: ${{ runner.os == 'Windows' }}
+          AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY: ${{ runner.os == 'Windows' }}
+          AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET: ${{ runner.os == 'Windows' }}
+          AIVISION_MACOS_RELEASE_HOOK_BUDGET: ${{ runner.os == 'macOS' }}
           CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS: 'true'
           CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS: 'true'
         run: |
@@ -124,8 +132,15 @@ jobs:
               grep -Eq '^test result: ok\. 1 passed; 0 failed; 0 ignored;' "$log"
           }
           result=0
-          benchmark ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml async_parent_integration \
+          codex_manifest=ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml
+          benchmark "$codex_manifest" async_parent_integration \
             pretool_parent_timing_p95_stays_below_50_ms || result=$?
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY=false benchmark "$codex_manifest" async_parent_integration \
+            prompt_seed_is_reused_by_pretool_control_response || result=$?
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY=false benchmark "$codex_manifest" async_parent_integration \
+            delayed_worker_start_does_not_delay_parent_or_strand_the_queue || result=$?
+          AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY=false benchmark "$codex_manifest" async_parent_integration \
+            one_second_collector_does_not_delay_post_parent || result=$?
           benchmark ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml async_hook_contract \
             pretooluse_parent_latency_stays_under_fifty_milliseconds --release || result=$?
           AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY=false benchmark \
@@ -148,7 +163,11 @@ jobs:
           test_filters=()
           if [ "$NATIVE_SOURCE" = true ]; then test_targets=(--all-targets --no-fail-fast); fi
           if [ "$NATIVE_SOURCE" = true ] && [ "$NATIVE_TIER" = release ]; then
-            test_filters=(-- --exact --skip pretool_parent_timing_p95_stays_below_50_ms)
+            test_filters=(-- --exact
+              --skip pretool_parent_timing_p95_stays_below_50_ms
+              --skip prompt_seed_is_reused_by_pretool_control_response
+              --skip delayed_worker_start_does_not_delay_parent_or_strand_the_queue
+              --skip one_second_collector_does_not_delay_post_parent)
           fi
           cargo build --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common --bins --jobs 2
           cargo test --locked --manifest-path ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml --no-default-features --features common "${test_targets[@]}" --jobs 2 "${test_filters[@]}"
@@ -309,7 +328,7 @@ jobs:
           # retains its native-source directory below the artifact root.
           inputs=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-ubuntu-24.04-${{ github.run_attempt }}/native-source")
           if [ "$TEST_TIER" = release ]; then
-            inputs+=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-macos-15-${{ github.run_attempt }}/native-source")
+            inputs+=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-macos-26-${{ github.run_attempt }}/native-source")
             inputs+=(--input-dir "${{ runner.temp }}/native-source-artifacts/native-source-windows-2025-${{ github.run_attempt }}/native-source")
           fi
           python ai-vision/agent-plugins/tests/native_agent_e2e/weaver_gate.py \

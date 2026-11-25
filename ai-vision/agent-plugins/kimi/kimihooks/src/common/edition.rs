@@ -689,27 +689,27 @@ mod tests {
     }
 
     #[test]
-    fn profile_from_env_default_prod() {
+    fn profile_from_env_uses_gray_only_for_gray() {
         let key = "KIMI_LANGFUSE_ENV";
-        let prev = std::env::var(key).ok();
+        let prev = std::env::var_os(key);
+        std::env::remove_var(key);
+        let default = Profile::from_env();
         std::env::set_var(key, "prod");
-        assert_eq!(Profile::from_env(), Profile::Prod);
-        match prev {
-            Some(v) => std::env::set_var(key, v),
-            None => std::env::remove_var(key),
-        }
-    }
-
-    #[test]
-    fn profile_from_env_gray() {
-        let key = "KIMI_LANGFUSE_ENV";
-        let prev = std::env::var(key).ok();
+        let prod = Profile::from_env();
+        std::env::set_var(key, "PROD");
+        let uppercase_prod = Profile::from_env();
         std::env::set_var(key, "gray");
-        assert_eq!(Profile::from_env(), Profile::Gray);
+        let gray = Profile::from_env();
+
+        // Restore the shared environment before any assertion can panic.
         match prev {
             Some(v) => std::env::set_var(key, v),
             None => std::env::remove_var(key),
         }
+        assert_eq!(default, Profile::Prod);
+        assert_eq!(prod, Profile::Prod);
+        assert_eq!(uppercase_prod, Profile::Prod);
+        assert_eq!(gray, Profile::Gray);
     }
 
     #[test]

@@ -123,7 +123,7 @@ class NativeDockerTests(unittest.TestCase):
         matrix=jobs['native-source']['strategy']['matrix']['os']
         source=re.fullmatch(r"\$\{\{ fromJSON\(inputs\.tier == 'release' && '([^']+)' \|\| '([^']+)'\) \}\}",matrix)
         self.assertIsNotNone(source)
-        self.assertEqual(json.loads(source[1]),['ubuntu-24.04','macos-15','windows-2025'])
+        self.assertEqual(json.loads(source[1]),['ubuntu-24.04','macos-26','windows-2025'])
         self.assertEqual(json.loads(source[2]),['ubuntu-24.04'])
         triggers=document.get('on',document.get(True))
         intel=triggers['workflow_call']['inputs']['intel_docker']

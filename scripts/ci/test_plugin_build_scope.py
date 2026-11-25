@@ -154,6 +154,35 @@ class PluginBuildScopeTests(unittest.TestCase):
         self.assertEqual(plugin_job['uses'], './.github/workflows/release-plugins.yml')
         self.assertNotIn('linux_amd64_only', plugin_job.get('with', {}))
 
+    def test_formal_release_can_route_only_arm64_macos_packaging_to_macos_26(self):
+        workflows = ROOT / '.github/workflows'
+        caller_jobs = yaml.safe_load((workflows / 'release-images.yml').read_text())['jobs']
+        option = 'use_macos_26_arm64'
+        self.assertEqual(
+            {job for job, definition in caller_jobs.items() if option in definition.get('with', {})},
+            {'plugins', 'cli'},
+        )
+        for caller_job, filename, build_job, platform_key in (
+            ('plugins', 'release-plugins.yml', 'rust-hooks', 'platform'),
+            ('cli', 'release-cli.yml', 'build', 'hook_platform'),
+        ):
+            with self.subTest(workflow=filename):
+                document = yaml.safe_load((workflows / filename).read_text())
+                events = document.get('on', document.get(True))
+                declaration = events['workflow_call']['inputs'][option]
+                self.assertEqual(declaration['type'], 'boolean')
+                self.assertIs(declaration['default'], False)
+                self.assertFalse(declaration.get('required', False))
+                self.assertNotIn(option, (events['workflow_dispatch'] or {}).get('inputs', {}))
+                self.assertEqual(caller_jobs[caller_job]['uses'], './.github/workflows/' + filename)
+                self.assertEqual(caller_jobs[caller_job]['with'][option],
+                                 "${{ needs.prepare.outputs.tier == 'release' }}")
+                self.assertEqual(
+                    document['jobs'][build_job]['runs-on'],
+                    "${{ matrix." + platform_key + " == 'darwin/arm64' && "
+                    "inputs.use_macos_26_arm64 && 'macos-26' || matrix.runner }}",
+                )
+
     def test_real_merge_shell_verifies_selected_or_complete_scope_before_archiving(self):
         for selected, expected in ((True, ['linux-gnu/x64']), (False, [
                 'linux-gnu/x64', 'linux-gnu/arm64', 'darwin/arm64', 'darwin/x64'])):

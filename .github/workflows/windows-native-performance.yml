@@ -7,23 +7,33 @@ permissions:
   contents: read
 
 jobs:
-  pretooluse:
-    name: ${{ matrix.hook }} PreToolUse p95
+  performance:
+    name: ${{ matrix.name }}
     runs-on: windows-2025
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         include:
-          - hook: Codex
+          - name: Codex PreToolUse p95
             manifest: ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml
             target: async_parent_integration
             test: pretool_parent_timing_p95_stays_below_50_ms
             release: false
-          - hook: Claude
+          - name: Codex prompt-seed PreToolUse
+            manifest: ai-vision/agent-plugins/codex/cdxhooks/Cargo.toml
+            target: async_parent_integration
+            test: prompt_seed_is_reused_by_pretool_control_response
+            release: false
+          - name: Claude PreToolUse p95
             manifest: ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml
             target: async_hook_contract
             test: pretooluse_parent_latency_stays_under_fifty_milliseconds
+            release: true
+          - name: Claude PostToolUse 1 MiB handoff
+            manifest: ai-vision/agent-plugins/claudecode/cchooks/Cargo.toml
+            target: async_hook_contract
+            test: large_posttool_payload_handoff_stays_below_parent_budget
             release: true
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -39,6 +49,8 @@ jobs:
           USE_RELEASE_PROFILE: ${{ matrix.release }}
           RUST_TEST_THREADS: '1'
           AIVISION_WINDOWS_HOOK_P95_REPORT_ONLY: 'false'
+          AIVISION_WINDOWS_LARGE_POSTTOOL_REPORT_ONLY: 'false'
+          AIVISION_WINDOWS_RELEASE_PROMPT_SEED_BUDGET: 'false'
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
@@ -48,6 +60,6 @@ jobs:
             export CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true
             export CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true
           fi
-          log="$RUNNER_TEMP/pretooluse-p95.log"
+          log="$RUNNER_TEMP/native-hook-performance.log"
           "${cargo_test[@]}" --test "$TEST_TARGET" "$TEST_NAME" -- --exact --nocapture | tee "$log"
           grep -Eq '^test result: ok\. 1 passed; 0 failed; 0 ignored;' "$log"

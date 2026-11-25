@@ -794,6 +794,22 @@ class CallerContractTests(unittest.TestCase):
                 self.assertEqual(set(jobs[name]["needs"]), {"frontend", "frontend-browser"})
                 self.assertIn(frontend_guard, jobs[name]["if"])
 
+    def test_windows_relay_runtime_applies_to_the_full_collector_matrix(self):
+        steps = workflow("framework-e2e.yml")["jobs"]["contracts"]["steps"]
+        named = {step["name"]: step for step in steps if "name" in step}
+        setup = next(step for step in steps if step.get("id") == "windows-relay-python")
+        self.assertEqual(setup["with"], {"python-version": "3.13", "update-environment": False})
+        lifecycle = named["Relay lifecycle and exporter regressions on Windows"]
+        collector = named["Relay RAG scenarios and official SDK export on Windows"]
+        self.assertEqual(collector["if"], lifecycle["if"])
+        self.assertEqual(collector["if"], "runner.os == 'Windows' && matrix.sdk != 'lf5'")
+        self.assertEqual(collector["env"]["RELAY_PYTHON"], "${{ steps.windows-relay-python.outputs.python-path }}")
+        self.assertIn("& $env:RELAY_PYTHON ai-vision/agent-plugins/tests/framework_e2e/suite.py", collector["run"])
+        self.assertIn("--sdks nemo-relay", collector["run"])
+        standard = named["Fake-model RAG scenarios and official SDK export (runner-local)"]
+        self.assertIn("(matrix.sdk == 'lf5' || runner.os == 'Windows') && 'langfuse' || 'langfuse nemo-relay'", standard["run"])
+        self.assertTrue(standard["run"].startswith("python "))
+
     def test_daily_is_linux_and_release_retains_cross_platform_coverage(self):
         ci = workflow("ci.yml")
         for tier in ("pr", "daily", "release"):
@@ -827,6 +843,27 @@ class CallerContractTests(unittest.TestCase):
                                 self.assertIn("windows-2025", platforms)
                         else:
                             self.assertEqual(platforms, ["ubuntu-24.04"])
+
+    def test_release_macos_source_jobs_share_one_non_canceling_queue(self):
+        found = set()
+        for filename in ("ci.yml", "framework-e2e.yml", "diagnostics-e2e.yml", "native-agent-e2e.yml"):
+            for job, definition in workflow(filename)["jobs"].items():
+                platforms = definition.get("strategy", {}).get("matrix", {}).get("os", "")
+                if "macos-26" not in platforms:
+                    continue
+                with self.subTest(workflow=filename, job=job):
+                    self.assertEqual(definition["runs-on"], "${{ matrix.os }}")
+                    concurrency = definition["concurrency"]
+                    self.assertEqual(concurrency["queue"], "max")
+                    self.assertIs(concurrency.get("cancel-in-progress", False), False)
+                    self.assertIn("matrix.os == 'macos-26' && 'aivision-release-macos-arm64'", concurrency["group"])
+                    fallback = f"{Path(filename).stem}-{job}-{{0}}-{{1}}-{{2}}"
+                    self.assertIn(
+                        f"format('{fallback}', github.run_id, github.run_attempt, strategy.job-index)",
+                        concurrency["group"],
+                    )
+                    found.add(filename)
+        self.assertEqual(found, {"ci.yml", "framework-e2e.yml", "diagnostics-e2e.yml", "native-agent-e2e.yml"})
 
     def test_intel_docker_is_opt_in_and_reuses_strict_selected_gates(self):
         ci = workflow("ci.yml")
@@ -1032,7 +1069,7 @@ class ArtifactContractTests(unittest.TestCase):
         step = next(step for step in jobs["native-semantics"]["steps"]
                     if "weaver_gate.py" in step.get("run", ""))
         for tier in ("pr", "daily", "release"):
-            platforms = ["ubuntu-24.04"] + (["macos-15", "windows-2025"] if tier == "release" else [])
+            platforms = ["ubuntu-24.04"] + (["macos-26", "windows-2025"] if tier == "release" else [])
             for attempt in (1, 2):
                 with self.subTest(tier=tier, attempt=attempt), tempfile.TemporaryDirectory() as directory:
                     root = Path(directory)

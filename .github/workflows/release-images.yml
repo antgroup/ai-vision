@@ -190,6 +190,8 @@ jobs:
   plugins:
     needs: [prepare]
     uses: ./.github/workflows/release-plugins.yml
+    with:
+      use_macos_26_arm64: ${{ needs.prepare.outputs.tier == 'release' }}
     permissions:
       contents: read
 
@@ -197,6 +199,7 @@ jobs:
     needs: [prepare, plugins]
     uses: ./.github/workflows/release-cli.yml
     with:
+      use_macos_26_arm64: ${{ needs.prepare.outputs.tier == 'release' }}
       plugin_dist: true
       product_version: ${{ needs.prepare.outputs.product_version }}
       run_number: ${{ needs.prepare.outputs.run_number }}
@@ -462,6 +465,7 @@ jobs:
           name: ${{ needs.prepare.outputs.personal_edition == 'true' && 'release-base-assets' || 'release-assets' }}-${{ github.run_attempt }}
           path: release
       - name: Deploy the packaged CLI and exact image digests without source mounts
+        id: packaged-deploy
         run: |
           set -euo pipefail
           test "$(uname -m)" = x86_64
@@ -493,6 +497,9 @@ jobs:
             .initial_images.pinned_content_verified == true and .recast_images.pinned_content_verified == true and
             .initial_memory.hits == 2 and .initial_memory == .recast_memory
           ' "$RUNNER_TEMP/release-smoke-$BACKEND/summary.json"
+      - name: Report packaged deployment failure categories
+        if: failure() && steps.packaged-deploy.outcome == 'failure'
+        run: python3 scripts/ci/release_smoke_failure.py "$RUNNER_TEMP/release-smoke-$BACKEND"
       - name: Export only the sanitized passed smoke receipt
         run: |
           python3 scripts/ci/release_candidate.py smoke --directory release \

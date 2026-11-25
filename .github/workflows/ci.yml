@@ -160,7 +160,12 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        os: ${{ fromJSON(needs.scope.outputs.tier == 'release' && '["ubuntu-24.04","macos-15"]' || '["ubuntu-24.04"]') }}
+        os: ${{ fromJSON(needs.scope.outputs.tier == 'release' && '["ubuntu-24.04","macos-26"]' || '["ubuntu-24.04"]') }}
+    concurrency:
+      group: >-
+        ${{ matrix.os == 'macos-26' && 'aivision-release-macos-arm64' ||
+           format('ci-collector-{0}-{1}-{2}', github.run_id, github.run_attempt, strategy.job-index) }}
+      queue: max
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     defaults:
