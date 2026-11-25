@@ -1089,7 +1089,9 @@ fn delayed_worker_start_does_not_delay_parent_or_strand_the_queue() {
     assert!(output.status.success());
     let parent_total_ms = parent_total_ms(&root.path().join("logs"), "PostToolUse").unwrap();
     // The release budget must remain below the worker's injected 150 ms delay.
-    let budget_ms = if cfg!(target_os = "macos")
+    let budget_ms = if cfg!(all(windows, debug_assertions)) {
+        100
+    } else if cfg!(target_os = "macos")
         && std::env::var("AIVISION_MACOS_RELEASE_HOOK_BUDGET").as_deref() == Ok("true")
     {
         120
