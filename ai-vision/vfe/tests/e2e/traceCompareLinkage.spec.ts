@@ -122,6 +122,31 @@ function searchRow(page: Page): Locator {
     .filter({ has: page.getByRole("cell", { name: /search-span/ }) })
 }
 
+test("back from a direct comparison opens the scoped trace list", async ({ page }) => {
+  const language = "en-US"
+  await compareWithSearchCall(page, language)
+  const scope = {
+    spaceId: "space-a",
+    agent: "Codex",
+    agent_uuid: "agent",
+    from: "2026-10-29T00:00:00.000Z",
+    to: "2026-10-29T01:00:00.000Z",
+  }
+  await page.goto("/trace/compare?" + new URLSearchParams({
+    ...scope,
+    a: "side-a",
+    b: "side-b",
+    showMcp: "1",
+  }))
+
+  await page.getByRole("button", { name: uiText(language, "traceCompare.back") }).click()
+  await expect(page).toHaveURL((url) =>
+    url.pathname === "/trace" &&
+    Object.entries(scope).every(([key, value]) => url.searchParams.get(key) === value) &&
+    ["a", "b", "showMcp"].every((key) => !url.searchParams.has(key))
+  )
+})
+
 test("comparison uses the shared preset window for both reads and source links", async ({
   page,
 }) => {

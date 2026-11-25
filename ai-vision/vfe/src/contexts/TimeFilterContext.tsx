@@ -8,7 +8,12 @@ import {
   useMemo,
   type ReactNode,
 } from "react"
-import { useInRouterContext, useMatch, useSearchParams } from "react-router-dom"
+import {
+  useInRouterContext,
+  useLocation,
+  useMatch,
+  useSearchParams,
+} from "react-router-dom"
 
 import { MONTH_TIME_RANGE_OPTION, TIME_RANGE_OPTIONS } from "@/lib/timeFilter"
 
@@ -136,6 +141,7 @@ export function TimeFilterProvider({ children }: { children: ReactNode }) {
 
 function TimeFilterRouterProvider({ children }: { children: ReactNode }) {
   const [searchParams, setSearchParams] = useSearchParams()
+  const { state } = useLocation()
   const isQualityOverview =
     Boolean(useMatch("/badcase")) &&
     searchParams.get("view") !== "list" &&
@@ -150,10 +156,10 @@ function TimeFilterRouterProvider({ children }: { children: ReactNode }) {
           if (result === false || next.toString() === before) return prev
           return next
         },
-        { replace: true }
+        { replace: true, state }
       )
     },
-    [setSearchParams]
+    [setSearchParams, state]
   )
 
   return (

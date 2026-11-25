@@ -27,7 +27,7 @@ import {
 import type { TFunction } from "i18next"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
 import {
   AlertTriangle,
   Blocks,
@@ -1540,6 +1540,7 @@ function useTraceDetail({
 export function TraceComparePage() {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
+  const { state } = useLocation()
   const navigate = useNavigate()
   const traceA = searchParams.get("a") ?? ""
   const traceB = searchParams.get("b") ?? ""
@@ -1623,6 +1624,15 @@ export function TraceComparePage() {
     (!!spaceId && configsQuery.isPending)
   const errorA = !!traceA && queryA.isError
   const errorB = !!traceB && queryB.isError
+  const backToTraceList = () => {
+    if (state?.fromTraceList === true) {
+      navigate(-1)
+      return
+    }
+    const params = new URLSearchParams(searchParams)
+    for (const key of ["a", "b", "showMcp"]) params.delete(key)
+    navigate({ pathname: "/trace", search: params.toString() }, { replace: true })
+  }
 
   let body: ReactNode
   if (!traceA || !traceB) {
@@ -1707,7 +1717,7 @@ export function TraceComparePage() {
           pageTitle={t("traceCompare.title")}
           agentProduct={agentProduct}
         />
-        <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+        <Button variant="outline" size="sm" onClick={backToTraceList}>
           ← {t("traceCompare.back")}
         </Button>
       </div>
