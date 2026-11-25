@@ -57,11 +57,7 @@ function splitKey(line: string): [string, string] | null {
   if (index <= 0) return null
   const key = line.slice(0, index).trim()
   if (!key) return null
-  const value = line
-    .slice(index + 1)
-    .trim()
-    .replace(/^["']|["']$/g, "")
-  return [key, value]
+  return [key, line.slice(index + 1).trim()]
 }
 
 /** YAML block scalar indicators: `>` folded, `|` literal, each with an
@@ -190,7 +186,12 @@ function frontMatter(text: string): LooseEntry | "unsupportedYaml" | null {
       index += 1
       continue
     }
-    const [key, value] = pair
+    const [key, rawValue] = pair
+    const quoted = /^["']/.test(rawValue)
+    const value =
+      quoted || rawValue.startsWith("[")
+        ? rawValue
+        : rawValue.replace(/(?:^|[ \t])#.*$/, "").trimEnd()
     if (ALLOWED_TOOLS_KEYS.includes(key) && !value) {
       const [items, next] = readStringList(lines, index + 1, end, rootIndent)
       if (items === null) return "unsupportedYaml"
@@ -210,13 +211,16 @@ function frontMatter(text: string): LooseEntry | "unsupportedYaml" | null {
       index = next
       continue
     }
+    const scalar = quoted
+      ? (yamlScalar(value) ?? value.replace(/^["']|["']$/g, ""))
+      : value
     if (
       ALLOWED_TOOLS_KEYS.includes(key) &&
-      value.startsWith("[") &&
-      parseFlowList(value) === null
+      scalar.startsWith("[") &&
+      parseFlowList(scalar) === null
     )
       return "unsupportedYaml"
-    entry[key] = value
+    entry[key] = scalar
     index += 1
   }
   return entry
@@ -250,21 +254,50 @@ function parseFlowList(text: string): string[] | null {
   return value === null ? null : [...values, value]
 }
 
+const YAML_EXTRA_ESCAPES: Record<string, string> = {
+  "0": "\0",
+  a: "\x07",
+  v: "\v",
+  e: "\x1b",
+  " ": " ",
+  "\t": "\t",
+  N: "\u0085",
+  _: "\u00a0",
+  L: "\u2028",
+  P: "\u2029",
+}
+
 function yamlScalar(text: string): string | null {
   if (/^["']/.test(text)) {
-    const match = text.match(/^(["'])(.*?)\1(?:\s+#.*)?$/)
+    const match = text.match(
+      /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*')(?:[ \t]+#.*)?$/
+    )
     if (!match) return null
-    if (match[1] === '"') {
+    const scalar = match[1]
+    if (scalar.startsWith('"')) {
       try {
-        return JSON.parse(`"${match[2]}"`) as string
+        // Consume JSON-compatible escapes too, so an escaped backslash stays literal.
+        const json = scalar.replace(
+          /\\(x[0-9a-fA-F]{2}|U[0-9a-fA-F]{8}|.)/g,
+          (escape, code: string) => {
+            const value =
+              code.length > 1
+                ? String.fromCodePoint(Number.parseInt(code.slice(1), 16))
+                : YAML_EXTRA_ESCAPES[code]
+            return value === undefined
+              ? escape
+              : JSON.stringify(value).slice(1, -1)
+          }
+        )
+        return JSON.parse(json) as string
       } catch {
         return null
       }
     }
-    return match[2].replace(/''/g, "'")
+    return scalar.slice(1, -1).replace(/''/g, "'")
   }
   if (/^[[\]{}&*!|>]/.test(text) || /[[\]{}]/.test(text)) return null
-  return text.replace(/\s+#.*$/, "").trim()
+  return text.replace(/[ \t]+#.*$/, "").trim()
 }
 
 /** Keep each top-level item separate; never flatten unsupported nested objects. */

@@ -187,6 +187,7 @@ test("an existing Skill needs fresh overwrite confirmation and keeps its stored 
 }, testInfo) => {
   const { dialog, batches, saved, writeIntents, updateStoredVersion } =
     await setup(page, "en-US", "Docs")
+  const content = skill('"docs" # Use the Agent Skill name')
   const chooser = page.waitForEvent("filechooser")
   await dialog
     .getByRole("button", { name: "Choose files", exact: true })
@@ -196,7 +197,7 @@ test("an existing Skill needs fresh overwrite confirmation and keeps its stored 
   ).setFiles({
     name: "docs.md",
     mimeType: "text/markdown",
-    buffer: Buffer.from(skill("docs")),
+    buffer: Buffer.from(content),
   })
   const row = dialog
     .locator("[data-import-conflict]")
@@ -233,5 +234,5 @@ test("an existing Skill needs fresh overwrite confirmation and keeps its stored 
     [{ name: "docs", version: initialVersion }],
     [{ name: "docs", version: "2026-11-19T00:00:00+00:00" }],
   ])
-  expect(saved.get("Docs")?.raw.content).toBe(skill("docs"))
+  expect(saved.get("Docs")?.raw.content).toBe(content)
 })
