@@ -31,6 +31,13 @@ from release_plan import (
 )
 
 
+# The public ci history predates the imported develop history. Authenticate the
+# last ci Daily before allowing its rolling alias to move to this develop line.
+LAST_CI_DAILY_TAG = "v0.6.0-daily.20261123.2"
+LAST_CI_DAILY_SHA = "d4f81c376bc4630f51a87090e39afc11afe67135"
+DEVELOP_DAILY_BASELINE = "0e8cbe356f4001fe44fd3c2d359f06cedd348e4e"
+
+
 def run(*args, input=None):
     return subprocess.check_output(args, input=input, text=True).strip()
 
@@ -384,7 +391,7 @@ def daily_version_order(version):
 
 
 def require_newer_daily(existing, plan, repository):
-    """Authenticate the current Daily's version before allowing a rolling write."""
+    """Return the authenticated previous Daily version tag and source commit."""
     require_product_repository(repository)
     if (existing.get("tag_name") != "daily" or existing.get("draft") is not False
             or type(existing.get("id")) is not int or existing["id"] <= 0):
@@ -419,6 +426,7 @@ def require_newer_daily(existing, plan, repository):
     require_live_tag(repository, "daily", manifest["source_sha"])
     if daily_version_order(plan["product_version"]) < current_order:
         raise ValueError("refusing to replace a newer published Daily version")
+    return tag, manifest["source_sha"]
 
 
 def require_known_dev_assets(directory, repository, existing):
@@ -541,6 +549,7 @@ def main():
     rolling = plan["alias"] in {"dev", "daily"}
     existing = None
     recovery = None
+    previous_daily = None
     if rolling:
         existing = api(
             f"repos/{repository}/releases/tags/{plan['alias']}", missing=True
@@ -552,7 +561,7 @@ def main():
             same = require_newer_rolling(existing, plan["build_id"],
                 allow_same=plan["alias"] == "dev" and args.candidate_acceptance is not None)
             if plan["alias"] == "daily":
-                require_newer_daily(existing, plan, repository)
+                previous_daily = require_newer_daily(existing, plan, repository)
             if same:
                 require_same_dev_candidate(existing, plan, repository)
                 recovery = {"mode": "same_frozen_candidate",
@@ -562,8 +571,16 @@ def main():
         if plan["alias"] == "daily" and previous and not existing:
             raise ValueError("Daily tag has no published rolling Release provenance")
         if previous:
+            comparison_base = plan["alias"]
+            if (
+                previous_daily == (LAST_CI_DAILY_TAG, LAST_CI_DAILY_SHA)
+                and live_repository.get("default_branch") == "develop"
+                and previous["object"].get("type") == "commit"
+                and previous["object"].get("sha") == LAST_CI_DAILY_SHA
+            ):
+                comparison_base = DEVELOP_DAILY_BASELINE
             comparison = api(
-                f"repos/{repository}/compare/{plan['alias']}...{plan['source_sha']}"
+                f"repos/{repository}/compare/{comparison_base}...{plan['source_sha']}"
             )
             if comparison["status"] not in {"ahead", "identical"}:
                 raise ValueError(

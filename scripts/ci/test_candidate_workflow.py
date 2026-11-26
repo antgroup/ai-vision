@@ -123,10 +123,10 @@ class CandidateWorkflowTests(unittest.TestCase):
         # Test the actual workflow selection, not a fixture's hard-coded Go value.
         self.assertRegex(selected, r'^1\.25\.\d+$', 'Native candidate driver requires pinned Go 1.25')
 
-    def test_old_release_remains_explicit_without_nightly_execution(self):
+    def test_product_release_has_daily_manual_and_formal_tag_triggers(self):
         document = yaml.safe_load((ROOT / '.github/workflows/release-images.yml').read_text())
         triggers = document.get('on', document.get(True))
-        self.assertNotIn('schedule', triggers)
+        self.assertEqual(triggers['schedule'], [{'cron': '23 18 * * *'}])
         self.assertIn('workflow_dispatch', triggers)
         self.assertEqual(triggers['push'], {'tags': ['v*']})
 

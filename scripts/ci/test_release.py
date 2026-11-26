@@ -1229,6 +1229,9 @@ class DailyPublicationFixture(DevPublicationFixture):
 
     def __init__(self, directory, product_plan, previous):
         super().__init__(directory, product_plan)
+        self.default_branch = "main"
+        self.comparison_refs = []
+        self.comparison_results = {}
         tag = previous.plan["release_tag"]
         self.releases.pop("dev")
         self.tags.pop("dev")
@@ -1243,12 +1246,19 @@ class DailyPublicationFixture(DevPublicationFixture):
         self.assets[300] = {path.name: path.read_bytes() for path in previous.directory.iterdir()}
 
     def api(self, path, **kwargs):
+        if path == f"repos/{self.repository}":
+            return {**LIVE_REPOSITORY, "default_branch": self.default_branch}
         if kwargs.get("data") is not None and path.endswith("/git/refs/tags/daily"):
             self.events.append(("write", path, copy.deepcopy(kwargs["data"])))
             self.tags["daily"] = kwargs["data"]["sha"]
             return None
         if "/compare/" in path:
-            return {"status": self.comparison_status or "ahead"}
+            refs = path.split("/compare/", 1)[1]
+            self.comparison_refs.append(refs)
+            status = self.comparison_results.get(refs, self.comparison_status or "ahead")
+            if status is None:
+                raise RuntimeError("fixture GitHub compare has no common ancestor")
+            return {"status": status}
         return super().api(path, **kwargs)
 
     def run(self, *args, **kwargs):
@@ -1387,6 +1397,62 @@ class DailyPublicationTests(unittest.TestCase):
                 self.remote.comparison_status = status
                 with self.assertRaisesRegex(ValueError, "rolling commit"):
                     self.publish()
+                self.assert_no_publication_writes()
+
+    def test_public_daily_cuts_over_from_the_known_legacy_source_to_develop(self):
+        self.prepare(
+            incoming={"version": "0.6.0", "snapshot_date": "20261127"},
+            previous={"version": "0.6.0", "snapshot_date": "20261123",
+                      "source_sha": "d4f81c376bc4630f51a87090e39afc11afe67135"},
+        )
+        self.remote.default_branch = "develop"
+        expected = f"0e8cbe356f4001fe44fd3c2d359f06cedd348e4e...{SHA}"
+        self.remote.comparison_results = {f"daily...{SHA}": None, expected: "ahead"}
+
+        self.publish()
+
+        self.assertEqual(self.remote.comparison_refs, [expected])
+        self.assertEqual(self.remote.tags["daily"], SHA)
+        self.assertIn("v0.6.0-daily.20261127", self.remote.releases["daily"]["body"])
+        self.assertEqual(self.remote.tags["v0.6.0-daily.20261123.2"],
+                         "d4f81c376bc4630f51a87090e39afc11afe67135")
+
+    def test_daily_cutover_does_not_allow_a_candidate_outside_develop_history(self):
+        self.prepare(
+            incoming={"version": "0.6.0", "snapshot_date": "20261127"},
+            previous={"version": "0.6.0", "snapshot_date": "20261123",
+                      "source_sha": "d4f81c376bc4630f51a87090e39afc11afe67135"},
+        )
+        self.remote.default_branch = "develop"
+        expected = f"0e8cbe356f4001fe44fd3c2d359f06cedd348e4e...{SHA}"
+        self.remote.comparison_results = {f"daily...{SHA}": None, expected: "diverged"}
+
+        with self.assertRaisesRegex(ValueError, "rolling commit"):
+            self.publish()
+
+        self.assertEqual(self.remote.comparison_refs, [expected])
+        self.assert_no_publication_writes()
+
+    def test_other_daily_predecessors_or_default_branches_keep_the_ancestry_guard(self):
+        legacy_sha = "d4f81c376bc4630f51a87090e39afc11afe67135"
+        for branch, snapshot, source in (
+            ("develop", "20261124", legacy_sha),
+            ("develop", "20261123", "c" * 40),
+            ("main", "20261123", legacy_sha),
+        ):
+            with self.subTest(branch=branch, snapshot=snapshot, source=source):
+                self.prepare(
+                    incoming={"version": "0.6.0", "snapshot_date": "20261127"},
+                    previous={"version": "0.6.0", "snapshot_date": snapshot, "source_sha": source},
+                )
+                self.remote.default_branch = branch
+                expected = f"daily...{SHA}"
+                self.remote.comparison_results = {expected: "diverged"}
+
+                with self.assertRaisesRegex(ValueError, "rolling commit"):
+                    self.publish()
+
+                self.assertEqual(self.remote.comparison_refs, [expected])
                 self.assert_no_publication_writes()
 
     def test_daily_unknown_or_conflicting_published_provenance_stops_before_writes(self):

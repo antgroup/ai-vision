@@ -266,15 +266,24 @@ describes the optional compiled candidate, runtime checks, and archived delivery
 evidence. Product publication runs through the standard release workflow.
 
 The standard source-compatible product [release workflow](../../.github/workflows/release-images.yml)
-defaults manual runs to `publish=false`. In `antgroup/ai-vision`, first run basic
-CI on the selected source. The release workflow stages the four owned images,
-the ordinary CLI and an exact copy of the selected upstream SigNoz index.
+defaults manual runs to `publish=false`. Before starting a manual candidate in
+`antgroup/ai-vision`, confirm basic CI passed on the selected source. The release
+workflow stages the four owned images, the ordinary CLI and an exact copy of the
+selected upstream SigNoz index.
 After anonymously verifying all five public image indexes, it runs the full
 source checks with its staged service images and the pinned SigNoz precision
 fixture. It also deploys the exact packaged Linux amd64 combination separately
-against OceanBase CE and seekdb. Candidate-only runs can write candidate images
-to GHCR. Product Releases and rolling tags require explicit publication. The nightly
-schedule stays paused. Native compilation is optional for this standard channel.
+against OceanBase CE and seekdb. Candidate-only runs can stage candidate images
+in GHCR. Native compilation is optional for this standard channel.
+
+GitHub schedules Daily at 02:23 Asia/Shanghai (`23 18 * * *` UTC) after the workflow
+reaches the default `develop` branch. The run builds the exact event SHA, reads the
+reviewed SigNoz digest from the dependency lock for that `VERSION`, and qualifies
+the Linux amd64 and arm64 Personal Edition kits. The publication job requires
+source checks, both database smokes, and final frozen acceptance. It publishes a
+versioned prerelease and reads back its assets before advancing the `daily` entry.
+See the [release guide](../../docs/deployment/en/dev-image-release.md) for the
+selected artifacts and inputs.
 When a package is created private, staging can complete and the anonymous check
 will stop the run before deployment. Confirm the package's repository access and
 public visibility, then run the full workflow again to obtain a new acceptance
@@ -326,10 +335,9 @@ Explicit `publish=true` remains available for a qualified manual run. Stable/RC
 publication continues through the tag workflow and additionally requires matching
 `VERSION`, reviewed bilingual notes and the protected release environment with an
 uninvolved reviewer. The separate promotion workflow cannot bypass those gates.
-Owners, package access, the external SigNoz digest and hosted acceptance remain
-setup items until verified. See the [release guide](../../docs/deployment/en/dev-image-release.md)
-for inputs, downloads and recovery. Merging these files creates no Release,
-changes no repository visibility and does not reactivate the schedule.
+Confirm package access and hosted acceptance against the actual release run.
+See the [release guide](../../docs/deployment/en/dev-image-release.md) for
+downloads and recovery.
 
 ## Native packaging and historical delivery
 

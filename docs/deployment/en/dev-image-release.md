@@ -4,12 +4,13 @@
 
 [`Release images`](../../../.github/workflows/release-images.yml) builds and qualifies a fixed product candidate. Manual runs default to **`publish=false`**. They retain reviewable assets and acceptance without creating a product Release or moving product aliases. The standard public channel uses source-compatible service images and the ordinary CLI. Its GitHub repository is `antgroup/ai-vision`. The current product target is `0.6.0`; check the Releases page for available downloads.
 
-Native compilation is available through an [optional candidate workflow](../../../.github/workflows/native-candidate.yml). The [temporary private Skills delivery](../../../deploy/native-packaging/release-contract.md) retains its own source-exclusion and access gates. User-facing Skills remain in `ob-labs/ai-vision-skills`. The nightly schedule remains paused.
+Native compilation is available through an [optional candidate workflow](../../../.github/workflows/native-candidate.yml). The [temporary private Skills delivery](../../../deploy/native-packaging/release-contract.md) retains its own source-exclusion and access gates. User-facing Skills remain in `ob-labs/ai-vision-skills`.
 
 ## Channels and test scope
 
 | Run | Source and version | Result after validation |
 | --- | --- | --- |
+| Scheduled Daily, 02:23 Asia/Shanghai | Exact event commit on the default `develop` branch. `VERSION-daily.YYYYMMDD` | Versioned prerelease with both Linux Personal Edition kits, plus the rolling `daily` entry |
 | Manual `daily`, default `publish=false` | Current default branch; `VERSION-daily.YYYYMMDD[.N]` | Frozen candidate assets and acceptance; no Release or product aliases |
 | Manual `dev`, default `publish=false` | Current default branch; `VERSION-dev.YYYYMMDD.RUN_NUMBER[.ATTEMPT]` | Frozen development candidate; no Release or product aliases |
 | Manual trial alias | Selected pushed branch; unique non-version alias and selected candidate channel | Candidate assets only; publication is rejected before version-tag writes |
@@ -17,7 +18,9 @@ Native compilation is available through an [optional candidate workflow](../../.
 | Manual `release_preview=true` | Selected branch and exact `VERSION` | Formal release qualification and frozen artifacts with publication disabled |
 | Push of a `v*` tag | Tag matches `VERSION` and is reachable from the default branch | Reviewed stable Release or RC prerelease after protected approval |
 
-An explicit `publish=true` manual Daily/Dev run still publishes after the same source/artifact gates. The separate promotion path is useful when a candidate must be reviewed before publication; it does not rebuild.
+GitHub schedules the Daily after this workflow reaches the default `develop` branch. The snapshot date comes from the original run creation time in Asia/Shanghai and stays fixed on reruns. Scheduled runs use revision `1`. After qualification, the workflow publishes the versioned prerelease, downloads and verifies its assets, then advances the rolling `daily` entry.
+
+An explicit `publish=true` manual Daily/Dev run still publishes after the same source and artifact gates. Use the separate promotion workflow to review a manual candidate and publish its frozen assets.
 
 Daily uses a fixed snapshot date. Set `snapshot_date` as `YYYYMMDD` and retain it through retries or work crossing midnight. Revision `1` omits the suffix; the next accepted snapshot for the same date uses `.2`. The version format is `0.6.0-daily.YYYYMMDD`, or `0.6.0-daily.YYYYMMDD.2` for revision 2. A rerun keeps the selected version; run ID/attempt only distinguish build identity. Changed accepted content requires a fresh Daily revision.
 
@@ -29,15 +32,15 @@ PRs select Linux basic checks by changed paths, including version/release PRs. I
 
 ## Candidate validation and publication
 
-1. Resolve the exact source SHA and approve an immutable upstream SigNoz index. Stable and RC builds use the index recorded in [the dependency lock](../../../deploy/config/release-dependencies.json) for the numeric product version. For public candidates, stage and verify the same index as `ghcr.io/antgroup/ai-vision/data-backend`.
-2. Confirm basic CI passed on the selected source, then build plugins and the matching ordinary CLI.
+1. Resolve the exact source SHA and approve an immutable upstream SigNoz index. Scheduled Daily, Stable and RC builds use the index recorded in [the dependency lock](../../../deploy/config/release-dependencies.json) for the numeric product version. For public candidates, stage and verify the same index as `ghcr.io/antgroup/ai-vision/data-backend`.
+2. Before a manual candidate run, confirm basic CI passed on the selected source. The workflow builds plugins and the matching ordinary CLI.
 3. Build changed product-owned images on Linux amd64/arm64 builders, or verify both architectures reused from a published Release. Record their actual build identities and digests under unique candidate tags.
 4. Assemble checksummed CLI/assets, `release-manifest.json` and both pinned vars files. The manifest binds `source_repository`, `release_tag`, `product_version`, source SHA and original build ID.
 5. Verify anonymous access to all five public candidate image references. Run the full source checks with the staged owned images and the pinned SigNoz precision fixture. Deploy the packaged Linux amd64 CLI and exact release images separately against OceanBase CE and seekdb. Require health, authentication, OTLP ingestion and API readback (including native memory operations), recast persistence, image identity and cleanup checks.
-6. Freeze the exact asset sizes/hashes and both sanitized passed smoke receipts in `candidate-acceptance.json`. Candidate-only runs stop here.
-7. On explicit publication, validate candidate provenance and current remote state, tag the five public packages, publish the versioned Release, then download and compare its actual asset bytes before moving rolling aliases. Stable/RC additionally requires reviewed notes and protected approval.
+6. Freeze the exact asset sizes and hashes and both sanitized passed smoke receipts in `candidate-acceptance.json`. When the run includes Personal Edition, qualify both kits and add their receipts to final acceptance. Candidate-only runs stop after acceptance.
+7. During publication, validate candidate provenance and current remote state, tag the five public packages, publish the versioned Release, then download and compare its actual asset bytes before moving rolling aliases. Stable and RC additionally require reviewed notes and protected approval.
 
-The public manifest pins five service images under `ghcr.io/antgroup/ai-vision/`. The `frontend`, `backend`, `ingest-gateway`, `diagnosis` and `data-backend` packages receive product-version and rolling tags after qualification and explicit publication. The `data-backend` package carries a digest-pinned copy of an approved `ghcr.io/ob-labs/signoz-ob` index. `data_backend_mirror` records both references with the same digest. SigNoz owns its upstream tags and build evidence. The OceanBase CE and seekdb references remain pinned to their upstream images.
+The public manifest pins five service images under `ghcr.io/antgroup/ai-vision/`. Publication applies product-version and rolling tags to the qualified `frontend`, `backend`, `ingest-gateway`, `diagnosis` and `data-backend` packages. The `data-backend` package carries a digest-pinned copy of an approved `ghcr.io/ob-labs/signoz-ob` index. `data_backend_mirror` records both references with the same digest. SigNoz owns its upstream tags and build evidence. The OceanBase CE and seekdb references remain pinned to their upstream images.
 
 Artifact deployment acceptance covers **Linux amd64** with both databases. It does not cover upgrades, Kubernetes, every real model/provider or unexecuted platforms. Native compilation and image/CLI platform availability have separate evidence.
 
@@ -47,20 +50,20 @@ On disposable GitHub-hosted Linux x64 runners with less than 64 GiB free on the 
 
 Confirm these prerequisites before expensive builds or publication:
 
-- For Daily and Dev, set `AIVISION_SIGNOZ_IMAGE` or the manual `signoz_image` input to an approved `ghcr.io/ob-labs/signoz-ob@sha256:...` index containing both Linux architectures. For a formal version, review the image digest, upstream source commit, and build receipt in the dependency lock. The lock applies to the corresponding RC and Stable versions.
+- For a scheduled Daily, keep the dependency lock matched to `VERSION` on `develop`. Review the image digest, upstream source commit, and build receipt. For manual Daily and Dev, set `AIVISION_SIGNOZ_IMAGE` or pass `signoz_image` with an approved `ghcr.io/ob-labs/signoz-ob@sha256:...` index containing both Linux architectures.
 - Confirm that the product repository is public and the intended actor has package and Release access. Candidate runs stage bytes in GHCR even when `publish=false`. The first authorized staging run can create private packages and stop before deployment smoke. Configure repository association, workflow access and public visibility for all five packages in GHCR. Then rerun the candidate so the registry gate can verify anonymous access.
 - For stable/RC, configure the `release` environment with required reviewers, prevention of self-review and administrator bypass disabled. Prepare an asset-free draft for the exact tag with reviewed English and Chinese notes using the [release template](../../../.github/RELEASE_TEMPLATE.md). The protected publishing job resolves that draft and verifies its uploaded assets before publication.
 - An optional `AIVISION_E2E_DOCKER_LINUX_RUNNER` must identify a trusted Linux Docker runner with enough resources for the full stack.
 
 The release workflow qualifies the five core services. Optional OpenShell installation is documented separately in the [sandbox plugin guide](sandbox-plugins.md).
 
-In **Actions → Release images → Run workflow**, select the default branch, `tag=daily`, the fixed snapshot/revision and **`publish=false`**. `candidate_channel` accepts `auto`, `daily` or `dev`. For a pushed branch trial, select that branch, set a unique `tag` and an explicit candidate channel, and keep `publish=false`. `latest`, version-like aliases and generated `candidate-*` names are reserved. Candidate builds queue per Git ref. Publication jobs share one queue for package aliases and Releases.
+In **Actions → Release images → Run workflow**, select `develop`, `tag=daily`, the fixed snapshot and revision, and **`publish=false`**. `candidate_channel` accepts `auto`, `daily` or `dev`. For a pushed branch trial, select that branch, set a unique `tag` and an explicit candidate channel, and keep `publish=false`. `latest`, version-like aliases and generated `candidate-*` names are reserved. Candidate builds queue per Git ref. Publication jobs share one queue for package aliases and Releases.
 
 ```bash
 # Select the actual snapshot date/revision before running.
 SNAPSHOT_DATE=YYYYMMDD
 gh workflow run release-images.yml -R antgroup/ai-vision \
-  --ref main -f tag=daily -f publish=false \
+  --ref develop -f tag=daily -f publish=false \
   -f snapshot_date="$SNAPSHOT_DATE" -f daily_revision=1
 gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 ```
@@ -151,11 +154,12 @@ below 50 ms. It also requires Claude's 1 MiB PostToolUse parent latency below
 
 ## Qualify the All-in-One Personal Edition
 
-Stable and RC builds include the Linux amd64 and arm64 single-container edition
-with embedded seekdb. On a Daily run, select `personal_edition=true` and
-`publish=false` to qualify those same platforms. Formal previews also qualify the
-Windows x64 CLI alongside the Personal Edition and distributed artifacts. The native
-jobs consume the frozen distributed candidate after both database smokes pass.
+Scheduled Daily, Stable and RC builds include the Linux amd64 and arm64
+single-container edition with embedded seekdb. On a manual Daily run, select
+`personal_edition=true` and `publish=false` to qualify those same platforms.
+Formal previews also qualify the Windows x64 CLI alongside the Personal Edition
+and distributed artifacts. The native jobs consume the frozen distributed
+candidate after both database smokes pass.
 Both run actual installs from the candidate files and record packaged image and
 CLI identities and persistent first-use results. Each architecture also checks
 native memory operation readback on the packaged data backend. The final `release-assets`
@@ -173,7 +177,7 @@ After reviewing the successful candidate and authorizing publication, run:
 CANDIDATE_RUN_ID=...
 CANDIDATE_ATTEMPT=...
 gh workflow run promote-release.yml -R antgroup/ai-vision \
-  --ref main -f candidate_run_id="$CANDIDATE_RUN_ID" \
+  --ref develop -f candidate_run_id="$CANDIDATE_RUN_ID" \
   -f candidate_run_attempt="$CANDIDATE_ATTEMPT"
 ```
 
@@ -237,6 +241,8 @@ Source checks run independently of release preparation. Missing SigNoz configura
 After a candidate failure, use **Re-run all jobs** to keep CLI, images and checks within one attempt. Preserve the Daily snapshot date/revision; changed accepted content requires the next revision. Unique candidate image tags can remain after failure, but candidate-only runs never move user aliases.
 
 Advancing `daily` requires both a newer workflow attempt and a product version that does not move backward. The publisher verifies the current version through its published versioned Release, authenticated manifest/checksum and live tags, then compares the numeric base version, snapshot date and revision. A later run cannot replace a newer date or revision; unknown or inconsistent prior provenance stops publication.
+
+The one-time move of the rolling `daily` entry from `ci` to `develop` requires the publisher to authenticate `v0.6.0-daily.20261123.2` and check the candidate against the approved `develop` history. Use the original versioned Release to download that `ci` build's assets. After the move, subsequent candidates must match or descend from the rolling entry's current source commit.
 
 For an interrupted Dev alias upload, retry promotion with the original candidate run and attempt. If a direct `publish=true` candidate run failed only in the development publication job, set `recover_dev_publication=true`; the verifier requires both smokes and frozen acceptance to have passed in that exact attempt and rejects every other failure or cancellation. Recovery verifies the frozen acceptance, exact published versioned assets, original Dev build/source pointer and live tag before restoring the same bytes. It preserves the original candidate notes and records the recovery publisher separately. Newer, changed or unprovable alias state requires inspection. A fresh Dev publication verifies uploaded alias assets before committing its completion notes.
 

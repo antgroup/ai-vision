@@ -3,9 +3,10 @@ name: Release images
 # Source checks, candidate read-back and an artifact deployment smoke must
 # pass before aliases change. Public releases qualify four native service
 # images and an exact data-backend mirror of the selected SigNoz index.
-# The legacy nightly schedule is paused while portable candidate CI is rebuilt.
-# Explicit manual/tag publication remains a separate operation.
+# The scheduled Daily uses the same qualification and publication jobs.
 on:
+  schedule:
+    - cron: '23 18 * * *' # 02:23 Asia/Shanghai
   push:
     tags: ["v*"]
   workflow_dispatch:
@@ -92,7 +93,7 @@ jobs:
       - id: plan
         env:
           INPUT_TAG: ${{ inputs.tag }}
-          INPUT_PERSONAL_EDITION: ${{ inputs.personal_edition }}
+          INPUT_PERSONAL_EDITION: ${{ github.event_name == 'schedule' || inputs.personal_edition == true }}
           INPUT_RELEASE_PREVIEW: ${{ inputs.release_preview }}
           INPUT_SNAPSHOT_DATE: ${{ inputs.snapshot_date }}
           INPUT_DAILY_REVISION: ${{ inputs.daily_revision }}
@@ -105,6 +106,10 @@ jobs:
           test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           if [[ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')" != public ]]; then
             echo '::error::The image workflow requires a public product repository.'
+            exit 1
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == schedule && "$GITHUB_REF" != refs/heads/develop ]]; then
+            echo '::error::Scheduled Daily requires develop to be the default branch.'
             exit 1
           fi
           if [[ "$GITHUB_REF" != "refs/heads/$DEFAULT_BRANCH" && "$GITHUB_REF" != refs/tags/v* ]] &&
@@ -141,7 +146,7 @@ jobs:
           PRODUCT_VERSION: ${{ steps.plan.outputs.product_version }}
         run: |
           set -euo pipefail
-          if [[ "$RELEASE_CHANNEL" == stable || "$RELEASE_CHANNEL" == rc ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == schedule || "$RELEASE_CHANNEL" == stable || "$RELEASE_CHANNEL" == rc ]]; then
             lock=deploy/config/release-dependencies.json
             ref=$(jq -er --arg version "${PRODUCT_VERSION%%-*}" '
               select(.product_version == $version) | .signoz.image
@@ -150,7 +155,7 @@ jobs:
               exit 1
             }
             if [[ -n "$INPUT_SIGNOZ" && "$INPUT_SIGNOZ" != "$ref" ]]; then
-              echo '::error::The formal release cannot override its reviewed SigNoz lock.'
+              echo '::error::This run requires the reviewed SigNoz lock.'
               exit 1
             fi
           else
@@ -790,7 +795,10 @@ jobs:
       group: release-publication
       cancel-in-progress: false
     needs: [prepare, assets, artifact-smoke, acceptance, personal-acceptance]
-    if: inputs.publish == true && (needs.prepare.outputs.channel == 'dev' || needs.prepare.outputs.channel == 'daily')
+    if: >-
+      (github.event_name == 'schedule' && needs.prepare.outputs.channel == 'daily') ||
+      (github.event_name == 'workflow_dispatch' && inputs.publish == true &&
+        (needs.prepare.outputs.channel == 'dev' || needs.prepare.outputs.channel == 'daily'))
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
