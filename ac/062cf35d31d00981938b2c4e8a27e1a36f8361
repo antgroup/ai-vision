@@ -1,0 +1,47 @@
+scripts/ci/README.md
+  s_a5245aba9fb40b::t_13518ae0de8437 269-270,276-286,338-340
+  s_a5245aba9fb40b::t_8c9172935bf75f 271-272
+scripts/ci/test_workflow_contracts.py
+  s_a5245aba9fb40b::t_5a57dd0611572b 223-256
+  s_a5245aba9fb40b::t_1dcd89dff422b0 178-195,318-324
+docs/deployment/zh-CN/dev-image-release.md
+  s_a5245aba9fb40b::t_df47d02db3e1c4 222
+  s_a5245aba9fb40b::t_8c9172935bf75f 13
+  s_a5245aba9fb40b::t_a9f489aaa89443 7,21-23,35-36,40-41,43,53,60,66,139-140,157
+  s_a5245aba9fb40b::t_f36a248e0ca0c3 221
+docs/version-info.md
+  s_a5245aba9fb40b::t_13518ae0de8437 79
+docs/rfcs/0002-versioning-and-releases.md
+  s_a5245aba9fb40b::t_13518ae0de8437 54
+scripts/ci/release_publish.py
+  s_a5245aba9fb40b::t_ab06c1c037204a 34-40,394,429,552,564,574-581,583
+scripts/ci/test_release.py
+  s_a5245aba9fb40b::t_62b91f43b7b8ba 1232-1234,1249-1250,1256-1261,1402-1455
+  s_a5245aba9fb40b::t_bf28410889d166 1456-1457
+.github/workflows/release-images.yml
+  s_a5245aba9fb40b::t_a9d57a9fbefa98 6,8-9,96,111-114,149,158,798-801
+docs/deployment/en/dev-image-release.md
+  s_a5245aba9fb40b::t_df47d02db3e1c4 21
+  s_a5245aba9fb40b::t_8c9172935bf75f 13,161-162
+  s_a5245aba9fb40b::t_39648616ee6ffe 7,23,35-36,40-41,43,53,60,66,157-160,180
+  s_a5245aba9fb40b::t_f36a248e0ca0c3 245
+  s_a5245aba9fb40b::t_aaa0e7206c2a59 22,246
+scripts/ci/test_candidate_workflow.py
+  s_a5245aba9fb40b::t_1dcd89dff422b0 126,129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ac062cf35d31d00981938b2c4e8a27e1a36f8361",
+  "prompts": {},
+  "sessions": {
+    "s_a5245aba9fb40b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a2128f-754e-7832-a878-86199f231c19",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
