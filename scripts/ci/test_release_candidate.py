@@ -247,6 +247,97 @@ class CandidateTests(unittest.TestCase):
                 source_sha=SHA, candidate_run_id="123", candidate_run_attempt="2", api_fn=api,
                 allow_dev_recovery=True)
 
+    def daily_recovery_api(self, path, *, event="schedule", conclusion="failure", publisher=None):
+        base = f"repos/{REPOSITORY}"
+        develop_sha = "c" * 40
+        value = self.api(path)
+        if path == base:
+            return {**value, "default_branch": "develop"}
+        if path == f"{base}/commits/develop":
+            return {"sha": develop_sha}
+        if path == f"{base}/compare/{SHA}...{develop_sha}":
+            return {"status": "ahead", "merge_base_commit": {"sha": SHA}}
+        if "/jobs?" in path:
+            value["jobs"].extend([
+                dict(value["jobs"][0], id=5, name="freeze qualified Personal Edition acceptance"),
+                dict(value["jobs"][0], id=6, name="publish verified development artifacts",
+                     conclusion=publisher or conclusion),
+            ])
+            value["total_count"] = len(value["jobs"])
+            return value
+        if "/actions/runs/" in path:
+            return {**value, "head_branch": "develop", "event": event, "conclusion": conclusion}
+        raise AssertionError(f"unexpected API path {path}")
+
+    def test_daily_recovery_authenticates_the_original_publisher_after_develop_advances(self):
+        module, _, acceptance = self.candidate()
+        for event, conclusion in (("schedule", "failure"), ("workflow_dispatch", "cancelled"),
+                                  ("schedule", "timed_out")):
+            with self.subTest(event=event, conclusion=conclusion):
+                receipt = module.verify_remote_candidate(self.directory, acceptance, repository=REPOSITORY,
+                    source_sha=None, candidate_run_id="123", candidate_run_attempt="2",
+                    api_fn=lambda path: self.daily_recovery_api(path, event=event, conclusion=conclusion),
+                    allow_daily_recovery=True)
+                self.assertTrue(receipt["publication_recovery"])
+                self.assertEqual(receipt["candidate_source_sha"], SHA)
+                self.assertEqual(receipt["candidate_build_id"], "123.2")
+
+    def test_daily_recovery_accepts_the_successful_candidate_only_run_of_an_interrupted_promotion(self):
+        module, _, acceptance = self.candidate()
+        options = dict(repository=REPOSITORY, source_sha=None, candidate_run_id="123",
+                       candidate_run_attempt="2", allow_daily_recovery=True)
+
+        receipt = module.verify_remote_candidate(self.directory, acceptance, **options,
+            api_fn=lambda path: self.daily_recovery_api(path, event="workflow_dispatch",
+                                                       conclusion="success", publisher="skipped"))
+        self.assertTrue(receipt["publication_recovery"])
+        self.assertEqual(receipt["candidate_source_sha"], SHA)
+
+        for event, publisher in (("workflow_dispatch", "success"), ("workflow_dispatch", "failure"),
+                                 ("schedule", "skipped")):
+            with self.subTest(event=event, publisher=publisher), self.assertRaises(ValueError):
+                module.verify_remote_candidate(self.directory, acceptance, **options,
+                    api_fn=lambda path: self.daily_recovery_api(path, event=event,
+                                                               conclusion="success", publisher=publisher))
+
+    def test_daily_recovery_rejects_other_sources_attempts_and_failed_qualification(self):
+        module, _, acceptance = self.candidate()
+        options = dict(repository=REPOSITORY, source_sha=None, candidate_run_id="123",
+                       candidate_run_attempt="2", allow_daily_recovery=True)
+        for segment, changes in (
+            (f"repos/{REPOSITORY}", {"default_branch": "main"}),
+            ("/compare/", {"status": "diverged"}),
+            ("/compare/", {"merge_base_commit": {"sha": "d" * 40}}),
+            ("/actions/runs/123", {"head_sha": "d" * 40}),
+            ("/actions/runs/123", {"run_attempt": 3}),
+            ("/actions/runs/123", {"conclusion": "success"}),
+            ("/attempts/2", {"event": "pull_request"}),
+            ("/attempts/2", {"path": ".github/workflows/other.yml"}),
+            ("/attempts/2", {"head_repository": {"full_name": "foreign/repository"}}),
+        ):
+            def api(path):
+                value = self.daily_recovery_api(path)
+                return value | changes if segment in path and "/jobs?" not in path else value
+
+            with self.subTest(segment=segment, changes=changes), self.assertRaises(ValueError):
+                module.verify_remote_candidate(self.directory, acceptance, api_fn=api, **options)
+
+        def extra_failed_job(path):
+            value = self.daily_recovery_api(path)
+            if "/jobs?" in path:
+                value["jobs"].append(dict(value["jobs"][-1], id=7, name="source checks"))
+                value["total_count"] += 1
+            return value
+
+        with self.assertRaisesRegex(ValueError, "publication-only"):
+            module.verify_remote_candidate(self.directory, acceptance, api_fn=extra_failed_job, **options)
+        with self.assertRaisesRegex(ValueError, "one publication recovery"):
+            module.verify_remote_candidate(self.directory, acceptance, api_fn=self.daily_recovery_api,
+                allow_dev_recovery=True, **options)
+        with self.assertRaisesRegex(ValueError, "frozen Daily source commit"):
+            module.verify_remote_candidate(self.directory, acceptance, api_fn=self.daily_recovery_api,
+                **{**options, "source_sha": "d" * 40})
+
     def test_standard_candidate_rejects_optional_release_manifest(self):
         module, receipts, _ = self.candidate()
         manifest = self.directory / "release-manifest.json"

@@ -33,16 +33,15 @@ class RuntimeBudgetTests(unittest.TestCase):
         self.assertNotIn('if', jobs['assets'])
         self.assertNotIn('openshell-catalog', str(jobs['assets']['steps']))
 
-    def test_only_publication_jobs_share_the_publication_queue(self):
+    def test_candidates_queue_per_ref_and_only_publishers_share_the_publication_queue(self):
         images, promote = workflow('release-images.yml'), workflow('promote-release.yml')
         jobs = images['jobs']
         publishers = (jobs['publish-stable'], jobs['publish-development'], promote['jobs']['promote'])
         gates = [job['concurrency'] for job in publishers]
         self.assertTrue(all(gate == gates[0] for gate in gates))
         gate = gates[0]
-        self.assertIs(gate['cancel-in-progress'], False)
-        self.assertNotEqual(images['concurrency']['group'], gate['group'])
-        self.assertIn('github.ref', images['concurrency']['group'])
+        self.assertEqual(images['concurrency'], {'group': 'release-candidate-${{ github.ref }}', 'queue': 'max'})
+        self.assertEqual(gate, {'group': 'release-publication', 'queue': 'max'})
         self.assertNotEqual(promote.get('concurrency', {}).get('group'), gate['group'])
         for name in ('prepare', 'build-services', 'build-backend', 'manifest', 'artifact-smoke', 'personal'):
             self.assertNotEqual(jobs[name].get('concurrency', {}).get('group'), gate['group'])

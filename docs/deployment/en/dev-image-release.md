@@ -57,7 +57,7 @@ Confirm these prerequisites before expensive builds or publication:
 
 The release workflow qualifies the five core services. Optional OpenShell installation is documented separately in the [sandbox plugin guide](sandbox-plugins.md).
 
-In **Actions → Release images → Run workflow**, select `develop`, `tag=daily`, the fixed snapshot and revision, and **`publish=false`**. `candidate_channel` accepts `auto`, `daily` or `dev`. For a pushed branch trial, select that branch, set a unique `tag` and an explicit candidate channel, and keep `publish=false`. `latest`, version-like aliases and generated `candidate-*` names are reserved. Candidate builds queue per Git ref. Publication jobs share one queue for package aliases and Releases.
+In **Actions → Release images → Run workflow**, select `develop`, `tag=daily`, the fixed snapshot and revision, and **`publish=false`**. `candidate_channel` accepts `auto`, `daily` or `dev`. For a pushed branch trial, select that branch, set a unique `tag` and an explicit candidate channel, and keep `publish=false`. `latest`, version-like aliases and generated `candidate-*` names are reserved. Scheduled and manual candidates queue by Git ref. Publication and recovery jobs share a queue for package aliases and Releases. Both queues use `queue: max`, with one active entry and up to 100 waiting entries per group.
 
 ```bash
 # Select the actual snapshot date/revision before running.
@@ -90,8 +90,8 @@ Formal releases and their previews package the ARM64 macOS CLI and Rust hooks
 on `macos-26`. The workflow checks the shipped binaries for ARM64 and a declared
 deployment target at or below macOS 11.0 before uploading them. Release-tier
 macOS ARM64 source checks also run on macOS 26, including the Native
-checks and the evidence consumed by Weaver. These source jobs share a queue
-so they request one hosted macOS ARM64 runner at a time. A failed packaged
+checks and the evidence consumed by Weaver. These source jobs share a
+`queue: max` group and request one hosted macOS ARM64 runner at a time. A failed packaged
 database smoke reports the last observed deployment phase and fixed error
 categories in Actions. Its runner-local logs stay on the runner.
 
@@ -181,7 +181,7 @@ gh workflow run promote-release.yml -R antgroup/ai-vision \
   -f candidate_run_attempt="$CANDIDATE_ATTEMPT"
 ```
 
-Promotion requires the latest successful attempt of the official `release-images.yml` workflow from the **current default-branch head**, both successful database smoke jobs and exact frozen assets. A newer rerun supersedes old acceptance. Stale/foreign/failed attempts, changed assets, branch trials and stable/RC candidates are rejected. The original candidate build ID remains in the assets; the publisher records its own distinct run/attempt and uploads `promotion-receipts-<publisher-run-id>-<attempt>`. No GitHub run identity is substituted.
+Ordinary promotion requires the latest successful attempt of the official `release-images.yml` workflow from the **current default-branch head**, both successful database smoke jobs and exact frozen assets. A newer rerun supersedes old acceptance. Stale, foreign or failed attempts, changed assets, branch trials and stable/RC candidates are rejected. The assets retain the original candidate build ID. The publisher records its own run and attempt in `promotion-receipts-<publisher-run-id>-<attempt>`.
 
 ## Download and deploy the tested combination
 
@@ -238,13 +238,27 @@ The latest published versioned product Release is the default reuse baseline; `r
 
 Source checks run independently of release preparation. Missing SigNoz configuration or registry access blocks artifact production, while source regressions still run. Source-fixture SigNoz v1 readback is not the candidate's native Langfuse v1 readback.
 
-After a candidate failure, use **Re-run all jobs** to keep CLI, images and checks within one attempt. Preserve the Daily snapshot date/revision; changed accepted content requires the next revision. Unique candidate image tags can remain after failure, but candidate-only runs never move user aliases.
+If candidate qualification fails, use **Re-run all jobs** to keep CLI, images and checks within one attempt. Preserve the Daily snapshot date and revision. Changed accepted content requires the next revision. Unique candidate image tags can remain after failure.
 
 Advancing `daily` requires both a newer workflow attempt and a product version that does not move backward. The publisher verifies the current version through its published versioned Release, authenticated manifest/checksum and live tags, then compares the numeric base version, snapshot date and revision. A later run cannot replace a newer date or revision; unknown or inconsistent prior provenance stops publication.
 
-The one-time move of the rolling `daily` entry from `ci` to `develop` requires the publisher to authenticate `v0.6.0-daily.20261123.2` and check the candidate against the approved `develop` history. Use the original versioned Release to download that `ci` build's assets. After the move, subsequent candidates must match or descend from the rolling entry's current source commit.
+The one-time move of the rolling `daily` entry from `ci` to `develop` requires the publisher to authenticate `v0.6.0-daily.20261123.2` and check the candidate against the approved `develop` history. The versioned and rolling Release notes for the first `develop` Daily explain the migration and link to the preserved `ci` downloads. Subsequent candidates must match or descend from the rolling entry's current source commit. [Last Daily from `ci`](https://github.com/antgroup/ai-vision/releases/tag/v0.6.0-daily.20261123.2).
 
 For an interrupted Dev alias upload, retry promotion with the original candidate run and attempt. If a direct `publish=true` candidate run failed only in the development publication job, set `recover_dev_publication=true`; the verifier requires both smokes and frozen acceptance to have passed in that exact attempt and rejects every other failure or cancellation. Recovery verifies the frozen acceptance, exact published versioned assets, original Dev build/source pointer and live tag before restoring the same bytes. It preserves the original candidate notes and records the recovery publisher separately. Newer, changed or unprovable alias state requires inspection. A fresh Dev publication verifies uploaded alias assets before committing its completion notes.
+
+If the Daily publisher finished the versioned Release and all tag updates but stopped before updating the rolling Release metadata, recover it with the original frozen candidate **before rerunning Release images**. Run **Promote qualified Daily or Dev** on `develop` using the run ID and attempt from **Release images**.
+
+```bash
+CANDIDATE_RUN_ID=...
+CANDIDATE_ATTEMPT=...
+gh workflow run promote-release.yml -R antgroup/ai-vision \
+  --ref develop -f candidate_run_id="$CANDIDATE_RUN_ID" \
+  -f candidate_run_attempt="$CANDIDATE_ATTEMPT" -f recover_daily_publication=true
+```
+
+For inline publication, the verifier requires the publication job to be the sole failed, cancelled or timed-out job in the official attempt. If a separate promotion was interrupted, recovery uses the original successful manual candidate attempt with its inline publication job skipped. In both cases, the original candidate commit must still be reachable from the current `develop` head.
+
+The publisher compares the versioned Release assets byte for byte and verifies the exact `daily` Git tag and all five image aliases. It then updates only the rolling Release metadata from the original versioned notes and records a promotion receipt. Ordinary publication stops when the rolling metadata and Git tag disagree.
 
 If publication is interrupted, preserve receipts and inspect exact assets, digests and current remote state before recovery. Do not rebuild different bytes under an accepted version, overwrite newer/unknown aliases or manually bypass a rejected gate. Publication spans several GitHub/registry writes and is not atomic. Billing/access failures, unavailable runners and skipped required checks remain failures or missing evidence.
 

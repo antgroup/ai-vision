@@ -1,20 +1,24 @@
 name: Promote qualified Daily or Dev
 
-# Explicit promotion reuses a successful frozen candidate; it never rebuilds.
+# Promotion and publication recovery use frozen candidate assets.
 on:
   workflow_dispatch:
     inputs:
       candidate_run_id:
-        description: Successful Release images workflow run ID from the current default branch head
+        description: Release images run ID for a qualified candidate or an interrupted publication
         type: string
         required: true
       candidate_run_attempt:
-        description: Exact successful candidate attempt (a newer rerun supersedes older acceptance)
+        description: Exact candidate attempt (a newer rerun supersedes older acceptance)
         type: string
         required: true
         default: '1'
       recover_dev_publication:
         description: Recover an exact Dev candidate whose only failure was publication
+        type: boolean
+        default: false
+      recover_daily_publication:
+        description: Repair an interrupted rolling Daily update using the original frozen candidate
         type: boolean
         default: false
 
@@ -25,7 +29,7 @@ jobs:
   promote:
     concurrency:
       group: release-publication
-      cancel-in-progress: false
+      queue: max
     if: >-
       github.repository == 'antgroup/ai-vision' &&
       github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
@@ -45,6 +49,7 @@ jobs:
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
           RECOVER_DEV_PUBLICATION: ${{ inputs.recover_dev_publication }}
+          RECOVER_DAILY_PUBLICATION: ${{ inputs.recover_daily_publication }}
         run: |
           set -euo pipefail
           if [[ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.visibility')" != public ]]; then
@@ -53,6 +58,7 @@ jobs:
           fi
           recovery=()
           if [[ "$RECOVER_DEV_PUBLICATION" == true ]]; then recovery+=(--recover-dev-publication); fi
+          if [[ "$RECOVER_DAILY_PUBLICATION" == true ]]; then recovery+=(--recover-daily-publication); fi
           [[ "$CANDIDATE_RUN_ID" =~ ^[1-9][0-9]*$ ]]
           [[ "$CANDIDATE_RUN_ATTEMPT" =~ ^[1-9][0-9]*$ ]]
           gh run download "$CANDIDATE_RUN_ID" --repo "$GITHUB_REPOSITORY" --name "release-assets-$CANDIDATE_RUN_ATTEMPT" --dir release
@@ -73,10 +79,12 @@ jobs:
           CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
           CANDIDATE_RUN_ATTEMPT: ${{ inputs.candidate_run_attempt }}
           RECOVER_DEV_PUBLICATION: ${{ inputs.recover_dev_publication }}
+          RECOVER_DAILY_PUBLICATION: ${{ inputs.recover_daily_publication }}
         run: |
           set -euo pipefail
           recovery=()
           if [[ "$RECOVER_DEV_PUBLICATION" == true ]]; then recovery+=(--recover-dev-publication); fi
+          if [[ "$RECOVER_DAILY_PUBLICATION" == true ]]; then recovery+=(--recover-daily-publication); fi
           python3 scripts/ci/release_publish.py publish --directory release \
             --candidate-acceptance acceptance/candidate-acceptance.json \
             --candidate-run-id "$CANDIDATE_RUN_ID" --candidate-run-attempt "$CANDIDATE_RUN_ATTEMPT" \

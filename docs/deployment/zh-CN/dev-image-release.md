@@ -57,7 +57,7 @@ PR 按改动路径选择 Linux 基础检查，包括版本和 release PR。集�
 
 发布工作流验收五个核心服务。可选 OpenShell 安装见[沙箱插件指南](sandbox-plugins.md)。
 
-在 **Actions → Release images → Run workflow** 选择 `develop`，设置 `tag=daily`、固定日期和修订号，并使用 **`publish=false`**。`candidate_channel` 接受 `auto`、`daily`、`dev`。试用已推送的分支时，选择该分支，设置独立的 `tag` 和明确的候选渠道，并使用 `publish=false`。`latest`、版本号格式和自动生成的 `candidate-*` 名称被保留。候选按 Git ref 排队。更新镜像别名和 Release 的发布任务共用一个队列。
+在 **Actions → Release images → Run workflow** 选择 `develop`，设置 `tag=daily`、固定日期和修订号，并使用 **`publish=false`**。`candidate_channel` 接受 `auto`、`daily`、`dev`。试用已推送的分支时，选择该分支，设置独立的 `tag` 和明确的候选渠道，并使用 `publish=false`。`latest`、版本号格式和自动生成的 `candidate-*` 名称被保留。定时和手动候选按 Git ref 排队。更新镜像别名和 Release 的发布与恢复任务共用一个队列。两类队列均使用 `queue: max`，每个并发组同时运行一项，最多等待 100 项。
 
 ```bash
 # 运行前填写实际快照日期／修订号。
@@ -85,7 +85,7 @@ SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运�
 正式发布及其预演使用 `macos-26` 打包 macOS ARM64 CLI 和 Rust hook。上传前，
 工作流核验实际交付二进制的 ARM64 架构，并检查其声明的最低 macOS 版本不高于 11.0。正式发布的 macOS ARM64 源码检查
 也在 macOS 26 上运行，其中包括 Native 检查及 Weaver 使用的证据。这些源码作业
-共用一个队列，每次只申请一台托管 macOS ARM64 runner。数据库制品 smoke 失败时，
+共用一个 `queue: max` 队列，每次只申请一台托管 macOS ARM64 runner。数据库制品 smoke 失败时，
 Actions 记录最后观测到的部署阶段和固定错误类别，原始日志留在 runner 内。
 
 ## 验收 Intel macOS Docker
@@ -158,7 +158,7 @@ gh workflow run promote-release.yml -R antgroup/ai-vision \
   -f candidate_run_attempt="$CANDIDATE_ATTEMPT"
 ```
 
-推进要求官方 `release-images.yml` 的最新成功 attempt，且源码仍为**当前默认分支 head**；两个数据库 smoke job 均成功，制品与冻结记录完全相符。新的重跑会取代旧验收。过期、外仓、失败的 attempt，改变的制品、分支试用及正式版／RC 候选均被拒绝。制品保留原始 candidate build ID；发布器记录自己独立的 run／attempt，并上传 `promotion-receipts-<publisher-run-id>-<attempt>`，不会替换 GitHub 运行身份。
+常规推进要求官方 `release-images.yml` 的最新成功 attempt，且源码仍为**当前默认分支 head**。两个数据库 smoke job 都要成功，制品要与冻结记录完全相符。新的重跑会取代旧验收。过期、外仓或失败的 attempt、改动过的制品、分支试用及正式版／RC 候选均被拒绝。制品保留原始 candidate build ID。发布器在 `promotion-receipts-<publisher-run-id>-<attempt>` 中记录自己的 run 和 attempt。
 
 ## 下载并部署被测组合
 
@@ -210,14 +210,28 @@ aiv logs --namespace aivision -n 80 backend
 
 源码检查独立于发布准备。缺少 SigNoz 配置或镜像仓库权限会阻止制品生产，源码回归仍运行。源码 fixture 的 SigNoz v1 回读不等于候选的原生 Langfuse v1 回读。
 
-候选失败后使用 **Re-run all jobs**，确保 CLI、镜像和检查属于同一 attempt。Daily 保留快照日期／修订号；已接受内容改变时使用下一个修订号。失败后唯一候选镜像 tag 可能保留，仅构建候选的运行始终不移动用户 alias。
+候选验收失败后使用 **Re-run all jobs**，确保 CLI、镜像和检查属于同一 attempt。Daily 保留快照日期及修订号。已接受内容改变时使用下一个修订号。失败后唯一候选镜像 tag 可能保留。
 
 Dev alias 附件上传中断后，可以用原候选的 run／attempt 重试推进发布。直接 `publish=true` 的候选若仅在开发发布作业失败，需设置 `recover_dev_publication=true`；校验器要求同一 attempt 的两个 smoke 和冻结验收均已通过，其他失败或取消仍会被拒绝。恢复会验证冻结验收、已发布的带版本制品、原 Dev 构建／源码入口和当前 tag，再恢复同一组字节。原候选说明保留，恢复发布器单独记录。较新、变化或来源无法验证的 alias 状态需要先检查。新的 Dev 发布会先回读上传后的附件，再写入完成说明。
 
-发布中断时保留回执，恢复前检查准确制品、digest 及当前远端状态。不能在已接受版本下重建不同字节、覆盖更新／来源不明的 alias，或手动绕过拒绝门禁。发布涉及多个 GitHub／镜像仓库写入，不是原子操作。账单／权限失败、runner 不可用和必要检查跳过都属于失败或缺少证据。
-
 推进 `daily` 时，workflow attempt 必须更新，产品版本也必须保持单调。发布器会通过已发布的带版本 Release、经认证读取的 manifest／校验和及当前 tag 核实既有版本，再按数字基础版本、快照日期和修订号比较。较晚运行不能覆盖更新日期或修订号；历史来源缺失或不一致时停止发布。
 
-滚动 `daily` 入口从 `ci` 切换到 `develop` 时，发布器会核验 `v0.6.0-daily.20261123.2` 的发布来源，并确认候选提交属于已批准的 `develop` 提交历史。需要该 `ci` 构建的制品时，从原有的带版本号 Release 下载。切换成功后，后续候选必须使用滚动入口当前的源码提交或其后继提交。
+滚动 `daily` 入口从 `ci` 切换到 `develop` 时，发布器会核验 `v0.6.0-daily.20261123.2` 的发布来源，并确认候选提交属于已批准的 `develop` 历史。首个 `develop` Daily 的带版本号 Release 和滚动 Release 都会说明这次切换，并指向旧版下载。切换后，后续候选必须使用滚动入口当前的源码提交或其后继提交。[最后一个来自 `ci` 的 Daily](https://github.com/antgroup/ai-vision/releases/tag/v0.6.0-daily.20261123.2)。
+
+如果 Daily 已发布带版本号的 Release 并完成标签更新，写入滚动 Release 元数据时中断，请**先用原始冻结候选恢复，再考虑重跑 Release images**。在 `develop` 运行 **Promote qualified Daily or Dev**，填入 **Release images** 的 run ID 和 attempt。
+
+```bash
+CANDIDATE_RUN_ID=...
+CANDIDATE_ATTEMPT=...
+gh workflow run promote-release.yml -R antgroup/ai-vision \
+  --ref develop -f candidate_run_id="$CANDIDATE_RUN_ID" \
+  -f candidate_run_attempt="$CANDIDATE_ATTEMPT" -f recover_daily_publication=true
+```
+
+如果在候选工作流内直接发布，官方 attempt 里仅发布作业可以失败、取消或超时。如果独立的推进发布中断，恢复使用原来成功的手动候选 attempt，其候选工作流内的发布作业应为跳过。两种情况下，原候选提交都必须仍可从当前 `develop` 分支顶端到达。
+
+发布器逐字节核对带版本号的 Release 制品，同时校验 `daily` Git 标签和五个镜像别名。校验通过后，用原带版本号 Release 的说明修复滚动 Release 元数据，并记录推进回执。常规发布遇到滚动元数据和 Git 标签不一致时会停止。
+
+发布中断时保留回执，恢复前检查准确制品、digest 及当前远端状态。不能在已接受版本下重建不同字节、覆盖更新／来源不明的 alias，或手动绕过拒绝门禁。发布涉及多个 GitHub／镜像仓库写入，不是原子操作。账单／权限失败、runner 不可用和必要检查跳过都属于失败或缺少证据。
 
 独立的手动 Product Compose lifecycle 要求 Docker 至少有 14 GiB 内存。默认 runner 容量不足时，将 `AIVISION_E2E_DOCKER_LINUX_RUNNER` 配置为容量足够的 Linux x64 runner。容量检查在 checkout 和构建前执行。

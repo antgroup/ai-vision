@@ -1,6 +1,6 @@
 paths:
-  ".github/workflows/{ci,diagnostics-e2e,framework-e2e,native-agent-e2e}.yml":
+  ".github/workflows/{ci,diagnostics-e2e,framework-e2e,native-agent-e2e,promote-release,release-images}.yml":
     ignore:
       # GitHub accepts concurrency.queue, which actionlint v1.7.12 does not parse.
-      # test_workflow_contracts.py checks the queued release matrices.
+      # CI contract tests check the queued release matrices and publication jobs.
       - '^unexpected key "queue" for "concurrency" section\. expected one of "cancel-in-progress", "group"$'

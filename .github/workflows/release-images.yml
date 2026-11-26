@@ -58,7 +58,7 @@ on:
 # Candidates stage run-specific artifacts. Only Release and rolling-alias writes share a cross-ref lock.
 concurrency:
   group: release-candidate-${{ github.ref }}
-  cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: read
@@ -759,7 +759,7 @@ jobs:
     environment: release
     concurrency:
       group: release-publication
-      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     permissions:
@@ -793,7 +793,7 @@ jobs:
     name: publish verified development artifacts
     concurrency:
       group: release-publication
-      cancel-in-progress: false
+      queue: max
     needs: [prepare, assets, artifact-smoke, acceptance, personal-acceptance]
     if: >-
       (github.event_name == 'schedule' && needs.prepare.outputs.channel == 'daily') ||
