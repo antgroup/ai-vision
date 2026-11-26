@@ -318,7 +318,8 @@ If the versioned Daily and all tags are in place but the rolling Release
 metadata still identifies its predecessor, set `recover_daily_publication=true`
 on `develop` with the original `Release images` run ID and attempt. If a later
 attempt of the same run failed, was cancelled or timed out, recover from the
-original frozen attempt. Recovery verifies
+original frozen attempt. This also applies to a successful manual rerun when
+its publication job was skipped. Recovery verifies
 either a publication-only interruption or the successful manual candidate with
 inline publication skipped for a separate promotion. It checks that the original
 source is still reachable from the current `develop` head, verifies the exact

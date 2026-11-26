@@ -18,6 +18,7 @@ from release_publish import api, validate_bundle
 BACKENDS = ("oceanbase", "seekdb")
 SMOKE_PLATFORM = "linux/amd64"
 SMOKE_COMPONENTS = {"database", *IMAGE_ROLES.values()}
+PUBLISHER_JOB = "publish verified development artifacts"
 
 
 def asset_inventory(directory, manifest, *, base_only=False):
@@ -114,6 +115,22 @@ def verify_frozen(directory, acceptance, *, repository, source_sha, build_id, ba
         raise ValueError("acceptance differs from frozen source, attempt or asset bytes")
 
 
+def read_attempt_jobs(api_fn, run_path, attempt):
+    jobs, page = [], 1
+    while True:
+        result = api_fn(f"{run_path}/attempts/{attempt}/jobs?per_page=100&page={page}")
+        batch = result.get("jobs")
+        if not isinstance(batch, list):
+            raise ValueError("candidate jobs response is invalid")
+        jobs.extend(batch)
+        if len(batch) < 100:
+            if result.get("total_count") != len(jobs):
+                raise ValueError("candidate job listing is incomplete")
+            break
+        page += 1
+    return jobs
+
+
 def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
                             candidate_run_id, candidate_run_attempt, api_fn=api,
                             allow_dev_recovery=False, allow_daily_recovery=False):
@@ -189,27 +206,25 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
     latest_matches = (
         latest["run_attempt"] == requested_attempt and latest.get("conclusion") == expected_conclusion
     )
-    # Only Daily metadata repair may reuse a superseded candidate. Publication
-    # will still verify the live split state against the selected attempt.
-    unsuccessful_daily_rerun = (
-        allow_daily_recovery and latest["run_attempt"] > requested_attempt
-        and latest.get("conclusion") in interrupted_conclusions
-    )
-    if (attempt["run_attempt"] != requested_attempt or attempt.get("conclusion") != expected_conclusion
-            or not (latest_matches or unsuccessful_daily_rerun)):
+    if attempt["run_attempt"] != requested_attempt or attempt.get("conclusion") != expected_conclusion:
         raise ValueError(invalid_attempt)
-    jobs, page = [], 1
-    while True:
-        result = api_fn(f"{base}/attempts/{candidate_run_attempt}/jobs?per_page=100&page={page}")
-        batch = result.get("jobs")
-        if not isinstance(batch, list):
-            raise ValueError("candidate jobs response is invalid")
-        jobs.extend(batch)
-        if len(batch) < 100:
-            if result.get("total_count") != len(jobs):
-                raise ValueError("candidate job listing is incomplete")
-            break
-        page += 1
+
+    # Only Daily metadata repair may reuse a superseded frozen attempt.
+    newer_daily_attempt = allow_daily_recovery and latest["run_attempt"] > requested_attempt
+    recover_after_rerun = newer_daily_attempt and latest.get("conclusion") in interrupted_conclusions
+    if newer_daily_attempt and latest["event"] == "workflow_dispatch" and latest.get("conclusion") == "success":
+        later_jobs = read_attempt_jobs(api_fn, base, latest["run_attempt"])
+        publishers = [job for job in later_jobs if job.get("name") == PUBLISHER_JOB]
+        expected_publisher = {
+            "run_id": int(candidate_run_id), "run_attempt": latest["run_attempt"],
+            "head_sha": source_sha, "status": "completed", "conclusion": "skipped",
+        }
+        recover_after_rerun = len(publishers) == 1 and all(
+            publishers[0].get(key) == value for key, value in expected_publisher.items()
+        )
+    if not (latest_matches or recover_after_rerun):
+        raise ValueError(invalid_attempt)
+    jobs = read_attempt_jobs(api_fn, base, candidate_run_attempt)
     required_jobs = [*(f"Linux amd64 candidate deployment ({backend})" for backend in BACKENDS),
                      "freeze qualified candidate acceptance", "verify public candidate indexes anonymously"]
     qualified_smokes = [f"linux/amd64/{backend}" for backend in BACKENDS]
@@ -230,7 +245,7 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
         ):
             raise ValueError(f"candidate lacks a successful {name} job in the exact attempt")
     if publication_recovery:
-        publishers = [job for job in jobs if job.get("name") == "publish verified development artifacts"]
+        publishers = [job for job in jobs if job.get("name") == PUBLISHER_JOB]
         if (len(publishers) != 1 or publishers[0].get("conclusion") not in publisher_conclusions
                 or any(job.get("run_id") != int(candidate_run_id)
                        or job.get("run_attempt") != int(candidate_run_attempt)

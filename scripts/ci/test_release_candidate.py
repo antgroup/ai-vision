@@ -328,6 +328,45 @@ class CandidateTests(unittest.TestCase):
                     self.assertTrue(any("/attempts/2/jobs?" in path for path in paths))
                     self.assertFalse(any("/attempts/3" in path for path in paths))
 
+    def test_daily_recovery_accepts_a_newer_success_only_when_it_skipped_publication(self):
+        module, _, acceptance = self.candidate()
+        options = dict(repository=REPOSITORY, source_sha=None, candidate_run_id="123",
+                       candidate_run_attempt="2", allow_daily_recovery=True)
+
+        def make_api(latest_jobs):
+            def api(path):
+                value = self.daily_recovery_api(
+                    path, event="workflow_dispatch", conclusion="success", publisher="skipped",
+                )
+                if path == f"repos/{REPOSITORY}/actions/runs/123":
+                    return {**value, "run_attempt": 3}
+                if "/attempts/3/jobs?" in path:
+                    jobs = [dict(job, run_attempt=3) for job in value["jobs"]]
+                    return latest_jobs(jobs)
+                return value
+            return api
+
+        def complete(jobs):
+            return {"total_count": len(jobs), "jobs": jobs}
+
+        receipt = module.verify_remote_candidate(self.directory, acceptance,
+            api_fn=make_api(complete), **options)
+        self.assertTrue(receipt["publication_recovery"])
+        self.assertEqual(receipt["candidate_build_id"], "123.2")
+
+        for change in (
+            lambda jobs: complete([*jobs[:-1], {**jobs[-1], "conclusion": "success"}]),
+            lambda jobs: complete(jobs[:-1]),
+            lambda jobs: complete(jobs + [jobs[-1]]),
+            lambda jobs: complete([*jobs[:-1], {**jobs[-1], "run_attempt": 2}]),
+            lambda jobs: complete([*jobs[:-1], {**jobs[-1], "head_sha": "d" * 40}]),
+            lambda jobs: complete([*jobs[:-1], {**jobs[-1], "run_id": 124}]),
+            lambda jobs: complete([*jobs[:-1], {**jobs[-1], "status": "in_progress"}]),
+            lambda jobs: {"total_count": len(jobs) + 1, "jobs": jobs},
+        ):
+            with self.assertRaises(ValueError):
+                module.verify_remote_candidate(self.directory, acceptance, api_fn=make_api(change), **options)
+
     def test_daily_recovery_rejects_an_unproven_or_successful_newer_attempt(self):
         module, _, acceptance = self.candidate()
         options = dict(repository=REPOSITORY, source_sha=None, candidate_run_id="123",
@@ -350,16 +389,18 @@ class CandidateTests(unittest.TestCase):
 
     def test_ordinary_promotion_rejects_a_historical_successful_attempt(self):
         module, _, acceptance = self.candidate()
+        for conclusion in ("failure", "success"):
+            def api(path):
+                value = self.api(path)
+                if path == f"repos/{REPOSITORY}/actions/runs/123":
+                    return {**value, "run_attempt": 3, "conclusion": conclusion}
+                return value
 
-        def api(path):
-            value = self.api(path)
-            if path == f"repos/{REPOSITORY}/actions/runs/123":
-                return {**value, "run_attempt": 3, "conclusion": "failure"}
-            return value
-
-        with self.assertRaisesRegex(ValueError, "exact successful official workflow attempt"):
-            module.verify_remote_candidate(self.directory, acceptance, repository=REPOSITORY,
-                source_sha=SHA, candidate_run_id="123", candidate_run_attempt="2", api_fn=api)
+            with self.subTest(conclusion=conclusion), self.assertRaisesRegex(
+                ValueError, "exact successful official workflow attempt"
+            ):
+                module.verify_remote_candidate(self.directory, acceptance, repository=REPOSITORY,
+                    source_sha=SHA, candidate_run_id="123", candidate_run_attempt="2", api_fn=api)
 
     def test_daily_recovery_rejects_other_sources_attempts_and_failed_qualification(self):
         module, _, acceptance = self.candidate()

@@ -9,7 +9,7 @@ on:
         type: string
         required: true
       candidate_run_attempt:
-        description: Exact candidate attempt (Daily metadata recovery can use the original attempt after an unsuccessful rerun)
+        description: Use the original frozen attempt for Daily metadata recovery and the latest attempt for other modes
         type: string
         required: true
         default: '1'
