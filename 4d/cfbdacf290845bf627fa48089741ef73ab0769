@@ -1,0 +1,59 @@
+.github/workflows/release-images.yml
+  s_a5245aba9fb40b::t_ff7602cba6b13e 767,823
+  s_a5245aba9fb40b::t_a3be4a1c8d028b 56-63,76-78,794-819,821-822,824-858
+  s_a5245aba9fb40b::t_92c43e4b877676 820
+  s_a5245aba9fb40b::t_c056d80c80ba4f 129-133
+docs/deployment/en/dev-image-release.md
+  s_a5245aba9fb40b::t_8232d331852d88 256-257
+  s_a5245aba9fb40b::t_ea6aeb8475b16d 241,254
+  s_a5245aba9fb40b::t_c056d80c80ba4f 18
+  s_a5245aba9fb40b::t_5ea1de3aa57ec8 239-240,242,245-253,255,258-259
+  s_a5245aba9fb40b::t_cd8ac38b0b24c1 243-244
+docs/deployment/zh-CN/dev-image-release.md
+  s_a5245aba9fb40b::t_ea6aeb8475b16d 214,227
+  s_a5245aba9fb40b::t_5ea1de3aa57ec8 212-213,215,218-226,228,231-232
+  s_a5245aba9fb40b::t_cd8ac38b0b24c1 216-217
+  s_a5245aba9fb40b::t_c056d80c80ba4f 18
+  s_a5245aba9fb40b::t_8232d331852d88 229-230
+scripts/ci/test_workflow_contracts.py
+  s_a5245aba9fb40b::t_25e222f0b41698 273
+  s_a5245aba9fb40b::t_6969b976f65508 207-209
+  s_a5245aba9fb40b::t_28f0be6f312606 264-272,274-284
+scripts/ci/test_release_recovery.py
+  s_a5245aba9fb40b::t_4a74da62f9022d 1-80
+scripts/ci/test_formal_release_recovery.py
+  s_a5245aba9fb40b::t_c9ef5e9892b3e3 58,101-102,190-242,246-255
+  s_a5245aba9fb40b::t_5f404b594b3521 1-57,59-100,103-135,137-138,142-189
+  s_a5245aba9fb40b::t_10a618908c5b57 136,139-141,243-245,256-264
+scripts/ci/release_publish.py
+  s_a5245aba9fb40b::t_7cc4c5c8430a11 725-726,843,861,885-887
+  s_a5245aba9fb40b::t_b41a7cff659d21 28,431,447-448,478-587,590-598,600-612,614-622,626-628,630-637,639,641-642,644-657,667-668,678-681,689-697,734-767
+  s_a5245aba9fb40b::t_37c54e90a2249d 588-589,599,623-625,629,638,640,643
+  s_a5245aba9fb40b::t_c4c6ec3fc2e539 613
+scripts/ci/test_release.py
+  s_a5245aba9fb40b::t_082cff6fed0dea 1669-1679,1716,1726-1727
+  s_a5245aba9fb40b::t_c2082106e38c74 432,434-457,495,500-504,516,543,554-555,559,567-569
+  s_a5245aba9fb40b::t_e3d1cbf9e38278 565-566
+scripts/ci/test_ci_runtime_budget.py
+  s_a5245aba9fb40b::t_e17b9aedfafe22 29-31,41-42
+scripts/ci/release_recovery.py
+  s_a5245aba9fb40b::t_e3f5653c1a01d9 1-98
+scripts/ci/test_formal_tag_ancestry.py
+  s_a5245aba9fb40b::t_1096acd80da113 1-97
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "4dcfbdacf290845bf627fa48089741ef73ab0769",
+  "prompts": {},
+  "sessions": {
+    "s_a5245aba9fb40b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a2128f-754e-7832-a878-86199f231c19",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
