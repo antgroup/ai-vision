@@ -1,0 +1,57 @@
+.github/workflows/promote-release.yml
+  s_a5245aba9fb40b::t_1980fcf696fa57 21
+  s_a5245aba9fb40b::t_511abd6f5c58fc 32
+  s_a5245aba9fb40b::t_0c733810d0c0ad 3,8,12,20,22-23,52,61,82,87
+scripts/ci/test_public_release.py
+  s_a5245aba9fb40b::t_d355519014f832 15,195-211
+  s_a5245aba9fb40b::t_83ab0237d89e27 212
+scripts/ci/release_publish.py
+  s_a5245aba9fb40b::t_c30c45eca04686 402,435,493-532,535-548,557-559,567-568,582,585-587,590-595,597-600,629-648,653,683,727-728,764,877
+  s_a5245aba9fb40b::t_bc863544a0d516 533-534
+  s_a5245aba9fb40b::t_4138ac08772095 332,334-342,344,347
+scripts/ci/test_release_candidate.py
+  s_a5245aba9fb40b::t_63d26f38e60445 308,337-339
+  s_a5245aba9fb40b::t_4283c3f6298cde 250,263-264,284-301
+  s_a5245aba9fb40b::t_80ee40af8dedf6 251-262,265-283,302-307,309-336,340
+docs/deployment/en/dev-image-release.md
+  s_a5245aba9fb40b::t_af240d0321deeb 249,259-261
+  s_a5245aba9fb40b::t_152819c73d06d1 60,93-94,184,241,245,250-258
+  s_a5245aba9fb40b::t_e8a827e720ec7d 262
+docs/deployment/zh-CN/dev-image-release.md
+  s_a5245aba9fb40b::t_563b48c2f63873 60,88,161,213,219-235
+scripts/ci/test_release.py
+  s_a5245aba9fb40b::t_89e0ad52a8a117 1235-1238,1255-1258,1285-1286,1323-1334,1336,1338,1345-1392
+  s_a5245aba9fb40b::t_bc863544a0d516 1273-1282,1498-1499,1508-1511
+  s_a5245aba9fb40b::t_1980fcf696fa57 1394-1404
+  s_a5245aba9fb40b::t_354bca3719fdea 1393
+scripts/ci/release_candidate.py
+  s_a5245aba9fb40b::t_27f52b1eb53f41 9,119,121-122,130-136,145-146,149-150,153-154,161-163,169-174,180,184,208-209,226-227,246-248,268-269,271-272
+  s_a5245aba9fb40b::t_94d48d3186932e 160,164-168,220
+  s_a5245aba9fb40b::t_521458977da1d7 143-144,147-148,151-152,185-186
+scripts/ci/README.md
+  s_a5245aba9fb40b::t_4bbafa5f718f37 199-204,214,289-290,309,317-326
+  s_a5245aba9fb40b::t_dcd08315a3a470 327
+.github/workflows/release-images.yml
+  s_a5245aba9fb40b::t_511abd6f5c58fc 762,796
+  s_a5245aba9fb40b::t_1abcf2f67337bd 61
+.github/actionlint.yaml
+  s_a5245aba9fb40b::t_6edcc415234e67 2,5
+scripts/ci/test_ci_runtime_budget.py
+  s_a5245aba9fb40b::t_e3d6499f0f477b 36,43-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ccc542259709f1cdcc29e8e4557ba343cb833d9c",
+  "prompts": {},
+  "sessions": {
+    "s_a5245aba9fb40b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a2128f-754e-7832-a878-86199f231c19",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
