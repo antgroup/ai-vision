@@ -2,13 +2,14 @@
 """Install AI Vision All-in-One Personal Edition on a supported local Linux Docker host."""
 
 import argparse
-from contextlib import nullcontext
+from contextlib import ExitStack, nullcontext
 import hashlib
 import json
 import os
 from pathlib import Path
 import platform
 import re
+import selectors
 import shutil
 import socket
 import subprocess
@@ -53,8 +54,8 @@ OWNER = "io.aivision.all-in-one.instance"
 RELEASE = "io.aivision.all-in-one.release"
 
 
-def output(*args):
-    return subprocess.check_output(args, text=True).strip()
+def output(*args, timeout=None):
+    return subprocess.check_output(args, text=True, timeout=timeout).strip()
 
 
 def linux_platform(system, architecture):
@@ -460,12 +461,39 @@ def saved_image_matches(stream, expected, target):
     return f"{config['os']}/{config['architecture']}" == target
 
 
-def verified_image(manifest, reference=None, *, known_id=None):
+def verification_time_left(deadline):
+    if deadline is None:
+        return None
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Docker image verification timed out.")
+    return remaining
+
+
+class DockerExportReader:
+    """Read a Docker export pipe without blocking beyond its shared deadline."""
+
+    def __init__(self, pipe, selector, deadline):
+        self.descriptor = pipe.fileno()
+        self.selector = selector
+        self.deadline = deadline
+        selector.register(pipe, selectors.EVENT_READ)
+
+    def read(self, size):
+        if not self.selector.select(verification_time_left(self.deadline)):
+            raise TimeoutError("Docker image verification timed out.")
+        # A buffered pipe read can block while waiting to fill the requested size.
+        return os.read(self.descriptor, size)
+
+
+def verified_image(manifest, reference=None, *, known_id=None, timeout=None):
+    deadline = time.monotonic() + timeout if timeout is not None else None
     expected, target = manifest["image_id"], manifest["platform"]
     image_id, actual_platform = output(
         "docker", "image", "inspect", "--format", "{{.Id}} {{.Os}}/{{.Architecture}}",
-        reference or manifest["image_tag"],
+        reference or manifest["image_tag"], timeout=verification_time_left(deadline),
     ).split()
+    verification_time_left(deadline)
     if actual_platform == target and image_id in (expected, known_id):
         return image_id
     if actual_platform == target and re.fullmatch(r"sha256:" + SHA256.pattern, image_id):
@@ -473,12 +501,23 @@ def verified_image(manifest, reference=None, *, known_id=None):
         # that immutable ID to the published config rather than trusting a tag.
         command = ["docker", "image", "save", image_id]
         with subprocess.Popen(command, stdout=subprocess.PIPE) as process:
-            matches = saved_image_matches(process.stdout, expected, target)
-            # Finish reading any tar padding before checking the export status.
-            for _ in iter(lambda: process.stdout.read(1024 * 1024), b""):
-                pass
-            if process.wait() == 0 and matches:
-                return image_id
+            try:
+                with ExitStack() as resources:
+                    stream = process.stdout
+                    if deadline is not None:
+                        selector = resources.enter_context(selectors.DefaultSelector())
+                        stream = DockerExportReader(stream, selector, deadline)
+                    matches = saved_image_matches(stream, expected, target)
+                    # Finish reading any tar padding before checking the export status.
+                    while stream.read(1024 * 1024):
+                        pass
+                    status = process.wait(timeout=verification_time_left(deadline))
+                    if status == 0 and matches:
+                        return image_id
+            finally:
+                # Popen waits on exit. Stop the child first if reading or waiting failed.
+                if process.poll() is None:
+                    process.kill()
     raise ValueError("The Docker image does not match the manifest identity and platform.")
 
 

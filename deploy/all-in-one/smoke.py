@@ -39,6 +39,8 @@ HOST_ARCH = {"x86_64": "amd64", "amd64": "amd64", "aarch64": "arm64", "arm64": "
 OWNER = "io.aivision.all-in-one.instance"
 RELEASE = "io.aivision.all-in-one.release"
 SHA256 = r"[0-9a-f]{64}"
+# Allow time to stream the full image export as well as inspect the image.
+IMAGE_VERIFICATION_TIMEOUT = 120
 verify_image = run_path(str(Path(__file__).with_name("install-all-in-one.py")))["verified_image"]
 
 
@@ -210,8 +212,10 @@ def verify_running(name, manifest, web, otlp):
             "The installed container is not healthy.")
     image_id = inspect("container", name, ".Image")
     try:
-        require(verify_image(manifest, reference=image_id) == image_id,
+        require(verify_image(manifest, reference=image_id, timeout=IMAGE_VERIFICATION_TIMEOUT) == image_id,
                 "The installed container uses different image bytes.")
+    except (TimeoutError, subprocess.TimeoutExpired) as error:
+        raise QualificationError("The installed image verification timed out.") from error
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError, tarfile.TarError) as error:
         raise QualificationError("The installed image does not match the candidate's config and platform.") from error
     mounts = inspect("container", name, ".Mounts")

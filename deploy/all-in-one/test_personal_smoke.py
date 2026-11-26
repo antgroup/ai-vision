@@ -8,7 +8,9 @@ from io import BytesIO, StringIO
 import json
 from pathlib import Path
 import shutil
+import signal
 import subprocess
+import sys
 import tarfile
 from tempfile import TemporaryDirectory
 import unittest
@@ -16,7 +18,9 @@ from unittest.mock import Mock, patch
 from urllib.error import HTTPError
 
 from sample_trace import Platform, main as sample_main, prepare_demo, trace_complete
-from smoke import QualificationError, inspect, memory_request, read_candidate, read_diagnosis, require_archive_parity
+from smoke import (
+    QualificationError, inspect, memory_request, read_candidate, read_diagnosis, require_archive_parity, verify_running,
+)
 
 
 SOURCE = "a" * 40
@@ -67,6 +71,54 @@ class InstallerImageIdentityTests(unittest.TestCase):
             process.wait.return_value = 0
             self.assertEqual(installer.verified_image(self.manifest), self.runtime_id)
             save.assert_called_once_with(["docker", "image", "save", self.runtime_id], stdout=subprocess.PIPE)
+
+    def test_smoke_times_out_and_reaps_a_stalled_image_export(self):
+        candidate = {**self.manifest, "release_tag": TAG}
+        archive = self.docker_save().read().hex()
+        export_program = """
+import os
+import sys
+import time
+
+phase, archive = sys.argv[1:]
+if phase == "read":
+    time.sleep(2)
+sys.stdout.buffer.write(bytes.fromhex(archive))
+sys.stdout.flush()
+if phase == "wait":
+    os.close(sys.stdout.fileno())
+if phase != "read":
+    time.sleep(2)
+"""
+        real_popen = subprocess.Popen
+        for phase in ("read", "drain", "wait"):
+            with self.subTest(phase=phase):
+                exports = []
+
+                def docker_process(args, **kwargs):
+                    if args[:3] == ("docker", "image", "inspect"):
+                        inspected = f"{self.runtime_id} {self.target}"
+                        return real_popen([sys.executable, "-c", "import sys; print(sys.argv[1])", inspected],
+                                          **kwargs)
+                    self.assertEqual(args, ["docker", "image", "save", self.runtime_id])
+                    process = real_popen([sys.executable, "-c", export_program, phase, archive], **kwargs)
+                    exports.append(process)
+                    return process
+
+                with patch("smoke.inspect", side_effect=[
+                    {"Running": True, "Health": {"Status": "healthy"}},
+                    self.runtime_id,
+                    [{"Type": "volume", "Name": "candidate-data", "Destination": "/data"}],
+                    {"io.aivision.all-in-one.instance": "candidate", "io.aivision.all-in-one.release": TAG},
+                    {"5174/tcp": [{"HostIp": "127.0.0.1", "HostPort": "5174"}],
+                     "4318/tcp": [{"HostIp": "127.0.0.1", "HostPort": "4318"}]},
+                    "candidate-container-id",
+                ]), patch("smoke.IMAGE_VERIFICATION_TIMEOUT", 0.75, create=True), \
+                     patch.object(subprocess, "Popen", side_effect=docker_process):
+                    with self.assertRaisesRegex(QualificationError, "image verification timed out"):
+                        verify_running("candidate", candidate, 5174, 4318)
+                self.assertEqual(len(exports), 1)
+                self.assertEqual(exports[0].returncode, -signal.SIGKILL)
 
     def test_rejects_export_with_wrong_config_reference_or_contents(self):
         for stream in (self.docker_save(manifest_path="other.json"), self.docker_save(content=b"other config")):
