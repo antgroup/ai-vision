@@ -272,7 +272,43 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         setAgents(items)
         setDisabledAgents(v2Data.disabled_agents || [])
 
-        // On space switch: restore per-workspace memory or pick first agent.
+        // Check URL for agent selection
+        const currentRouteAgentProduct =
+          getAgentProductFromDashboardPath(
+            window.location.pathname,
+            window.location.search
+          ) ||
+          (shouldSyncAgentUrl(window.location.pathname)
+            ? getAgentProductFromSearch(window.location.search)
+            : null)
+        // Prefer exact agent_uuid match (multi-instance products like langfuse
+        // share one agent_product, so product-only routing picks the wrong one).
+        const routeAgentUuid =
+          getAgentUuidFromDashboardPath(
+            window.location.pathname,
+            window.location.search
+          ) ||
+          (shouldSyncAgentUrl(window.location.pathname)
+            ? getAgentUuidFromSearch(window.location.search)
+            : null)
+        const routeMatch = routeAgentUuid
+          ? findAgentByUuid(items, routeAgentUuid)
+          : !isSpaceSwitch && currentRouteAgentProduct
+            ? findAgentByProduct(items, currentRouteAgentProduct, typesData)
+            : null
+
+        if (routeMatch) {
+          const value = getAgentValue(routeMatch)
+          setCurrentAgent(routeMatch)
+          localStorage.setItem(AGENT_STORAGE_KEY, value)
+          writeWorkspaceAgent(spaceId, value)
+          setLoadedSpaceId(spaceId)
+          return items
+        }
+
+        // A matching URL UUID selects an agent in the destination Space.
+        // A header Space switch usually carries the previous Space's UUID, so
+        // fall back to the destination Space's remembered agent in that case.
         if (isSpaceSwitch) {
           const rememberedProduct = readWorkspaceAgent(spaceId)
           const remembered = rememberedProduct
@@ -297,40 +333,6 @@ export function AgentProvider({ children }: { children: ReactNode }) {
             }
           }
           spaceSwitchRef.current = true
-          setLoadedSpaceId(spaceId)
-          return items
-        }
-
-        // Check URL for agent selection
-        const currentRouteAgentProduct =
-          getAgentProductFromDashboardPath(
-            window.location.pathname,
-            window.location.search
-          ) ||
-          (shouldSyncAgentUrl(window.location.pathname)
-            ? getAgentProductFromSearch(window.location.search)
-            : null)
-        // Prefer exact agent_uuid match (multi-instance products like langfuse
-        // share one agent_product, so product-only routing picks the wrong one).
-        const routeAgentUuid =
-          getAgentUuidFromDashboardPath(
-            window.location.pathname,
-            window.location.search
-          ) ||
-          (shouldSyncAgentUrl(window.location.pathname)
-            ? getAgentUuidFromSearch(window.location.search)
-            : null)
-        const routeMatch = routeAgentUuid
-          ? findAgentByUuid(items, routeAgentUuid)
-          : currentRouteAgentProduct
-            ? findAgentByProduct(items, currentRouteAgentProduct, typesData)
-            : null
-
-        if (routeMatch) {
-          const value = getAgentValue(routeMatch)
-          setCurrentAgent(routeMatch)
-          localStorage.setItem(AGENT_STORAGE_KEY, value)
-          writeWorkspaceAgent(spaceId, value)
           setLoadedSpaceId(spaceId)
           return items
         }
@@ -425,7 +427,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
               })
             )
           },
-          { replace: true }
+          { replace: true, state: location.state }
         )
         lastSyncedAgent.current = value
       }
@@ -433,7 +435,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       setCurrentAgent(agent)
       setLoadedSpaceId(spaceId)
     },
-    [setSearchParams, shouldSyncUrl, spaceId]
+    [location.state, setSearchParams, shouldSyncUrl, spaceId]
   )
 
   // Non-sync pages: strip stale ?agent= from URL (keep other params intact).
@@ -458,7 +460,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   // (e.g. navigating from a non-sync page), we do NOT clear context — instead
   // let Context→URL restore the agent to the URL.
   useEffect(() => {
-    if (!shouldSyncUrl || !initialized) return
+    if (!shouldSyncUrl || !initialized || loadedSpaceId !== spaceId) return
 
     const urlAgent = getAgentProductFromSearch(location.search)
     const urlAgentUuid = getAgentUuidFromSearch(location.search)
@@ -513,6 +515,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     location.search,
     currentAgent,
     shouldSyncUrl,
+    loadedSpaceId,
     spaceId,
   ])
 
@@ -558,7 +561,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       setSearchParams(
         (prev) =>
           setAgentProductInSearch(prev.toString(), agentValue, { agentUuid }),
-        { replace: true }
+        { replace: true, state: location.state }
       )
     } else {
       setSearchParams(
@@ -568,7 +571,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
           next.delete("agent_uuid")
           return next
         },
-        { replace: true }
+        { replace: true, state: location.state }
       )
     }
     lastSyncedAgent.current = urlIdentity
@@ -579,6 +582,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     spaceId,
     location.pathname,
     location.search,
+    location.state,
     setSearchParams,
     shouldSyncUrl,
   ])

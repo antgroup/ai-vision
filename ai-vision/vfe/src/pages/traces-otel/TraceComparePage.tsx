@@ -27,7 +27,12 @@ import {
 import type { TFunction } from "i18next"
 import { useQuery } from "@tanstack/react-query"
 import { useTranslation } from "react-i18next"
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom"
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom"
 import {
   AlertTriangle,
   Blocks,
@@ -1626,12 +1631,27 @@ export function TraceComparePage() {
   const errorB = !!traceB && queryB.isError
   const backToTraceList = () => {
     if (state?.fromTraceList === true) {
+      // A Personal list history entry omits its Space, so browser Back alone
+      // would reopen that list in the currently selected Space.
+      if (typeof state.implicitSpaceReturnSearch === "string") {
+        const params = new URLSearchParams(state.implicitSpaceReturnSearch)
+        if (params.get("spaceId") !== spaceId) {
+          navigate(
+            { pathname: "/trace", search: params.toString() },
+            { replace: true }
+          )
+          return
+        }
+      }
       navigate(-1)
       return
     }
     const params = new URLSearchParams(searchParams)
     for (const key of ["a", "b", "showMcp"]) params.delete(key)
-    navigate({ pathname: "/trace", search: params.toString() }, { replace: true })
+    navigate(
+      { pathname: "/trace", search: params.toString() },
+      { replace: true }
+    )
   }
 
   let body: ReactNode
