@@ -1,0 +1,38 @@
+deploy/config/release-dependencies.json
+  s_a5245aba9fb40b::t_f2353d256d06f0 2
+VERSION
+  s_a5245aba9fb40b::t_f2353d256d06f0 1
+docs/deployment/en/dev-image-release.md
+  s_a5245aba9fb40b::t_f2353d256d06f0 5
+ai-vision/agent-plugins/claudecode/cchooks/tests/async_hook_contract.rs
+  s_a5245aba9fb40b::t_f2353d256d06f0 2023,2025-2026
+docs/version-info.md
+  s_a5245aba9fb40b::t_f2353d256d06f0 3
+deploy/all-in-one/test_personal_smoke.py
+  s_a5245aba9fb40b::t_f2353d256d06f0 12,31-75
+  s_a5245aba9fb40b::t_cb5a565ac0a93d 76-77
+ai-vision/agent-plugins/codex/cdxhooks/tests/async_parent_integration.rs
+  s_a5245aba9fb40b::t_f2353d256d06f0 991-995,997-998,1092-1094
+deploy/all-in-one/install-all-in-one.py
+  s_a5245aba9fb40b::t_f2353d256d06f0 437-484,489-490,501,510-512,563-564
+deploy/all-in-one/smoke.py
+  s_a5245aba9fb40b::t_f2353d256d06f0 14,21,42,212-216
+docs/deployment/zh-CN/dev-image-release.md
+  s_a5245aba9fb40b::t_f2353d256d06f0 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ea0a72f91ac0e5257bacf0ddcb311122a1fdb04a",
+  "prompts": {},
+  "sessions": {
+    "s_a5245aba9fb40b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a2128f-754e-7832-a878-86199f231c19",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
