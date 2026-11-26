@@ -2637,9 +2637,11 @@
     },
     "cliInstall": {
       "title": "Install and check the aiv CLI first",
-      "description": "Install the aiv CLI and collection plugin on the host running the Agent. On Windows, use PowerShell 7.",
+      "description": "Select the platform where the Agent runs. To check Windows executables, use PowerShell 7.",
       "guide": "Open the aiv CLI installation guide",
       "check": "After installation, check the path and version in the same terminal you will use to connect",
+      "checkWindowsRemote": "Check executable paths and versions in PowerShell 7",
+      "windowsRemoteOnly": "The published Windows CLI can access an existing AI Vision server but cannot install this collection plugin. If the Agent runs on macOS or Linux, select macOS/Linux and run the installation command on that host.",
       "pathHint": "On macOS / Linux, the default directory is ~/.local/bin. The export in the check command applies to the current terminal; add it to ~/.zshrc (zsh) or your active Bash startup file, then verify in a new terminal. For a custom directory, use the export command printed by the installer.",
       "pathHintWindows": "On Windows, the default directory is `%LOCALAPPDATA%\\AI Vision\\bin`, and the installer adds it to your user PATH; open a new PowerShell terminal to verify. For a custom directory, add it to PATH manually.",
       "ready": "Once you see the aiv path and version, generate and run the installation command below. If you see command not found: aiv, install the CLI or fix PATH first.",

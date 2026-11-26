@@ -4,7 +4,7 @@ import { createRequire } from "node:module"
 import test from "node:test"
 import { JSDOM } from "jsdom"
 import i18next from "i18next"
-import { act, createElement, type ComponentType } from "react"
+import { act, createElement, useState, type ComponentType } from "react"
 import { createRoot } from "react-dom/client"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import ts from "typescript"
@@ -297,9 +297,31 @@ async function fixture(language = "zh-CN", platform = "Linux") {
     OnboardingGuideSections: ComponentType<{
       guide: ConfigGuideV2
       hasInstallationCommand: boolean
+      platform: string
+      onPlatformChange: (platform: string) => void
       agentName?: string
       agentProduct?: string
     }>
+  }
+  function GuideFixture({
+    guide,
+    hasInstallationCommand,
+    agent,
+  }: {
+    guide: ConfigGuideV2
+    hasInstallationCommand: boolean
+    agent: { agentName?: string; agentProduct?: string }
+  }) {
+    const [targetPlatform, setTargetPlatform] = useState(
+      platform === "Windows" ? "Windows" : "macOS/Linux"
+    )
+    return createElement(OnboardingGuideSections, {
+      guide,
+      hasInstallationCommand,
+      platform: targetPlatform,
+      onPlatformChange: setTargetPlatform,
+      ...agent,
+    })
   }
   const element = dom.window.document.getElementById("root")!
   const root = createRoot(element)
@@ -318,10 +340,10 @@ async function fixture(language = "zh-CN", platform = "Linux") {
           createElement(
             I18nextProvider,
             { i18n },
-            createElement(OnboardingGuideSections, {
+            createElement(GuideFixture, {
               guide,
               hasInstallationCommand,
-              ...agent,
+              agent,
             })
           )
         )
@@ -492,60 +514,36 @@ test("issuing a plugin command preserves both CLI preparation and the original c
   }
 })
 
-test("a Windows browser shows the PowerShell check even with a legacy guide", async () => {
+test("saved Windows install commands stay hidden even when the guide has host metadata", async () => {
   const ui = await fixture("en-US", "Windows")
   try {
-    await ui.render(false)
-    assert.equal(ui.element.textContent?.includes(connectCommand), false)
-    await ui.render(true)
-    const platforms = [...ui.element.querySelectorAll('[role="tab"]')].map(
-      (tab) => tab.textContent?.trim()
-    )
-    assert.deepEqual(platforms, ["macOS/Linux", "Windows", "macOS/Linux"])
-    assert.match(ui.element.textContent || "", /PowerShell 7/)
-    const commands = [...ui.element.querySelectorAll("code")].map(
-      (code) => code.textContent
-    )
-    assert.equal(commands.includes(checkCommand("codex")), false)
-    assert.ok(commands.includes(windowsCheck("codex")))
-    assert.ok(commands.includes(connectCommand))
-    assert.ok(
-      ui.element.querySelector(
-        'a[href="https://aivision.mintlify.site/en/guides/install-cli"]'
+    for (const host of [undefined, "codex"]) {
+      await ui.render(true, { ...savedGuide, host })
+      const commands = [...ui.element.querySelectorAll("code")].map(
+        (code) => code.textContent
       )
-    )
+      assert.deepEqual(commands, [windowsCheck("codex")])
+      assert.ok(
+        ui.element.textContent?.includes(
+          ui.t("agentAccess.cliInstall.windowsRemoteOnly")
+        )
+      )
+    }
   } finally {
     await ui.cleanup()
   }
 })
 
-test("a Windows browser uses PowerShell ready, path and troubleshooting copy", async () => {
+test("unsupported Windows installs show PATH help without promising installation", async () => {
   const ui = await fixture("en-US", "Windows")
   try {
     await ui.render(false, builtinGuide("codex", "Codex"), {
       agentName: "Codex",
     })
     const text = ui.element.textContent || ""
-    assert.ok(
-      text.includes(
-        ui.t("agentAccess.cliInstall.readyWithHostWindows", { host: "codex" })
-      )
-    )
+    assert.match(text, /PowerShell 7/)
     assert.ok(text.includes(ui.t("agentAccess.cliInstall.pathHintWindows")))
-    assert.ok(
-      text.includes(
-        ui.t("agentAccess.cliInstall.hostNotFoundWindows", {
-          host: "codex",
-          agent: "Codex",
-        })
-      )
-    )
-    assert.equal(
-      text.includes(
-        ui.t("agentAccess.cliInstall.readyWithHost", { host: "codex" })
-      ),
-      false
-    )
+    assert.doesNotMatch(text, /generate and run the installation command/)
   } finally {
     await ui.cleanup()
   }
@@ -554,39 +552,28 @@ test("a Windows browser uses PowerShell ready, path and troubleshooting copy", a
 test("a Windows browser falls back to the aiv-only PowerShell check", async () => {
   const ui = await fixture("en-US", "Windows")
   try {
-    await ui.render(false, builtinGuide("unknown-agent", "Unknown Agent"))
+    const guide = builtinGuide("unknown-agent", "Unknown Agent")
+    const setup = guide.sections.find(
+      (section) => section.type === "setup_steps"
+    )
+    const customCommand = "Install-ExampleAgent"
+    assert.ok(setup)
+    setup.platforms.Windows = {
+      modes: {
+        cli: {
+          label: "Custom",
+          steps: [
+            { title: "Install the example Agent", command: customCommand },
+          ],
+        },
+      },
+    }
+    await ui.render(true, guide)
     const text = ui.element.textContent || ""
     assert.ok(text.includes(windowsCheck()))
     assert.ok(text.includes(ui.t("agentAccess.cliInstall.readyWindows")))
+    assert.ok(text.includes(customCommand))
     assert.equal(text.includes("Get-Command unknown-agent"), false)
-  } finally {
-    await ui.cleanup()
-  }
-})
-
-test("a generated guide host keeps its Windows install tab", async () => {
-  const ui = await fixture()
-  const guide = structuredClone(builtinGuide("codex", "Codex"))
-  const setup = guide.sections.find((section) => section.type === "setup_steps")
-  assert.ok(setup && setup.type === "setup_steps")
-  setup.platforms.Windows = {
-    modes: {
-      cli: {
-        label: "原生安装",
-        steps: [{ title: "安装插件", command: connectCommand }],
-      },
-    },
-  }
-  const windowsTabCount = () =>
-    [...ui.element.querySelectorAll('[role="tab"]')].filter(
-      (tab) => tab.textContent?.trim() === "Windows"
-    ).length
-  try {
-    await ui.render(true, guide)
-    assert.equal(windowsTabCount(), 1)
-    guide.host = "codex"
-    await ui.render(true, guide)
-    assert.equal(windowsTabCount(), 2)
   } finally {
     await ui.cleanup()
   }

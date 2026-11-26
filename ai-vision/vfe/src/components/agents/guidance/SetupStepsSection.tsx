@@ -13,6 +13,8 @@ import type {
 
 interface Props {
   section: SetupStepsSectionType
+  platform?: string
+  onPlatformChange?: (platform: string) => void
 }
 
 function StepCommand({ step, index }: { step: SetupStepItem; index: number }) {
@@ -60,13 +62,18 @@ function StepCommand({ step, index }: { step: SetupStepItem; index: number }) {
   )
 }
 
-export function SetupStepsSection({ section }: Props) {
+export function SetupStepsSection({
+  section,
+  platform,
+  onPlatformChange,
+}: Props) {
   const { t } = useTranslation()
   const platformNames = Object.keys(section.platforms)
   const defaultPlatform =
     platformNames.find((platform) => platform === detectPlatform()) ||
     platformNames[0]
-  const [activePlatform, setActivePlatform] = useState(defaultPlatform)
+  const [selectedPlatform, setSelectedPlatform] = useState(defaultPlatform)
+  const activePlatform = platform ?? selectedPlatform
 
   const platformConfig = section.platforms[activePlatform]
   const modeNames = platformConfig ? Object.keys(platformConfig.modes) : []
@@ -75,7 +82,8 @@ export function SetupStepsSection({ section }: Props) {
   )
 
   const handlePlatformChange = (platform: string) => {
-    setActivePlatform(platform)
+    if (onPlatformChange) onPlatformChange(platform)
+    else setSelectedPlatform(platform)
     const newModes = Object.keys(section.platforms[platform]?.modes || {})
     if (!newModes.includes(activeMode)) {
       setActiveMode(newModes.includes("cli") ? "cli" : newModes[0] || "")

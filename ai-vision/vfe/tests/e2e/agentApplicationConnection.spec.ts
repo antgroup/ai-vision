@@ -6,9 +6,13 @@ const spaceUuid = "44444444-4444-4444-8444-444444444444"
 const publicUrl = "https://vision.example.test"
 const appName = "DeepSeek Harness"
 
-async function openFleet(
+async function mockFleet(
   page: Page,
-  options: { catalogUnavailable?: boolean; hermes?: boolean } = {}
+  options: {
+    catalogUnavailable?: boolean
+    hermes?: boolean
+    savedWindowsInstall?: boolean
+  } = {}
 ) {
   const name = options.hermes ? "Hermes Agent" : appName
   const product = options.hermes ? "Hermes" : "DeepSeekHarness"
@@ -27,6 +31,29 @@ async function openFleet(
           : { json: { code: 0, data: { cdn_base: publicUrl } } }
       )
       return
+    }
+    if (options.savedWindowsInstall && request.method() === "POST") {
+      if (path === `/api/v1/spaces/${spaceUuid}/agents/create`) {
+        await route.fulfill({
+          json: { code: 0, data: { agent_uuid: agentUuid } },
+        })
+        return
+      }
+      if (
+        path ===
+        `/api/v1/spaces/${spaceUuid}/agents/${agentUuid}/installation-tokens`
+      ) {
+        await route.fulfill({
+          json: {
+            code: 0,
+            data: {
+              installation_token: "fixture-install-token",
+              expires_at: new Date(Date.now() + 60_000).toISOString(),
+            },
+          },
+        })
+        return
+      }
     }
     const result = guideFixture(
       path.replace(spaceUuid, guideSpace),
@@ -47,13 +74,29 @@ async function openFleet(
         agents: Record<string, unknown>[]
         agent_types: Record<string, unknown>[]
       }
-      data.agents.push({
-        id: 2,
-        uuid: agentUuid,
-        agent_product: product,
-        name,
-        status: 1,
-      })
+      if (!options.savedWindowsInstall) {
+        data.agents.push({
+          id: 2,
+          uuid: agentUuid,
+          agent_product: product,
+          name,
+          status: 1,
+        })
+      }
+      const install = {
+        modes: {
+          cli: {
+            label: "CLI",
+            steps: [
+              {
+                title: "安装",
+                command:
+                  "aiv connect dsh --installation-token '{installationToken}'",
+              },
+            ],
+          },
+        },
+      }
       const applicationType = {
         agent_product: product,
         agent_name: product,
@@ -66,6 +109,7 @@ async function openFleet(
         config_guide: {
           schema: "v2",
           plugin_key: "dsh",
+          host: "dsh",
           sections: [
             {
               type: "prerequisites",
@@ -76,20 +120,8 @@ async function openFleet(
               type: "setup_steps",
               title: "在 Agent 所在机器安装",
               platforms: {
-                "macOS/Linux": {
-                  modes: {
-                    cli: {
-                      label: "CLI",
-                      steps: [
-                        {
-                          title: "安装",
-                          command:
-                            "aiv connect dsh --installation-token '{installationToken}'",
-                        },
-                      ],
-                    },
-                  },
-                },
+                "macOS/Linux": install,
+                ...(options.savedWindowsInstall ? { Windows: install } : {}),
               },
             },
           ],
@@ -118,6 +150,14 @@ async function openFleet(
     await route.fulfill({ status: result.status, json: result.body })
   })
   await page.goto(`/access?spaceId=${spaceUuid}`)
+  return { name, paths }
+}
+
+async function openFleet(
+  page: Page,
+  options: { catalogUnavailable?: boolean; hermes?: boolean } = {}
+) {
+  const { name, paths } = await mockFleet(page, options)
   const card = page
     .locator(".group")
     .filter({ has: page.getByRole("heading", { name, exact: true }) })
@@ -136,6 +176,71 @@ async function openFleet(
   await expect(dialog).toBeVisible()
   return { card, dialog, viewDetails, paths }
 }
+
+test("a Windows browser can only generate a command for a supported Agent host", async ({
+  page,
+}, testInfo) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "userAgent", { value: "Windows" })
+  })
+  const { name, paths } = await mockFleet(page, { savedWindowsInstall: true })
+  await page.locator('[data-product-guide="agent-market-tab"]').click()
+  await page
+    .locator('[data-product-guide="agent-market"] .rounded-xl')
+    .filter({ has: page.getByRole("heading", { name, exact: true }) })
+    .getByRole("button", { name: "查看接入说明" })
+    .click()
+  const dialog = page.getByRole("dialog")
+  const generate = dialog.getByRole("button", {
+    name: "生成安装命令",
+    exact: true,
+  })
+  const windows = dialog.getByRole("tab", { name: "Windows", exact: true })
+  const unix = dialog
+    .getByRole("tab", { name: "macOS/Linux", exact: true })
+    .first()
+  const windowsPath = dialog.getByText(/Windows 默认安装到/)
+  const windowsLimitation = dialog.getByText(/不能安装此采集插件/)
+  const unixPath = dialog.getByText(/默认安装到 ~\/\.local\/bin/)
+  const unixReady = dialog.getByText(/确认看到 aiv、dsh 的路径和版本后/)
+  const unixTroubleshooting = dialog.getByText(/接入预检会失败/)
+  await expect(windows).toHaveAttribute("aria-selected", "true")
+  await expect(dialog.locator("code")).toContainText("Get-Command dsh")
+  await expect(windowsPath).toBeVisible()
+  await expect(windowsLimitation).toBeVisible()
+  await expect(generate).toHaveCount(0)
+  await dialog.screenshot({
+    path: testInfo.outputPath("windows-agent-onboarding.png"),
+  })
+  expect(paths.some((path) => path.endsWith("/installation-tokens"))).toBe(
+    false
+  )
+
+  await unix.click()
+  await expect(dialog.locator("code")).toContainText("command -v dsh")
+  await expect(unixPath).toBeVisible()
+  await expect(unixReady).toBeVisible()
+  await expect(unixTroubleshooting).toBeVisible()
+  await expect(windowsPath).toHaveCount(0)
+  await expect(windowsLimitation).toHaveCount(0)
+  await generate.click()
+  const command = dialog.getByText(
+    "aiv connect dsh --installation-token 'fixture-install-token'",
+    { exact: true }
+  )
+  await expect(command).toBeVisible()
+  await windows.click()
+  await expect(windowsPath).toBeVisible()
+  await expect(windowsLimitation).toBeVisible()
+  await expect(unixPath).toHaveCount(0)
+  await expect(unixReady).toHaveCount(0)
+  await expect(unixTroubleshooting).toHaveCount(0)
+  await expect(command).toHaveCount(0)
+  await expect(dialog.getByRole("button", { name: /生成/ })).toHaveCount(0)
+  expect(
+    paths.filter((path) => path.endsWith("/installation-tokens"))
+  ).toHaveLength(1)
+})
 
 test("viewing an application opens a read-only guide with copyable connection details", async ({
   page,

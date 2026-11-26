@@ -2637,9 +2637,11 @@
     },
     "cliInstall": {
       "title": "先安装并检查 aiv CLI",
-      "description": "请在实际运行 Agent 的主机上安装 aiv CLI 和采集插件。Windows 使用 PowerShell 7。",
+      "description": "请选择 Agent 实际运行的主机平台。检查 Windows 上的可执行文件时，请使用 PowerShell 7。",
       "guide": "打开 aiv CLI 安装指南",
       "check": "安装后，在将要执行接入命令的同一个终端中检查路径与版本",
+      "checkWindowsRemote": "在 PowerShell 7 中检查可执行文件的路径和版本",
+      "windowsRemoteOnly": "已发布的 Windows CLI 可以访问已有的 AI Vision 服务，但不能安装此采集插件。如果 Agent 运行在 macOS 或 Linux 上，请选择 macOS/Linux，并在该主机上执行安装命令。",
       "pathHint": "macOS / Linux 默认安装到 ~/.local/bin。检查命令中的 export 只对当前终端生效；请将它加入 ~/.zshrc（zsh）或实际使用的 Bash 启动文件，再打开新终端验证。自定义安装目录请使用安装器输出的 export 命令。",
       "pathHintWindows": "Windows 默认安装到 `%LOCALAPPDATA%\\AI Vision\\bin`，安装器会把该目录加入当前用户 PATH；安装后请打开新的 PowerShell 终端验证。自定义目录请手动加入 PATH。",
       "ready": "确认看到 aiv 的路径和版本后，再生成并执行下方安装命令。若提示 command not found: aiv，请先完成 CLI 安装或修正 PATH。",

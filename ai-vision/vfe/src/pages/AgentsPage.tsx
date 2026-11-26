@@ -55,6 +55,7 @@ import { Hint } from "@/components/error/Hint"
 import { SpaceGuard } from "@/components/error/SpaceAgentGuard"
 import { WarningsBar } from "@/components/agents/guidance"
 import { OnboardingGuideSections } from "@/components/agents/guidance/OnboardingGuideSections"
+import { supportsPluginInstallation } from "@/components/agents/guidance/localizeGuideSections"
 import { HermesRelayGuide } from "./onboarding/HermesRelayGuide"
 import { isHermesRelayOnboarding } from "./onboarding/hermesRelayConfiguration"
 import { ApplicationConnectionDetails } from "./onboarding/ApplicationConnectionDetails"
@@ -71,6 +72,7 @@ import { cn } from "@/lib/utils"
 import { resolveAgentDisplayName } from "@/agents/lib/agent-display"
 import { buildAgentDashboardUrl } from "@/agents/lib/agentDashboardRoute"
 import {
+  detectPlatform,
   isConfigGuideV2,
   type ConfigGuide,
   type ConfigGuideLegacy,
@@ -843,6 +845,7 @@ function OnboardingDialog({
   const spaceId = currentSpace?.id ?? ""
   const queryClient = useQueryClient()
   const canManage = currentSpace?.permissions.includes("agent.manage") ?? false
+  const [installPlatform, setInstallPlatform] = useState(detectPlatform)
   const [agentUuid, setAgentUuid] = useState(modalAgent.agentUuid)
   const [installationAuthorization, setInstallationAuthorization] = useState<{
     installation_token: string
@@ -850,16 +853,17 @@ function OnboardingDialog({
     base_url?: string
   } | null>(null)
   const hasInstallationCommand = Boolean(installationAuthorization)
-  const isPlugin =
-    isConfigGuideV2(modalAgent.configGuide) &&
-    Boolean(modalAgent.configGuide.plugin_key)
+  const v2Guide = isConfigGuideV2(modalAgent.configGuide)
+    ? modalAgent.configGuide
+    : undefined
+  const isPlugin = Boolean(v2Guide?.plugin_key)
+  const canInstallPlugin =
+    isPlugin && v2Guide && supportsPluginInstallation(v2Guide, installPlatform)
   const isManualPlugin = isManualPluginGuide(
     modalAgent.setupMode,
     modalAgent.configGuide
   )
-  const nativeRelayConfig = isConfigGuideV2(modalAgent.configGuide)
-    ? modalAgent.configGuide.native_relay_onboarding
-    : undefined
+  const nativeRelayConfig = v2Guide?.native_relay_onboarding
   const isNativeHermes = isHermesRelayOnboarding(
     modalAgent.product,
     nativeRelayConfig
@@ -1082,6 +1086,8 @@ function OnboardingDialog({
                   <OnboardingGuideSections
                     guide={configGuide}
                     hasInstallationCommand={false}
+                    platform={installPlatform}
+                    onPlatformChange={setInstallPlatform}
                     agentName={modalAgent.name}
                     agentProduct={modalAgent.product}
                     readOnly
@@ -1176,11 +1182,13 @@ function OnboardingDialog({
                   <OnboardingGuideSections
                     guide={configGuide}
                     hasInstallationCommand={hasInstallationCommand}
+                    platform={installPlatform}
+                    onPlatformChange={setInstallPlatform}
                     agentName={modalAgent.name}
                     agentProduct={modalAgent.product}
                   />
                 )}
-                {isPlugin && !hasInstallationCommand && (
+                {canInstallPlugin && !hasInstallationCommand && (
                   <p className="text-sm text-muted-foreground">
                     {canManage
                       ? t("agentAccess.generateHint", {
@@ -1190,7 +1198,7 @@ function OnboardingDialog({
                       : t("agentAccess.contactAdmin")}
                   </p>
                 )}
-                {isPlugin && hasInstallationCommand && (
+                {canInstallPlugin && hasInstallationCommand && (
                   <p className="text-sm text-muted-foreground">
                     {t("agentAccess.expiresAt", {
                       time: new Date(
@@ -1222,19 +1230,21 @@ function OnboardingDialog({
                   {t("common.close")}
                 </Button>
                 {isPlugin ? (
-                  <Button
-                    onClick={handleEnable}
-                    disabled={enableMutation.isPending || !canManage}
-                  >
-                    {enableMutation.isPending && (
-                      <Loader2 className="size-4 animate-spin" />
-                    )}
-                    {modalAgent.status === "disabled"
-                      ? t("agentAccess.reconnectGenerate")
-                      : hasInstallationCommand
-                        ? t("agentAccess.regenerate")
-                        : t("agentAccess.generate")}
-                  </Button>
+                  canInstallPlugin && (
+                    <Button
+                      onClick={handleEnable}
+                      disabled={enableMutation.isPending || !canManage}
+                    >
+                      {enableMutation.isPending && (
+                        <Loader2 className="size-4 animate-spin" />
+                      )}
+                      {modalAgent.status === "disabled"
+                        ? t("agentAccess.reconnectGenerate")
+                        : hasInstallationCommand
+                          ? t("agentAccess.regenerate")
+                          : t("agentAccess.generate")}
+                    </Button>
+                  )
                 ) : modalAgent.status === "disabled" ? (
                   <Button
                     className="font-normal"

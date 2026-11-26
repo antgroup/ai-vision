@@ -29,8 +29,7 @@ def installation_guide(plugin):
     if not plugin.get("binary"):
         requirements.append({"label": "Node.js", "value": "已安装"})
     # The browser fills in the command's placeholders after authorization.
-    # The same aiv connect command is published for macOS/Linux and Windows;
-    # Windows users run it in PowerShell 7 with a Windows build of the aiv CLI.
+    # The published Windows remote client does not support aiv connect.
     # --base-url is anchored to the SAME origin the onboarding catalog serves
     # its plugin downloads from (public_base_url): the installer enforces a
     # same-origin check on the artifact URL, so the browser origin (the vite
@@ -57,7 +56,7 @@ def installation_guide(plugin):
                 "type": "setup_steps",
                 "title": "在 Agent 所在机器安装",
                 "platforms": {
-                    platform: {
+                    "macOS/Linux": {
                         "modes": {
                             "cli": {
                                 "label": "原生安装",
@@ -70,7 +69,6 @@ def installation_guide(plugin):
                             }
                         }
                     }
-                    for platform in ("macOS/Linux", "Windows")
                 },
             },
             {

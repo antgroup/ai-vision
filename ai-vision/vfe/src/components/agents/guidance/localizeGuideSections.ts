@@ -1,5 +1,5 @@
 import type { TFunction } from "i18next"
-import type { ConfigGuideV2, GuideSection } from "./types"
+import type { ConfigGuideV2, GuideSection, SetupStepsSection } from "./types"
 
 const BUILTIN_PLUGIN_KEYS = new Set([
   "claude-code",
@@ -10,6 +10,40 @@ const BUILTIN_PLUGIN_KEYS = new Set([
   "pi",
   "dsh",
 ])
+
+function installPlatforms(guide: ConfigGuideV2, section: SetupStepsSection) {
+  return Object.entries(section.platforms).filter(([platform, { modes }]) => {
+    if (
+      platform !== "Windows" ||
+      !BUILTIN_PLUGIN_KEYS.has(guide.plugin_key ?? "")
+    )
+      return true
+
+    // Previously saved built-in guides may advertise a Windows CLI that
+    // cannot run aiv connect. Host metadata identifies the executable only.
+    const steps = modes.cli?.steps
+    return !(
+      Object.keys(modes).length === 1 &&
+      steps?.length === 1 &&
+      steps[0].command.startsWith(`aiv connect ${guide.plugin_key} `)
+    )
+  })
+}
+
+export function supportsPluginInstallation(
+  guide: ConfigGuideV2,
+  platform: string
+) {
+  return guide.sections.some(
+    (section) =>
+      section.type === "setup_steps" &&
+      installPlatforms(guide, section).some(
+        ([name, { modes }]) =>
+          name === platform &&
+          Object.values(modes).some(({ steps }) => steps.length > 0)
+      )
+  )
+}
 
 const GUIDE_TEXT_KEYS = [
   "prerequisitesTitle",
@@ -95,28 +129,12 @@ export function localizeGuideSections(
           title: translate(section.title),
           steps: section.steps.map(translate),
         }
-      case "setup_steps": {
-        // New generated guides carry host metadata and publish a real Windows
-        // install tab. Older saved guides only have the legacy Windows
-        // installer tab, which must stay hidden.
-        const platforms = Object.entries(section.platforms).filter(
-          ([platform, { modes }]) => {
-            if (!builtinPlugin || platform !== "Windows") return true
-            if (guide.host) return true
-
-            const steps = modes.cli?.steps
-            const legacyConnectTab =
-              Object.keys(modes).length === 1 &&
-              steps?.length === 1 &&
-              steps[0].command.startsWith(`aiv connect ${guide.plugin_key} `)
-            return !legacyConnectTab
-          }
-        )
+      case "setup_steps":
         return {
           ...section,
           title: translate(section.title),
           platforms: Object.fromEntries(
-            platforms.map(([platform, config]) => [
+            installPlatforms(guide, section).map(([platform, config]) => [
               platform,
               {
                 ...config,
@@ -137,7 +155,6 @@ export function localizeGuideSections(
             ])
           ),
         }
-      }
       default:
         return section
     }
