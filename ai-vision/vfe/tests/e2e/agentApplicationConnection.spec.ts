@@ -11,11 +11,17 @@ async function mockFleet(
   options: {
     catalogUnavailable?: boolean
     hermes?: boolean
-    savedWindowsInstall?: boolean
+    savedGuide?: "linux-only" | "windows-and-unix"
   } = {}
 ) {
-  const name = options.hermes ? "Hermes Agent" : appName
-  const product = options.hermes ? "Hermes" : "DeepSeekHarness"
+  const linuxOnly = options.savedGuide === "linux-only"
+  const name = options.hermes ? "Hermes Agent" : linuxOnly ? "Codex" : appName
+  const product = options.hermes
+    ? "Hermes"
+    : linuxOnly
+      ? "Codex"
+      : "DeepSeekHarness"
+  const plugin = linuxOnly ? "codex" : "dsh"
   const state = { runs: 0, unexpected: [] }
   const paths: string[] = []
   await page.addInitScript(() => localStorage.setItem("language", "zh-CN"))
@@ -32,7 +38,7 @@ async function mockFleet(
       )
       return
     }
-    if (options.savedWindowsInstall && request.method() === "POST") {
+    if (options.savedGuide && request.method() === "POST") {
       if (path === `/api/v1/spaces/${spaceUuid}/agents/create`) {
         await route.fulfill({
           json: { code: 0, data: { agent_uuid: agentUuid } },
@@ -74,7 +80,7 @@ async function mockFleet(
         agents: Record<string, unknown>[]
         agent_types: Record<string, unknown>[]
       }
-      if (!options.savedWindowsInstall) {
+      if (!options.savedGuide) {
         data.agents.push({
           id: 2,
           uuid: agentUuid,
@@ -90,8 +96,7 @@ async function mockFleet(
             steps: [
               {
                 title: "安装",
-                command:
-                  "aiv connect dsh --installation-token '{installationToken}'",
+                command: `aiv connect ${plugin} --installation-token '{installationToken}'`,
               },
             ],
           },
@@ -103,13 +108,13 @@ async function mockFleet(
         display_name: name,
         category: "CUSTOM",
         description: "在 Agent 所在机器安装采集插件",
-        icon: "/assets/agents/dsh.svg",
+        icon: `/assets/agents/${plugin}.svg`,
         capabilities: { supports_trace: true },
         setup_mode: "CLI",
         config_guide: {
           schema: "v2",
-          plugin_key: "dsh",
-          host: "dsh",
+          plugin_key: plugin,
+          ...(linuxOnly ? {} : { host: plugin }),
           sections: [
             {
               type: "prerequisites",
@@ -120,8 +125,10 @@ async function mockFleet(
               type: "setup_steps",
               title: "在 Agent 所在机器安装",
               platforms: {
-                "macOS/Linux": install,
-                ...(options.savedWindowsInstall ? { Windows: install } : {}),
+                [linuxOnly ? "Linux" : "macOS/Linux"]: install,
+                ...(options.savedGuide === "windows-and-unix"
+                  ? { Windows: install }
+                  : {}),
               },
             },
           ],
@@ -177,20 +184,32 @@ async function openFleet(
   return { card, dialog, viewDetails, paths }
 }
 
-test("a Windows browser can only generate a command for a supported Agent host", async ({
-  page,
-}, testInfo) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, "userAgent", { value: "Windows" })
-  })
-  const { name, paths } = await mockFleet(page, { savedWindowsInstall: true })
+async function openSavedGuide(
+  page: Page,
+  savedGuide: "linux-only" | "windows-and-unix",
+  userAgent: string
+) {
+  await page.addInitScript((value) => {
+    Object.defineProperty(navigator, "userAgent", { value })
+  }, userAgent)
+  const { name, paths } = await mockFleet(page, { savedGuide })
   await page.locator('[data-product-guide="agent-market-tab"]').click()
   await page
     .locator('[data-product-guide="agent-market"] .rounded-xl')
     .filter({ has: page.getByRole("heading", { name, exact: true }) })
     .getByRole("button", { name: "查看接入说明" })
     .click()
-  const dialog = page.getByRole("dialog")
+  return { paths, dialog: page.getByRole("dialog") }
+}
+
+test("a Windows browser can only generate a command for a supported Agent host", async ({
+  page,
+}, testInfo) => {
+  const { dialog, paths } = await openSavedGuide(
+    page,
+    "windows-and-unix",
+    "Windows"
+  )
   const generate = dialog.getByRole("button", {
     name: "生成安装命令",
     exact: true,
@@ -240,6 +259,48 @@ test("a Windows browser can only generate a command for a supported Agent host",
   expect(
     paths.filter((path) => path.endsWith("/installation-tokens"))
   ).toHaveLength(1)
+})
+
+test("a saved Linux-only Codex guide can still generate and show its install command", async ({
+  page,
+}, testInfo) => {
+  const { dialog, paths } = await openSavedGuide(
+    page,
+    "linux-only",
+    "Mozilla/5.0 (X11; Linux x86_64)"
+  )
+  const linux = dialog.getByRole("tab", { name: "Linux", exact: true }).first()
+  const windows = dialog.getByRole("tab", { name: "Windows", exact: true })
+  const generate = dialog.getByRole("button", {
+    name: "生成安装命令",
+    exact: true,
+  })
+  const command = dialog.getByText(
+    "aiv connect codex --installation-token 'fixture-install-token'",
+    { exact: true }
+  )
+  await expect(generate).toBeVisible()
+  await expect(linux).toHaveAttribute("aria-selected", "true")
+  await expect(dialog.locator("code")).toContainText("command -v codex")
+  await expect(command).toHaveCount(0)
+
+  await generate.click()
+  await expect(command).toBeVisible()
+  await command.scrollIntoViewIfNeeded()
+  await expect(command).toBeInViewport()
+  await dialog.screenshot({
+    path: testInfo.outputPath("saved-linux-onboarding.png"),
+  })
+
+  await windows.click()
+  await expect(dialog.locator("code")).toContainText("Get-Command codex")
+  await expect(dialog.getByRole("button", { name: /生成/ })).toHaveCount(0)
+  await expect(command).toHaveCount(0)
+  await linux.click()
+  await expect(command).toBeVisible()
+  expect(paths.filter((path) => path.endsWith("/installation-tokens"))).toEqual(
+    [`/api/v1/spaces/${spaceUuid}/agents/${agentUuid}/installation-tokens`]
+  )
 })
 
 test("viewing an application opens a read-only guide with copyable connection details", async ({

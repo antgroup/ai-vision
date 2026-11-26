@@ -1,5 +1,10 @@
 import type { TFunction } from "i18next"
-import type { ConfigGuideV2, GuideSection, SetupStepsSection } from "./types"
+import type {
+  ConfigGuideV2,
+  GuideSection,
+  PlatformConfig,
+  SetupStepsSection,
+} from "./types"
 
 const BUILTIN_PLUGIN_KEYS = new Set([
   "claude-code",
@@ -12,22 +17,46 @@ const BUILTIN_PLUGIN_KEYS = new Set([
 ])
 
 function installPlatforms(guide: ConfigGuideV2, section: SetupStepsSection) {
-  return Object.entries(section.platforms).filter(([platform, { modes }]) => {
-    if (
-      platform !== "Windows" ||
-      !BUILTIN_PLUGIN_KEYS.has(guide.plugin_key ?? "")
-    )
-      return true
+  const platforms = Object.entries(section.platforms)
+  if (!BUILTIN_PLUGIN_KEYS.has(guide.plugin_key ?? "")) return platforms
 
-    // Previously saved built-in guides may advertise a Windows CLI that
-    // cannot run aiv connect. Host metadata identifies the executable only.
-    const steps = modes.cli?.steps
-    return !(
-      Object.keys(modes).length === 1 &&
-      steps?.length === 1 &&
-      steps[0].command.startsWith(`aiv connect ${guide.plugin_key} `)
-    )
+  return platforms.flatMap(([name, config]) => {
+    if (name !== "Windows") return [[name, config] as const]
+
+    // Remove unsupported CLI steps without discarding other saved instructions.
+    const modes = Object.entries(config.modes)
+      .map(([key, mode]) => {
+        const steps = mode.steps.filter(({ command }) => {
+          const [cli, action, plugin] = command.trimStart().split(/\s+/, 3)
+          return !(
+            cli === "aiv" &&
+            action === "connect" &&
+            plugin === guide.plugin_key
+          )
+        })
+        return [key, { ...mode, steps }] as const
+      })
+      .filter(([, mode]) => mode.steps.length > 0)
+    return modes.length
+      ? [[name, { modes: Object.fromEntries(modes) }] as const]
+      : []
   })
+}
+
+function hasInstallSteps({ modes }: PlatformConfig) {
+  return Object.values(modes).some(({ steps }) => steps.length > 0)
+}
+
+export function onboardingPlatforms(guide?: ConfigGuideV2) {
+  const unixTargets = new Set<string>()
+  for (const section of guide?.sections ?? []) {
+    if (section.type !== "setup_steps") continue
+    for (const [name, config] of Object.entries(section.platforms)) {
+      if (name !== "Windows" && hasInstallSteps(config)) unixTargets.add(name)
+    }
+  }
+  if (!unixTargets.size) unixTargets.add("macOS/Linux")
+  return [...unixTargets, "Windows"]
 }
 
 export function supportsPluginInstallation(
@@ -38,9 +67,7 @@ export function supportsPluginInstallation(
     (section) =>
       section.type === "setup_steps" &&
       installPlatforms(guide, section).some(
-        ([name, { modes }]) =>
-          name === platform &&
-          Object.values(modes).some(({ steps }) => steps.length > 0)
+        ([name, config]) => name === platform && hasInstallSteps(config)
       )
   )
 }

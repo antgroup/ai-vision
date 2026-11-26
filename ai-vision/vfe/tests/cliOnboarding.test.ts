@@ -303,6 +303,15 @@ async function fixture(language = "zh-CN", platform = "Linux") {
       agentProduct?: string
     }>
   }
+  const { detectPlatform } = load(
+    new URL("../src/components/agents/guidance/types.ts", import.meta.url)
+  ) as { detectPlatform: (platforms: readonly string[]) => string }
+  const { onboardingPlatforms } = load(
+    new URL(
+      "../src/components/agents/guidance/localizeGuideSections.ts",
+      import.meta.url
+    )
+  ) as { onboardingPlatforms: (guide: ConfigGuideV2) => string[] }
   function GuideFixture({
     guide,
     hasInstallationCommand,
@@ -312,8 +321,8 @@ async function fixture(language = "zh-CN", platform = "Linux") {
     hasInstallationCommand: boolean
     agent: { agentName?: string; agentProduct?: string }
   }) {
-    const [targetPlatform, setTargetPlatform] = useState(
-      platform === "Windows" ? "Windows" : "macOS/Linux"
+    const [targetPlatform, setTargetPlatform] = useState(() =>
+      detectPlatform(onboardingPlatforms(guide))
     )
     return createElement(OnboardingGuideSections, {
       guide,
@@ -529,6 +538,34 @@ test("saved Windows install commands stay hidden even when the guide has host me
         )
       )
     }
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("unsupported Windows CLI steps do not hide valid saved Windows instructions", async () => {
+  const ui = await fixture("en-US", "Windows")
+  const guide = structuredClone(savedGuide)
+  const setup = guide.sections.find(
+    (section) => section.type === "setup_steps"
+  )!
+  const modes = setup.platforms.Windows.modes
+  const customCommand = "Install-CodexIntegration"
+  modes.cli.steps.push({
+    title: "Use a custom installer",
+    command: customCommand,
+  })
+  modes.other = {
+    label: "Unsupported installer",
+    steps: [{ title: "Connect Codex", command: connectCommand }],
+  }
+  try {
+    await ui.render(true, guide)
+    assert.deepEqual(
+      [...ui.element.querySelectorAll("code")].map((code) => code.textContent),
+      [windowsCheck("codex"), customCommand]
+    )
+    assert.doesNotMatch(ui.element.textContent ?? "", /Unsupported installer/)
   } finally {
     await ui.cleanup()
   }

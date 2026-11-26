@@ -55,7 +55,10 @@ import { Hint } from "@/components/error/Hint"
 import { SpaceGuard } from "@/components/error/SpaceAgentGuard"
 import { WarningsBar } from "@/components/agents/guidance"
 import { OnboardingGuideSections } from "@/components/agents/guidance/OnboardingGuideSections"
-import { supportsPluginInstallation } from "@/components/agents/guidance/localizeGuideSections"
+import {
+  onboardingPlatforms,
+  supportsPluginInstallation,
+} from "@/components/agents/guidance/localizeGuideSections"
 import { HermesRelayGuide } from "./onboarding/HermesRelayGuide"
 import { isHermesRelayOnboarding } from "./onboarding/hermesRelayConfiguration"
 import { ApplicationConnectionDetails } from "./onboarding/ApplicationConnectionDetails"
@@ -845,7 +848,12 @@ function OnboardingDialog({
   const spaceId = currentSpace?.id ?? ""
   const queryClient = useQueryClient()
   const canManage = currentSpace?.permissions.includes("agent.manage") ?? false
-  const [installPlatform, setInstallPlatform] = useState(detectPlatform)
+  const v2Guide = isConfigGuideV2(modalAgent.configGuide)
+    ? modalAgent.configGuide
+    : undefined
+  const [installPlatform, setInstallPlatform] = useState(() =>
+    detectPlatform(onboardingPlatforms(v2Guide))
+  )
   const [agentUuid, setAgentUuid] = useState(modalAgent.agentUuid)
   const [installationAuthorization, setInstallationAuthorization] = useState<{
     installation_token: string
@@ -853,9 +861,6 @@ function OnboardingDialog({
     base_url?: string
   } | null>(null)
   const hasInstallationCommand = Boolean(installationAuthorization)
-  const v2Guide = isConfigGuideV2(modalAgent.configGuide)
-    ? modalAgent.configGuide
-    : undefined
   const isPlugin = Boolean(v2Guide?.plugin_key)
   const canInstallPlugin =
     isPlugin && v2Guide && supportsPluginInstallation(v2Guide, installPlatform)

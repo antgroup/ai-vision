@@ -4,6 +4,7 @@ import { SectionRenderer } from "./SectionRenderer"
 import { SetupStepsSection } from "./SetupStepsSection"
 import {
   localizeGuideSections,
+  onboardingPlatforms,
   supportsPluginInstallation,
 } from "./localizeGuideSections"
 import { PLUGIN_HOSTS } from "./pluginHosts"
@@ -80,38 +81,31 @@ export function OnboardingGuideSections({
             section={{
               type: "setup_steps",
               title: t("agentAccess.cliInstall.title"),
-              platforms: {
-                "macOS/Linux": {
-                  modes: {
-                    cli: {
-                      label: "CLI",
-                      steps: [
-                        {
-                          title: t("agentAccess.cliInstall.check"),
-                          command: unixCheckCommand,
-                        },
-                      ],
+              platforms: Object.fromEntries(
+                onboardingPlatforms(guide).map((name) => [
+                  name,
+                  {
+                    modes: {
+                      cli: {
+                        label: "CLI",
+                        steps: [
+                          {
+                            title: t(
+                              name === "Windows" && isWindows && !canInstall
+                                ? "agentAccess.cliInstall.checkWindowsRemote"
+                                : "agentAccess.cliInstall.check"
+                            ),
+                            command:
+                              name === "Windows"
+                                ? windowsCheckCommand
+                                : unixCheckCommand,
+                          },
+                        ],
+                      },
                     },
                   },
-                },
-                Windows: {
-                  modes: {
-                    cli: {
-                      label: "CLI",
-                      steps: [
-                        {
-                          title: t(
-                            isWindows && !canInstall
-                              ? "agentAccess.cliInstall.checkWindowsRemote"
-                              : "agentAccess.cliInstall.check"
-                          ),
-                          command: windowsCheckCommand,
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
+                ])
+              ),
             }}
           />
           <p className="text-xs text-muted-foreground">
