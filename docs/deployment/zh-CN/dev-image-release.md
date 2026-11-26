@@ -218,7 +218,7 @@ Dev alias 附件上传中断后，可以用原候选的 run／attempt 重试推�
 
 滚动 `daily` 入口从 `ci` 切换到 `develop` 时，发布器会核验 `v0.6.0-daily.20261123.2` 的发布来源，并确认候选提交属于已批准的 `develop` 历史。首个 `develop` Daily 的带版本号 Release 和滚动 Release 都会说明这次切换，并指向旧版下载。切换后，后续候选必须使用滚动入口当前的源码提交或其后继提交。[最后一个来自 `ci` 的 Daily](https://github.com/antgroup/ai-vision/releases/tag/v0.6.0-daily.20261123.2)。
 
-如果 Daily 已发布带版本号的 Release 并完成标签更新，写入滚动 Release 元数据时中断，请**先用原始冻结候选恢复，再考虑重跑 Release images**。在 `develop` 运行 **Promote qualified Daily or Dev**，填入 **Release images** 的 run ID 和 attempt。
+如果 Daily 已发布带版本号的 Release 并完成标签更新，写入滚动 Release 元数据时中断，请用原始冻结候选恢复。在 `develop` 运行 **Promote qualified Daily or Dev**，填入 **Release images** 的原始 run ID 和 attempt。如果同一个 run 的后续重跑已失败、取消或超时，仍使用原始 attempt 和冻结制品。
 
 ```bash
 CANDIDATE_RUN_ID=...

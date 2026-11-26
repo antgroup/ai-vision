@@ -154,36 +154,50 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
     elif branch_sha != source_sha:
         raise ValueError("candidate source is stale against the current default branch head")
     base = f"repos/{repository}/actions/runs/{candidate_run_id}"
-    # A newer attempt supersedes old artifacts, even when an old attempt passed.
     latest = api_fn(base)
     attempt = api_fn(f"{base}/attempts/{candidate_run_attempt}")
+    requested_attempt = int(candidate_run_attempt)
+    interrupted_conclusions = {"failure", "cancelled", "timed_out"}
     publisher_conclusions = {"failure"}
     events = {"workflow_dispatch"}
     if allow_daily_recovery:
         events.add("schedule")
-        publisher_conclusions.update({"cancelled", "timed_out"})
-        if latest.get("event") == "workflow_dispatch" and latest.get("conclusion") == "success":
+        if attempt.get("event") == "workflow_dispatch" and attempt.get("conclusion") == "success":
             # A separate promotion can be interrupted after a candidate-only run ends.
             publisher_conclusions = {"skipped"}
-        elif latest.get("conclusion") not in publisher_conclusions:
+        elif attempt.get("conclusion") in interrupted_conclusions:
+            publisher_conclusions = interrupted_conclusions
+        else:
             raise ValueError("Daily recovery requires an interrupted publisher after successful qualification")
     publication_recovery = allow_daily_recovery or (
         allow_dev_recovery and plan["channel"] == "dev"
         and latest.get("conclusion") == attempt.get("conclusion") == "failure"
     )
-    expected_conclusion = latest.get("conclusion") if publication_recovery else "success"
+    expected_conclusion = attempt.get("conclusion") if publication_recovery else "success"
+    description = "interrupted" if allow_daily_recovery else "successful"
+    invalid_attempt = f"candidate is not the exact {description} official workflow attempt"
     for run in (latest, attempt):
         if (type(run.get("id")) is not int or run["id"] != int(candidate_run_id)
-                or type(run.get("run_attempt")) is not int or run["run_attempt"] != int(candidate_run_attempt)
+                or type(run.get("run_attempt")) is not int
                 or run.get("head_sha") != source_sha or run.get("head_branch") != branch
                 or run.get("path") != ".github/workflows/release-images.yml"
-                or run.get("event") not in events or run.get("event") != latest.get("event")
+                or run.get("event") not in events or run.get("event") != attempt.get("event")
                 or run.get("repository", {}).get("full_name") != repository
                 or run.get("head_repository", {}).get("full_name") != repository
-                or run.get("status") != "completed"
-                or run.get("conclusion") != expected_conclusion):
-            description = "interrupted" if allow_daily_recovery else "successful"
-            raise ValueError(f"candidate is not the exact {description} official workflow attempt")
+                or run.get("status") != "completed"):
+            raise ValueError(invalid_attempt)
+    latest_matches = (
+        latest["run_attempt"] == requested_attempt and latest.get("conclusion") == expected_conclusion
+    )
+    # Only Daily metadata repair may reuse a superseded candidate. Publication
+    # will still verify the live split state against the selected attempt.
+    unsuccessful_daily_rerun = (
+        allow_daily_recovery and latest["run_attempt"] > requested_attempt
+        and latest.get("conclusion") in interrupted_conclusions
+    )
+    if (attempt["run_attempt"] != requested_attempt or attempt.get("conclusion") != expected_conclusion
+            or not (latest_matches or unsuccessful_daily_rerun)):
+        raise ValueError(invalid_attempt)
     jobs, page = [], 1
     while True:
         result = api_fn(f"{base}/attempts/{candidate_run_attempt}/jobs?per_page=100&page={page}")

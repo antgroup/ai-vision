@@ -246,7 +246,7 @@ The one-time move of the rolling `daily` entry from `ci` to `develop` requires t
 
 For an interrupted Dev alias upload, retry promotion with the original candidate run and attempt. If a direct `publish=true` candidate run failed only in the development publication job, set `recover_dev_publication=true`; the verifier requires both smokes and frozen acceptance to have passed in that exact attempt and rejects every other failure or cancellation. Recovery verifies the frozen acceptance, exact published versioned assets, original Dev build/source pointer and live tag before restoring the same bytes. It preserves the original candidate notes and records the recovery publisher separately. Newer, changed or unprovable alias state requires inspection. A fresh Dev publication verifies uploaded alias assets before committing its completion notes.
 
-If the Daily publisher finished the versioned Release and all tag updates but stopped before updating the rolling Release metadata, recover it with the original frozen candidate **before rerunning Release images**. Run **Promote qualified Daily or Dev** on `develop` using the run ID and attempt from **Release images**.
+If the Daily publisher finished the versioned Release and all tag updates but stopped before updating the rolling Release metadata, recover it with the original frozen candidate. Run **Promote qualified Daily or Dev** on `develop` using the original run ID and attempt from **Release images**. If a newer rerun has already ended in failure, cancellation or timeout, use the same original attempt and frozen assets.
 
 ```bash
 CANDIDATE_RUN_ID=...

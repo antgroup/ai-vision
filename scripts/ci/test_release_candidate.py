@@ -300,6 +300,67 @@ class CandidateTests(unittest.TestCase):
                     api_fn=lambda path: self.daily_recovery_api(path, event=event,
                                                                conclusion="success", publisher=publisher))
 
+    def test_daily_recovery_uses_the_original_attempt_after_an_unsuccessful_rerun(self):
+        module, _, acceptance = self.candidate()
+        options = dict(repository=REPOSITORY, source_sha=None, candidate_run_id="123",
+                       candidate_run_attempt="2", allow_daily_recovery=True)
+        for event, original_conclusion, publisher in (
+            ("schedule", "failure", "failure"),
+            ("workflow_dispatch", "success", "skipped"),
+        ):
+            for rerun_conclusion in ("failure", "cancelled", "timed_out"):
+                paths = []
+
+                def api(path):
+                    paths.append(path)
+                    value = self.daily_recovery_api(
+                        path, event=event, conclusion=original_conclusion, publisher=publisher,
+                    )
+                    if path == f"repos/{REPOSITORY}/actions/runs/123":
+                        return {**value, "run_attempt": 3, "conclusion": rerun_conclusion}
+                    return value
+
+                with self.subTest(event=event, original=original_conclusion, rerun=rerun_conclusion):
+                    receipt = module.verify_remote_candidate(self.directory, acceptance, api_fn=api, **options)
+                    self.assertTrue(receipt["publication_recovery"])
+                    self.assertEqual(receipt["candidate_build_id"], "123.2")
+                    self.assertEqual(receipt["candidate_source_sha"], SHA)
+                    self.assertTrue(any("/attempts/2/jobs?" in path for path in paths))
+                    self.assertFalse(any("/attempts/3" in path for path in paths))
+
+    def test_daily_recovery_rejects_an_unproven_or_successful_newer_attempt(self):
+        module, _, acceptance = self.candidate()
+        options = dict(repository=REPOSITORY, source_sha=None, candidate_run_id="123",
+                       candidate_run_attempt="2", allow_daily_recovery=True)
+        for changes in (
+            {"run_attempt": 1},
+            {"run_attempt": 3, "status": "in_progress", "conclusion": None},
+            {"run_attempt": 3, "conclusion": "success"},
+            {"run_attempt": 3, "head_sha": "d" * 40},
+            {"run_attempt": 3, "event": "workflow_dispatch"},
+        ):
+            def api(path):
+                value = self.daily_recovery_api(path)
+                if path == f"repos/{REPOSITORY}/actions/runs/123":
+                    return {**value, **changes}
+                return value
+
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                module.verify_remote_candidate(self.directory, acceptance, api_fn=api, **options)
+
+    def test_ordinary_promotion_rejects_a_historical_successful_attempt(self):
+        module, _, acceptance = self.candidate()
+
+        def api(path):
+            value = self.api(path)
+            if path == f"repos/{REPOSITORY}/actions/runs/123":
+                return {**value, "run_attempt": 3, "conclusion": "failure"}
+            return value
+
+        with self.assertRaisesRegex(ValueError, "exact successful official workflow attempt"):
+            module.verify_remote_candidate(self.directory, acceptance, repository=REPOSITORY,
+                source_sha=SHA, candidate_run_id="123", candidate_run_attempt="2", api_fn=api)
+
     def test_daily_recovery_rejects_other_sources_attempts_and_failed_qualification(self):
         module, _, acceptance = self.candidate()
         options = dict(repository=REPOSITORY, source_sha=None, candidate_run_id="123",
