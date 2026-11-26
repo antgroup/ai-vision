@@ -1,6 +1,6 @@
 # Versions and Updates
 
-Open `/about` from the global help menu to see **the current version, available updates, and release notes**. The root [VERSION](../VERSION) is the product version source, currently set to the release target `0.6.0`. Publication happens separately.
+Open `/about` from the global help menu to see **the current version, available updates, and release notes**. The root [VERSION](../VERSION) is the product version source, currently set to the release target `0.6.1`. Publication happens separately.
 
 ## Page Behavior and Update Checks
 
