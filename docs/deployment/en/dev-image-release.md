@@ -15,7 +15,7 @@ Native compilation is available through an [optional candidate workflow](../../.
 | Manual trial alias | Selected pushed branch; unique non-version alias and selected candidate channel | Candidate assets only; publication is rejected before version-tag writes |
 | Qualified Daily/Dev promotion | Exact successful candidate run/attempt, still at the current default-branch head | Versioned prerelease and rolling entry using the original frozen assets |
 | Manual `release_preview=true` | Selected branch and exact `VERSION` | Formal release qualification and frozen artifacts with publication disabled |
-| Push of a `v*` tag | Tag matches `VERSION` and is reachable from the default branch | Reviewed stable Release or RC prerelease after protected approval |
+| Push of a `v*` tag | Tag matches `VERSION` and identifies a commit in `main` history | Reviewed stable Release or RC prerelease after protected approval |
 
 An explicit `publish=true` manual Daily/Dev run still publishes after the same source/artifact gates. The separate promotion path is useful when a candidate must be reviewed before publication; it does not rebuild.
 
@@ -235,6 +235,27 @@ The latest published versioned product Release is the default reuse baseline; `r
 Source checks run independently of release preparation. Missing SigNoz configuration or registry access blocks artifact production, while source regressions still run. Source-fixture SigNoz v1 readback is not the candidate's native Langfuse v1 readback.
 
 After a candidate failure, use **Re-run all jobs** to keep CLI, images and checks within one attempt. Preserve the Daily snapshot date/revision; changed accepted content requires the next revision. Unique candidate image tags can remain after failure, but candidate-only runs never move user aliases.
+
+### Recover a formal release publication
+
+If Stable or RC publication was interrupted after the publisher saved its journal, use the original release tag, run ID and attempt. The tag must contain the recovery-capable workflow. The recovery run retrieves the original release assets, acceptance and journal, which the workflow retains for 14 days.
+
+Start recovery before rerunning the original workflow. A new attempt supersedes the interrupted attempt.
+
+```bash
+RELEASE_TAG=vX.Y.Z
+FORMAL_RUN_ID=...
+FORMAL_RUN_ATTEMPT=...
+gh workflow run release-images.yml -R antgroup/ai-vision \
+  --ref "$RELEASE_TAG" -f recover_formal_run_id="$FORMAL_RUN_ID" \
+  -f recover_formal_run_attempt="$FORMAL_RUN_ATTEMPT"
+```
+
+A reviewer other than the person who starts recovery approves the job in the protected `release` environment. The job verifies the original attempt and the live tag against the source commit in `main` history, then resumes publication using the frozen assets. For an earlier failure during qualification, follow the candidate rerun procedure.
+
+For a draft, recovery verifies the reviewed title and notes and the exact bytes of every existing attachment before uploading missing files. Duplicate, unexpected, or incomplete uploads stop recovery. If Stable has already published, GitHub Latest must still point to that Release, and each GHCR `:latest` alias must still match the recorded predecessor or the accepted target. Recovery moves only the unfinished aliases. An already-published RC is verified without updating aliases.
+
+### Daily and Dev publication recovery
 
 Advancing `daily` requires both a newer workflow attempt and a product version that does not move backward. The publisher verifies the current version through its published versioned Release, authenticated manifest/checksum and live tags, then compares the numeric base version, snapshot date and revision. A later run cannot replace a newer date or revision; unknown or inconsistent prior provenance stops publication.
 

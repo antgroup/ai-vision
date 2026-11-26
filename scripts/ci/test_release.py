@@ -429,37 +429,32 @@ class PublicationTests(unittest.TestCase):
                 self.assertIn(":" + plan()["product_version"], call.args[-2])
             self.assertEqual(verify.call_count, 10)
 
-    def test_stable_and_daily_aliases_follow_five_service_immutable_readbacks(self):
+    def test_daily_aliases_follow_five_service_immutable_readbacks(self):
         images = PUBLIC_IMAGES
-        for product_plan, alias in ((plan(), "daily"),
-                                    (plan(event="push", ref="refs/tags/v0.0.1"), "latest")):
-            events = []
-            with (
-                self.subTest(alias=alias),
-                tempfile.TemporaryDirectory() as directory,
-                mock_inline_acceptance(directory),
-                patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY="antgroup/ai-vision"),
-                patch("public_registry.verify_public_images"),
-                patch("release_publish.validate_bundle", return_value=(product_plan, images)),
-                patch("release_publish.preflight"),
-                patch("release_publish.find_release_draft", return_value={"id": 42, "body": "Fixture"}),
-                patch("release_publish.read_draft", return_value={"id": 42, "body": "Fixture"}),
-                patch("release_publish.require_live_tag"),
-                patch("release_publish.verify_remote_assets", side_effect=lambda *args, **kwargs: events.append(("remote-verified",))),
-                patch("release_publish.api", side_effect=lambda path, **kwargs: {"body": "## Changes\n* Fixture"} if path.endswith("/generate-notes") else (LIVE_REPOSITORY if path == f"repos/{PUBLIC_REPOSITORY}" else None)),
-                patch("release_publish.inspect_digest", return_value=None),
-                patch("release_publish.run", side_effect=lambda *args, **kwargs: events.append(("write", args)) or ""),
-                patch("public_registry.verify_public_tag", side_effect=lambda ref, expected: events.append(("verified", ref))),
-            ):
-                publish_main()
-            first_alias = next(index for index, event in enumerate(events)
-                               if event[0] == "write" and event[1][0] == "docker"
-                               and event[1][-2].endswith(":" + alias))
-            verified = {event[1] for event in events[:first_alias] if event[0] == "verified"}
-            self.assertEqual(verified, {f"{package}:{product_plan['product_version']}" for package in PACKAGES.values()})
-            aliases = {event[1][-2] for event in events if event[0] == "write"
-                       and event[1][0] == "docker" and event[1][-2].endswith(":" + alias)}
-            self.assertEqual(aliases, {f"{package}:{alias}" for package in PACKAGES.values()})
+        product_plan = plan()
+        events = []
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            mock_inline_acceptance(directory),
+            patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY="antgroup/ai-vision"),
+            patch("public_registry.verify_public_images"),
+            patch("release_publish.validate_bundle", return_value=(product_plan, images)),
+            patch("release_publish.require_live_tag"),
+            patch("release_publish.verify_remote_assets", side_effect=lambda *args, **kwargs: events.append(("remote-verified",))),
+            patch("release_publish.api", side_effect=lambda path, **kwargs: {"body": "## Changes\n* Fixture"} if path.endswith("/generate-notes") else (LIVE_REPOSITORY if path == f"repos/{PUBLIC_REPOSITORY}" else None)),
+            patch("release_publish.inspect_digest", return_value=None),
+            patch("release_publish.run", side_effect=lambda *args, **kwargs: events.append(("write", args)) or ""),
+            patch("public_registry.verify_public_tag", side_effect=lambda ref, expected: events.append(("verified", ref))),
+        ):
+            publish_main()
+        first_alias = next(index for index, event in enumerate(events)
+                           if event[0] == "write" and event[1][0] == "docker"
+                           and event[1][-2].endswith(":daily"))
+        verified = {event[1] for event in events[:first_alias] if event[0] == "verified"}
+        self.assertEqual(verified, {f"{package}:{product_plan['product_version']}" for package in PACKAGES.values()})
+        aliases = {event[1][-2] for event in events if event[0] == "write"
+                   and event[1][0] == "docker" and event[1][-2].endswith(":daily")}
+        self.assertEqual(aliases, {f"{package}:daily" for package in PACKAGES.values()})
 
     def test_release_preview_cannot_enter_preflight_or_publication(self):
         preview = {**plan(event="push", ref="refs/tags/v0.0.1"), "release_preview": True}
@@ -497,10 +492,16 @@ class PublicationTests(unittest.TestCase):
                    "assets": [], "body": "## English\nChange\n## 中文\n变更"}
         content = b"frozen release checksum bytes"
         asset = {"id": 12, "name": "SHA256SUMS", "size": len(content), "state": "uploaded"}
+        latest_aliases = {}
 
         def api(path, *, data=None, **kwargs):
             if path == prefix:
                 return LIVE_REPOSITORY
+            if path == f"{prefix}/environments/release":
+                return {"can_admins_bypass": False, "protection_rules": [
+                    {"type": "required_reviewers", "prevent_self_review": True, "reviewers": [{"id": 1}]}]}
+            if path == f"{prefix}/releases/latest":
+                return None if release["draft"] else release.copy()
             if path == f"{prefix}/git/ref/tags/{tag}":
                 return {"object": {"type": "commit", "sha": SHA}}
             if path == f"{prefix}/releases?per_page=100&page=1":
@@ -512,6 +513,7 @@ class PublicationTests(unittest.TestCase):
                     self.assertTrue(release["draft"])
                     self.assertEqual(data, {"draft": False, "prerelease": False, "make_latest": "true"})
                     release.update(data)
+                    release["published_at"] = "2026-11-26T00:00:00Z"
                     events.append("publish")
                 return release.copy()
             if path == f"{prefix}/releases/42/assets?per_page=100&page=1":
@@ -538,6 +540,7 @@ class PublicationTests(unittest.TestCase):
 
         def write(*args, **kwargs):
             if args[0] == "docker":
+                latest_aliases[args[-2]] = args[-1].split("@")[1]
                 events.append("latest")
             else:
                 upload(*args, **kwargs)
@@ -548,16 +551,22 @@ class PublicationTests(unittest.TestCase):
             with (
                 mock_inline_acceptance(root),
                 patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123",
-                           GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY=PUBLIC_REPOSITORY),
+                           GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY=PUBLIC_REPOSITORY,
+                           GITHUB_REF=f"refs/tags/{tag}"),
                 patch("public_registry.verify_public_images"),
                 patch("public_registry.verify_public_tag"),
                 patch("release_publish.validate_bundle", return_value=(product, PUBLIC_IMAGES)),
-                patch("release_publish.preflight"),
+                patch("release_publish.inspect_digest", side_effect=lambda ref, **_: latest_aliases.get(ref)),
                 patch("release_publish.publish_version_tags", side_effect=lambda *a, **k: events.append("version-tags")),
                 patch("release_publish.api", side_effect=api),
                 patch("release_publish.run", side_effect=write),
                 patch("release_publish.subprocess.run", side_effect=download),
             ):
+                journal = Path(sys.argv[sys.argv.index("--acceptance") + 1]).with_name("formal-publication.json")
+                sys.argv.extend(["--formal-journal", str(journal)])
+                sys.argv[1] = "preflight"
+                publish_main()
+                sys.argv[1] = "publish"
                 publish_main()
 
     def test_stable_publisher_keeps_draft_identity_through_upload_and_public_readback(self):
@@ -808,9 +817,6 @@ class GeneratedRollingNotesTests(unittest.TestCase):
             patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY="antgroup/ai-vision"),
             patch("public_registry.verify_public_images"),
             patch("release_publish.validate_bundle", return_value=(product_plan, images)),
-            patch("release_publish.preflight"),
-            patch("release_publish.find_release_draft", return_value={"id": 42, "body": "Fixture"}),
-            patch("release_publish.read_draft", return_value={"id": 42, "body": "Fixture"}),
             patch("release_publish.verify_remote_assets", side_effect=lambda directory, value, repository, **kwargs: events.append(("remote-readback", value["release_tag"])) or {}),
             patch("release_publish.check_version_tags"),
             patch("release_publish.publish_version_tags", side_effect=lambda *args, **kwargs: events.append(("version-tags",))),
@@ -819,11 +825,6 @@ class GeneratedRollingNotesTests(unittest.TestCase):
             patch("public_registry.verify_public_tag"),
             patch("release_publish.subprocess.run", side_effect=download),
         ):
-            if product_plan["channel"] in {"stable", "rc"}:
-                (Path(directory) / "SHA256SUMS").write_text("fixture checksums")
-                with patch("release_publish.require_live_tag"):
-                    publish_main()
-                return events
             try:
                 publish_main()
             except Exception as error:
@@ -907,22 +908,6 @@ class GeneratedRollingNotesTests(unittest.TestCase):
                 self.assertFalse(any(e[0] in {"run", "version-tags"} for e in caught.exception.events))
                 self.assertFalse(any(e[0] == "api" and e[1].endswith("/generate-notes")
                                      for e in caught.exception.events))
-
-    def test_stable_and_rc_preserve_reviewed_notes_and_titles(self):
-        for product_plan in (plan(event="push", ref="refs/tags/v0.0.1"),
-                             plan(event="push", version="0.1.0-rc.1", ref="refs/tags/v0.1.0-rc.1")):
-            with self.subTest(channel=product_plan["channel"]):
-                events = self.publish(product_plan)
-                self.assertFalse(any(e[0] == "api" and e[1].endswith("/generate-notes") for e in events))
-                endpoint = f"https://uploads.github.com/repos/{PUBLIC_REPOSITORY}/releases/42/assets?name=SHA256SUMS"
-                self.assertTrue(any(e[0] == "run" and e[1][:3] == ("gh", "api", endpoint) for e in events))
-                for e in events:
-                    if e[0] == "run":
-                        self.assertNotIn("--notes", e[1])
-                        self.assertNotIn("--title", e[1])
-                    if e[0] == "api" and e[2].get("data"):
-                        self.assertNotIn("body", e[2]["data"])
-                        self.assertNotIn("name", e[2]["data"])
 
 
 class AssetTests(unittest.TestCase):
@@ -1681,7 +1666,17 @@ def require_publication_gates(jobs):
     if "public-registry" not in ancestors("artifact-smoke"):
         raise ValueError("artifact smoke can start before anonymous image verification")
     for name in publishers:
-        if not {"public-source-checks", "public-registry", "artifact-smoke", "acceptance"} <= ancestors(name):
+        if name == "recover-formal":
+            recovery = jobs[name]
+            steps = [step.get("run", "") for step in recovery["steps"]]
+            verification = next((index for index, command in enumerate(steps)
+                                 if "scripts/ci/release_recovery.py" in command), None)
+            publication = next((index for index, command in enumerate(steps)
+                                if "release_publish.py publish" in command and "--recover-formal" in command), None)
+            if (recovery.get("environment") != "release" or verification is None or publication is None
+                    or verification >= publication):
+                raise ValueError("formal recovery requires protected publication using a verified original attempt")
+        elif not {"public-source-checks", "public-registry", "artifact-smoke", "acceptance"} <= ancestors(name):
             raise ValueError("publication can bypass a source, registry, deployment or acceptance gate")
         if "always(" in jobs[name].get("if", "") or jobs[name].get("continue-on-error"):
             raise ValueError("publication can bypass a failed gate")
@@ -1718,6 +1713,7 @@ class WorkflowTests(unittest.TestCase):
             ("build-services", {"needs": []}),
             ("build-backend", {"needs": []}),
             ("publish-stable", {"environment": "unprotected"}),
+            ("recover-formal", {"environment": "unprotected"}),
             ("publish-development", {"if": "always()"}),
         ):
             changed = copy.deepcopy(jobs)
@@ -1727,7 +1723,8 @@ class WorkflowTests(unittest.TestCase):
                 self.assertRaises(ValueError),
             ):
                 require_publication_gates(changed)
-        self.assertEqual(jobs["prepare"]["if"], f"github.repository == '{PUBLIC_REPOSITORY}'")
+        self.assertIn(f"github.repository == '{PUBLIC_REPOSITORY}'", jobs["prepare"]["if"])
+        self.assertIn("!inputs.recover_formal_run_id && !inputs.recover_formal_run_attempt", jobs["prepare"]["if"])
         source_checks = jobs["public-source-checks"]
         self.assertEqual(source_checks["uses"], "./.github/workflows/ci.yml")
         self.assertIn("public-registry", source_checks["needs"])

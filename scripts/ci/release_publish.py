@@ -25,6 +25,7 @@ from release_assets import DATABASES, IMAGE_VARS, file_sha256, release_asset_nam
 from release_reuse import validate_build
 from release_plan import (
     IMAGES,
+    formal_release_channel,
     require_digest,
     require_draft_notes,
     require_release_environment,
@@ -427,7 +428,7 @@ def require_known_dev_assets(directory, repository, existing):
         raise ValueError("Dev has duplicate or unknown assets outside the frozen candidate")
 
 
-def verify_remote_assets(directory, plan, repository, *, release_id=None, draft=False):
+def verify_remote_assets(directory, plan, repository, *, release_id=None, draft=False, allow_partial=False):
     """Authenticated download and byte verification, including the checksum file."""
     tag = plan["release_tag"]
     require_live_tag(repository, tag, plan["source_sha"])
@@ -443,7 +444,8 @@ def verify_remote_assets(directory, plan, repository, *, release_id=None, draft=
     assets = remote_release_assets(repository, release)
     expected = {path.name: path for path in directory.iterdir()}
     names = [asset.get("name") for asset in assets]
-    if len(names) != len(set(names)) or set(names) != set(expected):
+    if (len(names) != len(set(names)) or not set(names) <= set(expected)
+            or (set(names) != set(expected) and not (draft and allow_partial))):
         raise ValueError("remote release asset set differs from frozen assets")
     verified = {}
     for asset in assets:
@@ -473,6 +475,186 @@ def verify_remote_assets(directory, plan, repository, *, release_id=None, draft=
     return {"release_id": release["id"], "release_tag": plan["release_tag"], "assets": verified}
 
 
+def formal_journal_identity(plan, repository, acceptance_sha256):
+    return {
+        "schema_version": 1,
+        "source_repository": repository,
+        "source_sha": plan["source_sha"],
+        "release_tag": plan["release_tag"],
+        "candidate_build_id": plan["build_id"],
+        "candidate_acceptance_sha256": acceptance_sha256,
+    }
+
+
+def formal_release_metadata(release):
+    return {
+        "release_id": release["id"],
+        "title_sha256": hashlib.sha256(json.dumps(release.get("name")).encode()).hexdigest(),
+        "body_sha256": hashlib.sha256(release["body"].encode()).hexdigest(),
+    }
+
+
+def stable_predecessor(repository, release, product_version):
+    """Authenticate the preceding stable version and its immutable image references."""
+    if release is None:
+        return None
+    tag = release.get("tag_name")
+    if (not isinstance(tag, str) or not tag.startswith("v")
+            or formal_release_channel(tag[1:]) != "stable"
+            or type(release.get("id")) is not int or release["id"] <= 0
+            or release.get("draft") is not False or release.get("prerelease") is not False
+            or not release.get("published_at")
+            or tuple(map(int, tag[1:].split("."))) >= tuple(map(int, product_version.split(".")))):
+        raise ValueError("formal journal requires a known, older published Stable predecessor")
+    assets = remote_release_assets(repository, release)
+    by_name = {asset.get("name"): asset for asset in assets}
+    if len(by_name) != len(assets) or not {"release-manifest.json", "SHA256SUMS"} <= set(by_name):
+        raise ValueError("Stable predecessor manifest provenance is missing or ambiguous")
+    payload = read_remote_metadata(repository, by_name["release-manifest.json"])
+    checksums = read_remote_metadata(repository, by_name["SHA256SUMS"]).decode().splitlines()
+    digest = hashlib.sha256(payload).hexdigest()
+    if [line for line in checksums if line.endswith("  release-manifest.json")] != [f"{digest}  release-manifest.json"]:
+        raise ValueError("Stable predecessor manifest checksum does not match")
+    manifest = json.loads(payload)
+    if (not isinstance(manifest, dict) or manifest.get("source_repository") != repository
+            or manifest.get("release_tag") != tag or manifest.get("product_version") != tag[1:]
+            or manifest.get("channel") != "stable"
+            or not re.fullmatch(r"[a-f0-9]{40}", manifest.get("source_sha") or "")
+            or not isinstance(manifest.get("images"), dict)
+            or set(manifest["images"]) != set(product_image_repositories(repository))):
+        raise ValueError("Stable predecessor manifest does not identify the expected release")
+    require_live_tag(repository, tag, manifest["source_sha"])
+    images = manifest["images"]
+    for target, ref in version_targets({"product_version": tag[1:]}, images, repository=repository).items():
+        public_registry.verify_public_tag(target, ref)
+    return {
+        "id": release["id"], "tag_name": tag, "source_sha": manifest["source_sha"],
+        "manifest_sha256": digest, "images": images,
+    }
+
+
+def require_stable_latest(repository, expected):
+    latest = api(f"repos/{repository}/releases/latest", missing=True)
+    if expected is None and latest is None:
+        return
+    if (not latest or not expected or latest.get("id") != expected["id"]
+            or latest.get("tag_name") != expected["tag_name"]
+            or latest.get("draft") is not False or latest.get("prerelease") is not False):
+        raise ValueError("GitHub latest Release changed or does not match the formal journal")
+
+
+def stable_alias_updates(repository, images, previous, published=None):
+    require_stable_latest(repository, previous if published is None else published)
+    updates = {}
+    for name, package in product_image_repositories(repository).items():
+        tag = f"{package}:latest"
+        target = images[name]
+        old_digest = previous["images"][name].split("@")[1] if previous is not None else None
+        current = inspect_digest(tag, missing=True)
+        if published is not None and current == target.split("@")[1]:
+            continue
+        if current != old_digest:
+            raise ValueError(f"refusing to overwrite unknown Stable alias: {tag}")
+        updates[tag] = (old_digest, target)
+    return updates
+
+
+def create_formal_journal(path, plan, repository, images, identity):
+    release = find_release_draft(repository, plan["release_tag"])
+    predecessor = None
+    if plan["channel"] == "stable":
+        latest = api(f"repos/{repository}/releases/latest", missing=True)
+        predecessor = stable_predecessor(repository, latest, plan["product_version"])
+        stable_alias_updates(repository, images, predecessor)
+    journal = {**identity, "release": formal_release_metadata(release), "previous_stable": predecessor}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("x") as file:
+        file.write(json.dumps(journal, indent=2) + "\n")
+
+
+def read_formal_release(repository, tag, metadata):
+    release_id = metadata["release_id"]
+    release = api(f"repos/{repository}/releases/{release_id}")
+    if (not isinstance(release, dict) or type(release.get("id")) is not int
+            or not isinstance(release.get("body"), str) or release.get("tag_name") != tag
+            or formal_release_metadata(release) != metadata):
+        raise ValueError("formal Release identity, title or reviewed notes differ from the journal")
+    return release
+
+
+def publish_formal_journal(directory, plan, images, repository, journal, verify_acceptance, *, recover):
+    root = f"repos/{repository}"
+    tag = plan["release_tag"]
+    prerelease = plan["channel"] == "rc"
+    stable = not prerelease
+    require_release_environment(api(f"{root}/environments/release"))
+    require_live_tag(repository, tag, plan["source_sha"])
+    metadata = journal["release"]
+    if not isinstance(metadata, dict) or type(metadata.get("release_id")) is not int or metadata["release_id"] <= 0:
+        raise ValueError("invalid reviewed Release ID in the formal journal")
+    release = read_formal_release(repository, tag, metadata)
+    release_id = release["id"]
+    draft = release.get("draft") is True
+    if not draft and (not recover or release.get("draft") is not False
+                      or not release.get("published_at") or release.get("prerelease") is not prerelease):
+        raise ValueError("formal journal requires the reviewed draft or an exact published recovery target")
+    previous = journal["previous_stable"]
+    if previous is not None:
+        if not stable or not isinstance(previous, dict) or type(previous.get("id")) is not int or previous["id"] <= 0:
+            raise ValueError("invalid Stable predecessor in the formal journal")
+        live = api(f"{root}/releases/{previous['id']}")
+        if stable_predecessor(repository, live, plan["product_version"]) != previous:
+            raise ValueError("Stable predecessor changed after the formal journal was written")
+    if stable:
+        stable_alias_updates(repository, images, previous, None if draft else release)
+
+    if draft:
+        staged = verify_remote_assets(directory, plan, repository, release_id=release_id, draft=True,
+                                      allow_partial=True)
+        if not recover and staged["assets"]:
+            raise ValueError("a new formal publication requires an asset-free draft")
+        publish_version_tags(plan, images, repository=repository)
+        missing = [str(path) for path in sorted(directory.iterdir()) if path.name not in staged["assets"]]
+        upload_draft_assets(repository, release_id, missing)
+        verify_remote_assets(directory, plan, repository, release_id=release_id, draft=True)
+        verify_acceptance()
+        require_release_environment(api(f"{root}/environments/release"))
+        require_live_tag(repository, tag, plan["source_sha"])
+        draft_release = read_formal_release(repository, tag, metadata)
+        if draft_release.get("draft") is not True or draft_release.get("immutable"):
+            raise ValueError("formal draft state changed during asset verification")
+        if stable:
+            stable_alias_updates(repository, images, previous)
+        api(f"{root}/releases/{release_id}", data={
+            "draft": False, "prerelease": prerelease, "make_latest": "true" if stable else "false",
+        })
+    else:
+        for target, ref in version_targets(plan, images, repository=repository).items():
+            public_registry.verify_public_tag(target, ref)
+
+    remote = verify_remote_assets(directory, plan, repository, release_id=release_id)
+    release = read_formal_release(repository, tag, metadata)
+    if (release.get("draft") is not False or not release.get("published_at")
+            or release.get("prerelease") is not prerelease):
+        raise ValueError("formal Release did not publish with the expected channel")
+    verify_acceptance()
+    if stable:
+        require_release_environment(api(f"{root}/environments/release"))
+        require_live_tag(repository, tag, plan["source_sha"])
+        for alias, (old_digest, ref) in stable_alias_updates(repository, images, previous, release).items():
+            require_stable_latest(repository, release)
+            current = inspect_digest(alias, missing=True)
+            if current == ref.split("@")[1]:
+                continue
+            if current != old_digest:
+                raise ValueError(f"refusing to overwrite unknown Stable alias: {alias}")
+            run("docker", "buildx", "imagetools", "create", "--tag", alias, ref)
+        for name, package in product_image_repositories(repository).items():
+            public_registry.verify_public_tag(f"{package}:latest", images[name])
+        require_stable_latest(repository, release)
+    return remote
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("preflight", "publish"))
@@ -482,6 +664,8 @@ def main():
     parser.add_argument("--candidate-run-id")
     parser.add_argument("--candidate-run-attempt")
     parser.add_argument("--recover-dev-publication", action="store_true")
+    parser.add_argument("--formal-journal", type=Path)
+    parser.add_argument("--recover-formal", action="store_true")
     parser.add_argument("--receipt", type=Path)
     args = parser.parse_args()
     candidate_inputs = (args.candidate_acceptance, args.candidate_run_id, args.candidate_run_attempt)
@@ -491,6 +675,10 @@ def main():
         raise ValueError("Dev publication recovery requires the original frozen candidate")
     if args.acceptance and args.candidate_acceptance:
         raise ValueError("select same-attempt acceptance or remote candidate promotion")
+    if args.formal_journal and not args.acceptance:
+        raise ValueError("formal publication requires the original frozen acceptance")
+    if args.recover_formal and (not args.formal_journal or args.command != "publish"):
+        raise ValueError("formal recovery requires publish and the original formal journal")
     repository = require_product_repository(os.environ.get("GITHUB_REPOSITORY"))
     acceptance_path = args.acceptance or args.candidate_acceptance
     if not acceptance_path:
@@ -498,6 +686,15 @@ def main():
     source_sha = os.environ["GITHUB_SHA"]
     publisher_build_id = f"{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}"
     build_id = publisher_build_id
+    journal = None
+    if args.formal_journal and args.command == "publish":
+        journal = json.loads(args.formal_journal.read_text())
+        if not isinstance(journal, dict) or type(journal.get("schema_version")) is not int:
+            raise ValueError("invalid formal publication journal")
+        if args.recover_formal:
+            build_id = journal.get("candidate_build_id")
+            if not isinstance(build_id, str) or not re.fullmatch(r"[1-9][0-9]*\.[1-9][0-9]*", build_id):
+                raise ValueError("formal recovery requires a valid original candidate build ID")
     acceptance_bytes = acceptance_path.read_bytes()
     acceptance = json.loads(acceptance_bytes)
     acceptance_sha256 = hashlib.sha256(acceptance_bytes).hexdigest()
@@ -525,6 +722,8 @@ def main():
     if plan.get("release_preview"):
         raise ValueError("a release preview cannot enter publication preflight or publish")
     stable = plan["channel"] in {"stable", "rc"}
+    if stable and args.command == "publish" and not args.formal_journal:
+        raise ValueError("formal publication requires a persisted formal journal")
     if not stable and plan["alias"] not in {"daily", "dev"}:
         raise ValueError("trial aliases are candidate-only and cannot publish product versions")
     live_repository = api(f"repos/{repository}")
@@ -532,6 +731,40 @@ def main():
             or live_repository.get("visibility") != "public"):
         raise ValueError("public publication requires the official repository to be public")
     public_registry.verify_public_images(images)
+    if args.formal_journal:
+        if (not stable or formal_release_channel(plan["product_version"]) != plan["channel"]
+                or plan["release_tag"] != f"v{plan['product_version']}"
+                or plan["alias"] != plan["product_version"]
+                or os.environ.get("GITHUB_REF") != f"refs/tags/{plan['release_tag']}"):
+            raise ValueError("formal publication requires the exact Stable or RC tag run")
+        identity = formal_journal_identity(plan, repository, acceptance_sha256)
+        if args.command == "preflight":
+            preflight(plan, images, repository)
+            create_formal_journal(args.formal_journal, plan, repository, images, identity)
+            return
+        if (set(journal) != {*identity, "release", "previous_stable"}
+                or any(journal[key] != value for key, value in identity.items())):
+            raise ValueError("formal journal does not match frozen source, acceptance or build identity")
+
+        def verify_formal_acceptance():
+            if file_sha256(acceptance_path) != acceptance_sha256:
+                raise ValueError("formal candidate acceptance changed during publication")
+            verify_frozen(args.directory, acceptance, repository=repository, source_sha=source_sha, build_id=build_id)
+
+        remote = publish_formal_journal(args.directory, plan, images, repository, journal,
+                                        verify_formal_acceptance, recover=args.recover_formal)
+        if args.receipt:
+            receipt = {
+                **identity, "status": "published", "publisher_build_id": publisher_build_id,
+                "publisher_source_sha": os.environ["GITHUB_SHA"],
+                "publisher_workflow_ref": os.environ.get("GITHUB_WORKFLOW_REF", ""),
+                "remote_assets": remote, "rolling_assets": None,
+                "recovery": {"mode": "formal_publication"} if args.recover_formal else None,
+                "candidate_publication_recovery": args.recover_formal,
+            }
+            args.receipt.parent.mkdir(parents=True, exist_ok=True)
+            args.receipt.write_text(json.dumps(receipt, indent=2) + "\n")
+        return
     if stable:
         preflight(plan, images, repository)
     else:
@@ -606,12 +839,8 @@ def main():
     if plan["alias"] == "dev" and existing:
         require_known_dev_assets(args.directory, repository, existing)
     generated = generate_rolling_notes(plan, repository, existing) if rolling and not recovery else None
-    release = find_release_draft(repository, plan["release_tag"]) if stable else None
     publish_version_tags(plan, images, repository=repository)
-    if stable:
-        # Upload through the reviewed draft's ID, never through a tag lookup.
-        upload_draft_assets(repository, release["id"], assets)
-    elif rolling and versioned is None:
+    if rolling and versioned is None:
         run(
             "gh",
             "release",
@@ -629,10 +858,7 @@ def main():
             "--notes",
             f"{generated}\n\n## Deployment\n\n{scope}{details}",
         )
-    if stable:
-        verify_remote_assets(args.directory, plan, repository, release_id=release["id"], draft=True)
-    else:
-        verify_remote_assets(args.directory, plan, repository)
+    verify_remote_assets(args.directory, plan, repository)
     if hashlib.sha256(acceptance_path.read_bytes()).hexdigest() != acceptance_sha256:
         raise ValueError("candidate acceptance changed during publication")
     if args.acceptance:
@@ -651,32 +877,14 @@ def main():
         current = require_unchanged_dev_release(existing, repository)
         if recovery:
             require_same_dev_candidate(current, plan, repository)
-    if stable:
-        require_live_tag(repository, plan["release_tag"], source_sha)
-        draft = read_draft(repository, plan["release_tag"], release["id"])
-        if draft.get("body") != release["body"]:
-            raise ValueError("reviewed draft Release notes changed during publication")
-        api(
-            f"repos/{repository}/releases/{release['id']}",
-            data={
-                "draft": False,
-                "prerelease": plan["channel"] == "rc",
-                "make_latest": "true" if plan["channel"] == "stable" else "false",
-            },
-        )
-        verify_remote_assets(args.directory, plan, repository, release_id=release["id"])
     # No alias is written until every required check has passed. Registry aliases
     # are not a cross-image transaction: a publishing outage may require reconciliation.
     for name, image in product_image_repositories(repository).items():
         ref = images[name]
-        tags = []
         if plan["alias"] != plan["product_version"]:
-            tags.append(plan["alias"])
-        if plan["channel"] == "stable":
-            tags.append("latest")
-        for tag in tags:
-            run("docker", "buildx", "imagetools", "create", "--tag", f"{image}:{tag}", ref)
-            public_registry.verify_public_tag(f"{image}:{tag}", ref)
+            target = f"{image}:{plan['alias']}"
+            run("docker", "buildx", "imagetools", "create", "--tag", target, ref)
+            public_registry.verify_public_tag(target, ref)
     if rolling:
         alias = plan["alias"]
         tag = api(f"repos/{repository}/git/ref/tags/{alias}", missing=True)

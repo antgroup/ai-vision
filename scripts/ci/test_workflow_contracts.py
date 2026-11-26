@@ -204,7 +204,9 @@ class WorkflowGateTests(unittest.TestCase):
 
     def test_public_daily_runs_full_source_checks_with_verified_candidate_images(self):
         jobs = workflow("release-images.yml")["jobs"]
-        self.assertEqual(jobs["prepare"]["if"], "github.repository == 'antgroup/ai-vision'")
+        self.assertEqual(jobs["prepare"]["if"].strip(),
+                         "github.repository == 'antgroup/ai-vision' && "
+                         "!inputs.recover_formal_run_id && !inputs.recover_formal_run_attempt")
         self.assertNotIn("source-checks", jobs)
         self.assertNotIn("include_openshell", triggers(workflow("release-images.yml"))["workflow_dispatch"]["inputs"])
         full = jobs["public-source-checks"]
@@ -258,6 +260,27 @@ class WorkflowGateTests(unittest.TestCase):
             name, _, value = output.read_text().partition("=")
             self.assertEqual(name, "AIVISION_SEEKDB_SMOKE_IMAGES_JSON")
             self.assertEqual(json.loads(value), {key: ref for key, ref in images.items() if key != "oceanbase"})
+
+    def test_formal_recovery_reuses_the_publication_lock_and_approval(self):
+        document = workflow("release-images.yml")
+        jobs = document["jobs"]
+        normal = jobs["publish-stable"]
+        recovery = jobs["recover-formal"]
+        self.assertEqual(recovery["environment"], normal["environment"])
+        self.assertEqual(recovery["concurrency"], normal["concurrency"])
+        self.assertEqual(recovery["permissions"], normal["permissions"])
+        self.assertIn("github.event_name == 'workflow_dispatch'", recovery["if"])
+        self.assertIn("startsWith(github.ref, 'refs/tags/v')", recovery["if"])
+        inputs = triggers(document)["workflow_dispatch"]["inputs"]
+        for name in ("recover_formal_run_id", "recover_formal_run_attempt"):
+            self.assertIs(inputs[name]["required"], False)
+            self.assertIn(f"inputs.{name}", recovery["if"])
+        journal = next(step for step in normal["steps"] if step.get("uses") == "actions/upload-artifact@v4")
+        self.assertEqual(journal["with"]["name"], "formal-publication-${{ github.run_attempt }}")
+        self.assertEqual(journal["with"]["retention-days"], 14)
+        self.assertIn("preflight --directory release", normal["steps"][-3]["run"])
+        self.assertIn("--formal-journal formal-publication.json", normal["steps"][-1]["run"])
+        self.assertIn("--recover-formal", recovery["steps"][-1]["run"])
 
     def test_public_release_candidates_cannot_write_aliases_without_publication(self):
         document = workflow("release-images.yml")

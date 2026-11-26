@@ -26,7 +26,9 @@ class RuntimeBudgetTests(unittest.TestCase):
         dispatch = document.get('on', document.get(True))['workflow_dispatch']['inputs']
         self.assertNotIn('include_openshell', dispatch)
         jobs = document['jobs']
-        self.assertEqual(jobs['prepare']['if'], f"github.repository == '{PUBLIC_REPOSITORY}'")
+        self.assertEqual(jobs['prepare']['if'].strip(),
+                         f"github.repository == '{PUBLIC_REPOSITORY}' && "
+                         "!inputs.recover_formal_run_id && !inputs.recover_formal_run_attempt")
         self.assertNotIn('openshell', jobs)
         self.assertNotIn('source-checks', jobs)
         self.assertIn('public-data-backend', jobs['assets']['needs'])
@@ -36,7 +38,8 @@ class RuntimeBudgetTests(unittest.TestCase):
     def test_only_publication_jobs_share_the_publication_queue(self):
         images, promote = workflow('release-images.yml'), workflow('promote-release.yml')
         jobs = images['jobs']
-        publishers = (jobs['publish-stable'], jobs['publish-development'], promote['jobs']['promote'])
+        publishers = (jobs['publish-stable'], jobs['recover-formal'],
+                      jobs['publish-development'], promote['jobs']['promote'])
         gates = [job['concurrency'] for job in publishers]
         self.assertTrue(all(gate == gates[0] for gate in gates))
         gate = gates[0]

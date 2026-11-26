@@ -53,6 +53,14 @@ on:
         type: choice
         options: [auto, daily, dev]
         default: auto
+      recover_formal_run_id:
+        description: Original interrupted RC or Stable publication run ID; use the same version tag
+        type: string
+        required: false
+      recover_formal_run_attempt:
+        description: Exact original RC or Stable publication attempt to recover; required together with run ID
+        type: string
+        required: false
 
 # Candidates stage run-specific artifacts. Only Release and rolling-alias writes share a cross-ref lock.
 concurrency:
@@ -65,7 +73,9 @@ permissions:
 
 jobs:
   prepare:
-    if: github.repository == 'antgroup/ai-vision'
+    if: >-
+      github.repository == 'antgroup/ai-vision' &&
+      !inputs.recover_formal_run_id && !inputs.recover_formal_run_attempt
     name: resolve exact source and external dependency
     runs-on: ubuntu-22.04
     timeout-minutes: 15
@@ -116,13 +126,15 @@ jobs:
             echo '::error::Formal release previews require publish=false.'
             exit 1
           fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]] &&
+             ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
+            echo '::error::Formal release tags must identify a commit reachable from main.'
+            exit 1
+          fi
           mkdir -p "$RUNNER_TEMP/release-plan"
           RELEASE_CREATED_AT="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq '.created_at')"
           export RELEASE_CREATED_AT
           python3 scripts/ci/release_plan.py plan --file "$RUNNER_TEMP/release-plan/release-plan.json"
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            git merge-base --is-ancestor "$GITHUB_SHA" "origin/$DEFAULT_BRANCH"
-          fi
       - id: images
         run: |
           image_repositories=$(python3 scripts/ci/public_registry.py repositories)
@@ -752,7 +764,7 @@ jobs:
       (needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') &&
       !inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)
     environment: release
-    concurrency:
+    concurrency: &formal-publication-queue
       group: release-publication
       cancel-in-progress: false
     runs-on: ubuntu-22.04
@@ -779,8 +791,71 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - run: |
-          python3 scripts/ci/release_publish.py publish --directory release --acceptance acceptance/candidate-acceptance.json
+      - name: Prepare the formal publication journal
+        run: |
+          python3 scripts/ci/release_publish.py preflight --directory release \
+            --acceptance acceptance/candidate-acceptance.json \
+            --formal-journal formal-publication.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Persist the formal publication journal
+        uses: actions/upload-artifact@v4
+        with:
+          name: formal-publication-${{ github.run_attempt }}
+          path: formal-publication.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Publish the reviewed Release and read back the final aliases
+        run: |
+          python3 scripts/ci/release_publish.py publish --directory release \
+            --acceptance acceptance/candidate-acceptance.json \
+            --formal-journal formal-publication.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  recover-formal:
+    name: recover interrupted stable or RC publication
+    if: >-
+      github.repository == 'antgroup/ai-vision' && github.event_name == 'workflow_dispatch' &&
+      startsWith(github.ref, 'refs/tags/v') &&
+      (inputs.recover_formal_run_id || inputs.recover_formal_run_attempt)
+    environment: release
+    concurrency: *formal-publication-queue
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      packages: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify the original run and download its frozen publication artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORIGINAL_RUN_ID: ${{ inputs.recover_formal_run_id }}
+          ORIGINAL_RUN_ATTEMPT: ${{ inputs.recover_formal_run_attempt }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main; then
+            echo '::error::The recovery tag commit must be reachable from main.'
+            exit 1
+          fi
+          python3 scripts/ci/release_recovery.py "$ORIGINAL_RUN_ID" "$ORIGINAL_RUN_ATTEMPT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Complete the approved publication using the original frozen bytes
+        run: |
+          python3 scripts/ci/release_publish.py publish --directory release \
+            --acceptance acceptance/candidate-acceptance.json \
+            --formal-journal formal/formal-publication.json --recover-formal
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
