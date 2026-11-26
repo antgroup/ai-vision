@@ -31,6 +31,8 @@ from uuid import UUID
 DEFAULT_BASE_URL = "__AIVISION_BASE_URL__"
 DEFAULT_AGENT = "__AIVISION_AGENT__"
 NATIVE_BUILD = "__compiled__" in globals()
+MINIMAX_CODE_HOST_VERSION = '0.7.2'
+INSTALLABLE_AGENTS = ('claude-code', 'codex', 'kimi', 'opencode', 'openclaw', 'pi', 'dsh', 'minimax-code')
 
 ALIASES = {"cc": "claude-code", "claude": "claude-code", "cdx": "codex", "km": "kimi", "kimi-cli": "kimi", "ocd": "opencode", "ocw": "openclaw", "ds": "dsh", "deepseek": "dsh"}
 
@@ -230,6 +232,9 @@ def host_directory(agent, host_version=None):
         else:
             key, default = 'KIMI_SHARE_DIR', home / '.kimi'
         return Path(os.environ.get(key) or str(default)).expanduser().resolve()
+    if agent == 'minimax-code':
+        directory = os.environ.get('MINIMAX_DATA_DIR') or os.environ.get('MAVIS_DATA_DIR')
+        return Path(directory or home / '.minimax').expanduser().resolve()
     defaults = {
         "codex": ("CODEX_HOME", home / ".codex"),
         "claude-code": ("CLAUDE_CONFIG_DIR", home / ".claude"),
@@ -247,12 +252,15 @@ def host_directory(agent, host_version=None):
 def native_env(agent, directory):
     env = os.environ.copy()
     key = {"codex": "CODEX_HOME", "claude-code": "CLAUDE_CONFIG_DIR", "kimi": "KIMI_SHARE_DIR",
-           "opencode": "OPENCODE_CONFIG_DIR", "openclaw": "OPENCLAW_STATE_DIR", "pi": "PI_CODING_AGENT_DIR", "dsh": "DSH_HOME"}[agent]
+           "opencode": "OPENCODE_CONFIG_DIR", "openclaw": "OPENCLAW_STATE_DIR", "pi": "PI_CODING_AGENT_DIR",
+           "dsh": "DSH_HOME", "minimax-code": "MINIMAX_DATA_DIR"}[agent]
     env[key] = str(directory)
     if agent == 'kimi':
         # Each host generation reads its own variable. Pin both to honor an
         # explicit --config-dir even if the invoking shell carries stale values.
         env['KIMI_CODE_HOME'] = str(directory)
+    if agent == 'minimax-code':
+        env['MAVIS_DATA_DIR'] = str(directory)
     return env
 
 
@@ -325,7 +333,7 @@ def unpack_package(archive, destination):
 MODE_ENV = {'codex': 'CDXHOOKS_COLLECTION_MODE', 'claude-code': 'CCHOOKS_COLLECTION_MODE',
             'kimi': 'KIMI_COLLECTION_MODE', 'opencode': 'OBSERV_OPENCODE_COLLECTION_MODE',
             'openclaw': 'OBSERV_OPENCLAW_COLLECTION_MODE', 'pi': 'OBSERV_PI_COLLECTION_MODE',
-            'dsh': 'DSH_OBSERV_COLLECTION_MODE'}
+            'dsh': 'DSH_OBSERV_COLLECTION_MODE', 'minimax-code': 'MINIMAX_CODE_COLLECTION_MODE'}
 
 
 def parse_collection_mode(value):
@@ -344,8 +352,9 @@ def saved_collection_mode(agent, root, args):
     if agent == 'openclaw':
         path = Path(os.environ.get('OPENCLAW_CONFIG_PATH', str(root / 'openclaw.json'))).expanduser() if not args.config_dir else root / 'openclaw.json'
         key = 'collectionMode'
+    default = 'privacy' if agent == 'minimax-code' else 'full'
     if not path.exists():
-        return 'full', 'default'
+        return default, 'default'
     try:
         doc = read_json(path)
         if agent == 'openclaw':
@@ -354,7 +363,7 @@ def saved_collection_mode(agent, root, args):
             return parse_collection_mode(doc[key]), 'native_config' if key == 'collectionMode' else 'managed_config'
     except (OSError, ValueError, TypeError, AttributeError):
         raise ConnectError('Cannot read existing collection mode; fix the local configuration before installing') from None
-    return 'full', 'default'
+    return default, 'default'
 
 
 def collection_mode_environment(agent):
@@ -526,6 +535,16 @@ def register_native(args, plugin, root, installed, managed, support, token, tx, 
             run([plugin["host"], "plugin", "--profile", profile, "add", str(installed)], env)
             run(["node", str(support / "register-dsh.mjs"), "--profile", profile,
                  "--config-src", str(settings), "--config-file", str(settings), "--state-dir", str(root)], env)
+    elif agent == 'minimax-code':
+        launcher = managed / 'run'
+        if launcher.is_symlink():
+            raise ConnectError('Remove the symbolic link at the managed MiniMax Code launcher before installing')
+        command = shlex.join([plugin['node'], str(installed / 'dist/index.js'),
+                              '--ingest-config', str(ingest), '--mcode', plugin['host'], '--'])
+        profile = shlex.quote(str(root))
+        content = f'#!/bin/sh\nexport MINIMAX_DATA_DIR={profile} MAVIS_DATA_DIR={profile}\nexec {command} "$@"\n'
+        tx.watch(launcher)
+        config.atomic_write(launcher, content.encode(), mode=0o700)
 
 
 def preflight(args):
@@ -556,10 +575,20 @@ def preflight(args):
     # Run exactly the executable we checked; PATH lookup may otherwise fall
     # through an invalid launcher to a different installed host version.
     plugin = {**plugin, 'host': host}
-    if not plugin.get('binary') and not shutil.which('node'):
+    node = shutil.which('node') if not plugin.get('binary') else None
+    if not plugin.get('binary') and not node:
         raise ConnectError("Node.js is required by this plugin")
     if agent == 'dsh' and any(not re.fullmatch(r'[a-zA-Z0-9_-]+', p) for p in args.profiles.split(',')):
         raise ConnectError('Invalid dsh profile name')
+    if agent == 'minimax-code':
+        system = platform.system()
+        if system not in {'Darwin', 'Linux'} or (system == 'Linux' and (
+                platform.libc_ver()[0] == 'musl' or list(Path('/lib').glob('ld-musl-*.so.1')))):
+            raise ConnectError('MiniMax Code CLI PoC requires macOS or glibc Linux')
+        version = run([host, '--version'], native_env(agent, root)).strip()
+        if version != MINIMAX_CODE_HOST_VERSION:
+            raise ConnectError(f'MiniMax Code CLI PoC requires mcode {MINIMAX_CODE_HOST_VERSION}')
+        plugin = {**plugin, 'host': os.path.abspath(host), 'node': os.path.abspath(node), 'host_version': version}
     return agent, base, catalog, entry, plugin, root, item
 
 
@@ -581,7 +610,8 @@ def install(args):
             print(f"Would install {plugin['name']} {entry['version']} to {root}; collection mode: {args.collection_mode} ({args.collection_mode_source}); no credentials exchanged or files modified")
         return
     env = native_env(agent, root)
-    version = [plugin['host_version']] if agent == 'kimi' else run([plugin['host'], '--version'], env).strip().splitlines()
+    version = ([plugin['host_version']] if agent in ('kimi', 'minimax-code')
+               else run([plugin['host'], '--version'], env).strip().splitlines())
     if not version:
         raise ConnectError("Host version check failed")
     managed = root / 'aivision' / agent
@@ -609,7 +639,11 @@ def install(args):
     try:
         with tempfile.TemporaryDirectory(prefix='aivision-install-') as temp:
             support = Path(temp)
-            required = ([] if NATIVE_BUILD else ['native_config.py']) + (([] if NATIVE_BUILD else ['hook_runtime.py']) if plugin.get('binary') else {'opencode':['register-opencode.mjs'], 'pi':['configure-pi.mjs'], 'dsh':['register-dsh.mjs'], 'openclaw':[]}[agent])
+            required = [] if NATIVE_BUILD else ['native_config.py']
+            if plugin.get('binary') and not NATIVE_BUILD:
+                required.append('hook_runtime.py')
+            required += {'opencode': ['register-opencode.mjs'], 'pi': ['configure-pi.mjs'],
+                         'dsh': ['register-dsh.mjs']}.get(agent, [])
             for name in required:
                 info = next((s for s in catalog['support_files'] if s['name'] == name), None)
                 if info is None:
@@ -659,6 +693,9 @@ def install(args):
                             path = root / 'profiles' / profile / name
                             if path.is_file():
                                 registration_files[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+                elif agent == 'minimax-code':
+                    launcher = managed / 'run'
+                    registration_files[str(launcher)] = hashlib.sha256(launcher.read_bytes()).hexdigest()
                 tx.json(managed / 'installation.json', {'agent':agent, 'version':entry['version'], 'sha256':item['sha256'],
                         'host_version': version[0], 'installed_path': str(installed), 'profiles': getattr(args, 'profiles', 'tui,web'),
                         'registration_files': registration_files,
@@ -681,13 +718,18 @@ def install(args):
         raise
     (managed / 'pending-installation.json').unlink(missing_ok=True)
     print(f"{plugin['name']} telemetry plugin installed. Config directory: {root}")
-    print(f'Saved collection mode: {args.collection_mode}. Restart the host and start a new session to apply it; existing sessions and historical data are unchanged.')
+    if agent == 'minimax-code':
+        print(f'Saved collection mode: {args.collection_mode}.')
+        print(f'Run a monitored mcode exec task with: {shlex.quote(str(managed / "run"))} "Your prompt"')
+    else:
+        print(f'Saved collection mode: {args.collection_mode}. Restart the host and start a new session to apply it; existing sessions and historical data are unchanged.')
     override = collection_mode_environment(agent)
     if override:
         print(f"Current process environment override: {override['mode']} ({override['source']}); the host may have a different environment.")
     if agent == 'codex':
         print('Restart Codex and use /hooks to review and trust the new AI Vision hooks; untrusted hooks will not run.')
-    print(f'Restart the Agent and run a real task, then use aiv agent status {agent} or aiv query trace list to check reported data.')
+    next_step = 'After running a task, use' if agent == 'minimax-code' else 'Restart the Agent and run a real task, then use'
+    print(f'{next_step} aiv agent status {agent} or aiv query trace list to check reported data.')
     print('Enabling or installing the plugin does not confirm that telemetry has been received.')
 
 
@@ -793,12 +835,20 @@ def native_registered(agent, root, installed, managed, args, installation):
             if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
                 return None
         return True
+    if agent == 'minimax-code':
+        launcher = managed / 'run'
+        if launcher.is_symlink() or not launcher.is_file() or not os.access(launcher, os.X_OK):
+            return False
+        digest = installation.get('registration_files', {}).get(str(launcher))
+        if hashlib.sha256(launcher.read_bytes()).hexdigest() != digest:
+            return None
+        return True
     return False
 
 
 def installation_status(args):
     agent = ALIASES.get(args.agent, args.agent)
-    if agent not in ('codex', 'claude-code', 'kimi', 'opencode', 'openclaw', 'pi', 'dsh'):
+    if agent not in INSTALLABLE_AGENTS:
         raise ConnectError('Unknown Agent; use --list-agents')
     root = Path(args.config_dir).expanduser().resolve() if args.config_dir else host_directory(agent)
     managed = root / 'aivision' / agent
@@ -906,7 +956,7 @@ def main():
     parser.add_argument('--list-agents', action='store_true')
     args = parser.parse_args()
     if args.list_agents:
-        print('claude-code, codex, kimi, opencode, openclaw, pi, dsh')
+        print(', '.join(INSTALLABLE_AGENTS))
         return 0
     try:
         if sys.version_info < (3, 11):

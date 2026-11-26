@@ -67,19 +67,19 @@ deny contains make_advice(
 
 # @weaver.rule.zh: 限制 `agentic.runtime.name` 必须使用 AiVision 支持的 runtime 枚举。
 # @weaver.rule.check.zh: 当 span 上的 `agentic.runtime.name` 不在允许集合内时命中。
-# @weaver.rule.fix.zh: 改为 claude-code、codex、cursor、aider、openclaw、opencode、gemini-cli、hermes、kimi-cli、codefuse、antigravity-cli、pi 或 dsh；新增 runtime 需先扩展语义规范和规则枚举。
+# @weaver.rule.fix.zh: 改为 claude-code、codex、cursor、aider、openclaw、opencode、gemini-cli、hermes、kimi-cli、codefuse、antigravity-cli、pi、dsh 或 minimax-code；新增 runtime 需先扩展语义规范和规则枚举。
 # @weaver.rule.entity: span:common
 # @weaver.rule.category.zh: 枚举值
 # @weaver.rule.fields: agentic.runtime.name
 # @weaver.rule.subject: field:agentic.runtime.name
 # @weaver.rule.placement: span_attributes
 # @weaver.rule.constraint.type: enum
-# @weaver.rule.allowed_values: claude-code, codex, cursor, aider, openclaw, opencode, gemini-cli, hermes, kimi-cli, codefuse, antigravity-cli, pi, dsh
+# @weaver.rule.allowed_values: claude-code, codex, cursor, aider, openclaw, opencode, gemini-cli, hermes, kimi-cli, codefuse, antigravity-cli, pi, dsh, minimax-code
 deny contains make_advice(
     "invalid_runtime_name",
     "violation",
     {"span_name": input.sample.span.name, "value": runtime_name},
-    sprintf("Span '%s': Invalid runtime_name '%s'. Valid: claude-code, codex, cursor, aider, openclaw, opencode, gemini-cli, hermes, kimi-cli, codefuse, antigravity-cli, pi, dsh.", [input.sample.span.name, runtime_name])
+    sprintf("Span '%s': Invalid runtime_name '%s'. Valid: claude-code, codex, cursor, aider, openclaw, opencode, gemini-cli, hermes, kimi-cli, codefuse, antigravity-cli, pi, dsh, minimax-code.", [input.sample.span.name, runtime_name])
 ) if {
     has_span
     runtime_name := get_span_attr("agentic.runtime.name")

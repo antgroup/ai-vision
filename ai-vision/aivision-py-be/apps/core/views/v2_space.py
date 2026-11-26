@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 
 from ..cache import cached_query
 from ..models import Agent, AgentTypeConfig, Space
+from ..services.plugin_artifacts import market_display_scope
 from .common import check_space_access_or_error, error_response, success_response
 
 
@@ -113,7 +114,9 @@ class V2SpaceAgentsView(APIView):
                 "agent_product": atc.agent_product,
                 "runtime_type": atc.runtime_type,
                 "display_name": atc.display_name,
-                "display_scope": atc.display_scope,
+                "display_scope": market_display_scope(
+                    atc.display_scope, atc.config_guide
+                ),
                 "category": atc.category,
                 "description": atc.description,
                 "icon": atc.icon,

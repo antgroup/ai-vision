@@ -16,7 +16,7 @@ from apps.core.services.agent_installation import (
     installation_is_authorized,
     market_agents,
 )
-from apps.core.services.plugin_artifacts import public_base_url
+from apps.core.services.plugin_artifacts import preview_plugin_available, public_base_url
 
 from .common import error_response, success_response
 from .ingest_tokens import _mint
@@ -37,7 +37,7 @@ class AgentInstallationTokenView(APIView):
         agent = (
             market_agents(ctx.space).select_for_update().filter(uuid=agent_uuid).first()
         )
-        if agent is None:
+        if agent is None or not preview_plugin_available(agent.agent_type.config_guide):
             return error_response("Agent not found", 4004, status=404)
         raw, digest = AgentInstallation.generate_secret(INSTALL_TOKEN_PREFIX)
         expires = timezone.now() + timedelta(minutes=15)

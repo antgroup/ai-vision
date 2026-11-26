@@ -611,7 +611,7 @@ get_metric_dp_attr(name) = value if {
 # that used to live at the top of monolithic span/metric/event policy files.
 
 # Controlled-vocabulary constants used across split severity files.
-valid_runtime_names := {"claude-code", "codex", "cursor", "aider", "openclaw", "opencode", "gemini-cli", "hermes", "kimi-cli", "codefuse", "antigravity-cli", "pi", "dsh"}
+valid_runtime_names := {"claude-code", "codex", "cursor", "aider", "openclaw", "opencode", "gemini-cli", "hermes", "kimi-cli", "codefuse", "antigravity-cli", "pi", "dsh", "minimax-code"}
 
 valid_collection_modes := {"full", "privacy"}
 

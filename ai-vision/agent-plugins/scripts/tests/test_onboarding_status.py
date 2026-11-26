@@ -80,6 +80,14 @@ class StatusTests(unittest.TestCase):
 
 
 class ReleaseArtifactTests(unittest.TestCase):
+    def test_optional_preview_is_not_required_by_release_verification(self):
+        preview = {'key': 'minimax-code', 'package': 'observ-minimax-code', 'preview': True}
+        with tempfile.TemporaryDirectory() as temp:
+            dist = Path(temp)
+            verify(dist, [preview], {('linux-gnu', 'x64')})
+            with self.assertRaises(FileNotFoundError):
+                verify(dist, [preview], {('linux-gnu', 'x64')}, agents=['minimax-code'])
+
     def test_missing_architecture_and_corrupt_binary_fail_release_gate(self):
         with tempfile.TemporaryDirectory() as temp:
             dist = Path(temp)

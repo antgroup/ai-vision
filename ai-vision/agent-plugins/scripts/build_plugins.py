@@ -114,6 +114,8 @@ def main():
     for plugin in CATALOG:
         if args.agent not in {"all", plugin["key"]}:
             continue
+        if plugin.get("preview") and args.agent == "all":
+            continue
         if plugin.get("source_install"):
             if args.agent != "all":
                 parser.error(f"{plugin['name']} uses its documented source installer")

@@ -137,3 +137,23 @@ def latest_plugin(plugin: dict, base: str) -> dict:
     except (OSError, ValueError, KeyError, TypeError):
         pass
     return result
+
+
+def preview_plugin_available(guide) -> bool:
+    if not isinstance(guide, dict) or guide.get("preview") is not True:
+        return True
+    try:
+        return any(
+            plugin.get("preview")
+            and plugin["key"] == guide.get("plugin_key")
+            and latest_plugin(plugin, "")["downloads"]
+            for plugin in plugin_catalog()
+        )
+    except (OSError, ValueError):
+        return False
+
+
+def market_display_scope(display_scope, guide):
+    # Keep the type available to existing Agents and trace routing. Only the
+    # market card and new installation entry points depend on the artifact.
+    return display_scope if preview_plugin_available(guide) else "HIDDEN"

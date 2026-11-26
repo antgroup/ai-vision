@@ -10,7 +10,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from apps.core.models import AgentTypeConfig
-from apps.core.services.plugin_artifacts import plugins_root, plugin_catalog
+from apps.core.services.plugin_artifacts import latest_plugin, plugins_root, plugin_catalog
 from apps.core.management.commands.configure_signoz_datasource import _validate_endpoint
 
 
@@ -47,9 +47,16 @@ def installation_guide(plugin):
     restart = f"重启 {plugin['name']}"
     if plugin["key"] == "codex":
         restart += "，输入 /hooks 检查并信任新增的 AI Vision hooks"
+    run_task = restart + "，执行一次包含模型调用和工具调用的任务"
+    custom_config = '使用自定义配置目录时，安装命令追加 --config-dir "目录路径"，Agent 启动时也使用该目录'
+    if plugin["key"] == "minimax-code":
+        requirements[1] = {"label": "MiniMax Code CLI", "value": "在 macOS 或 glibc Linux 上安装 mcode 0.7.2，并配置可用的模型"}
+        run_task = "执行安装完成时显示的启动命令，运行一次包含模型调用和工具调用的 mcode exec 任务"
+        custom_config = '使用自定义配置目录时，安装命令追加 --config-dir "目录路径"，再运行安装器显示的启动命令'
     return {
         "schema": "v2",
         "plugin_key": plugin["key"],
+        **({"preview": True} if plugin.get("preview") else {}),
         "sections": [
             {"type": "prerequisites", "title": "接入前提", "items": requirements},
             {
@@ -59,7 +66,7 @@ def installation_guide(plugin):
                     "macOS/Linux": {
                         "modes": {
                             "cli": {
-                                "label": "原生安装",
+                                "label": "CLI 接入" if plugin["key"] == "minimax-code" else "原生安装",
                                 "steps": [
                                     {
                                         "title": "复制并执行安装命令，授权和上报配置将自动完成",
@@ -75,9 +82,9 @@ def installation_guide(plugin):
                 "type": "verification",
                 "title": "查看采集结果",
                 "steps": [
-                    restart + "，执行一次包含模型调用和工具调用的任务",
+                    run_task,
                     "打开当前空间的数据看板和任务轨迹，确认数据已上报",
-                    '使用自定义配置目录时，安装命令追加 --config-dir "目录路径"，Agent 启动时也使用该目录',
+                    custom_config,
                 ],
             },
         ],
@@ -155,6 +162,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         endpoint = _validate_endpoint(options["endpoint"])
         for order, plugin in enumerate(plugin_catalog(), 1):
+            if plugin.get("preview") and not latest_plugin(plugin, "")["downloads"]:
+                continue
             matches = list(
                 AgentTypeConfig.objects.shared_runtime().filter(
                     agent_product=plugin["product"]

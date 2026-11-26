@@ -449,12 +449,27 @@ _aivision_billing_span_attrs := {
     "aivision.billing.estimate_list_price",
 }
 
+_aivision_otlp_metadata_span_attrs := {
+    "aivision.otlp.scope.name",
+    "aivision.otlp.scope.version",
+    "aivision.otlp.sdk.language",
+}
+
+_aivision_ingest_resource_attrs := {
+    "aivision.space.id",
+    "aivision.org.id",
+    "aivision.user.id",
+    "aivision.agent.id",
+    "aivision.agent.product",
+    "aivision.ingest.key_id",
+}
+
 # Block span attributes with disallowed namespace prefix (OTLP key format)
 # @weaver.rule.title.zh: span:base 命名空间: disallowed_attr_prefix
 # @weaver.rule.zh: 校验 span:base 的「命名空间」规则 `disallowed_attr_prefix`，确保遥测满足 AiVision 语义约定。
 # @weaver.rule.entity: span:base
 # @weaver.rule.category.zh: 命名空间
-# @weaver.rule.fields: _internal., agentic., ant., gen_ai., service., telemetry., user., aivision.billing.mode, aivision.billing.estimate_list_price
+# @weaver.rule.fields: _internal., agentic., ant., gen_ai., service., telemetry., user., aivision.billing.mode, aivision.billing.estimate_list_price, aivision.otlp.scope.name, aivision.otlp.scope.version, aivision.otlp.sdk.language
 # @weaver.rule.placement: span_attributes
 # @weaver.rule.constraint.type: namespace
 # @weaver.rule.check.zh: Rego 条件命中 `disallowed_attr_prefix` 并产生 advice 时报告。
@@ -479,6 +494,7 @@ deny contains make_advice(
     not startswith(attr.key, "_internal.")
     not attr.key in _otel_standard_attrs
     not attr.key in _aivision_billing_span_attrs
+    not attr.key in _aivision_otlp_metadata_span_attrs
 }
 
 # Block span attributes with disallowed namespace prefix (Weaver name format)
@@ -486,7 +502,7 @@ deny contains make_advice(
 # @weaver.rule.zh: 校验 span:base 的「命名空间」规则 `disallowed_attr_prefix`，确保遥测满足 AiVision 语义约定。
 # @weaver.rule.entity: span:base
 # @weaver.rule.category.zh: 命名空间
-# @weaver.rule.fields: _internal., agentic., ant., gen_ai., service., telemetry., user., aivision.billing.mode, aivision.billing.estimate_list_price
+# @weaver.rule.fields: _internal., agentic., ant., gen_ai., service., telemetry., user., aivision.billing.mode, aivision.billing.estimate_list_price, aivision.otlp.scope.name, aivision.otlp.scope.version, aivision.otlp.sdk.language
 # @weaver.rule.placement: span_attributes
 # @weaver.rule.constraint.type: namespace
 # @weaver.rule.check.zh: Rego 条件命中 `disallowed_attr_prefix` 并产生 advice 时报告。
@@ -510,6 +526,7 @@ deny contains make_advice(
     not startswith(attr.name, "user.")
     not startswith(attr.name, "_internal.")
     not attr.name in _aivision_billing_span_attrs
+    not attr.name in _aivision_otlp_metadata_span_attrs
     not attr.name in _otel_standard_attrs
 }
 
@@ -520,7 +537,7 @@ deny contains make_advice(
 # @weaver.rule.zh: 校验 span:base 的「命名空间」规则 `disallowed_resource_attr_prefix`，确保遥测满足 AiVision 语义约定。
 # @weaver.rule.entity: span:base
 # @weaver.rule.category.zh: 命名空间
-# @weaver.rule.fields: _internal., agentic., ant., deployment., gen_ai., service., telemetry., user., vcs.
+# @weaver.rule.fields: _internal., agentic., ant., deployment., gen_ai., service., telemetry., user., vcs., aivision.space.id, aivision.org.id, aivision.user.id, aivision.agent.id, aivision.agent.product, aivision.ingest.key_id
 # @weaver.rule.placement: resource_attributes
 # @weaver.rule.constraint.type: namespace
 # @weaver.rule.check.zh: Rego 条件命中 `disallowed_resource_attr_prefix` 并产生 advice 时报告。
@@ -531,7 +548,7 @@ deny contains make_advice(
     "disallowed_resource_attr_prefix",
     "violation",
     {"attribute": attr.key, "span_name": input.sample.span.name},
-    sprintf("Resource (span '%s'): Attribute '%s' uses disallowed namespace. Only gen_ai.*, ant.*, agentic.*, service.*, telemetry.*, user.*, _internal.*, vcs.* prefixes are allowed.", [input.sample.span.name, attr.key])
+    sprintf("Resource (span '%s'): Attribute '%s' uses a disallowed namespace. Use a registered AI Vision or OpenTelemetry resource attribute.", [input.sample.span.name, attr.key])
 ) if {
     has_span
     has_resource
@@ -546,6 +563,7 @@ deny contains make_advice(
     not startswith(attr.key, "deployment.")
     not startswith(attr.key, "_internal.")
     not startswith(attr.key, "vcs.")
+    not attr.key in _aivision_ingest_resource_attrs
 }
 
 # Block resource attributes with disallowed namespace prefix (Weaver name format)
@@ -553,7 +571,7 @@ deny contains make_advice(
 # @weaver.rule.zh: 校验 span:base 的「命名空间」规则 `disallowed_resource_attr_prefix`，确保遥测满足 AiVision 语义约定。
 # @weaver.rule.entity: span:base
 # @weaver.rule.category.zh: 命名空间
-# @weaver.rule.fields: _internal., agentic., ant., deployment., gen_ai., service., telemetry., user., vcs.
+# @weaver.rule.fields: _internal., agentic., ant., deployment., gen_ai., service., telemetry., user., vcs., aivision.space.id, aivision.org.id, aivision.user.id, aivision.agent.id, aivision.agent.product, aivision.ingest.key_id
 # @weaver.rule.placement: resource_attributes
 # @weaver.rule.constraint.type: namespace
 # @weaver.rule.check.zh: Rego 条件命中 `disallowed_resource_attr_prefix` 并产生 advice 时报告。
@@ -564,7 +582,7 @@ deny contains make_advice(
     "disallowed_resource_attr_prefix",
     "violation",
     {"attribute": attr.name, "span_name": input.sample.span.name},
-    sprintf("Resource (span '%s'): Attribute '%s' uses disallowed namespace. Only gen_ai.*, ant.*, agentic.*, service.*, telemetry.*, user.*, _internal.*, vcs.* prefixes are allowed.", [input.sample.span.name, attr.name])
+    sprintf("Resource (span '%s'): Attribute '%s' uses a disallowed namespace. Use a registered AI Vision or OpenTelemetry resource attribute.", [input.sample.span.name, attr.name])
 ) if {
     has_span
     has_resource
@@ -579,4 +597,5 @@ deny contains make_advice(
     not startswith(attr.name, "deployment.")
     not startswith(attr.name, "_internal.")
     not startswith(attr.name, "vcs.")
+    not attr.name in _aivision_ingest_resource_attrs
 }

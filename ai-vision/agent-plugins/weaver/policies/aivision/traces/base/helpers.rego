@@ -107,6 +107,16 @@ get_resource_attr(name) = value if {
     value := attr.value
 }
 
+# AI Vision readback retains the gateway's verified attribution on resources.
+# This checks its shape only; authorization remains the gateway's responsibility.
+has_ingested_trace_identity if {
+    every key in {"aivision.space.id", "aivision.user.id", "aivision.ingest.key_id"} {
+        value := get_resource_attr(key)
+        is_string(value)
+        trim_space(value) != ""
+    }
+}
+
 _is_resource_only(name) if {
     name in {
         "ant.agent.type",
@@ -645,7 +655,7 @@ get_metric_dp_attr(name) = value if {
 # that used to live at the top of monolithic span/metric/event policy files.
 
 # Controlled-vocabulary constants used across split severity files.
-valid_runtime_names := {"claude-code", "codex", "cursor", "aider", "openclaw", "opencode", "gemini-cli", "hermes", "kimi-cli", "codefuse", "antigravity-cli", "pi", "dsh"}
+valid_runtime_names := {"claude-code", "codex", "cursor", "aider", "openclaw", "opencode", "gemini-cli", "hermes", "kimi-cli", "codefuse", "antigravity-cli", "pi", "dsh", "minimax-code"}
 
 valid_collection_modes := {"full", "privacy"}
 

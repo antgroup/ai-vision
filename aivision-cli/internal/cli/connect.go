@@ -499,18 +499,19 @@ installer. The installer downloads the matching hook and verifies its SHA-256.
 A successful connection saves the Agent context for aiv agent status and queries.
 No Agent UUID, installation token or query SpaceKey is needed for this flow.
 Repeating the command reuses the Agent and avoids duplicate hook registration.
-New installations default to Full; existing installations retain their mode.
+New installations default to Full, with Privacy for MiniMax Code CLI (PoC).
+Existing installations retain their mode.
 Privacy removes content locally while retaining trace structure, timing and usage.
 Restart the host and start a new session after changing modes. Historical data is
 unchanged. AIVISION_COLLECTION_MODE in the host environment overrides saved mode.
 
 Options:
-  <agent>           claude-code|codex|kimi|opencode|openclaw|pi|dsh
+  <agent>           claude-code|codex|kimi|opencode|openclaw|pi|dsh|minimax-code
                     Aliases: cc/claude, cdx, km/kimi-cli, ocd, ocw, ds/deepseek.
   --profile NAME    Saved account (default: $AIVISION_PROFILE or active profile).
   --config-dir DIR  Native Agent configuration directory (default: host default).
   --profiles LIST   Comma-separated dsh profiles (default: tui,web; dsh only).
-  --collection-mode MODE  full|privacy (case-insensitive; default: preserve or full).
+  --collection-mode MODE  full|privacy (case-insensitive).
   --python PATH     Python 3.11+ for source-development installers (auto-detect).
   --dry-run         Check catalog, platform and host Agent; do not create
                     an Agent, issue an installation grant or write native config.
