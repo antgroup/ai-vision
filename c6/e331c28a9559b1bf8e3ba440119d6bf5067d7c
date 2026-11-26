@@ -1,0 +1,37 @@
+VERSION
+  s_a5245aba9fb40b::t_c9fe1ad1be06f1 1
+ai-vision/agent-plugins/claudecode/cchooks/tests/async_hook_contract.rs
+  s_a5245aba9fb40b::t_1cbb62bb10e4a7 2023,2025-2026
+ai-vision/agent-plugins/codex/cdxhooks/tests/async_parent_integration.rs
+  s_a5245aba9fb40b::t_8f588e535d19ab 991-995,997-998,1092-1094
+deploy/all-in-one/install-all-in-one.py
+  s_a5245aba9fb40b::t_f883de0da456eb 437-484,489-490,501,510-512,563-564
+deploy/all-in-one/smoke.py
+  s_a5245aba9fb40b::t_e44eb22c8747ab 14,21,42,212-216
+deploy/all-in-one/test_personal_smoke.py
+  s_a5245aba9fb40b::t_95adcb3a0cb14e 12,31-77
+deploy/config/release-dependencies.json
+  s_a5245aba9fb40b::t_1af1777def087d 2
+docs/deployment/en/dev-image-release.md
+  s_a5245aba9fb40b::t_2f46dbd7f60b27 5
+docs/deployment/zh-CN/dev-image-release.md
+  s_a5245aba9fb40b::t_688bf47b3fb35a 5
+docs/version-info.md
+  s_a5245aba9fb40b::t_686bd78b25a554 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c6e331c28a9559b1bf8e3ba440119d6bf5067d7c",
+  "prompts": {},
+  "sessions": {
+    "s_a5245aba9fb40b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a2128f-754e-7832-a878-86199f231c19",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
