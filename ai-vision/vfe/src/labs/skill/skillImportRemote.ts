@@ -55,7 +55,11 @@ export async function installRepoSkills(
           entry.content ??
           (await fetchRegistrySkill(spaceId, { source, ref, path: entry.path }))
             .content
-        const result = parseSkillConfigText(content)
+        // Remote imports upsert by name without an overwrite prompt.
+        // Preserve their existing name parsing until that flow can review conflicts.
+        const result = parseSkillConfigText(content, undefined, {
+          parseCommentedScalars: false,
+        })
         if (typeof result === "string") {
           skipped.push(entry.name || entry.dirname || entry.path)
           continue

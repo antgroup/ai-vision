@@ -163,7 +163,10 @@ function readStringList(
 }
 
 /** Front matter lines between the leading and closing `---` fences. */
-function frontMatter(text: string): LooseEntry | "unsupportedYaml" | null {
+function frontMatter(
+  text: string,
+  parseCommentedScalars: boolean
+): LooseEntry | "unsupportedYaml" | null {
   const lines = text.split("\n")
   if (lines[0]?.trim() !== "---") return null
   const end = lines.findIndex(
@@ -187,11 +190,13 @@ function frontMatter(text: string): LooseEntry | "unsupportedYaml" | null {
       continue
     }
     const [key, rawValue] = pair
-    const quoted = /^["']/.test(rawValue)
-    const value =
-      quoted || rawValue.startsWith("[")
-        ? rawValue
-        : rawValue.replace(/(?:^|[ \t])#.*$/, "").trimEnd()
+    const quoted = parseCommentedScalars && /^["']/.test(rawValue)
+    let value = rawValue
+    if (!parseCommentedScalars) {
+      value = rawValue.replace(/^["']|["']$/g, "")
+    } else if (!quoted && !rawValue.startsWith("[")) {
+      value = rawValue.replace(/(?:^|[ \t])#.*$/, "").trimEnd()
+    }
     if (ALLOWED_TOOLS_KEYS.includes(key) && !value) {
       const [items, next] = readStringList(lines, index + 1, end, rootIndent)
       if (items === null) return "unsupportedYaml"
@@ -212,7 +217,7 @@ function frontMatter(text: string): LooseEntry | "unsupportedYaml" | null {
       continue
     }
     const scalar = quoted
-      ? (yamlScalar(value) ?? value.replace(/^["']|["']$/g, ""))
+      ? (quotedFrontMatterScalar(value) ?? value.replace(/^["']|["']$/g, ""))
       : value
     if (
       ALLOWED_TOOLS_KEYS.includes(key) &&
@@ -267,37 +272,44 @@ const YAML_EXTRA_ESCAPES: Record<string, string> = {
   P: "\u2029",
 }
 
+function quotedFrontMatterScalar(text: string): string | null {
+  const match = text.match(/^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*')(?:[ \t]+#.*)?$/)
+  if (!match) return null
+  const scalar = match[1]
+  if (!scalar.startsWith('"')) return scalar.slice(1, -1).replace(/''/g, "'")
+  try {
+    // Consume JSON-compatible escapes too, so an escaped backslash stays literal.
+    const json = scalar.replace(
+      /\\(x[0-9a-fA-F]{2}|U[0-9a-fA-F]{8}|.)/g,
+      (escape, code: string) => {
+        const value =
+          code.length > 1
+            ? String.fromCodePoint(Number.parseInt(code.slice(1), 16))
+            : YAML_EXTRA_ESCAPES[code]
+        return value === undefined ? escape : JSON.stringify(value).slice(1, -1)
+      }
+    )
+    return JSON.parse(json) as string
+  } catch {
+    return null
+  }
+}
+
 function yamlScalar(text: string): string | null {
   if (/^["']/.test(text)) {
-    const match = text.match(
-      /^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*')(?:[ \t]+#.*)?$/
-    )
+    const match = text.match(/^(["'])(.*?)\1(?:\s+#.*)?$/)
     if (!match) return null
-    const scalar = match[1]
-    if (scalar.startsWith('"')) {
+    if (match[1] === '"') {
       try {
-        // Consume JSON-compatible escapes too, so an escaped backslash stays literal.
-        const json = scalar.replace(
-          /\\(x[0-9a-fA-F]{2}|U[0-9a-fA-F]{8}|.)/g,
-          (escape, code: string) => {
-            const value =
-              code.length > 1
-                ? String.fromCodePoint(Number.parseInt(code.slice(1), 16))
-                : YAML_EXTRA_ESCAPES[code]
-            return value === undefined
-              ? escape
-              : JSON.stringify(value).slice(1, -1)
-          }
-        )
-        return JSON.parse(json) as string
+        return JSON.parse(`"${match[2]}"`) as string
       } catch {
         return null
       }
     }
-    return scalar.slice(1, -1).replace(/''/g, "'")
+    return match[2].replace(/''/g, "'")
   }
   if (/^[[\]{}&*!|>]/.test(text) || /[[\]{}]/.test(text)) return null
-  return text.replace(/[ \t]+#.*$/, "").trim()
+  return text.replace(/\s+#.*$/, "").trim()
 }
 
 /** Keep each top-level item separate; never flatten unsupported nested objects. */
@@ -439,14 +451,15 @@ function fromManifestEntries(
 
 export function parseSkillConfigText(
   text: string,
-  now = new Date()
+  now = new Date(),
+  { parseCommentedScalars = true } = {}
 ): SkillImportResult | SkillImportError {
   const trimmed = text.trim()
   if (!trimmed) return "noSkills"
   const importedAt = now.toISOString()
 
   if (trimmed.startsWith("---")) {
-    const matter = frontMatter(trimmed)
+    const matter = frontMatter(trimmed, parseCommentedScalars)
     if (typeof matter === "string") return matter
     if (!matter || !asText(matter.name)) return "invalidFormat"
     return {
