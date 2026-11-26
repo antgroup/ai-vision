@@ -1,0 +1,93 @@
+ai-vision/agent-plugins/agents.json
+  s_509f4bcbae7d6b::t_63849db2fd435f 92-102
+ai-vision/agent-plugins/docs/aivision-rules.md
+  s_509f4bcbae7d6b::t_e81df8e15c3199 79-84,130-133
+ai-vision/agent-plugins/docs/aivision-traces.md
+  s_509f4bcbae7d6b::t_0060e5e5dcf274 57-63,78-81
+ai-vision/agent-plugins/docs/semconv/attribute_groups.yaml
+  s_509f4bcbae7d6b::t_457c56e5f67d46 36-105,1113
+ai-vision/agent-plugins/minimax-code/build.mjs
+  s_509f4bcbae7d6b::t_fc561b56a91a44 1-11
+ai-vision/agent-plugins/minimax-code/history.mjs
+  s_509f4bcbae7d6b::t_b5dbef6c7a6cd7 1-59
+ai-vision/agent-plugins/minimax-code/history.test.mjs
+  s_509f4bcbae7d6b::t_551d96f82e5230 1-30
+ai-vision/agent-plugins/minimax-code/package.json
+  s_509f4bcbae7d6b::t_f0fa2a52a67d31 1-11
+ai-vision/agent-plugins/minimax-code/run.mjs
+  s_509f4bcbae7d6b::t_be3eb8b7cd7679 1-170
+ai-vision/agent-plugins/minimax-code/telemetry.mjs
+  s_509f4bcbae7d6b::t_13c6b01b091f8c 1-391
+ai-vision/agent-plugins/minimax-code/tests/run.test.mjs
+  s_509f4bcbae7d6b::t_5fbac259ebdcd4 1-85
+ai-vision/agent-plugins/minimax-code/tests/telemetry.test.mjs
+  s_509f4bcbae7d6b::t_8115a3a1deb0e5 1-212
+ai-vision/agent-plugins/scripts/build_plugins.py
+  s_509f4bcbae7d6b::t_6c9795caf4876d 117-118
+ai-vision/agent-plugins/scripts/connect
+  s_509f4bcbae7d6b::t_661f925945dfac 34-35,235-237,255-256,262-263,336,355,357,366,538-547,578-579,583-591,613-614,642-646,696-698,721-725,731-732,838-845,851,959
+ai-vision/agent-plugins/scripts/tests/test_onboarding.py
+  s_509f4bcbae7d6b::t_4cc43fa3b23b20 10,84-166
+ai-vision/agent-plugins/scripts/tests/test_onboarding_status.py
+  s_509f4bcbae7d6b::t_0e8d7ca125a679 83-90
+ai-vision/agent-plugins/scripts/verify_plugin_dist.py
+  s_509f4bcbae7d6b::t_05e325cb1d85fd 68-69
+ai-vision/agent-plugins/weaver/policies/aivision/events/base/helpers.rego
+  s_509f4bcbae7d6b::t_f226e70e5ab042 614
+ai-vision/agent-plugins/weaver/policies/aivision/metrics/base/helpers.rego
+  s_509f4bcbae7d6b::t_2f786da1a6af3c 780
+ai-vision/agent-plugins/weaver/policies/aivision/traces/README.md
+  s_509f4bcbae7d6b::t_b4677ee6319db3 34-40,47-50
+ai-vision/agent-plugins/weaver/policies/aivision/traces/base/README.md
+  s_509f4bcbae7d6b::t_9f669533810c81 25-28
+ai-vision/agent-plugins/weaver/policies/aivision/traces/base/helpers.rego
+  s_509f4bcbae7d6b::t_8e3d5a0f6d8a09 110-119,658
+ai-vision/agent-plugins/weaver/policies/aivision/traces/base/violations_compatibility_deprecated_genai.rego
+  s_509f4bcbae7d6b::t_1b44db5538f8e5 452-466,472,497,505,529,540,551,566,574,585,600
+ai-vision/agent-plugins/weaver/policies/aivision/traces/span_attributes/README.md
+  s_509f4bcbae7d6b::t_993035440ed7a0 21-27
+ai-vision/agent-plugins/weaver/policies/aivision/traces/span_attributes/violations_forbidden.rego
+  s_509f4bcbae7d6b::t_e52bb074ea50a0 70,77,82
+ai-vision/agent-plugins/weaver/policies/aivision/traces/span_attributes/violations_required.rego
+  s_509f4bcbae7d6b::t_659a40f9ad0759 8-10,21,25,28-30,41,45
+ai-vision/agent-plugins/weaver/weaver-guard/tests/validation_test.rs
+  s_509f4bcbae7d6b::t_541fe944bdd809 610-698
+ai-vision/aivision-py-be/apps/core/management/commands/configure_third_party_agents.py
+  s_509f4bcbae7d6b::t_1c4934d43777ef 13,50-55,59,69,85,87,165-166
+ai-vision/aivision-py-be/apps/core/services/plugin_artifacts.py
+  s_509f4bcbae7d6b::t_f08f6f8151feb0 140-159
+ai-vision/aivision-py-be/apps/core/tests/test_third_party_onboarding.py
+  s_91e649b5b306e4::t_083d130dfa15c0 1-2,5-6,261-384
+ai-vision/aivision-py-be/apps/core/views/agent.py
+  s_509f4bcbae7d6b::t_7a89edc54d2cf0 35,127-137,303
+ai-vision/aivision-py-be/apps/core/views/agent_installation.py
+  s_509f4bcbae7d6b::t_57b0777819ef97 19,40
+ai-vision/aivision-py-be/apps/core/views/v2_space.py
+  s_509f4bcbae7d6b::t_8a004f027bf6e4 8,117-119
+aivision-cli/internal/cli/connect.go
+  s_509f4bcbae7d6b::t_2c3c34296ddba1 502-503,509,514
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cb5d855ea93cd51a3f26d3070822a50d38e676f8",
+  "prompts": {},
+  "sessions": {
+    "s_509f4bcbae7d6b": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a2158c-1004-7981-95d7-0fc4b42cd708",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    },
+    "s_91e649b5b306e4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a21276-2e4d-7fa1-90dc-ef05e22c0ab7",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
