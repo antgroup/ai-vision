@@ -90,6 +90,8 @@ class InstallerTests(unittest.TestCase):
             root.mkdir()
             managed = root / 'aivision/minimax-code'
             launcher = managed / 'run'
+            managed.mkdir(parents=True)
+            launcher.write_bytes(b'old launcher')
             model_host = Path(temp) / 'mcode'
             node = Path(temp) / 'node'
             model_host.write_text('#!/bin/sh\nprintf "0.7.2\\n"\n')
@@ -144,19 +146,26 @@ class InstallerTests(unittest.TestCase):
             args = SimpleNamespace(agent='minimax-code', agent_uuid=agent_uuid, base_url=base,
                 config_dir=str(root), dry_run=False, collection_mode=None, space_key=None,
                 space_key_file=None, space_id='space', installation_token='aiv-install-test-ticket')
-            with patch.object(installer, 'request_bytes', side_effect=request), patch.object(installer.shutil, 'which', side_effect=which), contextlib.redirect_stdout(io.StringIO()):
+            diagnostics = io.StringIO()
+            with (patch.object(installer, 'request_bytes', side_effect=request),
+                  patch.object(installer.shutil, 'which', side_effect=which),
+                  contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(diagnostics)):
                 with self.assertRaisesRegex(installer.ConnectError, 'Confirmation unavailable'):
                     installer.install(args)
-                self.assertFalse(launcher.exists())
+                self.assertEqual(launcher.read_bytes(), b'old launcher')
                 self.assertFalse((managed/'ingest.json').exists())
+                self.assertEqual(list((managed/'versions').iterdir()), [])
                 confirm_fails = False
+                launcher.with_name('run.aivision-backup').mkdir()
                 installer.install(args)
                 status = installer.installation_status(args)
             self.assertEqual(requests.count('exchange'), 1)
             self.assertEqual(requests.count('installation-complete'), 2)
+            self.assertTrue(status['installed'])
             self.assertEqual(status['registration'], 'verified')
             self.assertEqual(status['credential'], 'valid')
             self.assertEqual(status['collection_mode'], 'privacy')
+            self.assertIn('post-installation cleanup', diagnostics.getvalue())
             self.assertFalse((managed/'pending-installation.json').exists())
             arguments = subprocess.check_output([str(launcher), 'a prompt', '--continue'], text=True).splitlines()
             self.assertEqual(arguments[0], str(root))

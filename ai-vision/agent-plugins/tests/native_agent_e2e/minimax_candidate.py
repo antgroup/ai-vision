@@ -8,14 +8,19 @@ import os
 from pathlib import Path
 import platform
 import re
+from runpy import run_path
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from uuid import uuid4
 
 from fake_provider import FakeProvider
 from windows_codex_onboarding import PUBLIC, SourceOnboardingServer
+
+
+MODEL = "custom_provider:ai-vision-fixture/native-e2e-chat"
 
 
 class MiniMaxOnboardingServer(SourceOnboardingServer):
@@ -64,8 +69,7 @@ def run(command, *, env, cwd, timeout=45):
 
 def check_turn(launcher, env, task, provider, server, *, mode, session=None):
     before = len(provider.requests)
-    command = [*launcher, "--cwd", str(task), "--permission", "full", "--max-steps", "5",
-               "--model", "custom_provider:ai-vision-fixture/native-e2e-chat"]
+    command = [*launcher, "--cwd", str(task), "--permission", "full", "--max-steps", "5", "--model", MODEL]
     if session:
         command.extend(("--session", session))
     command.append("Read the fixture file and return the receipt.")
@@ -102,6 +106,73 @@ def check_turn(launcher, env, task, provider, server, *, mode, session=None):
     if receipt not in result.stdout or (mode == "privacy") == (receipt in json.dumps(rows)):
         raise RuntimeError("Native read tool or privacy assertion failed")
     return start["sessionId"], {"mode": mode, "spans": len(rows), "model_calls": len(calls)}
+
+
+def check_windows_cancellation(host_command, env, task, provider, server, console_test):
+    """Interrupt a real mcode stream on its own console using the installed collector."""
+    send_ctrl_c = run_path(str(console_test))["SEND_CTRL_C"]
+    provider.scenario = "cancel"
+    before = len(provider.requests)
+    profile = Path(env["MINIMAX_DATA_DIR"])
+    managed = profile / "aivision/minimax-code"
+    installation = json.loads((managed / "installation.json").read_text(encoding="utf-8"))
+    wrapper = Path(installation["installed_path"]) / "dist/index.js"
+    node, entry = host_command
+    # Use the installed wrapper directly to observe its exit code and stream.
+    # The independent console fixture covers the enclosing PowerShell process.
+    command = [node, str(wrapper), "--ingest-config", str(managed / "ingest.json"),
+               "--mcode", node, "--mcode-entry", entry, "--profile-dir", str(profile), "--",
+               "--cwd", str(task), "--permission", "full", "--model", MODEL, "Start a streaming reply."]
+    output, diagnostics = task.parent / "cancel.jsonl", task.parent / "cancel.stderr"
+
+    def read_events():
+        return [json.loads(line) for line in output.read_bytes().split(b"\n")[:-1]]
+
+    with output.open("wb") as stdout, diagnostics.open("wb") as stderr:
+        process = subprocess.Popen(command, cwd=task, env={**env, "AIVISION_COLLECTION_MODE": "privacy"},
+                                   stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr,
+                                   creationflags=subprocess.CREATE_NEW_CONSOLE)
+        try:
+            deadline = time.monotonic() + 20
+            while process.poll() is None and time.monotonic() < deadline:
+                if any(event.get("item", {}).get("type") == "agent_message" and
+                       "pending" in event["item"].get("contentDelta", "") for event in read_events()):
+                    break
+                time.sleep(.05)
+            else:
+                raise RuntimeError("Native MiniMax Code did not start streaming cancellation fixture output")
+            subprocess.run([sys.executable, "-c", send_ctrl_c, str(process.pid)],
+                           creationflags=subprocess.DETACHED_PROCESS, capture_output=True, check=True, timeout=10)
+            code = process.wait(timeout=75)
+        finally:
+            if process.poll() is None:
+                taskkill = Path(env["SystemRoot"]) / "System32/taskkill.exe"
+                subprocess.run([str(taskkill), "/PID", str(process.pid), "/T", "/F"],
+                               creationflags=subprocess.CREATE_NO_WINDOW, capture_output=True, timeout=8)
+                process.wait(timeout=5)
+
+    events = read_events()
+    start, = (event for event in events if event["type"] == "turn.started")
+    end, = (event for event in events if event["type"] == "exec.completed")
+    trace = re.search(r"AI Vision Trace ([0-9a-f]{32}) \(cancelled\)", diagnostics.read_text(encoding="utf-8"))
+    if code != 130 or end["result"]["status"] != "cancelled" or trace is None:
+        raise RuntimeError("Ctrl-C did not cancel the native run and export its Trace")
+    spans = [span for span in server.spans if span["trace_id"] == trace[1]]
+    root, = (span for span in spans if span["attributes"].get("gen_ai.span.kind") == "CHAT")
+    model, = (span for span in spans if span["attributes"].get("gen_ai.span.kind") == "LLM")
+    if (len(spans) != 2 or model["parent_span_id"] != root["span_id"] or
+        any(span["attributes"].get("error.type") != "cancelled" or
+            span["attributes"].get("session.id") != start["sessionId"] or
+            span["attributes"].get("agentic.collection.mode") != "privacy" for span in spans)):
+        raise RuntimeError("Cancelled model and turn did not retain the expected Trace hierarchy and scope")
+    call, = (request for request in provider.requests[before:] if request["purpose"] == "agent")
+    usage = model["attributes"]
+    if not call["request"].get("stream") or call["usage_reported"] or any(
+        usage.get(f"agentic.usage.{field}.missing") != "true" or f"gen_ai.usage.{field}" in usage
+        for field in ("input_tokens", "output_tokens")
+    ):
+        raise RuntimeError("Cancelled model request did not preserve missing usage")
+    return {"status": "cancelled", "exit_code": code, "model_usage": "missing", "spans": len(spans)}
 
 
 def check_status(aiv, env, task, server):
@@ -177,13 +248,19 @@ def main():
             session, full = check_turn(launcher, env, task, provider, server, mode="full")
             receipt.write_text(f"receipt: {uuid4().hex}\n", encoding="utf-8")
             _, privacy = check_turn(launcher, env, task, provider, server, mode="privacy", session=session)
+            cancellation = {}
+            if windows:
+                console_test = args.repo / "ai-vision/agent-plugins/minimax-code/tests/test_windows_minimax_console.py"
+                cancellation["native_model_cancellation"] = check_windows_cancellation(
+                    host_command, env, task, provider, server, console_test)
             status = check_status(args.aiv, env, task, server)
-            if server.counts != {"exchanges": 1, "refreshes": 3, "confirmations": 1, "reports": 2}:
+            reports = 2 + len(cancellation)
+            if server.counts != {"exchanges": 1, "refreshes": reports + 1, "confirmations": 1, "reports": reports}:
                 raise RuntimeError("Unexpected installation or collector request counts")
             print(json.dumps({"status": "passed", "host": host, "agent": "mcode 0.7.2",
                               "artifact_sha256": server.download["sha256"],
                               "model": "loopback fixture", "turns": [full, privacy],
-                              "agent_status": status}))
+                              "agent_status": status, **cancellation}))
 
 
 if __name__ == "__main__":

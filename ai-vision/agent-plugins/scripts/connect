@@ -915,6 +915,7 @@ def install(args):
     created = not version_dir.exists()
     native_runtime = None
     native_runtime_created = False
+    confirmed = False
     try:
         with tempfile.TemporaryDirectory(prefix='aivision-install-') as temp:
             support = Path(temp)
@@ -990,12 +991,17 @@ def install(args):
                         or confirmation.get('space_id') != token['space_id']
                         or confirmation.get('status') != 1):
                     raise ConnectError("Installation confirmation failed; original configuration was restored")
-    except BaseException:
-        if native_runtime_created and native_runtime is not None:
-            shutil.rmtree(native_runtime.parent, ignore_errors=True)
-        if created and version_root.exists():
-            shutil.rmtree(version_root)
-        raise
+                confirmed = True
+    except BaseException as error:
+        if not confirmed:
+            if native_runtime_created and native_runtime is not None:
+                shutil.rmtree(native_runtime.parent, ignore_errors=True)
+            if created and version_root.exists():
+                shutil.rmtree(version_root)
+            raise
+        if not isinstance(error, (OSError, ConnectError)):
+            raise
+        print('AI Vision installation was confirmed, but post-installation cleanup or backup failed.', file=sys.stderr)
     (managed / 'pending-installation.json').unlink(missing_ok=True)
     print(f"{plugin['name']} telemetry plugin installed. Config directory: {root}")
     if agent == 'minimax-code':
