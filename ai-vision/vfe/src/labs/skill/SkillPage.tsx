@@ -218,8 +218,8 @@ export function SkillPage() {
       value === "all" ||
       (value === "observed" && !!stat) ||
       (value === "imported" && statsState === "ready" && !!config && !stat) ||
-      (value === "error" && !!stat && stat.errors > 0) ||
-      (value === "inferred" && !!provenance?.inferred) ||
+      (value === "error" && !!(stat?.errors || stat?.failedReads)) ||
+      (value === "inferred" && !!(provenance?.inferred || stat?.failedReads)) ||
       (value === "reported" && !!provenance?.reported)
     )
   }

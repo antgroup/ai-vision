@@ -236,7 +236,7 @@ class TraceProjectionTests(unittest.TestCase):
 
 
 def skill_read_span(identifier="bash", parent="root", command=None):
-    return span(
+    result = span(
         identifier,
         parent,
         **{
@@ -247,6 +247,8 @@ def skill_read_span(identifier="bash", parent="root", command=None):
             ),
         },
     )
+    result["status"] = {"code": "OK"}
+    return result
 
 
 class TraceSkillTagTests(unittest.TestCase):
@@ -277,6 +279,34 @@ class TraceSkillTagTests(unittest.TestCase):
             project_id="p",
         )
         self.assertEqual(result["tags"], ["mcp:codex_app.load", "skill:visualize"])
+
+    def test_failed_shell_read_does_not_tag_trace_or_remove_tool_observation(self):
+        failed = skill_read_span("failed")
+        failed["attributes"].update({
+            "agentic.tool.type": "skill",
+            "agentic.tool.name": "visualize",
+            "gen_ai.tool.call.name": "exec_command",
+            "gen_ai.tool.call.result": (
+                "Chunk ID: fixture\nWall time: 0.1 seconds\n"
+                "Process exited with code 1\nFinal output:\nNo such file or directory"
+            ),
+        })
+        failed["status"] = {"code": "OK"}
+        success = skill_read_span("success", command="cat /codex/skills/weather/SKILL.md")
+        success["attributes"].update({
+            "gen_ai.tool.call.name": "exec_command",
+            "gen_ai.tool.call.result": (
+                "Chunk ID: fixture\nWall time: 0.1 seconds\n"
+                "Process exited with code 0\nFinal output:\nProcess exited with code 1"
+            ),
+        })
+        root = span(**{"langfuse.trace.tags": ["skill:visualize", "manual"]})
+        detail = {"traceId": "trace-1", "spans": [root, failed, success]}
+
+        result = project_trace(detail, project_id="p")
+
+        self.assertEqual(result["tags"], ["manual", "skill:weather"])
+        self.assertIn("failed", {observation["id"] for observation in result["observations"]})
 
     def test_fallback_invocations_and_non_reader_commands_are_excluded(self):
         fallback = span(

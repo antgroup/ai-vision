@@ -58,6 +58,7 @@ class LabsToolOutcomeTests(SimpleTestCase):
         for name, row in rows.items():
             with self.subTest(kind=name):
                 self.assertEqual(row["status"], expected)
+        self.assertIs(rows["skill"]["failedRead"], False)
 
     def test_unset_status_and_default_mcp_false_are_not_success_evidence(self):
         # The real review search returned this transport shape with OTel UNSET.
@@ -127,7 +128,18 @@ class LabsToolOutcomeTests(SimpleTestCase):
         ]
         mcp = _serialize_scanned_observations([{"spans": spans}])
         memory = _scan_memory_window([memory_span(span) for span in spans], {"powercontext": {}})
-        skills = _scan_skill_window([{"traceId": "review", "spans": [skill_span(span) for span in spans]}], "Codex")
+        read = tool_span(
+            "failed-read",
+            status={"code": "OK"},
+            output="Exit code: 1\nOutput:\nNo such file or directory",
+        )
+        read["attributes"].update({
+            "gen_ai.span.kind": "TOOL",
+            "agentic.tool.raw_name": "exec_command",
+            "gen_ai.tool.call.arguments": "cat /skills/review-guidance/SKILL.md",
+        })
+        skill_spans = [skill_span(span) for span in spans] + [read]
+        skills = _scan_skill_window([{"traceId": "review", "spans": skill_spans}], "Codex")
         stats = [
             mcp["overview"], mcp["servers"][0]["stats"], mcp["servers"][0]["tools"][0]["stats"],
             memory["overview"], memory["servers"][0]["stats"], memory["servers"][0]["tools"][0]["stats"],
@@ -141,7 +153,12 @@ class LabsToolOutcomeTests(SimpleTestCase):
                 self.assertEqual(item["errors"], 1)
                 self.assertIsNone(item["errorRate"])
         self.assertEqual(memory["servers"][0]["stats"]["errors"], 1)
-        self.assertEqual(skills["skills"][0]["errors"], 1)
+        self.assertEqual(skills["overview"]["failedReads"], 1)
+        skill = skills["skills"][0]
+        self.assertEqual(skill["failedReads"], 1)
+        failure = next(call for call in skill["recentCalls"] if call["spanId"] == "failed-read")
+        self.assertEqual(failure["status"], "error")
+        self.assertIs(failure["failedRead"], True)
 
     def test_complete_outcome_population_keeps_real_zero_rate_and_no_calls(self):
         for spans, expected in (([], 0), ([tool_span(output={"exit_code": 0})], 0), ([tool_span(output={"exit_code": 1})], 1)):

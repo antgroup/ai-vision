@@ -106,6 +106,7 @@ export function SkillDrawer({
   const { t } = useTranslation()
   const open = !!skillName
   const provenance = stat ? skillProvenanceCounts(stat) : null
+  const failedReads = stat?.failedReads ?? 0
   // Same four-state health as the MCP server drawer; unknown stays hidden.
   const health =
     !stat || stat.calls === 0
@@ -145,12 +146,16 @@ export function SkillDrawer({
             </div>
             <SheetDescription className="text-sm leading-[22px] text-[var(--color-text-description)] empty:hidden">
               {stat
-                ? t("labs.skill.drawer.usage", {
-                    agents: stat.sourceAgents.join(", "),
-                    time: stat.lastSeen
-                      ? formatRelativeTime(stat.lastSeen, t)
-                      : t("labs.skill.topic.timeUnknown"),
-                  })
+                ? failedReads > 0 && stat.calls === 0
+                  ? t("labs.skill.provenance.readAttemptAgents", {
+                      agents: stat.sourceAgents.join(", "),
+                    })
+                  : t("labs.skill.drawer.usage", {
+                      agents: stat.sourceAgents.join(", "),
+                      time: stat.lastSeen
+                        ? formatRelativeTime(stat.lastSeen, t)
+                        : t("labs.skill.topic.timeUnknown"),
+                    })
                 : statState === "ready" &&
                     !statsError &&
                     config &&
@@ -317,6 +322,13 @@ export function SkillDrawer({
                         total: stat.calls,
                       })}`
                     : null}
+                </p>
+              ) : null}
+              {failedReads > 0 ? (
+                <p className="text-xs leading-5 text-[var(--color-error)]">
+                  {t("labs.skill.provenance.failedReads", {
+                    count: failedReads,
+                  })}
                 </p>
               ) : null}
               {statState === "idle" ? (

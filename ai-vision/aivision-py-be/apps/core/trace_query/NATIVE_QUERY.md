@@ -164,6 +164,12 @@ across page requests; concurrent replacement with unchanged counts remains a
 limitation. Explicit `agentic.tool.derived` values remain distinct from direct
 Skill reports.
 
+Confirmed failures of inferred `SKILL.md` reads increment `failedReads` and
+appear in Skill history with `failedRead: true` and the original Trace and
+Span IDs. Skill call counts, status rates, duration statistics, relations and
+Trace Skill tags use the counted calls. Native Skill calls retain their
+reported outcomes.
+
 `relations` contains only ancestor links established by the recalled candidates.
 An ordinary intermediate span is not recalled by this endpoint, so its missing
 ancestry cannot establish a Skill relation. The current Skill UI does not render

@@ -11,6 +11,7 @@ import { SkillSpanCard } from "@/labs/skill/SkillSpanCard"
 import { ContextCompactionCard } from "@/labs/context-compaction/ContextCompactionCard"
 import { ReportedFieldOmissions } from "@/labs/privacy/ReportedFieldOmissions"
 import {
+  failedSkillReadName,
   resolveSkillSpanInfo,
   resolveSkillDetailFields,
 } from "@/labs/skill/skillDisplay"
@@ -274,7 +275,10 @@ export function SpanDetailPanel({
       })
     : null
   if (contentModel?.kind === "tool") {
-    const outcome = resolveToolSpanOutcome(span, displayedOutput)
+    const outcome =
+      skillInfo && failedSkillReadName(span, displayedOutput)
+        ? "error"
+        : resolveToolSpanOutcome(span, displayedOutput)
     // Preserve output-only parser semantics; native cards also report explicit
     // span status, and a recorded span error always wins in the presentation.
     if (outcome === "error" || mcpInfo || skillInfo) {

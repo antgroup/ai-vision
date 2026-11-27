@@ -390,6 +390,138 @@ def _native_skill_span(
 
 
 class ScanSkillWindowTests(SimpleTestCase):
+    def test_codex_shell_failure_must_belong_to_a_single_skill_file_read(self):
+        path = "/private/skills/deploy/SKILL.md"
+        for command, expected in (
+            (f"cat {path}; false", 0),
+            (f"cat {path} /tmp/missing.txt", 0),
+            (f"cat -- {path} -another-file", 0),
+            (f"cat -- '{path}'", 1),
+            (["/bin/zsh", "-lc", f"head -n 10 '{path}'"], 1),
+        ):
+            with self.subTest(command=command):
+                span = _skill_span("read", "root", "deploy")
+                span["attributes"].update({
+                    "agentic.tool.raw_name": "exec_command",
+                    "agentic.tool.call.arguments": json.dumps({"command": command}),
+                })
+                span["status"] = {"code": "ERROR"}
+                result = _scan_skill_window([_trace("t", [span])], "Codex")
+                self.assertEqual(result["overview"]["failedReads"], expected)
+
+    def test_failed_codex_shell_read_is_discoverable_without_counting_as_a_call(self):
+        span = _skill_span("read", "root", "missing")
+        span["attributes"].update({
+            "agentic.tool.raw_name": "exec_command",
+            "agentic.tool.call.arguments": '{"cmd":"cat /private/skills/missing/SKILL.md"}',
+            "gen_ai.tool.call.result": (
+                "Chunk ID: cdx001\nWall time: 0.0001 seconds\n"
+                "Process exited with code 1\nOriginal token count: 8\n"
+                "Output:\ncat: /private/skills/missing/SKILL.md: No such file or directory\n"
+            ),
+        })
+
+        for legacy_skill_label in (False, True):
+            with self.subTest(legacy_skill_label=legacy_skill_label):
+                if legacy_skill_label:
+                    span["attributes"].update({
+                        "agentic.tool.type": "skill", "agentic.tool.name": "missing",
+                    })
+                result = _scan_skill_window([_trace("t", [span])], "codex")
+                skill = result["skills"][0]
+                for stats in (result["overview"], skill):
+                    self.assertEqual(stats["calls"], 0)
+                    self.assertEqual(stats["failedReads"], 1)
+                    self.assertEqual(stats["provenance"], {"inferred": 0, "reported": 0})
+                    self.assertEqual(stats["errors"], 0)
+                    self.assertEqual(stats["reportedStatusCalls"], 0)
+                    self.assertEqual(stats["measuredCalls"], 0)
+                    self.assertIsNone(stats["p95Ms"])
+                self.assertIsNone(skill["lastSeen"])
+                self.assertEqual(skill["sourceAgents"], ["codex"])
+                [row] = skill["recentCalls"]
+                self.assertEqual((row["traceId"], row["spanId"]), ("t", "read"))
+                self.assertTrue(row["derived"])
+                self.assertTrue(row["failedRead"])
+                self.assertEqual(row["status"], "error")
+                self.assertEqual(row["durationMs"], 100)
+                self.assertNotIn("/private/", str(row))
+
+    def test_failed_read_does_not_suppress_reported_error_or_create_relation(self):
+        invocation = _native_skill_span("native", "root", "deploy")
+        invocation["status"] = {"code": "ERROR", "message": "reported failure"}
+        failed_read = _skill_span("failed", "native", "deploy", 50)
+        failed_read["attributes"]["gen_ai.tool.call.result"] = '{"exit_code":1}'
+        failed_child = _skill_span("child", "native", "weather", 60)
+        failed_child["status"] = {"code": 2, "message": "cat: /private/skills/weather/SKILL.md"}
+
+        result = _scan_skill_window([_trace("t", [invocation, failed_read, failed_child])], "codex")
+
+        self.assertEqual(result["relations"], [])
+        self.assertEqual(result["overview"]["calls"], 1)
+        self.assertEqual(result["overview"]["errors"], 1)
+        self.assertEqual(result["overview"]["failedReads"], 2)
+        deploy = next(skill for skill in result["skills"] if skill["name"] == "deploy")
+        self.assertEqual(deploy["p95Ms"], 500)
+        self.assertEqual(deploy["recentCalls"][-1]["timestamp"], deploy["lastSeen"])
+        self.assertEqual(deploy["recentCalls"][-1]["lastError"], "reported failure")
+        self.assertNotIn("/private/", str(result))
+
+    def test_codex_bash_recognizes_compact_failure_and_redacted_legacy_attempt(self):
+        compact = _skill_span("compact", "root", "missing")
+        compact["agent_product"] = "Codex"
+        compact["attributes"].update({
+            "agentic.tool.raw_name": "Bash",
+            "agentic.tool.call.arguments": '{"command":"cat /tmp/skills/missing/SKILL.md"}',
+            "gen_ai.tool.call.result": "Exit code: 1\nOutput:\nNo such file or directory",
+        })
+        redacted = _native_skill_span("redacted", "root", "private")
+        redacted["agent_product"] = "Codex"
+        redacted["attributes"].update({
+            "agentic.tool.raw_name": "Bash",
+            "agentic.tool.derived": True,
+            "agentic.tool.call.arguments": '"[REDACTED]"',
+            "gen_ai.tool.call.arguments": "[REDACTED]",
+        })
+        redacted["status"] = {"code": "ERROR"}
+        no_payload = _native_skill_span("no-payload", "root", "no-payload")
+        no_payload["agent_product"] = "Codex"
+        no_payload["attributes"].update({
+            "agentic.tool.raw_name": "Bash",
+            "agentic.tool.derived": True,
+        })
+        no_payload["status"] = {"code": "ERROR"}
+        truncated = _native_skill_span("truncated", "root", "truncated")
+        truncated["agent_product"] = "Codex"
+        truncated["attributes"].update({
+            **no_payload["attributes"],
+            "agentic.tool.name": "truncated",
+            "gen_ai.tool.call.arguments": "[TRUNCATED]",
+        })
+        truncated["status"] = {"code": "ERROR"}
+        unmarked = _native_skill_span("unmarked", "root", "attributed")
+        unmarked["agent_product"] = "Codex"
+        unmarked["attributes"].update({
+            "agentic.tool.raw_name": "Bash",
+            "gen_ai.tool.call.arguments": "[REDACTED]",
+        })
+        unmarked["status"] = {"code": "ERROR"}
+
+        result = _scan_skill_window(
+            [_trace("t", [compact, redacted, no_payload, truncated, unmarked])], ""
+        )
+
+        self.assertEqual(result["overview"]["calls"], 1)
+        self.assertEqual(result["overview"]["errors"], 1)
+        self.assertEqual(result["overview"]["failedReads"], 4)
+        self.assertEqual(
+            {skill["name"]: skill["recentCalls"][0]["failedRead"] for skill in result["skills"]},
+            {
+                "missing": True, "private": True, "no-payload": True,
+                "truncated": True, "attributed": False,
+            },
+        )
+
     def test_missing_duration_and_time_are_unknown_not_zero_or_epoch(self):
         span = _native_skill_span("missing", "root", "deploy")
         span.pop("start_time_unix_nano")
@@ -815,6 +947,7 @@ class SkillConfigApiTests(SpaceKeyTestCase):
             response = self.client.get(f"/api/v2/spaces/{self.space.uuid}/labs/skill/observations", {"fromTimestamp":"2026-01-01T00:00:00Z", "toTimestamp":"2026-01-02T00:00:00Z", "history_skill":"deploy", "status":"error", "limit":"5"})
         self.assertEqual(response.json()["data"]["total"], 1)
         self.assertEqual(response.json()["data"]["calls"][0]["spanId"], "span-0")
+        self.assertIs(response.json()["data"]["calls"][0].get("failedRead"), True)
 
     def test_history_orders_fractional_times_and_missing_measurements_last(self):
         spans = [_native_skill_span(name, "root", "deploy") for name in ["whole", "fractional", "unknown"]]

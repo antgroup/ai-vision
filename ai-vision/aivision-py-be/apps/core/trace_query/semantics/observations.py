@@ -7,7 +7,7 @@ import re
 from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 
-from .skill_recognition import trace_skill_tags
+from .skill_recognition import trace_skill_tag_changes
 from .sdk_metadata import langfuse_metadata_is_json
 from .usage import aggregate_usage, indexed_model_prices, normalize_usage, reported_usage, usage_coverage
 
@@ -326,19 +326,14 @@ def project_trace(detail, *, project_id, prices=None):
     )
     if len(candidates) > 1:
         reason = "multiple_" + reason
-    # Collector trace tags only cover natively reported tool types; derived
-    # skill usage (shell reads of SKILL.md, host invocation links) never
-    # reaches langfuse.trace.tags, so merge it in here with the same rules
-    # the labs scanner uses. Every observation already carrying the key and
-    # the selected root (as the tags consumer's fallback) get the union;
-    # update-latest selection and downstream JSON-text projections keep
-    # working unchanged.
-    skill_tags = trace_skill_tags(detail.get("spans") or [])
-    if skill_tags:
+    # Use the Labs recognition rules to include successful reads and remove
+    # stale tags from collector reports that only point to a failed read.
+    skill_tags, stale_skill_tags = trace_skill_tag_changes(detail.get("spans") or [])
+    if skill_tags or stale_skill_tags:
         for observation in observations:
             attrs = observation["attributes"]
             existing = attrs.get("langfuse.trace.tags")
-            if existing is None and observation["id"] != root["id"]:
+            if existing is None and (observation["id"] != root["id"] or not skill_tags):
                 continue
             current = _json(existing)
             current = (
@@ -348,9 +343,8 @@ def project_trace(detail, *, project_id, prices=None):
                 if isinstance(current, (list, tuple))
                 else [str(current)]
             )
-            attrs["langfuse.trace.tags"] = list(
-                dict.fromkeys([*current, *skill_tags])
-            )
+            retained = [tag for tag in current if not isinstance(tag, str) or tag not in stale_skill_tags]
+            attrs["langfuse.trace.tags"] = list(dict.fromkeys([*retained, *skill_tags]))
             # The observation-level tags field was snapshotted during
             # projection; keep it identical to the merged attributes value.
             observation["tags"] = attrs["langfuse.trace.tags"]

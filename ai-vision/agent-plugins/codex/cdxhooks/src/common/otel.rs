@@ -49,9 +49,9 @@ use crate::common::payload_budget::{
     InlineImageFilterStats, SpanBudgetOutcome,
 };
 use crate::common::transcript::{
-    correlate_subagent_invocations, extract_skill_name_from_command_text,
-    normalized_subagent_activations, subagent_anchor_turn_index, subagent_invocation_key,
-    AssistantMessage, CollabAgentEvent, CollabInvocationSource, CollabInvocationState,
+    correlate_subagent_invocations, extract_skill_name_from_command_text, extract_skill_read_name,
+    is_shell_tool, normalized_subagent_activations, shell_exit_code, subagent_anchor_turn_index,
+    subagent_invocation_key, AssistantMessage, CollabAgentEvent, CollabInvocationSource, CollabInvocationState,
     SkillInvocation, SkillInvocationSource, SubagentActivationEvidence, SubagentIdentity,
     SubagentLifecycle, TokenUsage, ToolCall, Turn, TurnTerminalState,
 };
@@ -1383,7 +1383,8 @@ fn build_tool_span_with_suppression(
     // Rule 12: preserve truncation metadata
     let mut truncation_input_meta = json!(null);
     let mut truncation_output_meta = json!(null);
-    let (input_text, output_text) = if is_privacy_mode() {
+    let privacy = is_privacy_mode();
+    let (input_text, output_text) = if privacy {
         ("[REDACTED]".to_string(), "[REDACTED]".to_string())
     } else {
         let (filtered_input, input_image_stats) = filter_inline_base64_images(&tool_call.input);
@@ -1418,14 +1419,29 @@ fn build_tool_span_with_suppression(
         "send_message",
         "list_agents",
     ];
-    let skill_name = extract_skill_name_from_tool_call(tool_call).and_then(|name| {
-        let is_command_path = tool_call.name != "Skill";
-        if is_command_path && suppressed_command_path_skills.contains(&skill_match_key(&name)) {
-            None
-        } else {
-            Some(name)
-        }
-    });
+    let skill_read = extract_skill_read_name(tool_call);
+    let is_shell = is_shell_tool(&tool_call.name);
+    let success = if is_shell && tool_call.success.is_none() {
+        shell_exit_code(&tool_call.output).map(|code| code == 0)
+    } else {
+        tool_call.success
+    };
+    let error = if success == Some(false) {
+        Some(("tool_error".to_string(), output_text.clone()))
+    } else if is_shell && success == Some(true) {
+        None
+    } else {
+        detect_tool_error_from_output(&tool_call.output)
+    };
+    let skill_name = skill_read
+        .clone()
+        .or_else(|| extract_skill_name_from_tool_call(tool_call))
+        .filter(|name| {
+            let is_failed_read = skill_read.is_some() && error.is_some();
+            tool_call.name == "Skill"
+                || is_failed_read
+                || !suppressed_command_path_skills.contains(&skill_match_key(name))
+        });
     let info = if SUBAGENT_TOOL_NAMES.contains(&tool_call.name.as_str()) {
         use agentic_otel_common::AgenticToolInfo;
         AgenticToolInfo {
@@ -1470,6 +1486,9 @@ fn build_tool_span_with_suppression(
     ];
 
     append_agentic_tool_attrs_typed(&mut attributes, &info);
+    if info.tool_type == "skill" && skill_read.as_deref() == Some(info.name.as_str()) {
+        attributes.push(OtelAttribute::bool("agentic.tool.derived", true));
+    }
 
     // Rule 5: duration_ms
     let start_u128 = start_ns.parse::<u128>().unwrap_or(0);
@@ -1577,13 +1596,11 @@ fn build_tool_span_with_suppression(
     }
 
     // Rule 7: Error dual-channel — status.code=2 AND error.type attribute
-    let status = if tool_call.success == Some(false) {
-        let msg = render_json_value(&tool_call.output);
-        attributes.push(OtelAttribute::string("error.type", "tool_error"));
-        OtelStatus::error(msg)
-    } else if let Some((error_type, error_msg)) = detect_tool_error_from_output(&tool_call.output) {
-        attributes.push(OtelAttribute::string("error.type", &error_type));
-        OtelStatus::error(error_msg)
+    let status = if let Some((error_type, error_msg)) = error {
+        attributes.push(OtelAttribute::string("error.type", error_type));
+        OtelStatus::error(if privacy { "[REDACTED]".to_string() } else { error_msg })
+    } else if skill_read.is_some() && success.is_none() {
+        OtelStatus::unset()
     } else {
         OtelStatus::ok()
     };
@@ -1844,10 +1861,7 @@ fn extract_skill_name_from_tool_call(tool_call: &ToolCall) -> Option<String> {
             .or_else(|| extract_skill_name_field(&tool_call.input));
     }
 
-    if !matches!(
-        tool_call.name.as_str(),
-        "Bash" | "exec_command" | "shell_command" | "read_thread_terminal" | "write_stdin"
-    ) {
+    if !is_shell_tool(&tool_call.name) {
         return None;
     }
 
@@ -1859,6 +1873,22 @@ fn extract_skill_name_from_tool_call(tool_call: &ToolCall) -> Option<String> {
         .and_then(|v| v.as_str())?;
 
     extract_skill_name_from_command_text(command)
+}
+
+fn has_physical_skill_read(turn: &Turn, skill_name: &str) -> bool {
+    let key = skill_match_key(skill_name);
+    turn.tool_calls
+        .iter()
+        .filter_map(extract_skill_read_name)
+        .any(|name| skill_match_key(&name) == key)
+}
+
+fn suppresses_command_path(turn: &Turn, invocation: &SkillInvocation, name: &str) -> bool {
+    match invocation.source {
+        SkillInvocationSource::LegacyMarkdown => false,
+        SkillInvocationSource::CommandPathFallback => !has_physical_skill_read(turn, name),
+        _ => true,
+    }
 }
 
 fn extract_skill_name_field(input: &Value) -> Option<String> {
@@ -2240,8 +2270,8 @@ pub fn build_realtime_tool_span_for_call(
 
     let mut suppressed_command_path_skills = HashSet::new();
     for invocation in &turn.skill_invocations {
-        if invocation.source != SkillInvocationSource::LegacyMarkdown {
-            if let Some(name) = invocation_skill_name(invocation) {
+        if let Some(name) = invocation_skill_name(invocation) {
+            if suppresses_command_path(turn, invocation, &name) {
                 suppressed_command_path_skills.insert(skill_match_key(&name));
             }
         }
@@ -2443,6 +2473,11 @@ pub fn build_otel_export_request_for_turn(
         let Some(skill_name) = invocation_skill_name(invocation) else {
             continue;
         };
+        if invocation.source == SkillInvocationSource::CommandPathFallback
+            && has_physical_skill_read(turn, &skill_name)
+        {
+            continue;
+        }
         spans.push(build_skill_invocation_span(
             &trace_id,
             &root_span_id,
@@ -2478,8 +2513,8 @@ pub fn build_otel_export_request_for_turn(
 
     let mut suppressed_command_path_skills = HashSet::new();
     for invocation in &turn.skill_invocations {
-        if invocation.source != SkillInvocationSource::LegacyMarkdown {
-            if let Some(name) = invocation_skill_name(invocation) {
+        if let Some(name) = invocation_skill_name(invocation) {
+            if suppresses_command_path(turn, invocation, &name) {
                 suppressed_command_path_skills.insert(skill_match_key(&name));
             }
         }
@@ -6396,6 +6431,144 @@ mod tests {
             Some("skill eve-beta")
         );
         assert_eq!(find_attr("agentic.tool.raw_name").as_deref(), Some("Bash"));
+    }
+
+    #[test]
+    fn test_codex_skill_read_uses_its_own_outcome_in_both_collection_modes() {
+        let path = "/private/probe-root/.codex/skills/missing-probe/SKILL.md";
+        let command = format!("cat {path}");
+        let failure = format!("cat: {path}: No such file or directory");
+        for (output, expected_status) in [
+            (format!("Exit code: 1\nOutput:\n{failure}"), 2),
+            (format!("Chunk ID: 8a50\nWall time: 0.001 seconds\nProcess exited with code 1\nOriginal token count: 9\nOutput:\n{failure}"), 2),
+            ("Exit code: 0\nOutput:\nExample error text: Exit code: 1".to_string(), 1),
+        ] {
+            let lines = vec![
+                json!({"timestamp":"2026-11-27T08:00:00.000Z","type":"event_msg","payload":{"type":"task_started","turn_id":"turn-probe"}}),
+                json!({"timestamp":"2026-11-27T08:00:01.000Z","type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"read-probe","arguments":json!({"cmd":command}).to_string()}}),
+                json!({"timestamp":"2026-11-27T08:00:02.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"read-probe","output":output}}),
+                json!({"timestamp":"2026-11-27T08:00:03.000Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"turn-probe","last_agent_message":"The file could not be read."}}),
+            ];
+            let turns = crate::common::transcript::build_turns(&lines);
+            let turn = turns.last().expect("probe turn");
+            assert!(turn.completed);
+            for privacy in [false, true] {
+                let _mode = TestPrivacyModeGuard::set(privacy);
+                let body = build_otel_export_request_for_turn(turn, 1, "sess", "user", "1", None);
+                assert_eq!(
+                    exported_spans(&body)
+                        .iter()
+                        .filter(|span| {
+                            attr_string(span_attrs(span), "agentic.tool.name") == Some("missing-probe")
+                        })
+                        .count(),
+                    1
+                );
+                let span = exported_spans(&body).iter()
+                    .find(|span| attr_string(span_attrs(span), "gen_ai.tool.call.id") == Some("read-probe"))
+                    .expect("physical failed read span");
+                assert_eq!(span["status"]["code"], expected_status);
+                let attrs = span_attrs(span);
+                assert_eq!(
+                    attr_string(attrs, "error.type"),
+                    (expected_status == 2).then_some("tool_error")
+                );
+                assert_eq!(attr_string(attrs, "agentic.tool.type"), Some("skill"));
+                assert_eq!(attr_string(attrs, "agentic.tool.name"), Some("missing-probe"));
+                assert_eq!(attr_string(attrs, "agentic.tool.raw_name"), Some("Bash"));
+                assert!(attrs.iter().any(|attr| attr["key"] == "agentic.tool.derived"
+                    && attr["value"]["boolValue"] == true));
+                if privacy {
+                    assert!(!body.to_string().contains(path));
+                    assert!(!body.to_string().contains(&failure));
+                    let result = attr_string(attrs, "gen_ai.tool.call.result").unwrap();
+                    assert_eq!(result.trim_matches('"'), "[REDACTED]");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_codex_reads_keep_individual_outcomes_alongside_an_explicit_invocation() {
+        let _mode = TestPrivacyModeGuard::set(true);
+        let mut turn = make_turn();
+        let path = "/private/probe-root/.agents/skills/demo/SKILL.md";
+        let mut successful_read = turn.tool_calls[0].clone();
+        successful_read.call_id = "first-read".to_string();
+        successful_read.input = json!({"command": format!("cat {path}")});
+        successful_read.output = json!("Exit code: 0\nOutput:\ncontent");
+
+        let mut failed_read = successful_read.clone();
+        failed_read.call_id = "second-read".to_string();
+        failed_read.input = json!({"command":["/bin/zsh","-lc", format!("cat {path}")]});
+        failed_read.output = json!("cat: No such file or directory");
+        failed_read.success = Some(false);
+        turn.tool_calls = vec![successful_read, failed_read];
+
+        for explicit in [false, true] {
+            if explicit {
+                turn.skill_invocations.push(skill_invocation(
+                    "demo", 0, "2026-03-28T08:00:01.000Z", Some(0), Some(5),
+                ));
+            }
+            let body = build_otel_export_request_for_turn(&turn, 1, "sess", "user", "1", None);
+            let mut native = 0;
+            let mut reads = Vec::new();
+            for span in exported_spans(&body) {
+                let attrs = span_attrs(span);
+                if attr_string(attrs, "agentic.tool.name") != Some("demo") {
+                    continue;
+                }
+                if attr_string(attrs, "agentic.tool.raw_name") == Some("Skill") {
+                    native += 1;
+                    assert_eq!(span["status"]["code"], 1);
+                } else {
+                    reads.push((
+                        attr_string(attrs, "gen_ai.tool.call.id").unwrap(),
+                        span["status"]["code"].as_u64().unwrap(),
+                    ));
+                    assert!(attrs.iter().any(|attr| attr["key"] == "agentic.tool.derived"
+                        && attr["value"]["boolValue"] == true));
+                }
+            }
+            assert_eq!(native, usize::from(explicit));
+            if explicit {
+                assert_eq!(reads, [("second-read", 2)]);
+            } else {
+                assert_eq!(reads, [("first-read", 1), ("second-read", 2)]);
+            }
+            assert!(!body.to_string().contains(path));
+        }
+    }
+
+    #[test]
+    fn test_codex_shell_evidence_applies_only_to_the_execution_and_not_stdout() {
+        let _mode = TestPrivacyModeGuard::set(true);
+        let mut turn = make_turn();
+        let mut tool = turn.tool_calls[0].clone();
+        let path = "/private/probe-root/.codex/skills/demo/SKILL.md";
+        for (name, command, output, expected_status, derived) in [
+            ("mcp__demo__check", format!("cat {path}"), "Exit code: 1\nOutput:\ntext", 1, false),
+            ("Bash", format!("cat {path}"), "Output:\nExit code: 1", 0, true),
+            ("Bash", format!("cat {path}"), "Exit code: 1", 0, true),
+            ("Bash", format!("cat {path}"), "Process exited with code 1", 0, true),
+            ("Bash", format!("cat README.md; echo {path}"), "Exit code: 1\nOutput:\ntext", 2, false),
+            ("Bash", format!("cat {path} another-file"), "Exit code: 1\nOutput:\ntext", 2, false),
+            ("Bash", format!("cat -- {path} -another-file"), "Exit code: 1\nOutput:\ntext", 2, false),
+            ("Bash", format!("cat > {path}"), "Exit code: 1\nOutput:\ntext", 2, false),
+            ("Bash", "node /tmp/.codex/skills/demo/scripts/query.js".to_string(), "Exit code: 1\nOutput:\ntext", 2, false),
+        ] {
+            tool.name = name.to_string();
+            tool.input = json!({"command":command});
+            tool.output = json!(output);
+            turn.tool_calls[0] = tool.clone();
+            let body = build_otel_export_request_for_turn(&turn, 1, "sess", "user", "1", None);
+            let span = exported_spans(&body).iter()
+                .find(|span| attr_string(span_attrs(span), "gen_ai.tool.call.id") == Some("call-1"))
+                .expect("physical tool span");
+            assert_eq!(span["status"]["code"], expected_status);
+            assert_eq!(span_attrs(span).iter().any(|attr| attr["key"] == "agentic.tool.derived"), derived);
+        }
     }
 
     #[test]

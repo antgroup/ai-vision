@@ -33,7 +33,11 @@ import {
   listSkillStats,
   listSkillCallHistory,
 } from "./skillApi"
-import { resolveSkillDetailFields, skillTraceHref } from "./skillDisplay"
+import {
+  failedSkillReadName,
+  resolveSkillDetailFields,
+  skillTraceHref,
+} from "./skillDisplay"
 
 const LINK_CLASS =
   "rounded-[6px] text-xs leading-5 text-[var(--color-labs)] underline decoration-[var(--color-border-labs)] underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-labs)]"
@@ -105,10 +109,12 @@ export function SkillSpanCard({
     : callOutput !== undefined
       ? callOutput.value
       : (fields.output ?? undefined)
-  const outcome = resolveToolSpanOutcome(
-    span,
+  const outcomeOutput =
     callOutput !== undefined ? callOutput.value : reportedOutput
-  )
+  const failedRead = failedSkillReadName(span, outcomeOutput)
+  const outcome = failedRead
+    ? "error"
+    : resolveToolSpanOutcome(span, outcomeOutput)
   const failed = outcome === "error"
   const sharedContent =
     children !== undefined && children !== null && children !== false
@@ -160,11 +166,13 @@ export function SkillSpanCard({
               )}
             >
               {t(
-                failed
-                  ? "labs.skill.span.failed"
-                  : outcome === "ok"
-                    ? "labs.skill.span.succeeded"
-                    : "spanContent.statusUnknown"
+                failedRead
+                  ? "labs.skill.provenance.readError"
+                  : failed
+                    ? "labs.skill.span.failed"
+                    : outcome === "ok"
+                      ? "labs.skill.span.succeeded"
+                      : "spanContent.statusUnknown"
               )}
             </span>
           )}

@@ -1,5 +1,7 @@
 import { decodeEmbeddedPayload } from "@/components/labs/decision/decisionDisplay"
 import { parseTimestampMs } from "@/components/traces-otel/format"
+import { resolveToolSpanOutcome } from "@/components/traces-otel/spanContent"
+import type { OTelSpan } from "@/components/traces-otel/types"
 import { ARGUMENT_KEYS } from "@/labs/mcp/mcpDisplay"
 
 export interface SkillSpanInfo {
@@ -72,14 +74,12 @@ const SKILL_WRITER_TOOL_NAMES = new Set([
   "str_replace",
 ])
 
-function argumentGateText(attrs: Record<string, unknown>): string {
+function readArgumentValues(attrs: Record<string, unknown>): string[] {
   // Raw argument values without the embedded-escape round: the JSON-envelope
   // channel needs quotes intact to extract values.
-  return ARGUMENT_KEYS.map((key) => attrs[key])
-    .filter(
-      (value): value is string => typeof value === "string" && !!value.trim()
-    )
-    .join("\n")
+  return ARGUMENT_KEYS.map((key) => attrs[key]).filter(
+    (value): value is string => typeof value === "string" && !!value.trim()
+  )
 }
 
 function splitUnquotedOperators(text: string): string[] {
@@ -117,7 +117,7 @@ function splitUnquotedOperators(text: string): string[] {
   return segments
 }
 
-function shellTokens(segment: string): string[] {
+function shellTokens(segment: string, requireComplete = false): string[] {
   // Whitespace tokens that respect quoting, so "cat a; b" stays one token.
   const tokens: string[] = []
   let start: number | null = null
@@ -153,6 +153,7 @@ function shellTokens(segment: string): string[] {
     }
     if (start === null) start = index
   }
+  if (requireComplete && (quote !== null || escaped)) return []
   if (start !== null) tokens.push(segment.slice(start))
   return tokens
 }
@@ -339,6 +340,89 @@ function readSkillName(rawText: string): string | null {
   return null
 }
 
+function singleReadArgv(
+  argv: string[],
+  allowShellWrapper = true
+): string | null {
+  const [executable, ...operands] = argv
+  const program = executable?.split("/").at(-1) ?? ""
+  if (
+    allowShellWrapper &&
+    SKILL_WRAPPER_PROGRAMS.has(program) &&
+    operands.length === 2 &&
+    (operands[0] === "-c" || operands[0] === "-lc")
+  ) {
+    return singleReadCommand(operands[1], false)
+  }
+
+  let paths = operands
+  if (program === "head" || program === "tail") {
+    if (/^(?:-n|-c|--lines|--bytes)$/.test(operands[0] ?? "")) {
+      if (!/^[+-]?\d+$/.test(operands[1] ?? "")) return null
+      paths = operands.slice(2)
+    }
+    if (paths[0] === "--") paths = paths.slice(1)
+  } else if (program === "sed") {
+    if (operands[0] !== "-n" || !/^[0-9,$]*p$/.test(operands[1] ?? ""))
+      return null
+    paths = operands.slice(2)
+    if (paths[0] === "--") paths = paths.slice(1)
+  } else if (program === "cat") {
+    const optionEnd = operands.indexOf("--")
+    paths = operands.filter(
+      (operand, index) =>
+        operand === "-" ||
+        !operand.startsWith("-") ||
+        (optionEnd !== -1 && index > optionEnd)
+    )
+  } else {
+    return null
+  }
+  const path = paths[0]
+  if (paths.length !== 1 || !path || path.startsWith("#")) return null
+  return /(?:^|\/)skills\/([A-Za-z0-9._-]+)\/SKILL\.md$/.exec(path)?.[1] ?? null
+}
+
+function singleReadCommand(
+  command: string,
+  allowShellWrapper = true
+): string | null {
+  const trimmed = command.trim()
+  if (/[;|&<>\r\n`]|\$\(/.test(trimmed)) return null
+  return singleReadArgv(
+    shellTokens(trimmed, true).map(unquote),
+    allowShellWrapper
+  )
+}
+
+function singleReadSkillName(value: string): string | null {
+  let payload: unknown = value
+  for (
+    let depth = 0;
+    depth < 2 &&
+    typeof payload === "string" &&
+    /^[{["]/.test(payload.trimStart());
+    depth++
+  ) {
+    try {
+      payload = JSON.parse(payload)
+    } catch {
+      return null
+    }
+  }
+  if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+    const fields = payload as Record<string, unknown>
+    payload = fields.command ?? fields.cmd
+  }
+  if (typeof payload === "string") return singleReadCommand(payload)
+  if (
+    Array.isArray(payload) &&
+    payload.every((arg): arg is string => typeof arg === "string")
+  )
+    return singleReadArgv(payload)
+  return null
+}
+
 /**
  * Single recognition entry for skill spans, shared by the tree chip, the
  * trace summary and the span card. Native attributes are authoritative; the
@@ -384,7 +468,7 @@ export function resolveSkillSpanInfo(
       ""
     ).toLowerCase()
     if (!SKILL_WRITER_TOOL_NAMES.has(toolName)) {
-      const name = readSkillName(argumentGateText(attrs))
+      const name = readSkillName(readArgumentValues(attrs).join("\n"))
       if (name) return { name, id: null, derived: true }
     }
   }
@@ -436,6 +520,98 @@ export function nativeSkillName(
   }
   if (!name || isFallbackInvocation(attrs)) return null
   return name
+}
+
+type SkillOutcomeSpan = Pick<OTelSpan, "attributes" | "resource" | "status">
+
+function isCodexShell(span: SkillOutcomeSpan, attrs: Record<string, unknown>) {
+  const tool = (
+    text(attrs, "agentic.tool.raw_name") ??
+    text(attrs, "gen_ai.tool.call.name") ??
+    text(attrs, "gen_ai.tool.name")
+  )?.toLowerCase()
+  if (tool === "exec_command") return true
+  if (tool !== "bash" && tool !== "shell_command") return false
+
+  const resource = span.resource ?? {}
+  return [
+    "aivision.agent.product",
+    "ant.agent.product",
+    "ant.agent.type",
+    "agentic.runtime.name",
+  ].some((key) =>
+    [resource[key], attrs[key]].some(
+      (value) => typeof value === "string" && /^codex$/i.test(value.trim())
+    )
+  )
+}
+
+function codexShellFailed(output: unknown): boolean {
+  let result = output
+  for (
+    let depth = 0;
+    depth < 2 &&
+    typeof result === "string" &&
+    result.trimStart().startsWith('"');
+    depth++
+  ) {
+    try {
+      result = JSON.parse(result)
+    } catch {
+      return false
+    }
+  }
+  if (typeof result !== "string") return false
+  // Only inspect the transport header, never the command's displayed output.
+  const exitCode =
+    /^Chunk ID: [A-Za-z0-9_-]+\r?\nWall time: [0-9]+(?:\.[0-9]+)?[ \t]+(?:seconds?|s)\r?\nProcess exited with code (-?[0-9]{1,20})(?:\r?\n|$)/.exec(
+      result
+    )?.[1] ??
+    /^Exit code: (-?[0-9]{1,20})\r?\nOutput:(?:\r?\n|$)/.exec(result)?.[1]
+  return exitCode !== undefined && !/^-?0+$/.test(exitCode)
+}
+
+/** A file read can fail without invoking the Skill. Keep the evidence on the source span. */
+export function failedSkillReadName(
+  span: SkillOutcomeSpan,
+  output = span.attributes?.["gen_ai.tool.call.result"] ??
+    span.attributes?.["langfuse.observation.output"]
+): string | null {
+  const attrs = span.attributes
+  if (!attrs || text(attrs, "gen_ai.span.kind")?.toUpperCase() !== "TOOL")
+    return null
+  const codexShell = isCodexShell(span, attrs)
+  const outcome = resolveToolSpanOutcome(span, output)
+  if (outcome !== "error" && !(codexShell && codexShellFailed(output)))
+    return null
+
+  const reported = nativeSkillName(attrs)
+  const name = reported ?? resolveSkillSpanInfo(attrs)?.name
+  if (!name) return null
+  if (!codexShell) return reported ? null : name
+
+  // A shell exit applies to the whole command. Attribute it to the read only
+  // when the command reads that file alone or the producer marked the read.
+  const argumentValues = readArgumentValues(attrs)
+  if (argumentValues.some((value) => singleReadSkillName(value) === name))
+    return name
+  return reported &&
+    outcome === "error" &&
+    isTrue(attrs["agentic.tool.derived"]) &&
+    ARGUMENT_KEYS.every((key) => {
+      const value = attrs[key]
+      return (
+        value === undefined ||
+        value === null ||
+        (typeof value === "string" &&
+          (!value.trim() ||
+            /^(?:\[(?:REDACTED|TRUNCATED)\]|"\[(?:REDACTED|TRUNCATED)\]")$/.test(
+              value.trim()
+            )))
+      )
+    })
+    ? reported
+    : null
 }
 
 /** Parsed numeric token usage (aicoder columns); null when nothing is set. */
@@ -557,6 +733,8 @@ export function resolveSkillDetailFields(
 export interface CountedSkillSpans<T> {
   /** Skill spans that carry the usage count, in input order. */
   counted: T[]
+  /** Failed reads kept as evidence outside usage metrics. */
+  failedReads: T[]
   /** Skill names with a native, non-derived report anywhere in the window. */
   nativeSeen: Set<string>
 }
@@ -593,40 +771,45 @@ function intervalsOverlap(
 }
 
 /**
- * Usage merge over one window (mirrors the backend scan): every read of a
- * SKILL.md counts as one use, and a native period overlapping its own reads
+ * Usage merge over one window (mirrors the backend scan): each read without a
+ * reported failure counts as one use, and a native period overlapping those reads
  * is the same usage (the plugin derives that period from the first read),
  * so it merges into the reads instead of counting twice. A native period
  * with no reads of its own still counts once. Recognition itself — tree
  * chips — is unaffected; only the counted list changes.
  */
 export function resolveCountedSkillSpans<
-  T extends {
+  T extends SkillOutcomeSpan & {
     start_time_unix_nano?: string | null
     end_time_unix_nano?: string | null
-    attributes?: Record<string, unknown>
   },
 >(spans: T[]): CountedSkillSpans<T> {
+  const failedReads: T[] = []
   const derivedIntervals = new Map<string, [number, number][]>()
+  const recognized = []
   for (const span of spans) {
     const attrs = span.attributes
     const info = attrs ? resolveSkillSpanInfo(attrs) : null
-    if (!info?.name || nativeSkillName(attrs)) continue
+    if (!info?.name) continue
+    if (failedSkillReadName(span)) {
+      failedReads.push(span)
+      continue
+    }
+    const native = Boolean(nativeSkillName(attrs))
+    recognized.push({ span, name: info.name, derived: info.derived, native })
+    if (native) continue
     const intervals = derivedIntervals.get(info.name) ?? []
     intervals.push(spanIntervalMs(span))
     derivedIntervals.set(info.name, intervals)
   }
   const counted: T[] = []
   const nativeSeen = new Set<string>()
-  for (const span of spans) {
-    const attrs = span.attributes
-    const info = attrs ? resolveSkillSpanInfo(attrs) : null
-    if (!info?.name) continue
-    if (nativeSkillName(attrs)) {
-      if (!info.derived) nativeSeen.add(info.name)
+  for (const { span, name, derived, native } of recognized) {
+    if (native) {
+      if (!derived) nativeSeen.add(name)
       // Covered by a read of the same skill → same usage, drop the period.
       if (
-        (derivedIntervals.get(info.name) ?? []).some((interval) =>
+        (derivedIntervals.get(name) ?? []).some((interval) =>
           intervalsOverlap(spanIntervalMs(span), interval)
         )
       )
@@ -634,7 +817,7 @@ export function resolveCountedSkillSpans<
     }
     counted.push(span)
   }
-  return { counted, nativeSeen }
+  return { counted, failedReads, nativeSeen }
 }
 
 export interface SkillMarkdownParts {

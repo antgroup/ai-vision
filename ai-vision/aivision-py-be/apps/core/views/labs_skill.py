@@ -22,6 +22,7 @@ from ..services.trace_query_service import (
 )
 from ..trace_query.semantics.normalizers import coerce_datetime
 from ..trace_query.semantics.skill_recognition import (
+    _failed_skill_read,
     _native_skill_name,
     _skill_span_info,
 )
@@ -87,13 +88,18 @@ def _intervals_overlap(
 
 
 def _skill_call(
-    span: dict, agent_product: str, trace_id: str, info: tuple[str, bool]
+    span: dict,
+    agent_product: str,
+    trace_id: str,
+    info: tuple[str, bool],
+    *,
+    failed_read: bool = False,
 ) -> dict:
     name, derived = info
     attributes = span.get("attributes") or {}
     span_status = span.get("status") if isinstance(span.get("status"), dict) else {}
     status_message = str(span_status.get("message") or "")
-    outcome = tool_span_outcome(span)
+    outcome = "error" if failed_read else tool_span_outcome(span)
 
     start_time = coerce_datetime(span.get("start_time_unix_nano"))
     end_time = coerce_datetime(span.get("end_time_unix_nano"))
@@ -110,7 +116,8 @@ def _skill_call(
         duration_ms = (end_time - start_time).total_seconds() * 1000
     return {
         "name": name,
-        "derived": derived,
+        "derived": derived or failed_read,
+        "failedRead": failed_read,
         "traceId": str(span.get("trace_id") or trace_id or ""),
         "spanId": str(span.get("span_id") or ""),
         "agentProduct": str(span.get("agent_product") or agent_product or "").strip(),
@@ -118,7 +125,8 @@ def _skill_call(
         "status": outcome,
         "durationMs": round(duration_ms) if duration_ms is not None else None,
         "timestamp": start_time.isoformat().replace("+00:00", "Z") if start_time is not None else None,
-        "lastError": status_message if outcome == "error" else "",
+        # The source trace provides the raw shell error to authorized readers.
+        "lastError": status_message if outcome == "error" and not failed_read else "",
     }
 
 
@@ -172,18 +180,24 @@ def _scan_skill_window(
         # First pass: recognize skill spans and record native/derived usage
         # intervals per skill, so a native period overlapping its own reads
         # merges into them instead of counting the same usage twice.
-        recognized: list[tuple[dict, tuple[str, bool]]] = []
-        info_by_id: dict[str, tuple[str, bool] | None] = {}
-        derived_intervals: dict[str | None, list[tuple[float, float]]] = {}
+        recognized: list[tuple[dict, tuple[str, bool], bool, bool]] = []
+        info_by_id: dict[str, tuple[str, bool]] = {}
+        derived_intervals: dict[str, list[tuple[float, float] | None]] = {}
         for span in spans:
             if not isinstance(span, dict):
                 continue
             info = _skill_span_info(span)
-            info_by_id[str(span.get("span_id") or "")] = info
-            if info is None:
+            if not info or not info[0]:
                 continue
-            recognized.append((span, info))
-            if _native_skill_name(span.get("attributes") or {}) is not None:
+            reported = _native_skill_name(span["attributes"]) is not None
+            failed_read = _failed_skill_read(
+                span, info, reported=reported, agent_product=agent_product
+            )
+            recognized.append((span, info, reported, failed_read))
+            if failed_read:
+                continue
+            info_by_id[str(span.get("span_id") or "")] = info
+            if reported:
                 if not info[1]:
                     native_seen.add(info[0])
             else:
@@ -191,38 +205,41 @@ def _scan_skill_window(
                     _span_interval_ms(span)
                 )
 
-        for span, info in recognized:
+        for span, info, reported, failed_read in recognized:
             name, _derived = info
             # A native period covered by reads is the same usage (the plugin
             # derives it from the first read); the reads carry the count.
-            if _native_skill_name(span.get("attributes") or {}) is not None:
+            if reported and not failed_read:
                 interval = _span_interval_ms(span)
                 if any(
                     _intervals_overlap(interval, derived)
                     for derived in derived_intervals.get(name, [])
                 ):
                     continue
-            call = _skill_call(span, agent_product, trace_id, info)
+            call = _skill_call(span, agent_product, trace_id, info, failed_read=failed_read)
             identity = (call["traceId"], call["spanId"])
             if all(identity) and identity in seen_calls:
                 continue
             seen_calls.add(identity)
             name = call["name"]
-            all_calls.append(call)
             skill = by_skill.setdefault(
                 name,
                 {
                     "name": name,
-                    "calls": [],
+                    "history": [],
                     "sourceAgents": [],
                 },
             )
-            skill["calls"].append(call)
+            skill["history"].append(call)
             if (
                 call["agentProduct"]
                 and call["agentProduct"] not in skill["sourceAgents"]
             ):
                 skill["sourceAgents"].append(call["agentProduct"])
+
+            if failed_read:
+                continue
+            all_calls.append(call)
 
             # Nearest skill ancestor on the parent chain = direct nesting.
             ancestor_id = _span_parent_id(span)
@@ -245,7 +262,8 @@ def _scan_skill_window(
 
     skills = []
     for skill in by_skill.values():
-        calls = sorted(skill["calls"], key=_call_time_key)
+        history = sorted(skill["history"], key=_call_time_key)
+        calls = [row for row in history if not row["failedRead"]]
         durations = [call["durationMs"] for call in calls if call["durationMs"] is not None]
         skills.append(
             {
@@ -255,6 +273,7 @@ def _scan_skill_window(
                 # explicitly marked derived keep the badge on.
                 "derived": skill["name"] not in native_seen,
                 "calls": len(calls),
+                "failedReads": len(history) - len(calls),
                 "provenance": {
                     "inferred": sum(call["derived"] for call in calls),
                     "reported": sum(not call["derived"] for call in calls),
@@ -270,7 +289,7 @@ def _scan_skill_window(
         )
         if not summary:
             skills[-1]["recentCalls"] = (
-                calls if recent_limit is None else calls[:recent_limit]
+                history if recent_limit is None else history[:recent_limit]
             )
     skills.sort(key=lambda item: -item["calls"])
 
@@ -279,6 +298,7 @@ def _scan_skill_window(
             "skillCount": len(skills),
             "relationCount": len(edges),
             "calls": len(all_calls),
+            "failedReads": sum(skill["failedReads"] for skill in skills),
             "provenance": {
                 "inferred": sum(call["derived"] for call in all_calls),
                 "reported": sum(not call["derived"] for call in all_calls),

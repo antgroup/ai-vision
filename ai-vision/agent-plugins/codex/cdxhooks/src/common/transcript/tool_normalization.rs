@@ -100,6 +100,53 @@ pub(super) fn response_tool_name(payload: &Value) -> String {
     name.to_string()
 }
 
+pub(crate) fn is_shell_tool(name: &str) -> bool {
+    matches!(
+        name,
+        "Bash" | "exec_command" | "shell_command" | "read_thread_terminal" | "write_stdin"
+    )
+}
+
+pub(crate) fn shell_exit_code(output: &Value) -> Option<i64> {
+    if let Some(code) = output.get("exit_code").and_then(Value::as_i64) {
+        return Some(code);
+    }
+    let mut lines = output.as_str()?.lines();
+    let first = lines.next()?;
+    let code = if let Some(chunk_id) = first.strip_prefix("Chunk ID: ") {
+        if chunk_id.is_empty()
+            || !chunk_id.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'_' | b'-'))
+        {
+            return None;
+        }
+        let mut wall_time = lines.next()?.strip_prefix("Wall time: ")?.split_ascii_whitespace();
+        let duration = wall_time.next()?;
+        let (whole, fractional) = duration.split_once('.').unwrap_or((duration, "0"));
+        if !matches!(wall_time.next()?, "s" | "second" | "seconds")
+            || wall_time.next().is_some()
+            || ![whole, fractional].iter().all(|part| {
+                !part.is_empty() && part.bytes().all(|b| b.is_ascii_digit())
+            })
+        {
+            return None;
+        }
+        lines.next()?.strip_prefix("Process exited with code ")?
+    } else {
+        let code = first.strip_prefix("Exit code: ")?;
+        if lines.next()? != "Output:" {
+            return None;
+        }
+        code
+    };
+    // This is the Codex command-result header. Never look for exit codes in
+    // the command's stdout or stderr below it.
+    let digits = code.strip_prefix('-').unwrap_or(code);
+    if digits.is_empty() || !digits.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    code.parse().ok()
+}
+
 pub(super) fn normalize_tool_call(raw_name: &str, parsed_args: &Value) -> (String, Value) {
     match raw_name {
         "exec_command" | "shell_command" | "read_thread_terminal" | "write_stdin" => {

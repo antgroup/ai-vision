@@ -1,6 +1,5 @@
 """Shared bounded scans and latency aggregation for observability views."""
 
-import json
 import math
 from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor
@@ -9,60 +8,9 @@ from contextvars import copy_context
 from django.db import connections
 
 from ..services.trace_query_service import TraceQueryServiceError
+from ..trace_query.semantics.tool_outcome import tool_span_outcome as tool_span_outcome
 
 MAX_SCAN_WORKERS = 4
-
-
-def _reject_json_constant(value: str):
-    # Match JSON.parse: NaN/Infinity tokens are not valid JSON evidence.
-    raise ValueError(f"Invalid JSON constant: {value}")
-
-
-def tool_span_outcome(span: dict) -> str:
-    """Mirror native Trace's explicit tool-outcome evidence, never infer OK."""
-    attributes = span.get("attributes") or {}
-    status = span.get("status") if isinstance(span.get("status"), dict) else {}
-    code = str(status.get("code", "")).upper()
-    if (
-        code in {"2", "ERROR", "STATUS_CODE_ERROR"}
-        or attributes.get("langfuse.observation.level") == "ERROR"
-    ):
-        return "error"
-    output = attributes.get("gen_ai.tool.call.result")
-    if output is None:
-        output = attributes.get("langfuse.observation.output")
-    for _ in range(2):
-        if not isinstance(output, str):
-            break
-        try:
-            output = json.loads(output, parse_constant=_reject_json_constant)
-        except ValueError:
-            break
-    if isinstance(output, dict):
-        exit_code = output.get("exit_code")
-        try:
-            finite_exit = (
-                not isinstance(exit_code, bool)
-                and isinstance(exit_code, (int, float))
-                and math.isfinite(exit_code)
-            )
-        except OverflowError:
-            finite_exit = False
-        error = output.get("error")
-        if (
-            (isinstance(error, str) and error)
-            or isinstance(error, dict)
-            or output.get("is_error") is True
-            or output.get("isError") is True
-            or output.get("status") in ("failed", "error")
-            or (finite_exit and exit_code != 0)
-        ):
-            return "error"
-        if (finite_exit and exit_code == 0) or output.get("status") in (
-            "completed", "success"
-        ):
-            return "ok"
-    return "ok" if code in {"1", "OK", "STATUS_CODE_OK"} else "unknown"
 
 
 def call_status_stats(statuses: Iterable[str]) -> dict:

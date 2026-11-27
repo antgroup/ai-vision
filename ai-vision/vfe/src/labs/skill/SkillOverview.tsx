@@ -20,6 +20,17 @@ export function SkillOverview({
   const { t } = useTranslation()
   const hasCalls = overview.calls > 0
   const provenance = skillProvenanceCounts(overview)
+  const failedReads = overview.failedReads ?? 0
+  const recordSummary = [
+    hasCalls &&
+      (provenance
+        ? t("labs.skill.provenance.counts", provenance)
+        : t("labs.skill.provenance.unknownTotals")),
+    failedReads > 0 &&
+      t("labs.skill.provenance.failedReads", { count: failedReads }),
+  ]
+    .filter(Boolean)
+    .join(" · ")
 
   return (
     <LabsStatStrip
@@ -28,11 +39,7 @@ export function SkillOverview({
         {
           label: t("labs.skill.provenance.records"),
           value: overview.calls.toLocaleString(),
-          hint: hasCalls
-            ? provenance
-              ? t("labs.skill.provenance.counts", provenance)
-              : t("labs.skill.provenance.unknownTotals")
-            : undefined,
+          hint: recordSummary || undefined,
           help: t("labs.skill.provenance.help"),
         },
         {
