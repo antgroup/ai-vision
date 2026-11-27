@@ -128,7 +128,7 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
   windows-client:
-    name: Windows x64 onboarding and Ctrl-C fixtures
+    name: Windows x64 native client and Ctrl-C fixtures
     needs: artifact
     runs-on: windows-2025
     timeout-minutes: 20
@@ -147,6 +147,10 @@ jobs:
         with:
           go-version-file: aivision-cli/go.mod
           cache: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: minimax-code-preview-${{ env.SOURCE_SHA }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/plugin-dist/minimax-code
       - name: Verify the stock Windows CLI and source installer
         shell: pwsh
         run: |
@@ -165,4 +169,50 @@ jobs:
           npm run build --prefix "$env:PLUGINS_DIR/minimax-code"
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python "$env:PLUGINS_DIR/minimax-code/tests/test_windows_minimax_console.py"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install the pinned official host and qualify the Windows preview artifact
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "minimax-code-$env:MCODE_VERSION.tar.gz"
+          $prefix = Join-Path $env:RUNNER_TEMP 'mcode'
+          curl.exe --fail --location --proto '=https' --retry 3 --max-time 120 `
+            "https://github.com/MiniMax-AI/minimax-code/releases/download/v$env:MCODE_VERSION/minimax-code-$env:MCODE_VERSION.tar.gz" `
+            --output $archive
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ((Get-FileHash -Algorithm SHA256 $archive).Hash -ne $env:MCODE_SHA256) {
+            throw 'MiniMax Code release SHA-256 mismatch.'
+          }
+          npm.cmd install --global --prefix $prefix --registry=https://registry.npmjs.org/ `
+            --include=optional --ignore-scripts=false '--allow-scripts=@minimax-ai/code,better-sqlite3' $archive
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $mcode = Join-Path $prefix 'mcode.cmd'
+          if ((& $mcode --version) -ne $env:MCODE_VERSION -or $LASTEXITCODE -ne 0) {
+            throw 'Unexpected native MiniMax Code version.'
+          }
+          $binary = Join-Path $env:RUNNER_TEMP 'aiv.exe'
+          $zip = Join-Path $env:RUNNER_TEMP 'aiv-windows-x64.zip'
+          $client = Join-Path $env:RUNNER_TEMP 'aiv-client'
+          $version = (Get-Content VERSION -Raw).Trim()
+          Push-Location aivision-cli
+          try {
+            $env:CGO_ENABLED = '0'
+            go build -mod=vendor -ldflags "-X github.com/antgroup/ai-vision/aivision-cli/internal/cli.Version=$version" -o $binary .
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            python ../scripts/ci/windows_release_cli.py --binary $binary --license LICENSE --archive $zip
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally { Pop-Location }
+          Expand-Archive -LiteralPath $zip -DestinationPath $client
+          $aiv = Join-Path $client 'aiv.exe'
+          if ((& $aiv --version) -ne "aiv $version" -or $LASTEXITCODE -ne 0) {
+            throw 'Unexpected packaged Windows CLI version.'
+          }
+          $dist = Join-Path $env:RUNNER_TEMP 'plugin-dist'
+          python "$env:PLUGINS_DIR/scripts/verify_plugin_dist.py" --dist $dist --agent minimax-code --require-privacy
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r "$env:PLUGINS_DIR/tests/native_agent_e2e/requirements.txt"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Source: $env:SOURCE_SHA`nWindows CLI ZIP SHA-256: $((Get-FileHash -Algorithm SHA256 $zip).Hash)`n"
+          python "$env:PLUGINS_DIR/tests/native_agent_e2e/minimax_candidate.py" --repo . `
+            --dist $dist --aiv $aiv --mcode $mcode --host-platform Windows/AMD64 |
+            Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

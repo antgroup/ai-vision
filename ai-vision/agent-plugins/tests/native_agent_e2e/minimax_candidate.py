@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import platform
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -52,7 +53,7 @@ class MiniMaxOnboardingServer(SourceOnboardingServer):
 
 
 def run(command, *, env, cwd, timeout=45):
-    result = subprocess.run(command, cwd=cwd, env=env, text=True, capture_output=True,
+    result = subprocess.run(command, cwd=cwd, env=env, encoding="utf-8", capture_output=True,
                             timeout=timeout, stdin=subprocess.DEVNULL)
     if result.returncode:
         # The fixture has no external credentials. Avoid raw model/tools or
@@ -63,8 +64,8 @@ def run(command, *, env, cwd, timeout=45):
 
 def check_turn(launcher, env, task, provider, server, *, mode, session=None):
     before = len(provider.requests)
-    command = [str(launcher), "--cwd", str(task), "--permission", "full",
-               "--max-steps", "5", "--model", "custom_provider:ai-vision-fixture/native-e2e-chat"]
+    command = [*launcher, "--cwd", str(task), "--permission", "full", "--max-steps", "5",
+               "--model", "custom_provider:ai-vision-fixture/native-e2e-chat"]
     if session:
         command.extend(("--session", session))
     command.append("Read the fixture file and return the receipt.")
@@ -128,8 +129,9 @@ def main():
     parser.add_argument("--mcode", type=Path, required=True)
     parser.add_argument("--host-platform", required=True)
     args = parser.parse_args()
+    windows = platform.system() == "Windows"
     host = f"{platform.system()}/{platform.machine()}"
-    if host != args.host_platform:
+    if host.lower() != args.host_platform.lower():
         raise RuntimeError("Actual runner architecture did not match the candidate matrix")
     with tempfile.TemporaryDirectory(prefix="aiv-minimax-fixture-") as directory:
         root = Path(directory).resolve()
@@ -143,11 +145,28 @@ def main():
             "AIVISION_CONFIG_DIR": str(root / "aiv"), "AIVISION_PYTHON": sys.executable,
             "MCODE_DISABLE_TELEMETRY": "1", "MINIMAX_FIXTURE_API_KEY": "local-fixture-key",
         }
+        host_command = [str(args.mcode)]
+        launcher_path = Path(env["MINIMAX_DATA_DIR"]) / "aivision/minimax-code"
+        launcher = [str(launcher_path / "run")]
+        if windows:
+            env.update({name: os.environ[name] for name in ("SystemRoot", "ComSpec", "PATHEXT") if name in os.environ})
+            env.update(USERPROFILE=str(root), APPDATA=str(root / "AppData/Roaming"),
+                       LOCALAPPDATA=str(root / "AppData/Local"), TEMP=str(root), TMP=str(root), PYTHONUTF8="1")
+            node = shutil.which("node.exe", path=env["PATH"])
+            pwsh = shutil.which("pwsh.exe", path=env["PATH"])
+            entry = args.mcode.parent / "node_modules/@minimax-ai/code/cli.js"
+            if not node or not pwsh or not entry.is_file():
+                raise RuntimeError("The Windows fixture requires the npm MiniMax Code installation, Node.js and PowerShell")
+            # Configure the pinned npm entry directly. Installation still discovers
+            # the original npm shim and verifies it through the production resolver.
+            host_command = [node, str(entry)]
+            launcher = [pwsh, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File",
+                        str(launcher_path / "run.ps1")]
         with FakeProvider(receipt, scenario="cache-usage") as provider, MiniMaxOnboardingServer(
             args.repo / "ai-vision/agent-plugins", args.dist,
         ) as server:
             # Explicit CLI source-artifact installation, including public download and grant exchange.
-            run([str(args.mcode), "provider", "add", "--name", "AI Vision Fixture",
+            run([*host_command, "provider", "add", "--name", "AI Vision Fixture",
                  "--base-url", provider.url, "--api-format", "openai-completions",
                  "--model", "native-e2e-chat", "--api-key-env", "MINIMAX_FIXTURE_API_KEY"],
                 env=env, cwd=task)
@@ -155,7 +174,6 @@ def main():
                  "--space-id", server.space_id, "--agent-uuid", server.agent_uuid,
                  "--installation-token", server.installation_token, "--config-dir", env["MINIMAX_DATA_DIR"]],
                 env=env, cwd=task)
-            launcher = Path(env["MINIMAX_DATA_DIR"]) / "aivision/minimax-code/run"
             session, full = check_turn(launcher, env, task, provider, server, mode="full")
             receipt.write_text(f"receipt: {uuid4().hex}\n", encoding="utf-8")
             _, privacy = check_turn(launcher, env, task, provider, server, mode="privacy", session=session)
