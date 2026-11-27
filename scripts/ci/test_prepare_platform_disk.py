@@ -204,6 +204,7 @@ class PlatformDiskWorkflowTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[2]
         expected = {'diagnostics-e2e.yml': {'owned-platform-quick'},
                     'framework-e2e.yml': {'docker-platform', 'browser-platform', 'browser-platform-nvidia'},
+                    'minimax-code-oci-candidate.yml': {'qualify'},
                     'native-agent-e2e.yml': {'docker-platform'},
                     'native-candidate.yml': {'build'},
                     'release-images.yml': {'artifact-smoke'}}
@@ -226,7 +227,7 @@ class PlatformDiskWorkflowTests(unittest.TestCase):
                 self.assertGreater(python_index, next(i for i, s in enumerate(steps) if s.get('uses') == 'actions/checkout@v4'))
                 count += 1
             self.assertEqual(found, selected)
-        self.assertEqual(count, 7)
+        self.assertEqual(count, 8)
         for path in (root / '.github/workflows').glob('*.yml'):
             if path.name not in expected:
                 self.assertNotIn('prepare_platform_disk.py', path.read_text())
