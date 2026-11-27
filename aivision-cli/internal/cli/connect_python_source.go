@@ -1,4 +1,4 @@
-//go:build !native_distribution && (!windows || (amd64 && windows_codex_connect))
+//go:build !native_distribution && (!windows || amd64)
 
 package cli
 

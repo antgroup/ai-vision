@@ -275,6 +275,66 @@ def run(command, env):
     return result.stdout
 
 
+def windows_program_on_path(name):
+    # Only use explicit PATH directories, never implicit Windows cwd lookup.
+    for part in os.get_exec_path():
+        directory = Path(part.strip('"'))
+        candidate = directory / name
+        if directory.is_absolute() and candidate.is_file():
+            return candidate
+    return None
+
+
+def minimax_windows_command(shim):
+    package_entry = ('node_modules', '@minimax-ai', 'code', 'cli.js')
+    native_launch = r'^"([^"\r\n]+)" "%~dp0node_modules\\@minimax-ai\\code\\cli\.js" %\*$'
+
+    def read_launcher(path):
+        with path.open(encoding='utf-8-sig') as stream:
+            return stream.read(4096)
+
+    try:
+        content = read_launcher(shim)
+        prefix = shim.parent
+        if ('set /p mcode_release=<"%~dp0current"' in content.lower()
+                and 'call "%~dp0releases\\%mcode_release%\\.mcode-launcher.cmd"' in content.lower()):
+            release = read_launcher(prefix / 'current').strip()
+            if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', release):
+                raise ConnectError('Invalid MiniMax Code Windows release pointer; reinstall the pinned CLI')
+            active = prefix / 'releases' / release
+            executable = re.search(native_launch, read_launcher(active / '.mcode-launcher.cmd'), re.I | re.M)
+            if not executable:
+                raise ConnectError('Unrecognized official MiniMax Code Windows launcher')
+            node = Path(executable.group(1).replace('%%', '%'))
+            entry = active.joinpath(*package_entry)
+        else:
+            # npm prefixes use either node_modules under the prefix or its
+            # sibling in a node_modules/.bin directory.
+            npm_entry = re.search(
+                r'"%dp0%[\\/](node_modules|\.\.)[\\/]@minimax-ai[\\/]code[\\/]cli\.js"',
+                content, re.I,
+            )
+            if not npm_entry:
+                raise ConnectError('Use the npm or official installer version of MiniMax Code on Windows')
+            entry = prefix.joinpath(npm_entry.group(1), *package_entry[1:])
+            node = prefix / 'node.exe'
+            if not node.is_file():
+                node = windows_program_on_path('node.exe')
+        if node is not None and node.is_absolute() and node.suffix.lower() == '.exe' and node.is_file() and entry.is_file():
+            return str(node.resolve()), str(entry.resolve())
+    except (OSError, UnicodeError):
+        pass
+    raise ConnectError('Cannot resolve a working MiniMax Code Windows entry point and Node runtime')
+
+
+def minimax_launcher_path(managed):
+    return managed / ('run.ps1' if platform.system() == 'Windows' else 'run')
+
+
+def powershell_literal(value):
+    return "'" + str(value).replace("'", "''") + "'"
+
+
 def platform_download(downloads):
     universal = next((d for d in downloads if d["platform"] == "all" and d["arch"] == "all"), None)
     if universal:
@@ -536,15 +596,23 @@ def register_native(args, plugin, root, installed, managed, support, token, tx, 
             run(["node", str(support / "register-dsh.mjs"), "--profile", profile,
                  "--config-src", str(settings), "--config-file", str(settings), "--state-dir", str(root)], env)
     elif agent == 'minimax-code':
-        launcher = managed / 'run'
+        launcher = minimax_launcher_path(managed)
         if launcher.is_symlink():
             raise ConnectError('Remove the symbolic link at the managed MiniMax Code launcher before installing')
-        command = shlex.join([plugin['node'], str(installed / 'dist/index.js'),
-                              '--ingest-config', str(ingest), '--mcode', plugin['host'], '--'])
-        profile = shlex.quote(str(root))
-        content = f'#!/bin/sh\nexport MINIMAX_DATA_DIR={profile} MAVIS_DATA_DIR={profile}\nexec {command} "$@"\n'
+        command = [plugin['node'], str(installed / 'dist/index.js'),
+                   '--ingest-config', str(ingest), '--mcode', plugin['host']]
+        if platform.system() == 'Windows':
+            command += ['--mcode-entry', plugin['host_entry'], '--profile-dir', str(root), '--']
+            invocation = ' '.join(map(powershell_literal, command))
+            content = f'& {invocation} @args\r\nexit $LASTEXITCODE\r\n'
+            script = content.encode('utf-8-sig')
+        else:
+            command += ['--']
+            profile = shlex.quote(str(root))
+            content = f'#!/bin/sh\nexport MINIMAX_DATA_DIR={profile} MAVIS_DATA_DIR={profile}\nexec {shlex.join(command)} "$@"\n'
+            script = content.encode('utf-8')
         tx.watch(launcher)
-        config.atomic_write(launcher, content.encode(), mode=0o700)
+        config.atomic_write(launcher, script, mode=0o700)
 
 
 def preflight(args):
@@ -569,26 +637,36 @@ def preflight(args):
     if mode not in supported or (override and override['mode'] not in supported):
         raise ConnectError('This plugin artifact does not support the requested collection mode; update the deployment image and plugin artifacts')
     args.collection_mode, args.collection_mode_source = mode, source
-    host = shutil.which(plugin['host'])
+    minimax_windows = agent == 'minimax-code' and platform.system() == 'Windows'
+    host = windows_program_on_path('mcode.cmd') if minimax_windows else shutil.which(plugin['host'])
     if not host:
         raise ConnectError(f"Install and configure {plugin['name']} first ({plugin['host']} not found)")
     # Run exactly the executable we checked; PATH lookup may otherwise fall
     # through an invalid launcher to a different installed host version.
     plugin = {**plugin, 'host': host}
-    node = shutil.which('node') if not plugin.get('binary') else None
+    if minimax_windows:
+        node, host_entry = minimax_windows_command(host)
+        plugin = {**plugin, 'host': node, 'host_entry': host_entry}
+    else:
+        node = shutil.which('node') if not plugin.get('binary') else None
     if not plugin.get('binary') and not node:
         raise ConnectError("Node.js is required by this plugin")
     if agent == 'dsh' and any(not re.fullmatch(r'[a-zA-Z0-9_-]+', p) for p in args.profiles.split(',')):
         raise ConnectError('Invalid dsh profile name')
     if agent == 'minimax-code':
         system = platform.system()
-        if system not in {'Darwin', 'Linux'} or (system == 'Linux' and (
+        if minimax_windows and (NATIVE_BUILD or platform.machine().lower() not in {'amd64', 'x86_64'}):
+            raise ConnectError('MiniMax Code on Windows requires the x64 source installer')
+        if system not in {'Darwin', 'Linux', 'Windows'} or (system == 'Linux' and (
                 platform.libc_ver()[0] == 'musl' or list(Path('/lib').glob('ld-musl-*.so.1')))):
-            raise ConnectError('MiniMax Code CLI PoC requires macOS or glibc Linux')
-        version = run([host, '--version'], native_env(agent, root)).strip()
+            raise ConnectError('MiniMax Code CLI PoC requires macOS, glibc Linux, or Windows x64')
+        command = [plugin['host']]
+        if minimax_windows:
+            command.append(plugin['host_entry'])
+        version = run([*command, '--version'], native_env(agent, root)).strip()
         if version != MINIMAX_CODE_HOST_VERSION:
             raise ConnectError(f'MiniMax Code CLI PoC requires mcode {MINIMAX_CODE_HOST_VERSION}')
-        plugin = {**plugin, 'host': os.path.abspath(host), 'node': os.path.abspath(node), 'host_version': version}
+        plugin = {**plugin, 'host': os.path.abspath(plugin['host']), 'node': os.path.abspath(node), 'host_version': version}
     return agent, base, catalog, entry, plugin, root, item
 
 
@@ -694,7 +772,7 @@ def install(args):
                             if path.is_file():
                                 registration_files[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
                 elif agent == 'minimax-code':
-                    launcher = managed / 'run'
+                    launcher = minimax_launcher_path(managed)
                     registration_files[str(launcher)] = hashlib.sha256(launcher.read_bytes()).hexdigest()
                 tx.json(managed / 'installation.json', {'agent':agent, 'version':entry['version'], 'sha256':item['sha256'],
                         'host_version': version[0], 'installed_path': str(installed), 'profiles': getattr(args, 'profiles', 'tui,web'),
@@ -720,7 +798,9 @@ def install(args):
     print(f"{plugin['name']} telemetry plugin installed. Config directory: {root}")
     if agent == 'minimax-code':
         print(f'Saved collection mode: {args.collection_mode}.')
-        print(f'Run a monitored mcode exec task with: {shlex.quote(str(managed / "run"))} "Your prompt"')
+        launcher = minimax_launcher_path(managed)
+        command = f'& {powershell_literal(launcher)}' if platform.system() == 'Windows' else shlex.quote(str(launcher))
+        print(f'Run a monitored mcode exec task with: {command} "Your prompt"')
     else:
         print(f'Saved collection mode: {args.collection_mode}. Restart the host and start a new session to apply it; existing sessions and historical data are unchanged.')
     override = collection_mode_environment(agent)
@@ -836,8 +916,9 @@ def native_registered(agent, root, installed, managed, args, installation):
                 return None
         return True
     if agent == 'minimax-code':
-        launcher = managed / 'run'
-        if launcher.is_symlink() or not launcher.is_file() or not os.access(launcher, os.X_OK):
+        launcher = minimax_launcher_path(managed)
+        if (launcher.is_symlink() or not launcher.is_file()
+                or (platform.system() != 'Windows' and not os.access(launcher, os.X_OK))):
             return False
         digest = installation.get('registration_files', {}).get(str(launcher))
         if hashlib.sha256(launcher.read_bytes()).hexdigest() != digest:

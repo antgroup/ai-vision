@@ -13,13 +13,14 @@ test('applies the same collection mode normalization and precedence as the insta
   const profile = await mkdtemp(join(tmpdir(), 'minimax-launcher-mode-'));
   t.after(() => rm(profile, { recursive: true, force: true }));
   const configuration = join(profile, 'ingest.json');
-  const host = join(profile, 'mcode');
+  const host = join(profile, 'mcode.mjs');
   await writeFile(configuration, '{"collection_mode":"full"}', { mode: 0o600 });
-  await writeFile(host, '#!/bin/sh\nif [ "$1" = --version ]; then echo 0.7.2; else echo invoked; fi\n', { mode: 0o700 });
+  await writeFile(host, "console.log(process.argv[2] === '--version' ? '0.7.2' : 'invoked');\n");
 
   const env = { ...process.env, MINIMAX_DATA_DIR: profile, MINIMAX_CODE_COLLECTION_MODE: ' Privacy ' };
   delete env.AIVISION_COLLECTION_MODE;
-  const args = [launcher, '--ingest-config', configuration, '--mcode', host, '--', 'test'];
+  const args = [launcher, '--ingest-config', configuration, '--mcode', process.execPath,
+    '--mcode-entry', host, '--', 'test'];
   const normalized = spawnSync(process.execPath, args, { env, encoding: 'utf8' });
   assert.equal(normalized.status, 0, normalized.stderr);
   assert.equal(normalized.stdout, 'invoked\n');
@@ -35,7 +36,7 @@ test('exports a complete trace when a stdout consumer closes after the first eve
   const profile = await mkdtemp(join(tmpdir(), 'minimax-launcher-pipe-'));
   t.after(() => rm(profile, { recursive: true, force: true }));
   const configuration = join(profile, 'ingest.json');
-  const host = join(profile, 'mcode');
+  const host = join(profile, 'mcode.mjs');
   const transport = join(profile, 'transport.mjs');
   const received = join(profile, 'received.json');
   const consumerClosed = join(profile, 'consumer-closed');
@@ -43,12 +44,16 @@ test('exports a complete trace when a stdout consumer closes after the first eve
     collection_mode: 'privacy', agent_uuid: 'agent', space_id: 'space', agent_credential: 'fixture-credential',
     endpoint: 'http://fake.collector', base_url: 'http://fake.aiv',
   }), { mode: 0o600 });
-  await writeFile(host, `#!/bin/sh
-if [ "$1" = --version ]; then echo 0.7.2; exit; fi
-echo '{"schemaVersion":1,"type":"turn.started","sessionId":"session","turnId":"turn"}'
-while [ ! -f "$TEST_CONSUMER_CLOSED" ]; do sleep 0.01; done
-echo '{"schemaVersion":1,"type":"turn.completed","sessionId":"session","turnId":"turn"}'
-`, { mode: 0o700 });
+  await writeFile(host, `import { existsSync } from 'node:fs';
+import { setTimeout } from 'node:timers/promises';
+if (process.argv[2] === '--version') {
+  console.log('0.7.2');
+  process.exit(0);
+}
+console.log('{"schemaVersion":1,"type":"turn.started","sessionId":"session","turnId":"turn"}');
+while (!existsSync(process.env.TEST_CONSUMER_CLOSED)) await setTimeout(10);
+console.log('{"schemaVersion":1,"type":"turn.completed","sessionId":"session","turnId":"turn"}');
+`);
   await writeFile(transport, `import { writeFileSync } from 'node:fs';
 globalThis.fetch = async (url, options) => {
   if (url === 'http://fake.aiv/openapi/v1/ingest-tokens') {
@@ -66,7 +71,7 @@ globalThis.fetch = async (url, options) => {
   const env = { ...process.env, MINIMAX_DATA_DIR: profile, AIVISION_COLLECTION_MODE: 'privacy',
     TEST_CONSUMER_CLOSED: consumerClosed };
   const child = spawn(process.execPath, ['--import', transport, launcher,
-    '--ingest-config', configuration, '--mcode', host, '--', 'test'], { env });
+    '--ingest-config', configuration, '--mcode', process.execPath, '--mcode-entry', host, '--', 'test'], { env });
   t.after(() => child.kill());
   let stderr = '';
   child.stderr.on('data', chunk => { stderr += chunk; });

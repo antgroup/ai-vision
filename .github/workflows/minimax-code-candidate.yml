@@ -126,3 +126,43 @@ jobs:
               --dist "$RUNNER_TEMP/plugin-dist" --aiv "$RUNNER_TEMP/aiv-client/aiv" \
               --mcode "$RUNNER_TEMP/mcode/bin/mcode" --host-platform "$EXPECTED_HOST"
           } | tee -a "$GITHUB_STEP_SUMMARY"
+
+  windows-client:
+    name: Windows x64 onboarding and Ctrl-C fixtures
+    needs: artifact
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26.10.0'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - name: Verify the stock Windows CLI and source installer
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD) -ne $env:SOURCE_SHA -or
+              [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString() -ne 'X64') {
+            throw 'Native Windows x64 qualification requires the exact candidate SHA.'
+          }
+          Push-Location aivision-cli
+          try { go test -mod=vendor . -run '^TestWindowsMiniMax' } finally { Pop-Location }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s "$env:PLUGINS_DIR/scripts/tests" -p test_minimax_windows.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Send native Ctrl-C during model streaming and tool execution
+        shell: pwsh
+        run: |
+          npm run build --prefix "$env:PLUGINS_DIR/minimax-code"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python "$env:PLUGINS_DIR/minimax-code/tests/test_windows_minimax_console.py"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

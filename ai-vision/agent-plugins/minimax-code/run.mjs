@@ -9,6 +9,7 @@ import { readRows, readSessionRows } from './history.mjs';
 import { buildTrace, exportTrace } from './telemetry.mjs';
 
 const CANCELLATION_GRACE_MS = 65_000;
+const WINDOWS_DRAIN_GRACE_MS = 2_000;
 const SUPPORTED_VERSION = '0.7.2';
 const signals = ['SIGINT', 'SIGTERM'];
 const modelDiagnostics = new Set([
@@ -18,37 +19,66 @@ const modelDiagnostics = new Set([
 function settings(argv, env) {
   let ingestConfig = env.AIVISION_MINIMAX_INGEST_CONFIG;
   let mcode = env.AIVISION_MINIMAX_MCODE || 'mcode';
+  let mcodeEntry;
+  let profile = env.MINIMAX_DATA_DIR || env.MAVIS_DATA_DIR;
   let collectionMode;
   const args = [...argv];
-  while (['--ingest-config', '--mcode', '--collection-mode'].includes(args[0])) {
+  while (['--ingest-config', '--mcode', '--mcode-entry', '--profile-dir', '--collection-mode'].includes(args[0])) {
     const flag = args.shift();
     const value = args.shift();
     if (!value || value.startsWith('--')) throw new Error(`Missing value for ${flag}`);
     if (flag === '--ingest-config') ingestConfig = value;
     if (flag === '--mcode') mcode = value;
+    if (flag === '--mcode-entry') mcodeEntry = resolve(value);
+    if (flag === '--profile-dir') profile = value;
     if (flag === '--collection-mode') collectionMode = value;
   }
   if (args[0] === '--') args.shift();
   if (args[0] === 'exec') args.shift();
   if (!ingestConfig) throw new Error('Use the installed MiniMax Code launcher or provide --ingest-config');
-  const profile = env.MINIMAX_DATA_DIR || env.MAVIS_DATA_DIR;
   if (!profile) throw new Error('The MiniMax Code data directory must be selected by the installer');
   const userOptions = args.slice(0, args.includes('--') ? args.indexOf('--') : args.length);
   if (userOptions.some(arg => /^--(?:output-format|diagnostics-dir|profile|lane)(?:=|$)/.test(arg))) {
     throw new Error('The launcher manages output format, diagnostics and the selected MiniMax Code profile');
   }
-  return { ingestConfig: resolve(ingestConfig), mcode, profile: resolve(profile), collectionMode, args };
+  if (process.platform === 'win32' && (!mcodeEntry || !mcode.toLowerCase().endsWith('.exe'))) {
+    throw new Error('Use the installed MiniMax Code Windows launcher to select the native Node entry point');
+  }
+  return {
+    ingestConfig: resolve(ingestConfig), mcode, mcodeArgs: mcodeEntry ? [mcodeEntry] : [],
+    profile: resolve(profile), collectionMode, args,
+  };
 }
 
-async function captureExec({ mcode, args, profile }, diagnosticsPath) {
+// Windows child_process.kill() terminates the host instead of delivering a
+// catchable Ctrl+C. Only use it after the original console event and deadline.
+function forceWindowsExit(child) {
+  if (child.exitCode !== null || child.signalCode || !child.pid) return;
+  if (!process.env.SystemRoot) {
+    child.kill('SIGKILL');
+    return;
+  }
+  const taskkill = join(process.env.SystemRoot, 'System32', 'taskkill.exe');
+  execFile(taskkill, ['/PID', String(child.pid), '/T', '/F'], { timeout: 5_000, windowsHide: true }, error => {
+    if (error && child.exitCode === null && !child.signalCode) {
+      child.kill('SIGKILL');
+      console.error('Could not stop the whole MiniMax Code process tree.');
+    }
+  });
+}
+
+async function captureExec({ mcode, mcodeArgs, args, profile }, diagnosticsPath) {
+  const windows = process.platform === 'win32';
   const observedStartTimeMs = Date.now();
   const child = spawn(mcode, [
-    'exec', '--output-format', 'stream-json', '--diagnostics-dir', diagnosticsPath, ...args,
+    ...mcodeArgs, 'exec', '--output-format', 'stream-json', '--diagnostics-dir', diagnosticsPath, ...args,
   ], {
-    detached: true,
+    // Keep both processes on the same Windows console for CTRL_C_EVENT.
+    detached: !windows,
     stdio: ['pipe', 'pipe', 'inherit'],
-    env: { ...process.env, MINIMAX_DATA_DIR: profile },
+    env: { ...process.env, MINIMAX_DATA_DIR: profile, MAVIS_DATA_DIR: profile },
   });
+  const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
 
   const inputFlag = args.some(arg => arg === '--input' || arg.startsWith('--input='));
   if (inputFlag) {
@@ -62,12 +92,31 @@ async function captureExec({ mcode, args, profile }, diagnosticsPath) {
 
   let requestedSignal;
   let killTimer;
+  let drainTimer;
+  let forcedWindowsExit = false;
+  if (windows) {
+    child.once('exit', () => {
+      // A descendant that kept the write handle cannot prolong trace export.
+      drainTimer = setTimeout(() => {
+        lines.close();
+        child.stdout.destroy();
+      }, WINDOWS_DRAIN_GRACE_MS);
+      drainTimer.unref();
+    });
+  }
   function forwardSignal(signal) {
     if (requestedSignal || child.exitCode !== null || child.signalCode || !child.pid) return;
     requestedSignal = signal;
     // A single SIGTERM gives mcode time to commit the cancelled turn and emit exec.completed.
-    child.kill('SIGTERM');
+    if (!windows) child.kill('SIGTERM');
     killTimer = setTimeout(() => {
+      if (windows) {
+        if (child.exitCode === null && !child.signalCode) {
+          forcedWindowsExit = true;
+          forceWindowsExit(child);
+        }
+        return;
+      }
       try {
         process.kill(-child.pid, 'SIGKILL');
       } catch (error) {
@@ -91,7 +140,7 @@ async function captureExec({ mcode, args, profile }, diagnosticsPath) {
   process.stdout.on('error', closeStdout);
   const events = [];
   const consume = async () => {
-    for await (const line of createInterface({ input: child.stdout, crlfDelay: Infinity })) {
+    for await (const line of lines) {
       const observedTimeMs = Date.now();
       if (!stdoutClosed) {
         try {
@@ -113,10 +162,12 @@ async function captureExec({ mcode, args, profile }, diagnosticsPath) {
     const [[code, signal]] = await Promise.all([once(child, 'close'), consume()]);
     return {
       events, observedStartTimeMs, observedEndTimeMs: Date.now(),
-      termination: { code, signal, requestedSignal },
+      termination: { code: forcedWindowsExit ? 130 : code, signal, requestedSignal },
     };
   } finally {
     clearTimeout(killTimer);
+    clearTimeout(drainTimer);
+    lines.close();
     if (inputFlag) {
       process.stdin.unpipe(child.stdin);
       process.stdin.pause();
@@ -133,7 +184,7 @@ async function run() {
   const collectionMode = typeof requestedMode === 'string' ? requestedMode.trim().toLowerCase() : undefined;
   if (!['full', 'privacy'].includes(collectionMode)) throw new Error('Invalid collection mode');
 
-  const version = await promisify(execFile)(options.mcode, ['--version'], { timeout: 5_000 });
+  const version = await promisify(execFile)(options.mcode, [...options.mcodeArgs, '--version'], { timeout: 5_000 });
   if (version.stdout.trim() !== SUPPORTED_VERSION) {
     throw new Error(`This PoC requires MiniMax Code ${SUPPORTED_VERSION}`);
   }
