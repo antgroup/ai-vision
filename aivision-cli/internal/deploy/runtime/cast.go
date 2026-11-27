@@ -246,7 +246,11 @@ func (a *App) startContainer(c Component, vars map[string]string) error {
 	for _, v := range c.Volumes {
 		ev := expand(v, vars)
 		// Only pre-create named volumes; bind sources are handled separately.
-		if volName := volumeName(ev); volName != "" {
+		volName, err := volumeName(ev)
+		if err != nil {
+			return err
+		}
+		if volName != "" {
 			if err := a.Docker.EnsureVolume(a.Ctx, volName); err != nil {
 				return err
 			}
@@ -468,19 +472,4 @@ func underAny(path string, roots []string) bool {
 		}
 	}
 	return false
-}
-
-// volumeName extracts the named-volume part of a docker `-v` spec
-// ("name:/container/path" -> "name"). It returns "" for bind mounts, whose
-// source is a host path (starting with /, . or ~) rather than a volume name.
-func volumeName(spec string) string {
-	i := strings.IndexByte(spec, ':')
-	if i <= 0 {
-		return ""
-	}
-	name := spec[:i]
-	if strings.HasPrefix(name, "/") || strings.HasPrefix(name, ".") || strings.HasPrefix(name, "~") {
-		return "" // bind-mount source, not a named volume
-	}
-	return name
 }

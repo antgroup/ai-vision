@@ -13,6 +13,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/antgroup/ai-vision/aivision-cli/internal/pathguard"
 )
 
 // App is the shared execution context threaded through every command.
@@ -283,6 +285,9 @@ func (a *App) gitCloneOrFetch(c Component) error {
 		return nil
 	}
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err == nil {
+		if err := a.recoverRepoRecord(dir); err != nil {
+			return err
+		}
 		if !a.Force {
 			a.Log.Info("reuse existing repo %s (use --force to fetch %s)", dir, branch)
 			return nil
@@ -304,7 +309,52 @@ git fetch --prune origin && git checkout %s && git reset --hard origin/%s`,
 		return err
 	}
 	script := fmt.Sprintf("git clone --branch %s %s %s", shq(branch), shq(url), shq(dir))
-	return a.Log.RunShell(a.Ctx, script, RunOpts{Stream: a.Verbose})
+	if err := a.Log.RunShell(a.Ctx, script, RunOpts{Stream: a.Verbose}); err != nil {
+		return err
+	}
+	if a.State == nil {
+		return nil
+	}
+	if err := pathguard.EnsureStrictlyWithin(a.SourceRoot(), dir); err != nil {
+		a.Log.Warn("cloned %s outside sourceRoot or at its root; --purge-repos will keep it: %v", dir, err)
+		return nil
+	}
+	id, err := newRepoOwnerID()
+	if err != nil {
+		return fmt.Errorf("assign ownership to cloned repo %s: %w", dir, err)
+	}
+	if err := writeRepoOwner(dir, id, a.repoOwnerScope()); err != nil {
+		return fmt.Errorf("mark cloned repo %s: %w", dir, err)
+	}
+	if err := a.State.RecordManagedRepo(dir, id); err != nil {
+		return fmt.Errorf("record cloned repo %s: %w (checkout kept; rerun forge to retry registration or remove it manually)", dir, err)
+	}
+	return nil
+}
+
+// recoverRepoRecord repairs a clone whose record write failed after the
+// ownership marker was written. Checkouts without aiv's marker are ignored.
+func (a *App) recoverRepoRecord(dir string) error {
+	if a.State == nil || a.SourceRoot() == "" {
+		return nil
+	}
+	fs, err := openRepoFS(a.SourceRoot())
+	if err != nil {
+		return nil
+	}
+	defer fs.Close()
+	owner, err := fs.checkoutOwner(dir)
+	if err != nil || owner.Scope == "" || owner.Scope != a.repoOwnerScope() {
+		return nil
+	}
+	if err := a.State.RecordManagedRepo(dir, owner.ID); err != nil {
+		return fmt.Errorf("recover ownership record for %s: %w", dir, err)
+	}
+	return nil
+}
+
+func (a *App) repoOwnerScope() string {
+	return filepath.Clean(a.State.Workdir) + "\x00" + a.State.Namespace
 }
 
 // ResolveEnv builds a component's effective environment: values loaded from

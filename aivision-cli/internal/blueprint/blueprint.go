@@ -7,11 +7,31 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
+
+// namespacePattern keeps metadata.namespace to one safe path component while
+// accepting every selector Docker and Compose already allow, including
+// uppercase Docker names and trailing '-' or '_'. The first character must be
+// alphanumeric, which rejects ".", ".." and hidden names; separators,
+// absolute paths and backslashes are rejected as well.
+var namespacePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
+
+// ValidateNamespace rejects namespace values that could escape the workdir or
+// are unusable as a Docker, Compose or Kubernetes name.
+func ValidateNamespace(namespace string) error {
+	if namespace == "" {
+		return fmt.Errorf("metadata.namespace must not be empty")
+	}
+	if !namespacePattern.MatchString(namespace) {
+		return fmt.Errorf("metadata.namespace %q must start with a letter or digit and contain only letters, digits, '.', '_' or '-'", namespace)
+	}
+	return nil
+}
 
 // Blueprint is the single deployment configuration for an AI Vision stack.
 // It is the aiv equivalent of foundry's casting.yaml: one file that
@@ -222,6 +242,9 @@ func Parse(raw []byte) (*Blueprint, error) {
 func (bp *Blueprint) Validate() error {
 	if bp.Metadata.Namespace == "" {
 		bp.Metadata.Namespace = "aivision"
+	}
+	if err := ValidateNamespace(bp.Metadata.Namespace); err != nil {
+		return err
 	}
 	if bp.Config.SourceRoot == "" {
 		return fmt.Errorf("config.sourceRoot is required")

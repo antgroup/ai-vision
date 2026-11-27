@@ -25,11 +25,12 @@ type (
 	Health    = blueprint.Health
 	ToolReq   = blueprint.ToolReq
 
-	Logger     = runner.Logger
-	RunOpts    = runner.RunOpts
-	Docker     = runner.Docker
-	State      = state.State
-	DeployMeta = state.DeployMeta
+	Logger      = runner.Logger
+	RunOpts     = runner.RunOpts
+	Docker      = runner.Docker
+	State       = state.State
+	ManagedRepo = state.ManagedRepo
+	DeployMeta  = state.DeployMeta
 )
 
 // Function aliases keep the engine's call sites unchanged.

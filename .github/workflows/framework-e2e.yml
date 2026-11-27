@@ -298,6 +298,11 @@ jobs:
         run: |
           make assets-check
           go test -mod=vendor ./...
+      - name: Check concurrent CLI purge and recovery
+        run: >-
+          go test -mod=vendor -race -shuffle=on -count=3
+          -run '^Test(Concurrent|Destroy|Flock|Record)'
+          ./internal/cli ./internal/deploy/runtime ./internal/state
       - name: Installer unit tests
         run: python -m unittest discover -s scripts -p "test_install.py"
 

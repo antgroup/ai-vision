@@ -80,6 +80,8 @@ func TestPhysicalOwnershipChecksImplicitAndCaseInsensitiveLongVolumeMounts(t *te
 		"type=volume,src=aivforge-ob-data-aivision,dst=/data",
 		"TYPE=VoLuMe,SOURCE=aivforge-ob-data-aivision,TARGET=/data",
 		"SRC=aivforge-ob-data-aivision,DST=/data",
+		`type=volume,"source=aivforge-ob-data-aivision",target=/data`,
+		`type=volume,source=aivforge-ob-data-aivision,target=/data,"volume-opt=o=rw,src=other,hard"`,
 		"type=bind,source=aivforge-ob-data-aivision,target=/data",
 	} {
 		t.Run(mount, func(t *testing.T) {
@@ -98,6 +100,69 @@ func TestPhysicalOwnershipChecksImplicitAndCaseInsensitiveLongVolumeMounts(t *te
 				}
 			} else if err == nil || !strings.Contains(err.Error(), "managed by Compose") {
 				t.Fatalf("Docker long-mount volume ownership was missed: %v", err)
+			}
+		})
+	}
+}
+
+func TestDestroyRejectsInvalidNamedVolumeTarget(t *testing.T) {
+	for _, spec := range []string{
+		"archive:/",
+		"archive:relative",
+		"type=volume,src=archive",
+		"source=archive,dst=relative",
+		"source=archive,destination=/data/..",
+	} {
+		t.Run(spec, func(t *testing.T) {
+			app, err := datastoreApp(t, "aivision.yaml", nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			database := app.BP.Component("oceanbase")
+			database.Volumes, database.Mounts = nil, nil
+			if strings.Contains(spec, "=") {
+				database.Mounts = []string{spec}
+			} else {
+				database.Volumes = []string{spec}
+			}
+			mutation := installOwnershipDockerFixture(t, app, "absent")
+			if err := app.Destroy(DestroyOpts{Purge: true}); err == nil || !strings.Contains(err.Error(), "target") {
+				t.Fatalf("expected invalid volume target error for %q, got %v", spec, err)
+			}
+			if _, err := os.Stat(mutation); !os.IsNotExist(err) {
+				t.Fatalf("Docker mutation before rejecting %q: %v", spec, err)
+			}
+		})
+	}
+}
+
+func TestDeploymentVolumeOptions(t *testing.T) {
+	for _, tc := range []struct {
+		spec    string
+		name    string
+		long    bool
+		invalid bool
+	}{
+		{spec: "archive:/data:ro,Z,nocopy,cached", name: "archive"},
+		{spec: "/tmp/archive:/data:ro"},
+		{spec: "/data"},
+		{spec: "archive:/data:rw,ro", invalid: true},
+		{spec: "archive:/data:unexpected", invalid: true},
+		{spec: `  "type=volume",src=archive,dst=/data,"volume-opt=o=rw,src=other,hard"  `, name: "archive", long: true},
+		{spec: "type=bind,source=./archive,target=/data,bind-create-src", long: true},
+		{spec: "type=volume,target=/data", long: true},
+		{spec: "src=archive, target=/data", long: true, invalid: true},
+		{spec: "src=archive,target=/data,unexpected=1", long: true, invalid: true},
+		{spec: "src=archive,target=/data,ro=invalid", long: true, invalid: true},
+	} {
+		t.Run(tc.spec, func(t *testing.T) {
+			parse := volumeName
+			if tc.long {
+				parse = mountVolumeName
+			}
+			name, err := parse(tc.spec)
+			if name != tc.name || (err != nil) != tc.invalid {
+				t.Fatalf("volume name = %q, error = %v", name, err)
 			}
 		})
 	}
