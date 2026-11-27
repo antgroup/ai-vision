@@ -93,7 +93,7 @@ def _skill_call(
     trace_id: str,
     info: tuple[str, bool],
     *,
-    failed_read: bool,
+    failed_read: bool = False,
 ) -> dict:
     name, derived = info
     attributes = span.get("attributes") or {}
