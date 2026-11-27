@@ -34,6 +34,7 @@ export interface SkillCallRef {
   agentProduct: string
   sourceSystem?: string
   status: "ok" | "error" | "unknown"
+  failedRead?: boolean
   durationMs: number | null
   timestamp: string | null
   lastError: string
@@ -53,6 +54,8 @@ export interface SkillStat {
   derived: boolean
   calls: number
   errors: number
+  /** File reads that failed before Skill usage. */
+  failedReads?: number
   /** Optional for responses from older backends. */
   reportedStatusCalls?: number
   unknownStatusCalls?: number
@@ -68,6 +71,7 @@ export interface SkillStat {
 
 export interface SkillOverview {
   errors?: number
+  failedReads?: number
   measuredCalls?: number
   provenance?: SkillProvenance
   skillCount: number

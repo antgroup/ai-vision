@@ -1300,7 +1300,7 @@ fn test_codex_skill_compat_item_completed_user_message_builds_one_weather_span()
 }
 
 #[test]
-fn test_codex_skill_compat_custom_exec_static_wrapper_builds_one_fallback_span() {
+fn test_codex_skill_compat_custom_exec_static_wrapper_marks_the_physical_read() {
     let parsed_lines = load_fixture_lines("codex_skill_transcript_compat.jsonl");
     let wrapper = parsed_lines
         .iter()
@@ -1345,8 +1345,9 @@ fn test_codex_skill_compat_custom_exec_static_wrapper_builds_one_fallback_span()
         .iter()
         .find(|span| span_attr(span, "gen_ai.tool.call.id") == Some("call-custom-exec-read-skill"))
         .expect("inner custom exec tool span");
-    assert_eq!(inner_exec["name"], "tool exec");
-    assert_ne!(span_attr(inner_exec, "agentic.tool.type"), Some("skill"));
+    assert_eq!(span_attr(inner_exec, "agentic.tool.type"), Some("skill"));
+    assert_eq!(span_attr(inner_exec, "agentic.tool.raw_name"), Some("exec"));
+    assert_eq!(inner_exec["status"]["code"], 0);
 }
 
 #[test]

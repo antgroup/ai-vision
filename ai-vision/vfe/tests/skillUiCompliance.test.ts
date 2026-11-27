@@ -400,6 +400,32 @@ test("Skill totals preserve missing duration, reported zero, and complete sums",
   }
 })
 
+test("the Trace Skill summary keeps the failed read source with zero calls", async () => {
+  const ui = await fixture()
+  const span = {
+    ...skillSpan("missing", "failed-read", 30),
+    attributes: {
+      "gen_ai.span.kind": "TOOL",
+      "gen_ai.tool.call.arguments": '{"cmd":"cat skills/missing/SKILL.md"}',
+      "gen_ai.tool.call.result": { exit_code: 1 },
+    },
+  }
+  const selected: string[] = []
+  try {
+    await ui.render([span], (id) => selected.push(id))
+    const row = ui.document.querySelector("tbody > tr")!
+    const cells = row.querySelectorAll("td")
+    assert.equal(cells[2].textContent, "0")
+    assert.equal(cells[3].textContent, "1")
+    assert.equal(cells[4].textContent, "-")
+    assert.match(row.textContent ?? "", /labs\.skill\.provenance\.readError/)
+    await ui.key(row, "Enter")
+    assert.deepEqual(selected, ["failed-read"])
+  } finally {
+    await ui.cleanup()
+  }
+})
+
 test("Skill evidence offers two-line expansion and exact input/output copy", async () => {
   const ui = await fixture()
   const { SkillSpanCard } = ui.load<{
@@ -796,6 +822,36 @@ test("Skill unknown outcomes do not claim success or failure and retain provenan
     ),
     ["span-0", "span-1"]
   )
+})
+
+test("a failed-only Skill card counts read failures separately from calls", () => {
+  const shared = nativeUiHarness()
+  const { load } = nativeUiHarness({
+    "./skillDisplay": shared.load("labs/skill/skillDisplay.ts"),
+  })
+  const { SkillCard } = load<{
+    SkillCard: (props: Record<string, unknown>) => unknown
+  }>("labs/skill/SkillCard.tsx")
+  const card = SkillCard({
+    stat: {
+      name: "missing",
+      calls: 0,
+      errors: 0,
+      failedReads: 1,
+      errorRate: null,
+      p95Ms: null,
+      sourceAgents: ["Codex"],
+      lastSeen: null,
+      derived: true,
+    },
+    onOpen() {},
+  })
+  const records = uiElements(card, "Metric").find(
+    (metric) => metric.props.label === "labs.skill.provenance.records"
+  )!
+  assert.equal(records.props.value, "0")
+  assert.match(uiText(card), /labs\.skill\.provenance\.failedReads/)
+  assert.doesNotMatch(uiText(card), /labs\.skill\.card\.usage\b/)
 })
 
 test("Skill file import previews all accepted and rejected entries and verifies saved names", async () => {

@@ -556,6 +556,188 @@ test("a native period without reads of its own counts once", () => {
   assert.deepEqual(nativeSeen, new Set(["openai-docs"]))
 })
 
+test("failed file reads stay inspectable without replacing a reported Skill call", () => {
+  const native = {
+    ...nativePeriod("native", "review", 500),
+    status: { code: "ERROR", message: "native invocation failed" },
+  }
+  const failed = {
+    ...skillRead("failed", "review", 100, 30),
+    status: { code: "ERROR", message: "missing file" },
+  }
+  const result = resolveCountedSkillSpans([native, failed])
+  assert.deepEqual(
+    result.counted.map((span) => span.span_id),
+    ["native"]
+  )
+  assert.deepEqual(
+    result.failedReads.map((span) => span.span_id),
+    ["failed"]
+  )
+})
+
+test("Codex exit evidence marks a legacy file read as failed", () => {
+  const input = {
+    ...skillRead("read", "missing", 0, 30),
+    status: { code: "OK", message: "" },
+  }
+  const span = {
+    ...input,
+    attributes: {
+      ...input.attributes,
+      "agentic.tool.type": "skill",
+      "agentic.tool.name": "missing",
+      "agentic.tool.raw_name": "exec_command",
+      "gen_ai.tool.call.arguments": '{"cmd":"cat /skills/missing/SKILL.md"}',
+      "gen_ai.tool.call.result":
+        "Chunk ID: test\nWall time: 0.01 seconds\nProcess exited with code 1\nFinal output:\ncat: No such file or directory",
+    },
+  }
+  const result = resolveCountedSkillSpans([span])
+  assert.deepEqual(result.counted, [])
+  assert.deepEqual(result.failedReads, [span])
+  const serialized = {
+    ...span,
+    attributes: {
+      ...span.attributes,
+      "gen_ai.tool.call.result": JSON.stringify(
+        span.attributes["gen_ai.tool.call.result"]
+      ),
+    },
+  }
+  assert.deepEqual(resolveCountedSkillSpans([serialized]).failedReads, [
+    serialized,
+  ])
+  const unrelated = {
+    ...span,
+    attributes: { ...span.attributes, "agentic.tool.name": "other-skill" },
+  }
+  assert.deepEqual(resolveCountedSkillSpans([unrelated]).counted, [unrelated])
+  const successful = {
+    ...span,
+    attributes: {
+      ...span.attributes,
+      "gen_ai.tool.call.result":
+        "Exit code: 0\nOutput:\nAn example: Process exited with code 1\nFinal output:",
+    },
+  }
+  assert.deepEqual(resolveCountedSkillSpans([successful]).counted, [successful])
+})
+
+test("redacted reads need explicit Codex shell and derived evidence", () => {
+  const marker = "[REDACTED]"
+  const span = {
+    ...nativePeriod("read", "review", 30),
+    resource: { "ant.agent.product": "Codex" },
+    status: { code: "ERROR", message: marker },
+    attributes: {
+      "gen_ai.span.kind": "TOOL",
+      "agentic.tool.type": "skill",
+      "agentic.tool.name": "review",
+      "agentic.tool.raw_name": "Bash",
+      "agentic.tool.derived": true,
+      "gen_ai.tool.call.arguments": marker,
+      "agentic.tool.call.arguments": JSON.stringify(marker),
+      "gen_ai.tool.call.result": marker,
+    },
+  }
+  assert.deepEqual(resolveCountedSkillSpans([span]).failedReads, [span])
+  const native = {
+    ...span,
+    attributes: { ...span.attributes, "agentic.tool.raw_name": "Skill" },
+  }
+  assert.deepEqual(resolveCountedSkillSpans([native]).counted, [native])
+})
+
+test("an explicitly failed Codex read stays visible when its arguments were omitted", () => {
+  const span = {
+    ...nativePeriod("read", "review", 30),
+    status: { code: "ERROR", message: "" },
+    attributes: {
+      "gen_ai.span.kind": "TOOL",
+      "agentic.tool.type": "skill",
+      "agentic.tool.name": "review",
+      "agentic.tool.raw_name": "exec_command",
+      "agentic.tool.derived": true,
+    },
+  }
+  assert.deepEqual(resolveCountedSkillSpans([span]).failedReads, [span])
+  for (const argumentsValue of ["[TRUNCATED]", '"[TRUNCATED]"']) {
+    const truncated = {
+      ...span,
+      attributes: {
+        ...span.attributes,
+        "gen_ai.tool.call.arguments": argumentsValue,
+      },
+    }
+    assert.deepEqual(resolveCountedSkillSpans([truncated]).failedReads, [
+      truncated,
+    ])
+  }
+  const otherSkill = { cmd: "cat skills/other/SKILL.md" }
+  for (const argumentsValue of [JSON.stringify(otherSkill), otherSkill]) {
+    const contradictory = {
+      ...span,
+      attributes: {
+        ...span.attributes,
+        "gen_ai.tool.call.arguments": argumentsValue,
+      },
+    }
+    assert.deepEqual(resolveCountedSkillSpans([contradictory]).counted, [
+      contradictory,
+    ])
+  }
+})
+
+test("a Codex command failure is not attributed to a Skill read with other operations", () => {
+  for (const command of [
+    "cat skills/review/SKILL.md; false",
+    "cat skills/review/SKILL.md /tmp/missing.txt",
+    "cat -- skills/review/SKILL.md -another-file",
+    "cat skills/review/SKILL.md > /tmp/missing/out.txt",
+    "cat '/tmp/skills/review/SKILL.md",
+  ]) {
+    const attributes = {
+      "gen_ai.span.kind": "TOOL",
+      "agentic.tool.raw_name": "exec_command",
+      "gen_ai.tool.call.arguments": JSON.stringify({ cmd: command }),
+    }
+    const span = {
+      ...skillRead("read", "review", 0, 30),
+      status: { code: "ERROR", message: "command failed" },
+      attributes,
+    }
+    const legacy = {
+      ...span,
+      attributes: {
+        ...attributes,
+        "agentic.tool.type": "skill",
+        "agentic.tool.name": "review",
+      },
+    }
+    for (const testSpan of [span, legacy]) {
+      const result = resolveCountedSkillSpans([testSpan])
+      assert.deepEqual(result.failedReads, [], command)
+      assert.deepEqual(result.counted, [testSpan], command)
+    }
+  }
+})
+
+test("simple wrapped Codex file reads still carry their own failure", () => {
+  const span = {
+    ...skillRead("read", "review", 0, 30),
+    status: { code: "ERROR", message: "missing file" },
+    attributes: {
+      "gen_ai.span.kind": "TOOL",
+      "agentic.tool.raw_name": "exec_command",
+      "gen_ai.tool.call.arguments": JSON.stringify({
+        command: ["/bin/zsh", "-lc", "sed -n '1,80p' skills/review/SKILL.md"],
+      }),
+    },
+  }
+  assert.deepEqual(resolveCountedSkillSpans([span]).failedReads, [span])
+})
+
 test("a native period never merges reads of a different skill", () => {
   // The merge is per skill: the dws read keeps its count and the
   // typesafe-ai period still counts once (no typesafe-ai reads exist).

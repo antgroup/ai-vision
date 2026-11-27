@@ -9,6 +9,8 @@ Kept free of Django imports so the trace projection can use it on hot paths.
 import json
 import re
 
+from .tool_outcome import tool_span_outcome
+
 # Span attribute variants written by the plugins, in probe order. Mirrors
 # ARGUMENT_KEYS in the frontend resolver.
 ARGUMENT_KEYS = (
@@ -387,44 +389,151 @@ def _skill_span_info(span: dict) -> tuple[str, bool] | None:
     return None
 
 
-def _native_skill_name(attributes: object) -> str | None:
-    """Name from the plugin's own report (recognition branches 1/2). Native
-    records are authoritative — except command-path fallbacks, whose
-    arguments carry no command text to re-judge; they re-enter through the
-    gated shape branch on the exec TOOL span instead."""
+def _reported_skill_name(attributes: object) -> str | None:
     if not isinstance(attributes, dict):
         return None
     tool_type = _attribute_text(attributes, "agentic.tool.type")
     if tool_type and tool_type.lower() == "skill":
-        name = _attribute_text(attributes, "agentic.tool.name") or _attribute_text(
+        return _attribute_text(attributes, "agentic.tool.name") or _attribute_text(
             attributes, "agentic.skill.name"
         )
-    else:
-        name = _attribute_text(attributes, "agentic.skill.name")
-    if name is None or _is_fallback_invocation(attributes):
-        return None
-    return name
+    return _attribute_text(attributes, "agentic.skill.name")
 
 
-def trace_skill_tags(spans: object) -> list[str]:
-    """Sorted ``skill:<name>`` tags for one trace's spans, in the collector's
-    tag shape.
+def _native_skill_name(attributes: object) -> str | None:
+    """Exclude synthetic command-path reports whose source tool carries the evidence."""
+    name = _reported_skill_name(attributes)
+    return name if name is not None and not _is_fallback_invocation(attributes) else None
 
-    The collector writes trace tags only for natively reported tool types
-    (``agentic.tool.type`` of skill/mcp); derived skill usage — shell reads
-    of SKILL.md — never reaches
-    ``langfuse.trace.tags``, leaving every tags consumer (preview Tags
-    section, trace list rows, facets, tag filters) blind to it. Recognition
-    is the same one the labs scanner uses, so a tag never names a skill the
-    usage scanner would reject.
-    """
-    if not isinstance(spans, list):
+
+def _is_codex_shell(span: dict, attributes: dict, agent_product: str) -> bool:
+    name = (
+        _attribute_text(attributes, "agentic.tool.raw_name")
+        or _attribute_text(attributes, "gen_ai.tool.call.name")
+        or _attribute_text(attributes, "gen_ai.tool.name")
+        or ""
+    ).lower()
+    if name == "exec_command":
+        return True
+    if name not in {"bash", "shell_command"}:
+        return False
+    resource = span.get("resource")
+    resource = resource.get("attributes", resource) if isinstance(resource, dict) else None
+    sources = (attributes, resource, span.get("resource_attributes"))
+    identities = [span.get("agent_product"), agent_product]
+    for key in ("aivision.agent.product", "ant.agent.product", "ant.agent.type", "agentic.runtime.name"):
+        identities.extend(source.get(key) for source in sources if isinstance(source, dict))
+        identities.append(span.get(f"resource.attributes.{key}"))
+    return any(isinstance(value, str) and value.strip().lower() == "codex" for value in identities)
+
+
+def _single_read_tokens(command: object) -> list[str]:
+    if isinstance(command, list) and all(isinstance(token, str) for token in command):
+        return command
+    if not isinstance(command, str) or re.search(r"[;|&<>\n`]|\$\(", command.strip()):
         return []
-    names = {
-        info[0]
-        for span in spans
-        if isinstance(span, dict)
-        for info in (_skill_span_info(span),)
-        if info and info[0]
-    }
-    return sorted(f"skill:{name}" for name in names)
+    return [_unquote(token) for token in _shell_tokens(command)]
+
+
+def _single_codex_read_name(attributes: dict) -> str | None:
+    """Attribute a shell outcome only to a single, direct SKILL.md operand."""
+    for key in ARGUMENT_KEYS:
+        arguments = attributes.get(key)
+        if isinstance(arguments, str):
+            try:
+                arguments = json.loads(arguments)
+            except ValueError:
+                pass
+        if isinstance(arguments, dict):
+            arguments = arguments.get("command", arguments.get("cmd"))
+        tokens = _single_read_tokens(arguments)
+        if (len(tokens) == 3 and tokens[0].rsplit("/", 1)[-1] in SKILL_WRAPPER_PROGRAMS
+                and tokens[1] in {"-c", "-lc"}):
+            tokens = _single_read_tokens(tokens[2])
+        if not tokens:
+            continue
+        program, *paths = tokens
+        program = program.rsplit("/", 1)[-1]
+        if program in {"head", "tail"}:
+            if len(paths) >= 3 and paths[0] in {"-n", "-c", "--lines", "--bytes"} and re.fullmatch(r"[+-]?[0-9]+", paths[1]):
+                paths = paths[2:]
+            elif len(paths) > 1 and not (len(paths) == 2 and paths[0] == "--"):
+                continue
+        elif program == "sed":
+            if len(paths) < 3 or paths[0] != "-n" or not re.fullmatch(r"[0-9,$]*p", paths[1]):
+                continue
+            paths = paths[2:]
+            if any(path.startswith("-") and path != "--" for path in paths):
+                continue
+        elif program != "cat":
+            continue
+        option_end = paths.index("--") if "--" in paths else len(paths)
+        operands = [
+            path for index, path in enumerate(paths)
+            if index > option_end or path == "-" or not path.startswith("-")
+        ]
+        if len(operands) == 1 and operands[0].endswith("/SKILL.md"):
+            match = SKILL_MD_PATH.search(operands[0])
+            if match:
+                return match.group(1)
+    return None
+
+
+def _failed_skill_read(
+    span: dict, info: tuple[str, bool], *, reported: bool, agent_product: str = ""
+) -> bool:
+    """Detect failure on the source read, preserving native Skill call outcomes."""
+    name, derived = info
+    attributes = span["attributes"]
+    if str(attributes.get("gen_ai.span.kind", "")).upper() != "TOOL":
+        return False
+    codex_shell = _is_codex_shell(span, attributes, agent_product)
+    if reported and not codex_shell:
+        return False
+    if tool_span_outcome(span, codex_shell=codex_shell) != "error":
+        return False
+    if not codex_shell:
+        return True
+    if _single_codex_read_name(attributes) == name:
+        return True
+    # Older hooks can label the physical Bash span as a Skill. Its reader
+    # arguments must match that Skill name. When arguments are unavailable,
+    # the derived-read marker distinguishes a read from an attributed script.
+    arguments = (attributes[key] for key in ARGUMENT_KEYS if attributes.get(key) is not None)
+    return (
+        reported
+        and derived
+        and all(
+            isinstance(part, str)
+            and part.strip() in {"", "[REDACTED]", '"[REDACTED]"', "[TRUNCATED]", '"[TRUNCATED]"'}
+            for part in arguments
+        )
+        and tool_span_outcome(span) == "error"
+    )
+
+
+def trace_skill_tag_changes(spans: object) -> tuple[list[str], set[str]]:
+    """Derive Skill tags and identify stale ones written by a failed-read fallback."""
+    if not isinstance(spans, list):
+        return [], set()
+    calls: set[str] = set()
+    failed: set[str] = set()
+    tagged_fallbacks: set[str] = set()
+    for span in spans:
+        info = _skill_span_info(span)
+        attributes = span.get("attributes") if isinstance(span, dict) else None
+        if not info or not info[0]:
+            name = _reported_skill_name(attributes)
+            if name and _is_fallback_invocation(attributes):
+                tagged_fallbacks.add(name)
+            continue
+        name = info[0]
+        reported = _native_skill_name(attributes) is not None
+        if _failed_skill_read(span, info, reported=reported):
+            failed.add(name)
+            if reported:
+                tagged_fallbacks.add(name)
+        else:
+            calls.add(name)
+    stale = failed.intersection(tagged_fallbacks).difference(calls)
+    return sorted(f"skill:{name}" for name in calls), {f"skill:{name}" for name in stale}

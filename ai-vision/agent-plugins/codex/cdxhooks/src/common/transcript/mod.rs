@@ -72,11 +72,13 @@ pub use skill::{
     extract_skill_name_from_command_text, LoadedSkillDefinition, SkillInvocation,
     SkillInvocationSource,
 };
+pub(crate) use skill::extract_skill_read_name;
 use tool_normalization::{
     extract_agent_message_content, extract_agent_message_type, extract_pty_session_id,
     mcp_tool_result_output, normalize_tool_call, parse_jsonish_value, response_tool_name,
     upsert_assistant_message,
 };
+pub(crate) use tool_normalization::{is_shell_tool, shell_exit_code};
 pub use turn_builder::build_turns;
 #[cfg(test)]
 pub(crate) use turn_builder::build_turns_with_initial_input_tokens;

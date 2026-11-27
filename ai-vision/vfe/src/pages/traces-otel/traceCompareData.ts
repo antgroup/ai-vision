@@ -56,6 +56,7 @@ import {
   summarizeToolCallArguments,
 } from "@/labs/mcp/mcpDisplay"
 import {
+  failedSkillReadName,
   resolveSkillDetailFields,
   resolveSkillSpanInfo,
 } from "@/labs/skill/skillDisplay"
@@ -312,6 +313,7 @@ function recognizeSpan(
     }
     const skill = resolveSkillSpanInfo(attrs)
     if (skill) {
+      if (failedSkillReadName(span)) return null
       const skillDetails = resolveSkillDetailFields(attrs)
       let command = skillDetails?.rawArguments ?? base.arguments
       if (command) {

@@ -196,7 +196,7 @@ export function resolveToolOutcome(
 
 /** A missing error is not evidence of success; preserve explicit failures. */
 export function resolveToolSpanOutcome(
-  span: OTelSpan,
+  span: Pick<OTelSpan, "attributes" | "status">,
   output: unknown
 ): "error" | "ok" | "unknown" {
   const code = String(span.status?.code ?? "").toUpperCase()

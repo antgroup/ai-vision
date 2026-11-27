@@ -11,15 +11,16 @@ import {
   parseTimestampMs,
 } from "@/components/traces-otel/format"
 import type { OTelSpan } from "@/components/traces-otel/types"
-import {
-  ARGUMENT_KEYS,
-  isErrorSpan,
-  mcpCallDurationMs,
-} from "@/labs/mcp/mcpDisplay"
+import { ARGUMENT_KEYS, mcpCallDurationMs } from "@/labs/mcp/mcpDisplay"
+import { resolveToolSpanOutcome } from "@/components/traces-otel/spanContent"
 import { cn } from "@/lib/utils"
 
 import { listSkillConfigs } from "./skillApi"
-import { resolveCountedSkillSpans, resolveSkillSpanInfo } from "./skillDisplay"
+import {
+  failedSkillReadName,
+  resolveCountedSkillSpans,
+  resolveSkillSpanInfo,
+} from "./skillDisplay"
 
 interface SkillCallDetail {
   spanId: string
@@ -27,6 +28,7 @@ interface SkillCallDetail {
   arguments: string | null
   durationMs: number | null
   isError: boolean
+  failedRead: boolean
   startMs: number
 }
 
@@ -34,6 +36,7 @@ interface SkillUsage {
   name: string
   calls: number
   errors: number
+  failedReads: number
   /** Complete duration is unknown when any counted call has no measurement. */
   totalMs: number | null
   firstSpanId: string
@@ -49,14 +52,17 @@ const UNKNOWN_SKILL = "-"
 type DetailSort = "default" | "desc" | "asc"
 
 function summarize(spans: OTelSpan[]): SkillUsage[] {
-  // The usage merge counts real uses: every read carries its count, while a
-  // native period covered by its own reads merges into them.
-  const { counted } = resolveCountedSkillSpans(spans)
+  const { counted, failedReads } = resolveCountedSkillSpans(spans)
+  const failed = new Set(failedReads)
+  const visible = new Set([...counted, ...failedReads])
   const bySkill = new Map<string, SkillUsage>()
-  for (const span of counted) {
+  for (const span of spans) {
+    if (!visible.has(span)) continue
     const info = span.attributes ? resolveSkillSpanInfo(span.attributes) : null
     if (!info) continue
-    const name = info.name ?? UNKNOWN_SKILL
+    const failedRead = failed.has(span)
+    const name =
+      (failedRead ? failedSkillReadName(span) : info.name) ?? UNKNOWN_SKILL
     const startKey = span.start_time_unix_nano
       ? (parseTimestampMs(span.start_time_unix_nano) ?? Infinity)
       : Infinity
@@ -64,18 +70,30 @@ function summarize(spans: OTelSpan[]): SkillUsage[] {
       name,
       calls: 0,
       errors: 0,
-      totalMs: 0,
+      failedReads: 0,
+      totalMs: null,
       firstSpanId: span.span_id,
       firstStart: startKey,
       callDetails: [],
     }
-    usage.calls += 1
-    if (isErrorSpan(span)) usage.errors += 1
     const durationMs = mcpCallDurationMs(span)
-    usage.totalMs =
-      usage.totalMs === null || durationMs === null
-        ? null
-        : usage.totalMs + durationMs
+    const isError =
+      failedRead ||
+      resolveToolSpanOutcome(
+        span,
+        span.attributes?.["gen_ai.tool.call.result"] ??
+          span.attributes?.["langfuse.observation.output"]
+      ) === "error"
+    if (failedRead) {
+      usage.failedReads += 1
+    } else {
+      if (isError) usage.errors += 1
+      if (usage.calls === 0) usage.totalMs = durationMs
+      else if (usage.totalMs === null || durationMs === null)
+        usage.totalMs = null
+      else usage.totalMs += durationMs
+      usage.calls += 1
+    }
     usage.callDetails.push({
       spanId: span.span_id,
       name,
@@ -87,7 +105,8 @@ function summarize(spans: OTelSpan[]): SkillUsage[] {
             typeof value === "string" ? value : JSON.stringify(value)
           )[0] ?? null,
       durationMs,
-      isError: isErrorSpan(span),
+      isError,
+      failedRead,
       startMs: startKey,
     })
     if (startKey < usage.firstStart) {
@@ -110,7 +129,7 @@ interface SkillTraceSummaryProps {
   overviewLinks?: boolean
 }
 
-/** Renders nothing when the trace has no skill calls. */
+/** Renders nothing when the trace has no skill calls or failed read attempts. */
 export function SkillTraceSummary({
   spans,
   spaceId,
@@ -157,9 +176,12 @@ export function SkillTraceSummary({
   if (!skills.length) return null
 
   const totalCalls = skills.reduce((sum, item) => sum + item.calls, 0)
-  const totalErrors = skills.reduce((sum, item) => sum + item.errors, 0)
+  const totalErrors = skills.reduce(
+    (sum, item) => sum + item.errors + item.failedReads,
+    0
+  )
   const matchingGroups = onlyErrors
-    ? skills.filter((item) => item.errors > 0)
+    ? skills.filter((item) => item.errors > 0 || item.failedReads > 0)
     : skills
   const visibleGroups = matchingGroups.slice(0, groupLimit)
 
@@ -239,7 +261,7 @@ export function SkillTraceSummary({
             {visibleGroups.map((item) => {
               // A single call jumps straight to its span; multiple calls
               // expand an in-place list so each call stays reachable.
-              const expandable = item.calls > 1
+              const expandable = item.callDetails.length > 1
               const expanded = expandedSkills.has(item.name)
               const matchingCalls = onlyErrors
                 ? item.callDetails.filter((call) => call.isError)
@@ -288,7 +310,9 @@ export function SkillTraceSummary({
                       expandable || onSelectSpan
                         ? expandable
                           ? t("labs.skill.trace.expandHint")
-                          : t("labs.skill.trace.rowHint")
+                          : item.calls === 0
+                            ? t("labs.skill.provenance.readError")
+                            : t("labs.skill.trace.rowHint")
                         : undefined
                     }
                     className={cn(
@@ -317,6 +341,15 @@ export function SkillTraceSummary({
                           copyOnlyWhenOverflowing
                         />
                       </div>
+                      {item.calls === 0 ? (
+                        <span className="font-sans text-[var(--color-error)]">
+                          {item.failedReads === 1
+                            ? t("labs.skill.provenance.readError")
+                            : t("labs.skill.provenance.failedReads", {
+                                count: item.failedReads,
+                              })}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-3 py-2 font-sans text-[var(--color-text-description)]">
                       {description ? (
@@ -336,12 +369,12 @@ export function SkillTraceSummary({
                     <td
                       className={cn(
                         "px-3 py-2 text-right font-stats",
-                        item.errors
+                        item.errors || item.failedReads
                           ? "text-[var(--color-error)]"
                           : "text-[var(--color-text-description)]"
                       )}
                     >
-                      {item.errors}
+                      {item.errors + item.failedReads}
                     </td>
                     <td className="px-3 py-2 text-right font-stats text-[var(--color-text-secondary)]">
                       {formatDurationMs(item.totalMs)}
@@ -383,6 +416,12 @@ export function SkillTraceSummary({
                           </div>
                           {visibleCalls.map((call) => {
                             const number = item.callDetails.indexOf(call) + 1
+                            const numberLabel = t(
+                              call.failedRead
+                                ? "labs.skill.provenance.readAttemptNumber"
+                                : "traceRecords.callNumber",
+                              { number }
+                            )
                             const offset =
                               Number.isFinite(call.startMs) &&
                               Number.isFinite(item.firstStart)
@@ -399,17 +438,17 @@ export function SkillTraceSummary({
                                     <button
                                       type="button"
                                       title={call.spanId}
-                                      aria-label={`${t("traceRecords.viewSource", { number })}: ${call.spanId}`}
+                                      aria-label={`${call.failedRead ? numberLabel : t("traceRecords.viewSource", { number })}: ${call.spanId}`}
                                       onClick={() =>
                                         onSelectSpan?.(call.spanId)
                                       }
                                       className="min-w-0 rounded-sm text-left text-[var(--color-labs)] underline decoration-[var(--color-border-labs)] underline-offset-4 hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-labs)]"
                                     >
-                                      {t("traceRecords.callNumber", { number })}
+                                      {numberLabel}
                                     </button>
                                   ) : (
                                     <span title={call.spanId}>
-                                      {t("traceRecords.callNumber", { number })}
+                                      {numberLabel}
                                     </span>
                                   )}
                                   <span className="text-muted-foreground">
@@ -429,9 +468,13 @@ export function SkillTraceSummary({
                                         : "text-muted-foreground"
                                     )}
                                   >
-                                    {call.isError
-                                      ? t("labs.skill.trace.errors")
-                                      : t("traceRecords.noError")}
+                                    {t(
+                                      call.failedRead
+                                        ? "labs.skill.provenance.readError"
+                                        : call.isError
+                                          ? "labs.skill.trace.errors"
+                                          : "traceRecords.noError"
+                                    )}
                                   </span>
                                   <span className="font-stats text-muted-foreground">
                                     {t("labs.skill.trace.elapsed")}:{" "}

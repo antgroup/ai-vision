@@ -1,6 +1,6 @@
 //! skill ownership module.
 
-use super::Turn;
+use super::{ToolCall, Turn};
 use super::Value;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -347,6 +347,85 @@ pub(super) fn parse_static_exec_command_wrapper(source: &str) -> Option<String> 
         return Some(command);
     }
     None
+}
+
+fn skill_read_from_argv(arguments: &[&str]) -> Option<String> {
+    let (program, operands) = arguments.split_first()?;
+    let program = program.rsplit('/').next()?;
+    let paths = match program {
+        "cat" => operands,
+        "head" | "tail" => match operands {
+            [_] | ["--", _] => operands,
+            ["-n" | "-c" | "--lines" | "--bytes", count, path @ ..]
+                if count.parse::<i64>().is_ok() =>
+            {
+                path
+            }
+            _ => return None,
+        },
+        // Recognize the usual range-print form, without interpreting sed scripts.
+        "sed" => {
+            let ["-n", expression, paths @ ..] = operands else {
+                return None;
+            };
+            let range = expression.strip_suffix('p')?;
+            if !range.chars().all(|c| c.is_ascii_digit() || matches!(c, ',' | '$'))
+                || paths.iter().any(|path| path.starts_with('-') && *path != "--")
+            {
+                return None;
+            }
+            paths
+        }
+        _ => return None,
+    };
+    // A command's overall exit code cannot identify which of several files failed.
+    let mut reading_options = true;
+    let mut paths = paths.iter().filter(|path| {
+        if reading_options && **path == "--" {
+            reading_options = false;
+            return false;
+        }
+        !reading_options || **path == "-" || !path.starts_with('-')
+    });
+    let path = paths.next()?;
+    if !path.ends_with("/SKILL.md") || paths.next().is_some() {
+        return None;
+    }
+    extract_skill_reference_from_command_text(path).map(|reference| reference.name)
+}
+
+fn skill_read_from_shell_text(command: &str) -> Option<String> {
+    let command = command.trim();
+    if command.contains([';', '|', '&', '<', '>', '\n', '`']) || command.contains("$(") {
+        return None;
+    }
+    let arguments = shlex::split(command)?;
+    let argv: Vec<_> = arguments.iter().map(String::as_str).collect();
+    skill_read_from_argv(&argv)
+}
+
+pub(crate) fn extract_skill_read_name(tool: &ToolCall) -> Option<String> {
+    if tool.name == "exec" {
+        let command = parse_static_exec_command_wrapper(tool.input.as_str()?)?;
+        return skill_read_from_shell_text(&command);
+    }
+    if !super::is_shell_tool(&tool.name) {
+        return None;
+    }
+    let command = tool.input.get("command").or_else(|| tool.input.get("cmd"))?;
+    match command {
+        Value::String(text) => skill_read_from_shell_text(text),
+        Value::Array(arguments) => {
+            let argv: Vec<_> = arguments.iter().map(Value::as_str).collect::<Option<_>>()?;
+            if let [shell, "-c" | "-lc", command] = argv.as_slice() {
+                if matches!(shell.rsplit('/').next(), Some("sh" | "bash" | "zsh" | "dash" | "ksh")) {
+                    return skill_read_from_shell_text(command);
+                }
+            }
+            skill_read_from_argv(&argv)
+        }
+        _ => None,
+    }
 }
 
 pub(super) fn detect_skill_from_tool_input(

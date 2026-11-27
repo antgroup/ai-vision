@@ -46,6 +46,7 @@ export function SkillCard({
   const name = stat?.name ?? config?.name ?? ""
   const statsKnown = !!stat || statState === "ready"
   const hasCalls = (stat?.calls ?? 0) > 0
+  const failedReads = stat?.failedReads ?? 0
   const provenance = stat ? skillProvenanceCounts(stat) : null
   const description =
     config?.description?.trim() || t("labs.skill.card.noDescription")
@@ -80,12 +81,16 @@ export function SkillCard({
           </h3>
           {statState === "idle" ? null : stat?.sourceAgents.length ? (
             <p className="truncate text-xs leading-5 text-[var(--color-text-description)]">
-              {t("labs.skill.card.usage", {
-                agents: stat.sourceAgents.join(", "),
-                time: stat.lastSeen
-                  ? formatRelativeTime(stat.lastSeen, t)
-                  : t("labs.skill.topic.timeUnknown"),
-              })}
+              {failedReads > 0 && !hasCalls
+                ? t("labs.skill.provenance.readAttemptAgents", {
+                    agents: stat.sourceAgents.join(", "),
+                  })
+                : t("labs.skill.card.usage", {
+                    agents: stat.sourceAgents.join(", "),
+                    time: stat.lastSeen
+                      ? formatRelativeTime(stat.lastSeen, t)
+                      : t("labs.skill.topic.timeUnknown"),
+                  })}
             </p>
           ) : (
             <p className="truncate text-xs leading-5 text-[var(--color-text-description)]">
@@ -116,6 +121,12 @@ export function SkillCard({
           {provenance
             ? t("labs.skill.provenance.counts", provenance)
             : t("labs.skill.provenance.unknownTotals")}
+        </p>
+      ) : null}
+
+      {failedReads > 0 ? (
+        <p className="text-xs leading-5 text-[var(--color-error)]">
+          {t("labs.skill.provenance.failedReads", { count: failedReads })}
         </p>
       ) : null}
 

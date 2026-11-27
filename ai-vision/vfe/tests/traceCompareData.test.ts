@@ -478,6 +478,25 @@ test("skill spans are recognized and sorted by offset", () => {
   assert.ok(model.sideA.calls[0].offsetMs >= 0)
 })
 
+test("a failed file read is excluded from Trace comparison Skill calls", () => {
+  const model = buildCompareModel(
+    mkDetail([
+      mkSpan({
+        spanId: "failed-read",
+        startMs: 200,
+        attrs: {
+          "gen_ai.span.kind": "TOOL",
+          "gen_ai.tool.call.arguments": '{"cmd":"cat skills/review/SKILL.md"}',
+          "gen_ai.tool.call.result": { exit_code: 1 },
+        },
+      }),
+    ]),
+    mkDetail([mkSpan({ spanId: "root", startMs: 0 })]),
+    {}
+  )
+  assert.deepEqual(model.sideA.calls, [])
+})
+
 test("hybrid hits JSON result is recognized as search evidence with entries", () => {
   const result = JSON.stringify({
     mode: "hybrid",

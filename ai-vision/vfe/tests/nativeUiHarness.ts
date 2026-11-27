@@ -222,6 +222,8 @@ export function nativeUiHarness(boundaries: Record<string, unknown> = {}) {
       "components/traces/shared/traceUserInput.ts",
     "./spanContent": "components/traces-otel/spanContent.ts",
     "./spanContent.ts": "components/traces-otel/spanContent.ts",
+    "@/components/traces-otel/spanContent":
+      "components/traces-otel/spanContent.ts",
     "./spanFilters": "components/traces-otel/spanFilters.ts",
     "./spanCostFilter": "components/traces-otel/spanCostFilter.ts",
     "../../features/model-pricing/currency":
