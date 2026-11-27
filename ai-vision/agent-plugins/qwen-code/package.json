@@ -1,0 +1,11 @@
+{
+  "name": "observ-qwen-code",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test"
+  }
+}
