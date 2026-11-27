@@ -7,6 +7,7 @@ Python 3.11+ is required. Use --config-dir for an isolated or custom host config
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import getpass
 import hashlib
 import importlib.util
@@ -18,6 +19,7 @@ import platform
 import re
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -167,8 +169,11 @@ def install_authorization(args, base, managed):
     return token, {'space_key': key}
 
 
-def save_installation_authorization(path, data):
+def save_installation_authorization(path, data, atomic_writer=None):
     """Keep redeemed credentials recoverable if a later installation step fails."""
+    if atomic_writer is not None:
+        atomic_writer(path, json.dumps(data).encode(), 0o600)
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(dir=path.parent)
     try:
@@ -177,6 +182,199 @@ def save_installation_authorization(path, data):
         os.replace(temporary, path)
     finally:
         Path(temporary).unlink(missing_ok=True)
+
+
+class WindowsMiniMaxCredentials:
+    """Protect MiniMax installation state before storing any credential bytes."""
+
+    def __init__(self, managed):
+        import ctypes
+        from ctypes import wintypes as win
+
+        self.managed = managed
+        self.ctypes = ctypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        security = ctypes.WinDLL('advapi32', use_last_error=True)
+        pointer = ctypes.c_void_p
+        ptr = ctypes.POINTER
+
+        def api(dll, name, result, *args):
+            function = getattr(dll, name)
+            function.restype = result
+            function.argtypes = args
+            return function
+
+        class SecurityAttributes(ctypes.Structure):
+            _fields_ = [('length', win.DWORD), ('descriptor', pointer), ('inherit_handle', win.BOOL)]
+
+        class FileInformation(ctypes.Structure):
+            _fields_ = [('attributes', win.DWORD), ('created', win.FILETIME), ('accessed', win.FILETIME),
+                        ('written', win.FILETIME), ('volume', win.DWORD), ('size_high', win.DWORD),
+                        ('size_low', win.DWORD), ('links', win.DWORD), ('index_high', win.DWORD), ('index_low', win.DWORD)]
+
+        self.attributes = SecurityAttributes
+        self.file_information = FileInformation
+        self.volume_path = api(kernel, 'GetVolumePathNameW', win.BOOL, win.LPCWSTR, win.LPWSTR, win.DWORD)
+        self.volume_info = api(kernel, 'GetVolumeInformationW', win.BOOL, win.LPCWSTR, win.LPWSTR, win.DWORD,
+                               win.PDWORD, win.PDWORD, win.PDWORD, win.LPWSTR, win.DWORD)
+        self.create_directory = api(kernel, 'CreateDirectoryW', win.BOOL, win.LPCWSTR, ptr(SecurityAttributes))
+        self.open_file = api(kernel, 'CreateFileW', win.HANDLE, win.LPCWSTR, win.DWORD, win.DWORD, pointer,
+                             win.DWORD, win.DWORD, win.HANDLE)
+        self.get_attributes = api(kernel, 'GetFileAttributesW', win.DWORD, win.LPCWSTR)
+        self.get_file_info = api(kernel, 'GetFileInformationByHandle', win.BOOL, win.HANDLE, ptr(FileInformation))
+        self.close = api(kernel, 'CloseHandle', win.BOOL, win.HANDLE)
+        self.free = api(kernel, 'LocalFree', win.HLOCAL, win.HLOCAL)
+        # The process token pseudo-handle (GetCurrentProcessToken) is query-only and needs no CloseHandle.
+        token = win.HANDLE(-4)
+        token_info = api(security, 'GetTokenInformation', win.BOOL, win.HANDLE, win.DWORD,
+                         pointer, win.DWORD, win.PDWORD)
+        convert_sid = api(security, 'ConvertSidToStringSidW', win.BOOL, pointer, ptr(win.LPWSTR))
+        self.make_descriptor = api(security, 'ConvertStringSecurityDescriptorToSecurityDescriptorW', win.BOOL,
+                                   win.LPCWSTR, win.DWORD, ptr(pointer), win.PDWORD)
+        self.get_dacl = api(security, 'GetSecurityDescriptorDacl', win.BOOL,
+                            pointer, ptr(win.BOOL), ptr(pointer), ptr(win.BOOL))
+        self.get_owner = api(security, 'GetSecurityDescriptorOwner', win.BOOL, pointer, ptr(pointer), ptr(win.BOOL))
+        self.set_security = api(security, 'SetSecurityInfo', win.DWORD, win.HANDLE, win.DWORD, win.DWORD,
+                                pointer, pointer, pointer, pointer)
+
+        class TokenUser(ctypes.Structure):
+            _fields_ = [('sid', pointer), ('attributes', win.DWORD)]
+
+        required = win.DWORD()
+        token_info(token, 1, None, 0, ctypes.byref(required))  # TokenUser
+        data = ctypes.create_string_buffer(required.value)
+        sid = win.LPWSTR()
+        if (not required.value or not token_info(token, 1, data, required, ctypes.byref(required))
+                or not convert_sid(TokenUser.from_buffer(data).sid, ctypes.byref(sid))):
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            self.user_sid = sid.value
+        finally:
+            self.free(ctypes.cast(sid, pointer))
+
+    @contextmanager
+    def descriptor(self, directory):
+        ctypes = self.ctypes
+        flags = 'OICI' if directory else ''
+        sddl = f'O:{self.user_sid}D:P(A;{flags};FA;;;{self.user_sid})'
+        descriptor = ctypes.c_void_p()
+        if not self.make_descriptor(sddl, 1, ctypes.byref(descriptor), None):
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            yield descriptor
+        finally:
+            self.free(descriptor)
+
+    def require_ntfs(self):
+        ctypes = self.ctypes
+        from ctypes import wintypes as win
+
+        volume = ctypes.create_unicode_buffer(1024)
+        filesystem = ctypes.create_unicode_buffer(32)
+        flags = win.DWORD()
+        if (not self.volume_path(str(self.managed.parent), volume, len(volume))
+                or not self.volume_info(volume, None, 0, None, None, ctypes.byref(flags), filesystem, len(filesystem))
+                or filesystem.value != 'NTFS' or not flags.value & 0x00000008):  # FILE_PERSISTENT_ACLS
+            raise OSError('NTFS with persistent ACLs is required')
+
+    def protect(self, path, *, directory=False):
+        ctypes = self.ctypes
+        from ctypes import wintypes as win
+
+        with self.descriptor(directory) as descriptor:
+            if directory:
+                attributes = self.attributes(ctypes.sizeof(self.attributes), descriptor, False)
+                if self.create_directory(str(path), ctypes.byref(attributes)):
+                    return
+                error = ctypes.get_last_error()
+                if error != 183:  # ERROR_ALREADY_EXISTS
+                    raise ctypes.WinError(error)
+            self.validate(path, directory=directory)
+            # MAXIMUM_ALLOWED prevents SetSecurityInfo from propagating the new ACL to existing children.
+            # For a file, only request security and attribute access alongside the open temporary write handle.
+            access = 0x02000000 if directory else 0x000E0080
+            # OPEN_REPARSE_POINT and BACKUP_SEMANTICS open the directory itself without following a final link.
+            handle = self.open_file(str(path), access, 7, None, 3, 0x02200000, None)
+            if handle == ctypes.c_void_p(-1).value:
+                raise ctypes.WinError(ctypes.get_last_error())
+            try:
+                information = self.file_information()
+                if not self.get_file_info(handle, ctypes.byref(information)):
+                    raise ctypes.WinError(ctypes.get_last_error())
+                check_minimax_windows_attributes(information.attributes, information.links, directory)
+                owner = ctypes.c_void_p()
+                dacl = ctypes.c_void_p()
+                present, defaulted = win.BOOL(), win.BOOL()
+                if (not self.get_owner(descriptor, ctypes.byref(owner), ctypes.byref(defaulted))
+                        or not self.get_dacl(descriptor, ctypes.byref(present), ctypes.byref(dacl), ctypes.byref(defaulted))
+                        or not owner or not present or not dacl):
+                    raise OSError('Could not build the current user ACL')
+                # SE_FILE_OBJECT with OWNER, DACL and PROTECTED_DACL security information.
+                error = self.set_security(handle, 1, 0x80000005, owner, None, dacl, None)
+                if error:
+                    raise ctypes.WinError(error)
+            finally:
+                self.close(handle)
+
+    def validate(self, path, *, directory=False):
+        attributes = self.get_attributes(str(path))
+        if attributes == 0xFFFFFFFF:  # INVALID_FILE_ATTRIBUTES
+            error = self.ctypes.get_last_error()
+            if error in (2, 3):  # ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
+                return False
+            raise self.ctypes.WinError(error)
+        # GetFileAttributes returns the link's own flags. lstat supplies the hard-link count.
+        links = 1 if directory or attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT else path.lstat().st_nlink
+        check_minimax_windows_attributes(attributes, links, directory)
+        return True
+
+    def atomic_write(self, path, content, mode):
+        temporary = None
+        try:
+            if (not self.validate(self.managed.parent, directory=True)
+                    or not self.validate(self.managed, directory=True) or path.parent != self.managed):
+                raise OSError('Managed directory changed')
+            self.validate(path)
+            fd, name = tempfile.mkstemp(dir=self.managed)
+            temporary = Path(name)
+            with os.fdopen(fd, 'wb') as stream:
+                # Keep bytes out of the file until it has its own protected ACL.
+                self.protect(temporary)
+                stream.write(content)
+            os.replace(temporary, path)
+        except OSError:
+            raise ConnectError('MiniMax Code on Windows requires a private NTFS directory for credentials') from None
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+
+
+def check_minimax_windows_attributes(attributes, links, directory):
+    if attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+        raise OSError('Managed installation path is a reparse point')
+    if directory != bool(attributes & stat.FILE_ATTRIBUTE_DIRECTORY):
+        raise OSError('Managed installation path has the wrong type')
+    if not directory and (links != 1 or attributes & stat.FILE_ATTRIBUTE_READONLY):
+        raise OSError('Managed credential is not a regular writable file with one link')
+
+
+def prepare_minimax_windows_credentials(managed):
+    try:
+        security = WindowsMiniMaxCredentials(managed)
+        security.validate(managed.parent, directory=True)
+        managed.parent.mkdir(parents=True, exist_ok=True)
+        security.validate(managed.parent, directory=True)
+        security.validate(managed, directory=True)
+        names = ('ingest.json', 'ingest-token.json', 'pending-installation.json')
+        paths = [managed / name for name in (*names, *(name + '.aivision-backup' for name in names))]
+        existing = [path for path in paths if security.validate(path)]
+        security.require_ntfs()
+        security.protect(managed, directory=True)
+        for path in existing:
+            security.protect(path)
+        return security.atomic_write
+    except (OSError, AttributeError, ValueError):
+        raise ConnectError('MiniMax Code on Windows requires a private NTFS directory for credentials') from None
 
 
 def download(item, destination, base_url):
@@ -693,6 +891,8 @@ def install(args):
     if not version:
         raise ConnectError("Host version check failed")
     managed = root / 'aivision' / agent
+    windows_acl = agent == 'minimax-code' and platform.system() == 'Windows'
+    atomic_writer = prepare_minimax_windows_credentials(managed) if windows_acl else None
     token, authorization = install_authorization(args, base, managed)
     key = authorization.get('agent_credential') or authorization['space_key']
     if args.space_id and token['space_id'] != args.space_id:
@@ -703,12 +903,13 @@ def install(args):
     if token.get("agent_product") != plugin["product"]:
         raise ConnectError("Agent UUID belongs to a different Agent product")
     token['product'] = token["agent_product"]
-    managed.mkdir(parents=True, exist_ok=True)
+    if not windows_acl:
+        managed.mkdir(parents=True, exist_ok=True)
     ingest_config = {'base_url':base, **authorization, 'space_id':token['space_id'],
                      'agent_uuid':token['agent_uuid'], 'endpoint':token['endpoint'], 'agent':agent,
                      'product':token['agent_product'], 'config_dir':str(root), 'collection_mode': args.collection_mode}
     if authorization.get('agent_credential'):
-        save_installation_authorization(managed / 'pending-installation.json', ingest_config)
+        save_installation_authorization(managed / 'pending-installation.json', ingest_config, atomic_writer)
     version_root = managed / 'versions' / (entry['version'] + '-' + item['sha256'][:12])
     version_dir = version_root / plugin.get('package', 'hooks')
     created = not version_dir.exists()
@@ -753,7 +954,8 @@ def install(args):
                 check_binary_runtime(installed)
                 if NATIVE_BUILD:
                     native_runtime, native_runtime_created = persist_native_runtime(native_bundle_root(), managed)
-            with config.ConfigTransaction() as tx:
+            transaction = config.ConfigTransaction(atomic_writer=atomic_writer) if windows_acl else config.ConfigTransaction()
+            with transaction as tx:
                 tx.json(managed / 'ingest.json', ingest_config, private=True)
                 token['valid_until'] = time.time() + token['expires_in']
                 tx.json(managed / 'ingest-token.json', token, private=True)

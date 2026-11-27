@@ -6,6 +6,9 @@ on:
     paths:
       - '.github/workflows/minimax-code-candidate.yml'
       - 'ai-vision/agent-plugins/minimax-code/**'
+      - 'ai-vision/agent-plugins/scripts/connect'
+      - 'ai-vision/agent-plugins/scripts/native_config.py'
+      - 'ai-vision/agent-plugins/scripts/tests/test_minimax_windows.py'
       - 'ai-vision/agent-plugins/tests/native_agent_e2e/minimax_candidate.py'
 
 permissions:

@@ -33,9 +33,10 @@ def atomic_write(path: Path, content: bytes, mode=0o600):
 
 class ConfigTransaction:
     """Snapshot exact bytes before native commands or writes; restore on failure."""
-    def __init__(self):
+    def __init__(self, *, atomic_writer=None):
         self.originals = {}
         self.removed = set()
+        self.atomic_writer = atomic_writer or atomic_write
 
     def watch(self, path: Path):
         path = path.resolve()
@@ -49,7 +50,7 @@ class ConfigTransaction:
         mode = 0o600 if private or old is None else old[1]
         if old is not None and old[0] == content.encode() and old[1] == mode:
             return
-        atomic_write(path, content.encode(), mode)
+        self.atomic_writer(path, content.encode(), mode)
 
     def remove(self, path: Path):
         """Remove managed code without retaining a source backup after success."""
@@ -72,12 +73,12 @@ class ConfigTransaction:
                 if previous is None:
                     path.unlink(missing_ok=True)
                 else:
-                    atomic_write(path, *previous)
+                    self.atomic_writer(path, *previous)
         else:
             for path, previous in self.originals.items():
                 if path not in self.removed and previous is not None and path.read_bytes() != previous[0]:
                     # Never keep raw credentials in an unprotected backup.
-                    atomic_write(path.with_name(path.name + ".aivision-backup"), previous[0], 0o600)
+                    self.atomic_writer(path.with_name(path.name + ".aivision-backup"), previous[0], 0o600)
         return False
 
 

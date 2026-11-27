@@ -1,7 +1,11 @@
 import hashlib
 import importlib.machinery
 import importlib.util
+import json
+import os
 from pathlib import Path
+import shutil
+import subprocess
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -18,6 +22,18 @@ loader.exec_module(installer)
 
 
 class MiniMaxWindowsTests(unittest.TestCase):
+    def test_acl_failure_does_not_redeem_the_installation_grant(self):
+        args = SimpleNamespace(dry_run=False, agent_uuid="00000000-0000-0000-0000-000000000001")
+        pin = ("minimax-code", "http://localhost", {}, {}, {"host_version": "0.7.2"}, Path.cwd(), {})
+        with (patch.object(installer.platform, "system", return_value="Windows"),
+              patch.object(installer, "preflight", return_value=pin),
+              patch.object(installer, "prepare_minimax_windows_credentials",
+                           side_effect=installer.ConnectError("ACL not available")),
+              patch.object(installer, "install_authorization") as redeem):
+            with self.assertRaisesRegex(installer.ConnectError, "ACL not available"):
+                installer.install(args)
+            redeem.assert_not_called()
+
     def test_resolves_the_official_release_pointer_and_uses_its_node_runtime(self):
         with tempfile.TemporaryDirectory() as folder:
             prefix = Path(folder) / "a path"
@@ -79,6 +95,93 @@ class MiniMaxWindowsTests(unittest.TestCase):
                 self.assertTrue(installer.native_registered("minimax-code", root, installed, managed, args, receipt))
                 launcher.write_text("changed", encoding="utf8")
                 self.assertIsNone(installer.native_registered("minimax-code", root, installed, managed, args, receipt))
+
+
+@unittest.skipUnless(os.name == "nt" and shutil.which("pwsh.exe"), "native Windows and PowerShell 7 required")
+class MiniMaxWindowsCredentialACLTests(unittest.TestCase):
+    def read_acl(self, path):
+        result = subprocess.run([
+            shutil.which("pwsh.exe"), "-NoProfile", "-NonInteractive", "-Command", """
+$ErrorActionPreference = 'Stop'
+$acl = Get-Acl -LiteralPath $env:AIVISION_MINIMAX_TEST_ACL_PATH
+$type = [System.Security.Principal.SecurityIdentifier]
+$rules = @($acl.GetAccessRules($true, $true, $type) | ForEach-Object {
+  @{sid=$_.IdentityReference.Value; access=$_.AccessControlType.ToString(); rights=$_.FileSystemRights.ToString()}
+})
+@{owner=$acl.GetOwner($type).Value; caller=[System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value;
+  protected=$acl.AreAccessRulesProtected; rules=$rules} | ConvertTo-Json -Compress -Depth 4
+""",
+        ], env={**os.environ, "AIVISION_MINIMAX_TEST_ACL_PATH": str(path)},
+            check=True, capture_output=True, text=True, timeout=15)
+        return json.loads(result.stdout)
+
+    def assert_private(self, path):
+        acl = self.read_acl(path)
+        self.assertTrue(acl["protected"])
+        self.assertEqual(acl["owner"], acl["caller"])
+        self.assertEqual(acl["rules"], [{"sid": acl["caller"], "access": "Allow", "rights": "FullControl"}])
+
+    def test_credential_acl_survives_atomic_writes_backups_and_rollback(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            managed = root / "aivision" / "minimax-code"
+            managed.mkdir(parents=True)
+            root_acl = self.read_acl(root)
+            ingest = managed / "ingest.json"
+            ingest.write_text('{"fixture": "old"}', encoding="utf8")
+            pending = managed / "pending-installation.json"
+            token = managed / "ingest-token.json"
+            write = installer.prepare_minimax_windows_credentials(managed)
+            self.assert_private(managed)
+            self.assert_private(ingest)
+            installer.save_installation_authorization(pending, {"fixture": "pending"}, write)
+            with config.ConfigTransaction(atomic_writer=write) as transaction:
+                transaction.json(ingest, {"fixture": "new"}, private=True)
+                transaction.json(token, {"fixture": "token"}, private=True)
+            backup = ingest.with_name(ingest.name + ".aivision-backup")
+            with self.assertRaisesRegex(RuntimeError, "rollback"):
+                with config.ConfigTransaction(atomic_writer=write) as transaction:
+                    transaction.json(ingest, {"fixture": "rollback"}, private=True)
+                    raise RuntimeError("rollback")
+            self.assertEqual(json.loads(ingest.read_text(encoding="utf8")), {"fixture": "new"})
+            self.assertEqual(json.loads(backup.read_text(encoding="utf8")), {"fixture": "old"})
+            for path in (ingest, pending, token, backup):
+                self.assert_private(path)
+            self.assertEqual(self.read_acl(root), root_acl)
+
+    def test_rejects_hard_linked_existing_credentials(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            managed = root / "aivision" / "minimax-code"
+            managed.mkdir(parents=True)
+            external = root / "other.json"
+            external.write_text("unrelated", encoding="utf8")
+            acl = self.read_acl(external)
+            os.link(external, managed / "ingest.json")
+            with self.assertRaisesRegex(installer.ConnectError, "private NTFS directory"):
+                installer.prepare_minimax_windows_credentials(managed)
+            self.assertEqual(self.read_acl(external), acl)
+
+    def test_creates_private_directory_and_refuses_a_managed_junction(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder).resolve()
+            managed = root / "aivision" / "minimax-code"
+            installer.prepare_minimax_windows_credentials(managed)
+            self.assert_private(managed)
+            managed.rmdir()
+            external = root / "unrelated"
+            external.mkdir()
+            acl = self.read_acl(external)
+            subprocess.run([
+                shutil.which("pwsh.exe"), "-NoProfile", "-NonInteractive", "-Command",
+                "$ErrorActionPreference = 'Stop'; "
+                "New-Item -ItemType Junction -Path $env:AIVISION_MINIMAX_TEST_ACL_PATH "
+                "-Target $env:AIVISION_MINIMAX_TEST_ACL_TARGET | Out-Null",
+            ], env={**os.environ, "AIVISION_MINIMAX_TEST_ACL_PATH": str(managed),
+                    "AIVISION_MINIMAX_TEST_ACL_TARGET": str(external)}, check=True, timeout=15)
+            with self.assertRaisesRegex(installer.ConnectError, "private NTFS directory"):
+                installer.prepare_minimax_windows_credentials(managed)
+            self.assertEqual(self.read_acl(external), acl)
 
 
 if __name__ == "__main__":
