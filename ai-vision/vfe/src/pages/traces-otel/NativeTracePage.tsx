@@ -1897,8 +1897,13 @@ export default function NativeTracePage({
                 const params = new URLSearchParams({
                   a: checkedIds[0],
                   b: checkedIds[1],
-                  spaceId,
                 })
+                // Personal Spaces omit spaceId from the canonical URL.
+                if (searchParams.has("spaceId")) params.set("spaceId", spaceId)
+                const implicitSpaceReturn = params.has("spaceId")
+                  ? null
+                  : new URLSearchParams(searchParams)
+                implicitSpaceReturn?.set("spaceId", spaceId)
                 if (fromTimestamp) params.set("from", fromTimestamp)
                 if (toTimestamp) params.set("to", toTimestamp)
                 navigate(
@@ -1906,7 +1911,14 @@ export default function NativeTracePage({
                     params.toString(),
                     agentProduct,
                     { agentUuid }
-                  )}`
+                  )}`,
+                  {
+                    state: {
+                      fromTraceList: true,
+                      implicitSpaceReturnSearch:
+                        implicitSpaceReturn?.toString(),
+                    },
+                  }
                 )
               }}
             >

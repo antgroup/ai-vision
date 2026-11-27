@@ -28,8 +28,8 @@ def installation_guide(plugin):
     ]
     if not plugin.get("binary"):
         requirements.append({"label": "Node.js", "value": "已安装"})
-    # The native Windows client does not support agent installation. The
-    # browser fills in the macOS/Linux command's placeholders after authorization.
+    # The browser fills in the command's placeholders after authorization.
+    # The published Windows remote client does not support aiv connect.
     # --base-url is anchored to the SAME origin the onboarding catalog serves
     # its plugin downloads from (public_base_url): the installer enforces a
     # same-origin check on the artifact URL, so the browser origin (the vite
@@ -53,7 +53,7 @@ def installation_guide(plugin):
         requirements[1] = {"label": "MiniMax Code CLI", "value": "在 macOS 或 glibc Linux 上安装 mcode 0.7.2，并配置可用的模型"}
         run_task = "执行安装完成时显示的启动命令，运行一次包含模型调用和工具调用的 mcode exec 任务"
         custom_config = '使用自定义配置目录时，安装命令追加 --config-dir "目录路径"，再运行安装器显示的启动命令'
-    return {
+    guide = {
         "schema": "v2",
         "plugin_key": plugin["key"],
         **({"preview": True} if plugin.get("preview") else {}),
@@ -90,6 +90,9 @@ def installation_guide(plugin):
         ],
         "success_message": "请在 Agent 所在机器安装采集插件，运行任务后到数据看板查看上报结果。",
     }
+    if plugin.get("host"):
+        guide["host"] = plugin["host"]
+    return guide
 
 
 def plugin_config_guide(plugin):

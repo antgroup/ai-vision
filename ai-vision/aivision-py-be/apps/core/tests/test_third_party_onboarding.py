@@ -307,9 +307,16 @@ class ThirdPartyOnboardingTests(SpaceKeyTestCase):
                 (kind.runtime_type, kind.setup_mode), ("minimax-code", "CLI")
             )
             guide = kind.config_guide
+            self.assertTrue(guide["preview"])
+            self.assertEqual(guide["host"], "mcode")
             setup = next(
                 section for section in guide["sections"] if section["type"] == "setup_steps"
             )
+            self.assertNotIn("Windows", setup["platforms"])
+            verification = next(
+                section for section in guide["sections"] if section["type"] == "verification"
+            )
+            self.assertIn("mcode exec", verification["steps"][0])
             steps = setup["platforms"]["macOS/Linux"]["modes"]["cli"]["steps"]
             command = steps[0]["command"]
             self.assertIn("aiv connect minimax-code", command)
@@ -400,11 +407,12 @@ class ThirdPartyOnboardingTests(SpaceKeyTestCase):
         ):
             if kind.setup_mode != "CLI":
                 continue
-            command = next(
+            platforms = next(
                 section
                 for section in kind.config_guide["sections"]
                 if section["type"] == "setup_steps"
-            )["platforms"]["macOS/Linux"]["modes"]["cli"]["steps"][0]["command"]
+            )["platforms"]
+            command = platforms["macOS/Linux"]["modes"]["cli"]["steps"][0]["command"]
             self.assertIn("--base-url 'http://127.0.0.1:8001'", command)
             self.assertNotIn("{baseUrl}", command)
 

@@ -74,6 +74,49 @@ test("single-line values keep parsing as before", () => {
   assert.equal(result.configs[0].description, "short")
 })
 
+test("YAML comments do not become part of the Skill name", () => {
+  for (const name of [
+    '"qa-audit" # Matches the Agent name',
+    "'qa-audit' # Matches the Agent name",
+    "qa-audit # Matches the Agent name",
+  ]) {
+    const text = `---\nname: ${name}\ndescription: Audit # Metadata comment\n---\n\n# Body`
+    const result = parseSkillConfigText(text)
+    if (typeof result === "string") assert.fail(result)
+    assert.equal(result.configs[0].name, "qa-audit")
+    assert.equal(result.configs[0].description, "Audit")
+    assert.equal(result.configs[0].raw.content, text)
+  }
+})
+
+test("quoted hashes, attached hashes, and block content stay literal", () => {
+  for (const [name, expected] of [
+    ["qa#one # Comment", "qa#one"],
+    ["qa\u00a0#one # Comment", "qa\u00a0#one"],
+    ['"qa # one" # Comment', "qa # one"],
+    ['"qa\\x2daudit" # Comment', "qa-audit"],
+    ['"qa\\\\x2daudit" # Comment', "qa\\x2daudit"],
+    [String.raw`"qa\" # one" # Comment`, 'qa" # one'],
+    ["'qa'' # one' # Comment", "qa' # one"],
+  ]) {
+    const result = parseSkillConfigText(
+      `---\nname: ${name}\ndescription: | # A block\n  Audit records.\n  # Keep this text.\n---`
+    )
+    if (typeof result === "string") assert.fail(result)
+    assert.equal(result.configs[0].name, expected)
+    assert.equal(
+      result.configs[0].description,
+      "Audit records.\n# Keep this text."
+    )
+  }
+
+  const literal = parseSkillConfigText(
+    '---\nname: qa-audit\ndescription: "|" # A literal value\n---'
+  )
+  if (typeof literal === "string") assert.fail(literal)
+  assert.equal(literal.configs[0].description, "|")
+})
+
 test("front matter imports the humanizer-style allowed-tools list and preserves source", () => {
   const text = [
     "---",

@@ -214,18 +214,20 @@ for (const language of ["zh-CN", "en-US", "ja-JP"]) {
       if (theme === "dark")
         await expect(page.locator("html")).toHaveClass(/dark/)
 
+      const environmentCheck = guide.getByLabel(
+        uiText(language, "hermesOnboarding.checkEnvironment"),
+        { exact: true }
+      )
+      await expect(environmentCheck).toBeVisible()
+      await expect(environmentCheck).toHaveText(
+        "command -v hermes && hermes --version\nhermes doctor"
+      )
       await guide
         .getByRole("button", {
           name: uiText(language, "hermesOnboarding.createCredentials"),
           exact: true,
         })
         .click()
-      const environmentCheck = guide
-        .getByLabel(uiText(language, "hermesOnboarding.checkEnvironment"), {
-          exact: true,
-        })
-        .locator("xpath=ancestor::details[1]")
-      await expect(environmentCheck).not.toHaveAttribute("open")
       const configLabel = uiText(language, "hermesOnboarding.configSnippet")
       const config = guide.getByLabel(configLabel, { exact: true })
       await modal.screenshot({

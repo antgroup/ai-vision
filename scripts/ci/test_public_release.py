@@ -12,7 +12,7 @@ from product_registry import IMAGE_ROLES, PUBLIC_REPOSITORY, UPSTREAM_SIGNOZ, pr
 from release_assets import DATABASES, assemble
 from release_candidate import freeze, sanitize_smoke, verify_remote_candidate
 from release_plan import IMAGES as BUILT_COMPONENTS
-from release_publish import main as publish, publish_version_tags, validate_bundle
+from release_publish import generate_rolling_notes, main as publish, publish_version_tags, validate_bundle
 from release_reuse import latest_release, prepare
 import test_release as fixtures
 import test_release_candidate as candidate_fixtures
@@ -191,6 +191,24 @@ class PublicReleaseTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "conflicting release image: .*data-backend:"):
                 publish_version_tags(self.plan, IMAGES, repository=PUBLIC_REPOSITORY)
             write.assert_not_called()
+
+    def test_daily_cutover_notes_link_the_legacy_download_without_comparing_histories(self):
+        previous_url = "https://github.com/antgroup/ai-vision/releases/tag/v0.6.0-daily.20261123.2"
+        previous = {"body": f"[Versioned assets and exact image manifest]({previous_url})."}
+        with patch("release_publish.api") as github:
+            notes = generate_rolling_notes(self.plan, PUBLIC_REPOSITORY, previous, daily_history_cutover=True)
+        self.assertIn("`develop`", notes)
+        self.assertIn(previous_url, notes)
+        self.assertNotIn("/compare/", notes)
+        github.assert_not_called()
+
+    def test_daily_cutover_notes_reject_an_unexpected_predecessor(self):
+        previous = {"body": "[Versioned assets and exact image manifest]"
+                            "(https://github.com/antgroup/ai-vision/releases/tag/v0.6.0-daily.20261124)."}
+        with patch("release_publish.api") as github:
+            with self.assertRaisesRegex(ValueError, "legacy Daily"):
+                generate_rolling_notes(self.plan, PUBLIC_REPOSITORY, previous, daily_history_cutover=True)
+        github.assert_not_called()
 
     def test_public_inline_publish_reads_back_five_versions_before_moving_five_aliases(self):
         acceptance = self.acceptance()

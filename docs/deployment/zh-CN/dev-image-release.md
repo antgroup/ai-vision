@@ -2,22 +2,25 @@
 
 [部署文档](../README.md) · 简体中文 | [English](../en/dev-image-release.md)
 
-[`Release images`](../../../.github/workflows/release-images.yml) 构建并验收固定的产品候选版。手动运行默认 **`publish=false`**，保留可审阅的制品和验收记录，不创建产品 Release，也不移动滚动标签。标准公开渠道使用源码兼容的服务镜像和普通 CLI，GitHub 仓库为 `antgroup/ai-vision`。当前产品目标为 `0.6.0`，实际可下载版本以 Releases 页面为准。
+[`Release images`](../../../.github/workflows/release-images.yml) 构建并验收固定的产品候选版。手动运行默认 **`publish=false`**，保留可审阅的制品和验收记录，不创建产品 Release，也不移动滚动标签。标准公开渠道使用源码兼容的服务镜像和普通 CLI，GitHub 仓库为 `antgroup/ai-vision`。当前产品目标为 `0.6.1`，实际可下载版本以 Releases 页面为准。
 
-native 编译由[可选候选工作流](../../../.github/workflows/native-candidate.yml)负责。[临时私有 Skills 交付](../../../deploy/native-packaging/release-contract.md)保留自己的源码排除和访问门禁。用户 Skills 继续维护在 `ob-labs/ai-vision-skills`。定时 Daily 继续暂停。
+native 编译由[可选候选工作流](../../../.github/workflows/native-candidate.yml)负责。[临时私有 Skills 交付](../../../deploy/native-packaging/release-contract.md)保留自己的源码排除和访问门禁。用户 Skills 继续维护在 `ob-labs/ai-vision-skills`。
 
 ## 发布渠道与测试范围
 
 | 运行方式 | 来源与版本 | 验证通过后的产物 |
 | --- | --- | --- |
+| 定时 Daily，每天北京时间 02:23 | 默认分支 `develop` 上触发事件对应的提交，版本为 `VERSION-daily.YYYYMMDD` | 包含 Linux 双架构个人版制品的版本化预发布，以及滚动 `daily` 入口 |
 | 手动 `daily`，默认 `publish=false` | 当前默认分支；`VERSION-daily.YYYYMMDD[.N]` | 冻结的候选制品和验收记录，不发布 Release 或产品 alias |
 | 手动 `dev`，默认 `publish=false` | 当前默认分支；`VERSION-dev.YYYYMMDD.RUN_NUMBER[.ATTEMPT]` | 冻结的开发候选版，不发布 Release 或产品 alias |
 | 手动试用 alias | 所选已推送分支；独立的非版本号 alias 和所选候选渠道 | 仅生成候选制品；发布会在写入版本标签之前被拒绝 |
 | 合格 Daily／Dev 的推进发布 | 仍对应当前默认分支 head 的准确成功候选 run／attempt | 用原始冻结制品发布带版本号的预发布和滚动入口 |
 | 手动 `release_preview=true` | 所选分支及准确的 `VERSION` | 执行正式发布验收并冻结制品，关闭发布 |
-| 推送 `v*` tag | 与 `VERSION` 一致，且提交在默认分支历史中 | 通过受保护审批后的正式 Release 或 RC 预发布 |
+| 推送 `v*` tag | 与 `VERSION` 一致，且指向 `main` 历史中的提交 | 通过受保护审批后的正式 Release 或 RC 预发布 |
 
-显式 `publish=true` 的手动 Daily/Dev 运行仍可在相同源码／制品门禁通过后发布。独立推进流程用于先审阅候选、再发布，不会重新构建。
+工作流合入默认分支 `develop` 后，GitHub 按计划触发 Daily。快照日期取原始运行创建时的 Asia/Shanghai 日期，重跑沿用。定时构建使用修订号 `1`，通过验收并回读 Release 附件后更新滚动入口。
+
+手动 Daily／Dev 设置 `publish=true` 后，可在相同源码和制品检查通过后发布。也可以先审阅手动候选，再用推进工作流发布原有的冻结制品。
 
 Daily 使用固定的快照日期。按 `YYYYMMDD` 设置 `snapshot_date`，重试或跨午夜时保留它。首个快照使用 `0.6.0-daily.YYYYMMDD`，当天第二个验收快照使用 `0.6.0-daily.YYYYMMDD.2`。重跑保留所选版本，run ID／attempt 用于区分构建身份。已验收的内容改变时，必须使用新的当日修订号。
 
@@ -29,15 +32,15 @@ PR 按改动路径选择 Linux 基础检查，包括版本和 release PR。集�
 
 ## 候选验收与发布
 
-1. 确定准确的源码 SHA 和已批准的上游 SigNoz 镜像索引 digest。正式版和 RC 读取[依赖锁文件](../../../deploy/config/release-dependencies.json)中对应基础版本的固定索引。公开候选将同一索引复制到 `ghcr.io/antgroup/ai-vision/data-backend` 并回读校验。
-2. 确认所选源码通过基础 CI，再构建插件及配套普通 CLI。
+1. 确定准确的源码 SHA 和已批准的上游 SigNoz 镜像索引 digest。定时 Daily、正式版和 RC 读取[依赖锁文件](../../../deploy/config/release-dependencies.json)中对应基础版本的固定索引。公开候选将同一索引复制到 `ghcr.io/antgroup/ai-vision/data-backend` 并回读校验。
+2. 发起手动候选前，确认所选源码通过基础 CI。工作流构建插件及配套普通 CLI。
 3. 在 Linux amd64／arm64 构建器上构建变化的自有镜像，或验证从已发布 Release 复用的两个架构。记录实际构建身份和 digest，使用唯一候选 tag。
 4. 生成带校验和的 CLI／制品、`release-manifest.json` 和两份固定变量文件。manifest 绑定 `source_repository`、`release_tag`、`product_version`、源码 SHA 和原始 build ID。
 5. 验证五个公开候选镜像引用均可匿名读取。完整源码检查使用本次构建的自有镜像和固定的 SigNoz 精度测试镜像。制品验收使用打包后的 Linux amd64 CLI 和准确发布镜像，分别部署 OceanBase CE 和 seekdb，验证健康、认证、OTLP 写入和 API 回读（含原生记忆操作）、重新部署后的数据持久性、镜像身份及清理。
-6. 将准确的制品大小／哈希及两份经过脱敏的成功 smoke 回执冻结到 `candidate-acceptance.json`。仅构建候选的运行在此结束。
-7. 显式发布时，校验候选来源及当前远端状态，为五个公开镜像添加版本标签，再发布带版本号的 Release。下载并比较实际附件字节后移动滚动标签。正式版和 RC 另需已审阅的说明和受保护审批。
+6. 将准确的制品大小、哈希及两份脱敏后的成功 smoke 回执冻结到 `candidate-acceptance.json`。包含个人版的运行还会验收双架构制品，并在最终验收记录中加入回执。仅构建候选的运行在验收后结束。
+7. 发布时，校验候选来源及当前远端状态，为五个公开镜像添加版本标签，再发布带版本号的 Release。下载并比较实际附件字节后移动滚动标签。正式版和 RC 另需已审阅的说明和受保护审批。
 
-公开候选的 manifest 固定 `ghcr.io/antgroup/ai-vision/` 下的五个服务镜像。验收通过并显式发布后，`frontend`、`backend`、`ingest-gateway`、`diagnosis` 和 `data-backend` 均使用产品版本标签和滚动标签。`data-backend` 按 digest 固定获准使用的 `ghcr.io/ob-labs/signoz-ob` 镜像索引副本。`data_backend_mirror` 记录带有相同 digest 的上游和副本引用。SigNoz 维护上游标签及构建证据。OceanBase CE 和 seekdb 继续直接使用固定 digest 的上游镜像。
+公开候选的 manifest 固定 `ghcr.io/antgroup/ai-vision/` 下的五个服务镜像。发布流程为验收通过的 `frontend`、`backend`、`ingest-gateway`、`diagnosis` 和 `data-backend` 添加产品版本标签和滚动标签。`data-backend` 按 digest 固定获准使用的 `ghcr.io/ob-labs/signoz-ob` 镜像索引副本。`data_backend_mirror` 记录带有相同 digest 的上游和副本引用。SigNoz 维护上游标签及构建证据。OceanBase CE 和 seekdb 继续直接使用固定 digest 的上游镜像。
 
 制品部署验收覆盖 **Linux amd64** 和两个数据库，不覆盖升级、Kubernetes、所有真实模型服务或未执行的平台。native 编译、镜像／CLI 平台可用性分别保留实际证据。
 
@@ -47,20 +50,20 @@ PR 按改动路径选择 Linux 基础检查，包括版本和 release PR。集�
 
 在昂贵构建或发布前确认以下条件：
 
-- Daily 和 Dev 可用 `AIVISION_SIGNOZ_IMAGE` 或手动 `signoz_image` 指定含两个 Linux 架构的 `ghcr.io/ob-labs/signoz-ob@sha256:...`。发布正式版本时，通过依赖锁文件评审 SigNoz 的镜像摘要、源码提交和构建回执。同一基础版本的 RC 和正式版使用同一份锁。
+- 定时 Daily 要求 `develop` 上依赖锁文件中的版本与 `VERSION` 一致。评审镜像 digest、上游源码提交和构建回执。手动 Daily 和 Dev 使用 `AIVISION_SIGNOZ_IMAGE`，或通过 `signoz_image` 参数指定经批准且包含两个 Linux 架构的 `ghcr.io/ob-labs/signoz-ob@sha256:...`。
 - 确认产品仓库已公开，并核对实际操作账户的 Package 和 Release 权限。即使 `publish=false`，候选也会向 GHCR 写入镜像数据。首次获授权的候选可能创建私有 Package，随后在部署 smoke 前停止。为五个 Package 配置仓库关联、工作流访问权限和公开可见性，再重跑候选，由镜像仓库门禁验证匿名访问。
-- 正式版／RC：为 `release` environment 配置 required reviewers，禁止自我审批并关闭管理员绕过。按 [Release 模板](../../../.github/RELEASE_TEMPLATE.md)为准确的 tag 准备无附件的中英双语草稿。受保护的发布任务定位草稿并回读核验附件，通过后才发布。
+- 正式版／RC：为 `release` environment 配置 required reviewers，禁止自我审批并关闭管理员绕过。如果环境只允许指定的标签，在推送新标签前，把该版本的完整标签加入环境部署规则。按 [Release 模板](../../../.github/RELEASE_TEMPLATE.md)为该标签准备无附件的中英双语草稿。受保护的发布任务定位草稿并回读核验附件，通过后才发布。
 - 可选的 `AIVISION_E2E_DOCKER_LINUX_RUNNER` 必须指向可信且足以运行完整系统的 Linux Docker runner。
 
 发布工作流验收五个核心服务。可选 OpenShell 安装见[沙箱插件指南](sandbox-plugins.md)。
 
-在 **Actions → Release images → Run workflow** 选择默认分支、`tag=daily`、固定日期和修订号，并使用 **`publish=false`**。`candidate_channel` 接受 `auto`、`daily`、`dev`。试用已推送的分支时，选择该分支，设置独立的 `tag` 和明确的候选渠道，并使用 `publish=false`。`latest`、版本号格式和自动生成的 `candidate-*` 名称被保留。候选按 Git ref 排队。更新镜像别名和 Release 的发布任务共用一个队列。
+在 **Actions → Release images → Run workflow** 选择 `develop`，设置 `tag=daily`、固定日期和修订号，并使用 **`publish=false`**。`candidate_channel` 接受 `auto`、`daily`、`dev`。试用已推送的分支时，选择该分支，设置独立的 `tag` 和明确的候选渠道，并使用 `publish=false`。`latest`、版本号格式和自动生成的 `candidate-*` 名称被保留。定时和手动候选按 Git ref 排队。更新镜像别名和 Release 的发布与恢复任务共用一个队列。两类队列均使用 `queue: max`，每个并发组同时运行一项，最多等待 100 项。
 
 ```bash
 # 运行前填写实际快照日期／修订号。
 SNAPSHOT_DATE=YYYYMMDD
 gh workflow run release-images.yml -R antgroup/ai-vision \
-  --ref main -f tag=daily -f publish=false \
+  --ref develop -f tag=daily -f publish=false \
   -f snapshot_date="$SNAPSHOT_DATE" -f daily_revision=1
 gh run list -R antgroup/ai-vision --workflow release-images.yml --limit 5
 ```
@@ -82,7 +85,7 @@ SigNoz 摘要相同且只修改允许范围内的文档或界面时，Daily 运�
 正式发布及其预演使用 `macos-26` 打包 macOS ARM64 CLI 和 Rust hook。上传前，
 工作流核验实际交付二进制的 ARM64 架构，并检查其声明的最低 macOS 版本不高于 11.0。正式发布的 macOS ARM64 源码检查
 也在 macOS 26 上运行，其中包括 Native 检查及 Weaver 使用的证据。这些源码作业
-共用一个队列，每次只申请一台托管 macOS ARM64 runner。数据库制品 smoke 失败时，
+共用一个 `queue: max` 队列，每次只申请一台托管 macOS ARM64 runner。数据库制品 smoke 失败时，
 Actions 记录最后观测到的部署阶段和固定错误类别，原始日志留在 runner 内。
 
 ## 验收 Intel macOS Docker
@@ -133,8 +136,8 @@ Claude 内部和进程端到端 p95 均低于 50 ms，以及 Claude PostToolUse 
 
 ## 验收 All-in-One 个人版
 
-正式版和 RC 都包含内嵌 seekdb 的 Linux amd64 和 arm64 单容器个人版。Daily
-可设置 `personal_edition=true` 和 `publish=false` 验收同样的双架构。正式预演也会
+定时 Daily、正式版和 RC 都包含内嵌 seekdb 的 Linux amd64 和 arm64 单容器个人版。
+手动 Daily 可设置 `personal_edition=true` 和 `publish=false` 验收这两个架构。正式预演也会
 验证 Windows x64 CLI、个人版和分布式制品。原生双架构作业使用双库验收
 通过后冻结的分布式候选，实际安装并验证镜像、CLI、首次使用和数据持久化。
 两种架构均使用包内数据后端验证原生记忆操作回读。
@@ -151,11 +154,11 @@ Claude 内部和进程端到端 p95 均低于 50 ms，以及 Claude PostToolUse 
 CANDIDATE_RUN_ID=...
 CANDIDATE_ATTEMPT=...
 gh workflow run promote-release.yml -R antgroup/ai-vision \
-  --ref main -f candidate_run_id="$CANDIDATE_RUN_ID" \
+  --ref develop -f candidate_run_id="$CANDIDATE_RUN_ID" \
   -f candidate_run_attempt="$CANDIDATE_ATTEMPT"
 ```
 
-推进要求官方 `release-images.yml` 的最新成功 attempt，且源码仍为**当前默认分支 head**；两个数据库 smoke job 均成功，制品与冻结记录完全相符。新的重跑会取代旧验收。过期、外仓、失败的 attempt，改变的制品、分支试用及正式版／RC 候选均被拒绝。制品保留原始 candidate build ID；发布器记录自己独立的 run／attempt，并上传 `promotion-receipts-<publisher-run-id>-<attempt>`，不会替换 GitHub 运行身份。
+常规推进要求官方 `release-images.yml` 的最新成功 attempt，且源码仍为**当前默认分支 head**。两个数据库 smoke job 都要成功，制品要与冻结记录完全相符。新的重跑会取代旧验收。过期、外仓或失败的 attempt、改动过的制品、分支试用及正式版／RC 候选均被拒绝。制品保留原始 candidate build ID。发布器在 `promotion-receipts-<publisher-run-id>-<attempt>` 中记录自己的 run 和 attempt。
 
 ## 下载并部署被测组合
 
@@ -207,12 +210,51 @@ aiv logs --namespace aivision -n 80 backend
 
 源码检查独立于发布准备。缺少 SigNoz 配置或镜像仓库权限会阻止制品生产，源码回归仍运行。源码 fixture 的 SigNoz v1 回读不等于候选的原生 Langfuse v1 回读。
 
-候选失败后使用 **Re-run all jobs**，确保 CLI、镜像和检查属于同一 attempt。Daily 保留快照日期／修订号；已接受内容改变时使用下一个修订号。失败后唯一候选镜像 tag 可能保留，仅构建候选的运行始终不移动用户 alias。
+候选验收失败后使用 **Re-run all jobs**，确保 CLI、镜像和检查属于同一 attempt。Daily 保留快照日期及修订号。已接受内容改变时使用下一个修订号。失败后唯一候选镜像 tag 可能保留。
+
+### 恢复正式版或 RC 发布
+
+发布任务保存操作日志后中断时，使用原发布 tag、run ID 和 attempt 恢复。该 tag 所指提交须包含支持恢复的工作流。恢复任务从原运行读取发布制品、验收记录和发布日志，这些附件保留 14 天。
+
+先启动恢复任务。重跑原工作流会产生新的 attempt，并取代中断的 attempt。
+
+```bash
+RELEASE_TAG=vX.Y.Z
+FORMAL_RUN_ID=...
+FORMAL_RUN_ATTEMPT=...
+gh workflow run release-images.yml -R antgroup/ai-vision \
+  --ref "$RELEASE_TAG" -f recover_formal_run_id="$FORMAL_RUN_ID" \
+  -f recover_formal_run_attempt="$FORMAL_RUN_ATTEMPT"
+```
+
+由发起人以外的审核人在受保护的 `release` 环境中审批恢复任务。任务会核验原始 attempt，确认当前 tag 指向 `main` 历史中的原始源码提交，再继续发布冻结的制品。如果此前中断在候选验收阶段，按候选重跑流程处理。
+
+发布仍是草稿时，恢复任务会核验已审阅的标题、说明和每一份现有附件的字节，再上传缺失文件。附件重复、超出清单或上传不完整时，恢复会停止。Stable 已发布时，GitHub Latest 必须仍指向该 Release，每个 GHCR `:latest` alias 必须仍指向记录中的上一版或已验收的目标。恢复只推进尚未完成的 alias。已发布的 RC 仅做回读核验。
+
+上传返回 HTTP 502 时，GitHub 可能留下状态为 `starter`、大小为零的附件。发布器报告此情况后，先等发布作业停止。用日志中的 `release.release_id` 按 ID 读取 Release，确认它仍是原版本标签的草稿。确认该附件名称在原始冻结制品清单中，且草稿中只有一项同名附件。按附件 ID 重新读取，确认状态仍为 `starter`、大小仍为零。仅按数字 ID 删除这项占位附件，重新列出草稿附件，再用原 run ID 和 attempt 发起恢复。保留 `uploaded` 附件供恢复作业校验。 [GitHub Release 附件 API](https://docs.github.com/en/rest/releases/assets#upload-a-release-asset)
+
+### Daily 和 Dev 发布恢复
 
 Dev alias 附件上传中断后，可以用原候选的 run／attempt 重试推进发布。直接 `publish=true` 的候选若仅在开发发布作业失败，需设置 `recover_dev_publication=true`；校验器要求同一 attempt 的两个 smoke 和冻结验收均已通过，其他失败或取消仍会被拒绝。恢复会验证冻结验收、已发布的带版本制品、原 Dev 构建／源码入口和当前 tag，再恢复同一组字节。原候选说明保留，恢复发布器单独记录。较新、变化或来源无法验证的 alias 状态需要先检查。新的 Dev 发布会先回读上传后的附件，再写入完成说明。
 
-发布中断时保留回执，恢复前检查准确制品、digest 及当前远端状态。不能在已接受版本下重建不同字节、覆盖更新／来源不明的 alias，或手动绕过拒绝门禁。发布涉及多个 GitHub／镜像仓库写入，不是原子操作。账单／权限失败、runner 不可用和必要检查跳过都属于失败或缺少证据。
-
 推进 `daily` 时，workflow attempt 必须更新，产品版本也必须保持单调。发布器会通过已发布的带版本 Release、经认证读取的 manifest／校验和及当前 tag 核实既有版本，再按数字基础版本、快照日期和修订号比较。较晚运行不能覆盖更新日期或修订号；历史来源缺失或不一致时停止发布。
+
+滚动 `daily` 入口从 `ci` 切换到 `develop` 时，发布器会核验 `v0.6.0-daily.20261123.2` 的发布来源，并确认候选提交属于已批准的 `develop` 历史。首个 `develop` Daily 的带版本号 Release 和滚动 Release 都会说明这次切换，并指向旧版下载。切换后，后续候选必须使用滚动入口当前的源码提交或其后继提交。[最后一个来自 `ci` 的 Daily](https://github.com/antgroup/ai-vision/releases/tag/v0.6.0-daily.20261123.2)。
+
+如果 Daily 已发布带版本号的 Release 并完成标签更新，写入滚动 Release 元数据时中断，请用原始冻结候选恢复。在 `develop` 运行 **Promote qualified Daily or Dev**，填入 **Release images** 的原始 run ID 和 attempt。同一个 run 的后续重跑如果失败、取消或超时，或手动重跑成功且发布作业已跳过，恢复时仍使用原始 attempt 和冻结制品。
+
+```bash
+CANDIDATE_RUN_ID=...
+CANDIDATE_ATTEMPT=...
+gh workflow run promote-release.yml -R antgroup/ai-vision \
+  --ref develop -f candidate_run_id="$CANDIDATE_RUN_ID" \
+  -f candidate_run_attempt="$CANDIDATE_ATTEMPT" -f recover_daily_publication=true
+```
+
+如果在候选工作流内直接发布，官方 attempt 里仅发布作业可以失败、取消或超时。如果独立的推进发布中断，恢复使用原来成功的手动候选 attempt，其候选工作流内的发布作业应为跳过。两种情况下，原候选提交都必须仍可从当前 `develop` 分支顶端到达。
+
+发布器逐字节核对带版本号的 Release 制品，同时校验 `daily` Git 标签和五个镜像别名。校验通过后，用原带版本号 Release 的说明修复滚动 Release 元数据，并记录推进回执。常规发布遇到滚动元数据和 Git 标签不一致时会停止。
+
+发布中断时保留回执，恢复前检查准确制品、digest 及当前远端状态。不能在已接受版本下重建不同字节、覆盖更新／来源不明的 alias，或手动绕过拒绝门禁。发布涉及多个 GitHub／镜像仓库写入，不是原子操作。账单／权限失败、runner 不可用和必要检查跳过都属于失败或缺少证据。
 
 独立的手动 Product Compose lifecycle 要求 Docker 至少有 14 GiB 内存。默认 runner 容量不足时，将 `AIVISION_E2E_DOCKER_LINUX_RUNNER` 配置为容量足够的 Linux x64 runner。容量检查在 checkout 和构建前执行。

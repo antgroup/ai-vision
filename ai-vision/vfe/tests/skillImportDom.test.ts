@@ -77,7 +77,10 @@ async function fixture(
       fetches.push(payload)
       return { ...entry, content }
     },
-    saveSkillConfigBatch: async (_space: string, configs: { name: string }[]) => {
+    saveSkillConfigBatch: async (
+      _space: string,
+      configs: { name: string }[]
+    ) => {
       saves.push(...configs)
       await saveGate
       return configs.map(({ name }) => ({ requestedName: name, name }))
@@ -244,29 +247,63 @@ test("link imports fetch and save the selected repository branch", async () => {
   }
 })
 
-test("unparseable link imports stay open and report the skipped file", async () => {
-  const ui = await fixture("# No skill metadata")
+for (const [reason, content] of [
+  ["missing front matter", "# No skill metadata"],
+  [
+    "unsupported flow-list escape",
+    '---\nname: deploy\nallowed-tools: ["Re\\x61d", Write]\n---',
+  ],
+]) {
+  test("link import stays open and skips a file with " + reason, async () => {
+    const ui = await fixture(content)
+    const { SkillImportLinkPanel } = ui.load<{
+      SkillImportLinkPanel: ComponentType<Record<string, unknown>>
+    }>("SkillImportLinkPanel.tsx")
+    let closed = false
+    try {
+      await ui.render(
+        createElement(SkillImportLinkPanel, {
+          spaceId: "space-a",
+          onClose() {
+            closed = true
+          },
+        })
+      )
+      await ui.input("https://github.com/owner/repo")
+      await ui.click("labs.skill.import.link.resolve")
+      await ui.click("labs.skill.import.link.install")
+      assert.equal(closed, false)
+      assert.equal(ui.saves.length, 0)
+      assert.equal(
+        ui.document.querySelector('[role="alert"]')?.textContent,
+        "labs.skill.topic.installResult"
+      )
+    } finally {
+      await ui.cleanup()
+    }
+  })
+}
+
+test("repository import keeps its original save identity for commented names", async () => {
+  const ui = await fixture(
+    '---\nname: "deploy" # QA note\ndescription: Deployment skill\n---\n'
+  )
   const { SkillImportLinkPanel } = ui.load<{
     SkillImportLinkPanel: ComponentType<Record<string, unknown>>
   }>("SkillImportLinkPanel.tsx")
-  let closed = false
   try {
     await ui.render(
       createElement(SkillImportLinkPanel, {
         spaceId: "space-a",
-        onClose() {
-          closed = true
-        },
+        onClose() {},
       })
     )
     await ui.input("https://github.com/owner/repo")
     await ui.click("labs.skill.import.link.resolve")
     await ui.click("labs.skill.import.link.install")
-    assert.equal(closed, false)
-    assert.equal(ui.saves.length, 0)
-    assert.equal(
-      ui.document.querySelector('[role="alert"]')?.textContent,
-      "labs.skill.topic.installResult"
+    assert.deepEqual(
+      ui.saves.map((config) => (config as { name: string }).name),
+      ['deploy" # QA note']
     )
   } finally {
     await ui.cleanup()

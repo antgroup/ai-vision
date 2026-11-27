@@ -198,12 +198,13 @@ export function SpaceProvider({ children }: { children: ReactNode }) {
         }
         return next
       },
-      { replace: true }
+      { replace: true, state: location.state }
     )
   }, [
     currentSpace,
     location.pathname,
     location.search,
+    location.state,
     setSearchParams,
     spaces,
   ])

@@ -57,11 +57,7 @@ function splitKey(line: string): [string, string] | null {
   if (index <= 0) return null
   const key = line.slice(0, index).trim()
   if (!key) return null
-  const value = line
-    .slice(index + 1)
-    .trim()
-    .replace(/^["']|["']$/g, "")
-  return [key, value]
+  return [key, line.slice(index + 1).trim()]
 }
 
 /** YAML block scalar indicators: `>` folded, `|` literal, each with an
@@ -167,7 +163,10 @@ function readStringList(
 }
 
 /** Front matter lines between the leading and closing `---` fences. */
-function frontMatter(text: string): LooseEntry | "unsupportedYaml" | null {
+function frontMatter(
+  text: string,
+  parseCommentedScalars: boolean
+): LooseEntry | "unsupportedYaml" | null {
   const lines = text.split("\n")
   if (lines[0]?.trim() !== "---") return null
   const end = lines.findIndex(
@@ -190,7 +189,14 @@ function frontMatter(text: string): LooseEntry | "unsupportedYaml" | null {
       index += 1
       continue
     }
-    const [key, value] = pair
+    const [key, rawValue] = pair
+    const quoted = parseCommentedScalars && /^["']/.test(rawValue)
+    let value = rawValue
+    if (!parseCommentedScalars) {
+      value = rawValue.replace(/^["']|["']$/g, "")
+    } else if (!quoted && !rawValue.startsWith("[")) {
+      value = rawValue.replace(/(?:^|[ \t])#.*$/, "").trimEnd()
+    }
     if (ALLOWED_TOOLS_KEYS.includes(key) && !value) {
       const [items, next] = readStringList(lines, index + 1, end, rootIndent)
       if (items === null) return "unsupportedYaml"
@@ -210,13 +216,16 @@ function frontMatter(text: string): LooseEntry | "unsupportedYaml" | null {
       index = next
       continue
     }
+    const scalar = quoted
+      ? (quotedFrontMatterScalar(value) ?? value.replace(/^["']|["']$/g, ""))
+      : value
     if (
       ALLOWED_TOOLS_KEYS.includes(key) &&
-      value.startsWith("[") &&
-      parseFlowList(value) === null
+      scalar.startsWith("[") &&
+      parseFlowList(scalar) === null
     )
       return "unsupportedYaml"
-    entry[key] = value
+    entry[key] = scalar
     index += 1
   }
   return entry
@@ -248,6 +257,42 @@ function parseFlowList(text: string): string[] | null {
   if (quote || !token.trim()) return null
   const value = yamlScalar(token.trim())
   return value === null ? null : [...values, value]
+}
+
+const YAML_EXTRA_ESCAPES: Record<string, string> = {
+  "0": "\0",
+  a: "\x07",
+  v: "\v",
+  e: "\x1b",
+  " ": " ",
+  "\t": "\t",
+  N: "\u0085",
+  _: "\u00a0",
+  L: "\u2028",
+  P: "\u2029",
+}
+
+function quotedFrontMatterScalar(text: string): string | null {
+  const match = text.match(/^("(?:[^"\\]|\\.)*"|'(?:[^']|'')*')(?:[ \t]+#.*)?$/)
+  if (!match) return null
+  const scalar = match[1]
+  if (!scalar.startsWith('"')) return scalar.slice(1, -1).replace(/''/g, "'")
+  try {
+    // Consume JSON-compatible escapes too, so an escaped backslash stays literal.
+    const json = scalar.replace(
+      /\\(x[0-9a-fA-F]{2}|U[0-9a-fA-F]{8}|.)/g,
+      (escape, code: string) => {
+        const value =
+          code.length > 1
+            ? String.fromCodePoint(Number.parseInt(code.slice(1), 16))
+            : YAML_EXTRA_ESCAPES[code]
+        return value === undefined ? escape : JSON.stringify(value).slice(1, -1)
+      }
+    )
+    return JSON.parse(json) as string
+  } catch {
+    return null
+  }
 }
 
 function yamlScalar(text: string): string | null {
@@ -406,14 +451,15 @@ function fromManifestEntries(
 
 export function parseSkillConfigText(
   text: string,
-  now = new Date()
+  now = new Date(),
+  { parseCommentedScalars = true } = {}
 ): SkillImportResult | SkillImportError {
   const trimmed = text.trim()
   if (!trimmed) return "noSkills"
   const importedAt = now.toISOString()
 
   if (trimmed.startsWith("---")) {
-    const matter = frontMatter(trimmed)
+    const matter = frontMatter(trimmed, parseCommentedScalars)
     if (typeof matter === "string") return matter
     if (!matter || !asText(matter.name)) return "invalidFormat"
     return {

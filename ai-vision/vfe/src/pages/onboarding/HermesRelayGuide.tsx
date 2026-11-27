@@ -101,18 +101,23 @@ export function HermesRelayGuide({
             relay: config.relay_requirement,
           })}
         </p>
-        <details className="text-sm">
-          <summary className="w-fit cursor-pointer rounded-sm text-muted-foreground focus-visible:outline-2 focus-visible:outline-ring">
-            {t("hermesOnboarding.checkEnvironment")}
-          </summary>
-          <div className="mt-2">
-            <Snippet
-              label={t("hermesOnboarding.checkEnvironment")}
-              value={`hermes --version
+        <Snippet
+          label={t("hermesOnboarding.checkEnvironment")}
+          value={`command -v hermes && hermes --version
 hermes doctor`}
-            />
-          </div>
-        </details>
+        />
+        <p className="text-sm text-muted-foreground">
+          {t("hermesOnboarding.environmentReady", {
+            hermes: config.hermes_version ?? "",
+            relay: config.relay_requirement ?? "",
+          })}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("hermesOnboarding.environmentTroubleshooting", {
+            hermes: config.hermes_version ?? "",
+            relay: config.relay_requirement ?? "",
+          })}
+        </p>
       </div>
 
       <section className="space-y-3">

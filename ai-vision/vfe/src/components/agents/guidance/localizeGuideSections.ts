@@ -1,5 +1,10 @@
 import type { TFunction } from "i18next"
-import type { ConfigGuideV2, GuideSection } from "./types"
+import type {
+  ConfigGuideV2,
+  GuideSection,
+  PlatformConfig,
+  SetupStepsSection,
+} from "./types"
 
 const BUILTIN_PLUGIN_KEYS = new Set([
   "claude-code",
@@ -9,7 +14,64 @@ const BUILTIN_PLUGIN_KEYS = new Set([
   "openclaw",
   "pi",
   "dsh",
+  "minimax-code",
 ])
+
+function installPlatforms(guide: ConfigGuideV2, section: SetupStepsSection) {
+  const platforms = Object.entries(section.platforms)
+  if (!BUILTIN_PLUGIN_KEYS.has(guide.plugin_key ?? "")) return platforms
+
+  return platforms.flatMap(([name, config]) => {
+    if (name !== "Windows") return [[name, config] as const]
+
+    // Remove unsupported CLI steps without discarding other saved instructions.
+    const modes = Object.entries(config.modes)
+      .map(([key, mode]) => {
+        const steps = mode.steps.filter(({ command }) => {
+          const [cli, action, plugin] = command.trimStart().split(/\s+/, 3)
+          return !(
+            cli === "aiv" &&
+            action === "connect" &&
+            plugin === guide.plugin_key
+          )
+        })
+        return [key, { ...mode, steps }] as const
+      })
+      .filter(([, mode]) => mode.steps.length > 0)
+    return modes.length
+      ? [[name, { modes: Object.fromEntries(modes) }] as const]
+      : []
+  })
+}
+
+function hasInstallSteps({ modes }: PlatformConfig) {
+  return Object.values(modes).some(({ steps }) => steps.length > 0)
+}
+
+export function onboardingPlatforms(guide?: ConfigGuideV2) {
+  const unixTargets = new Set<string>()
+  for (const section of guide?.sections ?? []) {
+    if (section.type !== "setup_steps") continue
+    for (const [name, config] of Object.entries(section.platforms)) {
+      if (name !== "Windows" && hasInstallSteps(config)) unixTargets.add(name)
+    }
+  }
+  if (!unixTargets.size) unixTargets.add("macOS/Linux")
+  return [...unixTargets, "Windows"]
+}
+
+export function supportsPluginInstallation(
+  guide: ConfigGuideV2,
+  platform: string
+) {
+  return guide.sections.some(
+    (section) =>
+      section.type === "setup_steps" &&
+      installPlatforms(guide, section).some(
+        ([name, config]) => name === platform && hasInstallSteps(config)
+      )
+  )
+}
 
 const GUIDE_TEXT_KEYS = [
   "prerequisitesTitle",
@@ -95,25 +157,12 @@ export function localizeGuideSections(
           title: translate(section.title),
           steps: section.steps.map(translate),
         }
-      case "setup_steps": {
-        // Saved catalog guides can still contain the old Windows installer tab.
-        const platforms = Object.entries(section.platforms).filter(
-          ([platform, { modes }]) => {
-            if (!builtinPlugin || platform !== "Windows") return true
-
-            const steps = modes.cli?.steps
-            const legacyConnectTab =
-              Object.keys(modes).length === 1 &&
-              steps?.length === 1 &&
-              steps[0].command.startsWith(`aiv connect ${guide.plugin_key} `)
-            return !legacyConnectTab
-          }
-        )
+      case "setup_steps":
         return {
           ...section,
           title: translate(section.title),
           platforms: Object.fromEntries(
-            platforms.map(([platform, config]) => [
+            installPlatforms(guide, section).map(([platform, config]) => [
               platform,
               {
                 ...config,
@@ -134,7 +183,6 @@ export function localizeGuideSections(
             ])
           ),
         }
-      }
       default:
         return section
     }

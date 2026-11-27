@@ -122,6 +122,203 @@ function searchRow(page: Page): Locator {
     .filter({ has: page.getByRole("cell", { name: /search-span/ }) })
 }
 
+test("back from a direct comparison opens the scoped trace list", async ({
+  page,
+}) => {
+  const language = "en-US"
+  await compareWithSearchCall(page, language)
+  const scope = {
+    spaceId: "space-a",
+    agent: "Codex",
+    agent_uuid: "agent",
+    from: "2026-10-29T00:00:00.000Z",
+    to: "2026-10-29T01:00:00.000Z",
+  }
+  await page.goto(
+    "/trace/compare?" +
+      new URLSearchParams({
+        ...scope,
+        a: "side-a",
+        b: "side-b",
+        showMcp: "1",
+      })
+  )
+
+  await page
+    .getByRole("button", { name: uiText(language, "traceCompare.back") })
+    .click()
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === "/trace" &&
+      Object.entries(scope).every(
+        ([key, value]) => url.searchParams.get(key) === value
+      ) &&
+      ["a", "b", "showMcp"].every((key) => !url.searchParams.has(key))
+  )
+})
+
+async function openComparisonFromList(page: Page, search: string) {
+  await page.route("**/signoz/traces/list*", (route) =>
+    route.fulfill({
+      json: {
+        code: 0,
+        data: {
+          data: ["side-a", "side-b"].map((id) => ({
+            trace_id: id,
+            name: id,
+            start_time_unix_nano: timestamp(0),
+            end_time_unix_nano: timestamp(2_000),
+          })),
+          meta: { page: 1, limit: 20, totalItems: 2, totalPages: 1 },
+        },
+      },
+    })
+  )
+  await page.goto("/trace?" + search)
+  const selection = page.getByRole("table").getByRole("checkbox")
+  await selection.nth(0).check()
+  await selection.nth(1).check()
+  await page.getByRole("button", { name: "Compare", exact: true }).click()
+  await expect(page).toHaveURL(/\/trace\/compare\?/)
+}
+
+async function mockPersonalAgents(page: Page) {
+  await page.route(/\/api\/v2\/spaces\/space-a\/agents(?:\?|$)/, (route) =>
+    route.fulfill({
+      json: {
+        code: 0,
+        data: {
+          agents: [
+            {
+              uuid: "agent",
+              agent_product: "Codex",
+              agent_name: "Codex",
+              runtime_type: "codex",
+              category: "agent",
+            },
+            {
+              uuid: "claude-agent",
+              agent_product: "ClaudeCode",
+              agent_name: "Claude Code",
+              runtime_type: "claudecode",
+              category: "agent",
+            },
+          ],
+          agent_types: [],
+        },
+      },
+    })
+  )
+}
+
+test("returning to the trace list after an Agent switch restores the originating filters", async ({
+  page,
+}) => {
+  await prepare(page, "en-US")
+  await mcpPage(page, { navigate: false })
+  await mockPersonalAgents(page)
+  await openComparisonFromList(
+    page,
+    "spaceId=space-a&agent=Codex&agent_uuid=agent&range=1h&min_duration_ms=1000"
+  )
+  await page.getByRole("button", { name: "Select Agent: Codex" }).click()
+  await page.getByRole("menuitem", { name: /ClaudeCode/ }).click()
+  await expect(page).toHaveURL(/[?&]agent_uuid=claude-agent(?:&|$)/)
+  await page.getByRole("button", { name: /Back to trace list/ }).click()
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === "/trace" &&
+      url.searchParams.get("spaceId") === "space-a" &&
+      url.searchParams.get("agent_uuid") === "agent" &&
+      url.searchParams.get("range") === "1h" &&
+      url.searchParams.get("min_duration_ms") === "1000"
+  )
+})
+
+test("returning after Agent and Space switches restores the original Personal trace list", async ({
+  page,
+}) => {
+  await prepare(page, "en-US")
+  await mcpPage(page, { navigate: false })
+  await mockPersonalAgents(page)
+  await page.route(/\/api\/v2\/spaces\/space-b\/agents(?:\?|$)/, (route) =>
+    route.fulfill({
+      json: {
+        code: 0,
+        data: {
+          agents: [
+            {
+              uuid: "team-agent",
+              agent_product: "Codex",
+              agent_name: "Team Codex",
+              runtime_type: "codex",
+              category: "agent",
+            },
+          ],
+          agent_types: [],
+        },
+      },
+    })
+  )
+  await page.route("**/api/v1/spaces", (route) =>
+    route.fulfill({
+      json: {
+        code: 0,
+        message: "success",
+        data: {
+          items: [
+            { space_id: "space-a", name: "Review personal space", type: 1 },
+            { space_id: "space-b", name: "Review team space", type: 2 },
+          ].map((space) => ({
+            ...space,
+            scope: 1,
+            description: null,
+            creator_name: "Reviewer",
+            owner_uuid: "reviewer",
+            is_owner: true,
+            can_manage_admins: true,
+            can_transfer_ownership: true,
+            member_count: 1,
+            agent_count: 1,
+            status: 1,
+            gmt_create: timestamp(0),
+            role: 1,
+            permissions: [],
+            collaboration_enabled: true,
+          })),
+        },
+      },
+    })
+  )
+  await openComparisonFromList(
+    page,
+    "agent=Codex&agent_uuid=agent&range=1h&min_duration_ms=1000"
+  )
+  await page.getByRole("button", { name: "Select Agent: Codex" }).click()
+  await page.getByRole("menuitem", { name: /ClaudeCode/ }).click()
+  await expect(page).toHaveURL(/[?&]agent_uuid=claude-agent(?:&|$)/)
+  const personalSpace = page.getByRole("button", {
+    name: "Review personal space",
+  })
+  await personalSpace.click()
+  await page.getByRole("menuitem", { name: "Review team space" }).click()
+  await expect(page).toHaveURL(/[?&]spaceId=space-b(?:&|$)/)
+  await expect(page).toHaveURL(/[?&]agent_uuid=team-agent(?:&|$)/)
+  await page.getByRole("button", { name: /Back to trace list/ }).click()
+  await expect(personalSpace).toBeVisible()
+  await expect(
+    page.getByRole("button", { name: "Select Agent: Codex" })
+  ).toBeVisible()
+  await expect(page).toHaveURL(
+    (url) =>
+      url.pathname === "/trace" &&
+      !url.searchParams.has("spaceId") &&
+      url.searchParams.get("agent_uuid") === "agent" &&
+      url.searchParams.get("range") === "1h" &&
+      url.searchParams.get("min_duration_ms") === "1000"
+  )
+})
+
 test("comparison uses the shared preset window for both reads and source links", async ({
   page,
 }) => {

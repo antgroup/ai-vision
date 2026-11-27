@@ -4,7 +4,7 @@ import { createRequire } from "node:module"
 import test from "node:test"
 import { JSDOM } from "jsdom"
 import i18next from "i18next"
-import { act, createElement, type ComponentType } from "react"
+import { act, createElement, useState, type ComponentType } from "react"
 import { createRoot } from "react-dom/client"
 import { I18nextProvider, useTranslation } from "react-i18next"
 import ts from "typescript"
@@ -15,7 +15,14 @@ const connectCommand =
   "aiv connect codex --base-url 'https://vision.example.test' --space-id 'space-test' --agent-uuid 'agent-test' --installation-token 'test-ticket'"
 const unixCheck =
   'export PATH="$HOME/.local/bin:$PATH"\ncommand -v aiv && aiv --version'
-const windowsCheck = "Get-Command aiv\naiv --version"
+const checkCommand = (host: string) =>
+  `${unixCheck}\ncommand -v ${host} && ${host} --version`
+const windowsCheck = (host?: string) =>
+  [
+    "Get-Command aiv",
+    "aiv --version",
+    ...(host ? [`Get-Command ${host}`, `${host} --version`] : []),
+  ].join("\n")
 
 // An already saved guide has no new CLI installation metadata.
 const savedGuide: ConfigGuideV2 = {
@@ -58,13 +65,14 @@ const savedGuide: ConfigGuideV2 = {
 }
 
 const knownPlugins = [
-  ["claude-code", "Claude Code"],
-  ["codex", "Codex"],
-  ["kimi", "Kimi CLI"],
-  ["opencode", "OpenCode"],
-  ["openclaw", "OpenClaw"],
-  ["pi", "Pi"],
-  ["dsh", "DSH"],
+  ["claude-code", "Claude Code", "claude"],
+  ["codex", "Codex", "codex"],
+  ["kimi", "Kimi CLI", "kimi"],
+  ["opencode", "OpenCode", "opencode"],
+  ["openclaw", "OpenClaw", "openclaw"],
+  ["pi", "Pi", "pi"],
+  ["minimax-code", "MiniMax Code CLI (PoC)", "mcode"],
+  ["dsh", "DSH", "dsh"],
 ] as const
 
 // Published Chinese guide fields, as saved before the UI supported other locales.
@@ -290,9 +298,40 @@ async function fixture(language = "zh-CN", platform = "Linux") {
     OnboardingGuideSections: ComponentType<{
       guide: ConfigGuideV2
       hasInstallationCommand: boolean
+      platform: string
+      onPlatformChange: (platform: string) => void
       agentName?: string
       agentProduct?: string
     }>
+  }
+  const { detectPlatform } = load(
+    new URL("../src/components/agents/guidance/types.ts", import.meta.url)
+  ) as { detectPlatform: (platforms: readonly string[]) => string }
+  const { onboardingPlatforms } = load(
+    new URL(
+      "../src/components/agents/guidance/localizeGuideSections.ts",
+      import.meta.url
+    )
+  ) as { onboardingPlatforms: (guide: ConfigGuideV2) => string[] }
+  function GuideFixture({
+    guide,
+    hasInstallationCommand,
+    agent,
+  }: {
+    guide: ConfigGuideV2
+    hasInstallationCommand: boolean
+    agent: { agentName?: string; agentProduct?: string }
+  }) {
+    const [targetPlatform, setTargetPlatform] = useState(() =>
+      detectPlatform(onboardingPlatforms(guide))
+    )
+    return createElement(OnboardingGuideSections, {
+      guide,
+      hasInstallationCommand,
+      platform: targetPlatform,
+      onPlatformChange: setTargetPlatform,
+      ...agent,
+    })
   }
   const element = dom.window.document.getElementById("root")!
   const root = createRoot(element)
@@ -311,10 +350,10 @@ async function fixture(language = "zh-CN", platform = "Linux") {
           createElement(
             I18nextProvider,
             { i18n },
-            createElement(OnboardingGuideSections, {
+            createElement(GuideFixture, {
               guide,
               hasInstallationCommand,
-              ...agent,
+              agent,
             })
           )
         )
@@ -349,7 +388,7 @@ test("saved plugin guides show CLI installation and copyable PATH checks before 
       "existing guides must expose CLI installation before token generation"
     )
     const check = [...ui.element.querySelectorAll("code")].find(
-      (code) => code.textContent === unixCheck
+      (code) => code.textContent === checkCommand("codex")
     )
     assert.ok(
       check,
@@ -362,7 +401,95 @@ test("saved plugin guides show CLI installation and copyable PATH checks before 
     await act(async () =>
       copy.dispatchEvent(new ui.window.MouseEvent("click", { bubbles: true }))
     )
-    assert.deepEqual(ui.copied, [unixCheck])
+    assert.deepEqual(ui.copied, [checkCommand("codex")])
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+for (const [pluginKey, agentName, host] of knownPlugins) {
+  test(`${pluginKey} shows aiv + host checks, ready copy and troubleshooting`, async () => {
+    const ui = await fixture()
+    try {
+      const command = checkCommand(host)
+      await ui.render(false, builtinGuide(pluginKey, agentName), { agentName })
+      const code = [...ui.element.querySelectorAll("code")].find(
+        (element) => element.textContent === command
+      )
+      assert.ok(code, `${pluginKey}: aiv + ${host} check`)
+      const ready = ui.t("agentAccess.cliInstall.readyWithHost", { host })
+      assert.ok(
+        [...ui.element.querySelectorAll("p")].some(
+          (paragraph) => paragraph.textContent === ready
+        ),
+        `${pluginKey}: ready copy uses ${host}`
+      )
+      const troubleshooting = ui.t("agentAccess.cliInstall.hostNotFound", {
+        host,
+        agent: agentName,
+      })
+      assert.ok(
+        [...ui.element.querySelectorAll("p")].some(
+          (paragraph) => paragraph.textContent === troubleshooting
+        ),
+        `${pluginKey}: troubleshooting uses ${host}`
+      )
+      const copy = code.parentElement?.querySelector("button")
+      assert.ok(copy)
+      await act(async () =>
+        copy.dispatchEvent(new ui.window.MouseEvent("click", { bubbles: true }))
+      )
+      assert.deepEqual(ui.copied, [command])
+    } finally {
+      await ui.cleanup()
+    }
+  })
+}
+
+test("a generated guide host overrides the fallback map", async () => {
+  const ui = await fixture()
+  try {
+    const guide = { ...builtinGuide("codex", "Codex"), host: "codex-custom" }
+    await ui.render(false, guide)
+    const command = checkCommand("codex-custom")
+    assert.ok(
+      [...ui.element.querySelectorAll("code")].some(
+        (code) => code.textContent === command
+      )
+    )
+    const ready = ui.t("agentAccess.cliInstall.readyWithHost", {
+      host: "codex-custom",
+    })
+    assert.ok(ui.element.textContent?.includes(ready))
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("unknown plugin keys keep the aiv-only check and ready copy", async () => {
+  const ui = await fixture()
+  try {
+    await ui.render(false, builtinGuide("unknown-agent", "Unknown Agent"))
+    const commands = [...ui.element.querySelectorAll("code")].map(
+      (code) => code.textContent
+    )
+    assert.ok(commands.includes(unixCheck))
+    assert.equal(
+      commands.some((command) => command?.includes("command -v unknown-agent")),
+      false
+    )
+    assert.ok(
+      ui.element.textContent?.includes(ui.t("agentAccess.cliInstall.ready"))
+    )
+    assert.equal(
+      ui.element.textContent?.includes(
+        ui.t("agentAccess.cliInstall.hostNotFound", {
+          host: "unknown-agent",
+          agent: "Unknown Agent",
+        })
+      ),
+      false
+    )
   } finally {
     await ui.cleanup()
   }
@@ -377,14 +504,16 @@ test("issuing a plugin command preserves both CLI preparation and the original c
       (code) => code.textContent
     )
     assert.ok(
-      commands.includes(unixCheck),
+      commands.includes(checkCommand("codex")),
       "CLI preparation stays visible after authorization"
     )
     assert.ok(
       commands.includes(connectCommand),
       "connection origin, scope and token are preserved"
     )
-    assert.ok(commands.indexOf(unixCheck) < commands.indexOf(connectCommand))
+    assert.ok(
+      commands.indexOf(checkCommand("codex")) < commands.indexOf(connectCommand)
+    )
     assert.ok(
       ui.element.querySelector(
         'a[href="https://aivision.mintlify.site/zh-CN/guides/install-cli"]'
@@ -395,28 +524,94 @@ test("issuing a plugin command preserves both CLI preparation and the original c
   }
 })
 
-test("a Windows browser shows supported Agent host commands even with a legacy guide", async () => {
+test("saved Windows install commands stay hidden even when the guide has host metadata", async () => {
   const ui = await fixture("en-US", "Windows")
   try {
-    await ui.render(false)
-    assert.equal(ui.element.textContent?.includes(connectCommand), false)
-    await ui.render(true)
-    const platforms = [...ui.element.querySelectorAll('[role="tab"]')].map(
-      (tab) => tab.textContent?.trim()
-    )
-    assert.deepEqual(platforms, ["macOS/Linux", "macOS/Linux"])
-    assert.match(ui.element.textContent || "", /Windows.*query an existing/)
-    const commands = [...ui.element.querySelectorAll("code")].map(
-      (code) => code.textContent
-    )
-    assert.ok(commands.includes(unixCheck))
-    assert.ok(commands.includes(connectCommand))
-    assert.equal(commands.includes(windowsCheck), false)
-    assert.ok(
-      ui.element.querySelector(
-        'a[href="https://aivision.mintlify.site/en/guides/install-cli"]'
+    for (const host of [undefined, "codex"]) {
+      await ui.render(true, { ...savedGuide, host })
+      const commands = [...ui.element.querySelectorAll("code")].map(
+        (code) => code.textContent
       )
+      assert.deepEqual(commands, [windowsCheck("codex")])
+      assert.ok(
+        ui.element.textContent?.includes(
+          ui.t("agentAccess.cliInstall.windowsRemoteOnly")
+        )
+      )
+    }
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("unsupported Windows CLI steps do not hide valid saved Windows instructions", async () => {
+  const ui = await fixture("en-US", "Windows")
+  const guide = structuredClone(savedGuide)
+  const setup = guide.sections.find(
+    (section) => section.type === "setup_steps"
+  )!
+  const modes = setup.platforms.Windows.modes
+  const customCommand = "Install-CodexIntegration"
+  modes.cli.steps.push({
+    title: "Use a custom installer",
+    command: customCommand,
+  })
+  modes.other = {
+    label: "Unsupported installer",
+    steps: [{ title: "Connect Codex", command: connectCommand }],
+  }
+  try {
+    await ui.render(true, guide)
+    assert.deepEqual(
+      [...ui.element.querySelectorAll("code")].map((code) => code.textContent),
+      [windowsCheck("codex"), customCommand]
     )
+    assert.doesNotMatch(ui.element.textContent ?? "", /Unsupported installer/)
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("unsupported Windows installs show PATH help without promising installation", async () => {
+  const ui = await fixture("en-US", "Windows")
+  try {
+    await ui.render(false, builtinGuide("codex", "Codex"), {
+      agentName: "Codex",
+    })
+    const text = ui.element.textContent || ""
+    assert.match(text, /PowerShell 7/)
+    assert.ok(text.includes(ui.t("agentAccess.cliInstall.pathHintWindows")))
+    assert.doesNotMatch(text, /generate and run the installation command/)
+  } finally {
+    await ui.cleanup()
+  }
+})
+
+test("a Windows browser falls back to the aiv-only PowerShell check", async () => {
+  const ui = await fixture("en-US", "Windows")
+  try {
+    const guide = builtinGuide("unknown-agent", "Unknown Agent")
+    const setup = guide.sections.find(
+      (section) => section.type === "setup_steps"
+    )
+    const customCommand = "Install-ExampleAgent"
+    assert.ok(setup)
+    setup.platforms.Windows = {
+      modes: {
+        cli: {
+          label: "Custom",
+          steps: [
+            { title: "Install the example Agent", command: customCommand },
+          ],
+        },
+      },
+    }
+    await ui.render(true, guide)
+    const text = ui.element.textContent || ""
+    assert.ok(text.includes(windowsCheck()))
+    assert.ok(text.includes(ui.t("agentAccess.cliInstall.readyWindows")))
+    assert.ok(text.includes(customCommand))
+    assert.equal(text.includes("Get-Command unknown-agent"), false)
   } finally {
     await ui.cleanup()
   }

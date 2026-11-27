@@ -11,12 +11,14 @@ import os
 from pathlib import Path
 import platform
 import re
+from runpy import run_path
 import secrets
 import selectors
 import signal
 import socket
 import subprocess
 import sys
+import tarfile
 from tempfile import TemporaryDirectory
 import time
 import uuid
@@ -37,6 +39,9 @@ HOST_ARCH = {"x86_64": "amd64", "amd64": "amd64", "aarch64": "arm64", "arm64": "
 OWNER = "io.aivision.all-in-one.instance"
 RELEASE = "io.aivision.all-in-one.release"
 SHA256 = r"[0-9a-f]{64}"
+# Allow time to stream the full image export as well as inspect the image.
+IMAGE_VERIFICATION_TIMEOUT = 120
+verify_image = run_path(str(Path(__file__).with_name("install-all-in-one.py")))["verified_image"]
 
 
 class QualificationError(RuntimeError):
@@ -206,10 +211,13 @@ def verify_running(name, manifest, web, otlp):
     require(state.get("Running") is True and state.get("Health", {}).get("Status") == "healthy",
             "The installed container is not healthy.")
     image_id = inspect("container", name, ".Image")
-    require(image_id == manifest["image_id"], "The installed container uses different image bytes.")
-    architecture = docker("image", "inspect", "--format", "{{.Os}}/{{.Architecture}}", image_id,
-                          name="Docker image platform check")
-    require(architecture == manifest["platform"], "The installed image architecture differs.")
+    try:
+        require(verify_image(manifest, reference=image_id, timeout=IMAGE_VERIFICATION_TIMEOUT) == image_id,
+                "The installed container uses different image bytes.")
+    except (TimeoutError, subprocess.TimeoutExpired) as error:
+        raise QualificationError("The installed image verification timed out.") from error
+    except (OSError, ValueError, KeyError, subprocess.CalledProcessError, tarfile.TarError) as error:
+        raise QualificationError("The installed image does not match the candidate's config and platform.") from error
     mounts = inspect("container", name, ".Mounts")
     require(any(
         mount["Type"] == "volume" and mount["Name"] == name + "-data" and mount["Destination"] == "/data"

@@ -196,8 +196,12 @@ separate concurrency policies; this is not a global quota for a shared runner po
 
 PR reruns cancel obsolete PR runs. Daily/release runs are not cancelled by a newer PR. Matrices bound parallelism; jobs have timeouts; locked dependencies and build caches are reused where supported. Broad platform checks are concentrated in release validation instead of every frontend or documentation change.
 
-Product candidate builds serialize per Git ref. Only jobs that publish a
-Release or move public package or Git aliases share the publication queue.
+Product candidate builds, including scheduled Daily, serialize per Git ref.
+The publication and recovery jobs share the queue for Release, package and Git
+alias writes. These groups and the shared macOS ARM64 release source checks use
+`queue: max`. Each group runs one entry at a time and holds up to 100 waiting
+entries. Workflow contract tests check these queue settings because the pinned
+actionlint version predates `concurrency.queue`.
 The frontend, ingest gateway and diagnosis image builds start after the plan
 is ready. The backend waits for the plugin archive. Both groups use one
 [image build workflow](../../.github/workflows/release-image-build.yml), and the
@@ -207,7 +211,7 @@ The diagnostic platform job loads its Codex and deployment CLI images from a ran
 
 The five full-platform jobs (diagnostics fake34/Quick, framework SDK, both framework browser modes, and native fake49) and the manual native candidate builder also run [prepare_platform_disk.py](prepare_platform_disk.py) on a GitHub-hosted Linux X64 VM, after Python setup and before dependency installation or large builds. Both the workflow runner context and the helper's environment guard restrict this operation to the disposable VM. With at least 64 GiB free on the SDK filesystem, it leaves the SDK in place without scanning its contents. Below that reserve it removes only the unused `/usr/local/lib/android/sdk` directory defined by the [runner image's Android installer](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/install-android-sdk.sh). Supplied Android SDK environment paths must match that constant; a symlinked SDK root or ancestor, unexpected filesystem, or failed removal fails the step. Output contains fixed statuses and numeric capacity facts, without command output or environment values. It does not prune Docker, global caches, repository dependencies, or .NET. Self-hosted and macOS runners receive no SDK cleanup; their operators must provide enough deployment disk. The unchanged OceanBase configuration requires 10 GiB free for its same-filesystem startup precheck after the pinned images are cached (2 GiB datafile, 4 GiB log, and 4 GiB slog reservation); build and service storage need additional capacity. Database sizing and acceptance remain unchanged.
 
-Native semantic validation consumes OTLP evidence from the same workflow attempt. When a selected native source matrix has already succeeded but its downstream semantic job needs a retry, use **Re-run all jobs** so its attempt-scoped evidence is produced again. Release retries also require all jobs, as described in the [release guide](../../docs/deployment/en/dev-image-release.md#reuse-failures-and-recovery).
+Native semantic validation consumes OTLP evidence from the same workflow attempt. When a selected native source matrix has already succeeded but its downstream semantic job needs a retry, use **Re-run all jobs** so its attempt-scoped evidence is produced again. Use the same approach for release requalification. A Daily interrupted during the final metadata write needs the original frozen attempt for recovery. [Release recovery procedures](../../docs/deployment/en/dev-image-release.md#reuse-failures-and-recovery).
 
 Initial feedback targets are about 5 minutes for documentation, 15–20 minutes for ordinary source changes, and 45–60 minutes when database or deployment checks apply. These are planning targets, not measured guarantees. The full platform suites have explicit 90–120 minute ceilings and run only for affected high-risk changes or full tiers. Inspect actual job durations and failure rates after hosted runs become available; reduce redundant work or improve fixtures before weakening a required check. Runner capacity, cache misses, and image downloads must remain visible in the evidence.
 
@@ -266,15 +270,26 @@ describes the optional compiled candidate, runtime checks, and archived delivery
 evidence. Product publication runs through the standard release workflow.
 
 The standard source-compatible product [release workflow](../../.github/workflows/release-images.yml)
-defaults manual runs to `publish=false`. In `antgroup/ai-vision`, first run basic
-CI on the selected source. The release workflow stages the four owned images,
-the ordinary CLI and an exact copy of the selected upstream SigNoz index.
+defaults manual runs to `publish=false`. Before starting a manual candidate in
+`antgroup/ai-vision`, confirm basic CI passed on the selected source. The release
+workflow stages the four owned images, the ordinary CLI and an exact copy of the
+selected upstream SigNoz index.
 After anonymously verifying all five public image indexes, it runs the full
 source checks with its staged service images and the pinned SigNoz precision
 fixture. It also deploys the exact packaged Linux amd64 combination separately
-against OceanBase CE and seekdb. Candidate-only runs can write candidate images
-to GHCR. Product Releases and rolling tags require explicit publication. The nightly
-schedule stays paused. Native compilation is optional for this standard channel.
+against OceanBase CE and seekdb. Candidate-only runs can stage candidate images
+in GHCR. Native compilation is optional for this standard channel.
+
+GitHub schedules Daily at 02:23 Asia/Shanghai (`23 18 * * *` UTC) after the workflow
+reaches the default `develop` branch. The run builds the exact event SHA, reads the
+reviewed SigNoz digest from the dependency lock for that `VERSION`, and qualifies
+the Linux amd64 and arm64 Personal Edition kits. The publication job requires
+source checks, both database smokes, and final frozen acceptance. It publishes a
+versioned prerelease and reads back its assets before advancing the `daily` entry.
+The first `develop` Daily includes a migration note in both release bodies and
+links to the [last Daily download from `ci`](https://github.com/antgroup/ai-vision/releases/tag/v0.6.0-daily.20261123.2).
+See the [release guide](../../docs/deployment/en/dev-image-release.md) for the
+selected artifacts and inputs.
 When a package is created private, staging can complete and the anonymous check
 will stop the run before deployment. Confirm the package's repository access and
 public visibility, then run the full workflow again to obtain a new acceptance
@@ -291,13 +306,26 @@ are excluded from these receipts.
 [Promote qualified Daily or Dev](../../.github/workflows/promote-release.yml)
 accepts `candidate_run_id` and `candidate_run_attempt`. It reuses those exact
 assets without rebuilding or replacing the publisher's own GitHub run identity.
-The helper verifies that the selected attempt is the latest successful official
+Ordinary promotion verifies that the selected attempt is the latest successful official
 candidate for the current default-branch head, checks both smoke jobs and frozen
 acceptance, and rejects stale, foreign, failed, partial or changed inputs.
 Promotion cannot publish stable/RC or a branch trial. The publisher downloads and
 compares actual Release asset bytes before moving rolling aliases and records
 candidate and publisher identities separately. The workflow uploads
 `promotion-receipts-<publisher-run-id>-<attempt>`.
+
+If the versioned Daily and all tags are in place but the rolling Release
+metadata still identifies its predecessor, set `recover_daily_publication=true`
+on `develop` with the original `Release images` run ID and attempt. If a later
+attempt of the same run failed, was cancelled or timed out, recover from the
+original frozen attempt. This also applies to a successful manual rerun when
+its publication job was skipped. Recovery verifies
+either a publication-only interruption or the successful manual candidate with
+inline publication skipped for a separate promotion. It checks that the original
+source is still reachable from the current `develop` head, verifies the exact
+versioned Release assets, `daily` Git tag and five versioned and rolling image tags,
+then repairs only the rolling Release metadata. Ordinary publication rejects
+the inconsistent state. [Daily recovery procedure](../../docs/deployment/en/dev-image-release.md#reuse-failures-and-recovery).
 
 Daily versions use `VERSION-daily.YYYYMMDD[.REVISION]`. The selected snapshot date
 is fixed across midnight and retries; if omitted, it comes from the original
@@ -326,10 +354,9 @@ Explicit `publish=true` remains available for a qualified manual run. Stable/RC
 publication continues through the tag workflow and additionally requires matching
 `VERSION`, reviewed bilingual notes and the protected release environment with an
 uninvolved reviewer. The separate promotion workflow cannot bypass those gates.
-Owners, package access, the external SigNoz digest and hosted acceptance remain
-setup items until verified. See the [release guide](../../docs/deployment/en/dev-image-release.md)
-for inputs, downloads and recovery. Merging these files creates no Release,
-changes no repository visibility and does not reactivate the schedule.
+Confirm package access and hosted acceptance against the actual release run.
+See the [release guide](../../docs/deployment/en/dev-image-release.md) for
+downloads and recovery.
 
 ## Native packaging and historical delivery
 

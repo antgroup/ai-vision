@@ -429,37 +429,32 @@ class PublicationTests(unittest.TestCase):
                 self.assertIn(":" + plan()["product_version"], call.args[-2])
             self.assertEqual(verify.call_count, 10)
 
-    def test_stable_and_daily_aliases_follow_five_service_immutable_readbacks(self):
+    def test_daily_aliases_follow_five_service_immutable_readbacks(self):
         images = PUBLIC_IMAGES
-        for product_plan, alias in ((plan(), "daily"),
-                                    (plan(event="push", ref="refs/tags/v0.0.1"), "latest")):
-            events = []
-            with (
-                self.subTest(alias=alias),
-                tempfile.TemporaryDirectory() as directory,
-                mock_inline_acceptance(directory),
-                patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY="antgroup/ai-vision"),
-                patch("public_registry.verify_public_images"),
-                patch("release_publish.validate_bundle", return_value=(product_plan, images)),
-                patch("release_publish.preflight"),
-                patch("release_publish.find_release_draft", return_value={"id": 42, "body": "Fixture"}),
-                patch("release_publish.read_draft", return_value={"id": 42, "body": "Fixture"}),
-                patch("release_publish.require_live_tag"),
-                patch("release_publish.verify_remote_assets", side_effect=lambda *args, **kwargs: events.append(("remote-verified",))),
-                patch("release_publish.api", side_effect=lambda path, **kwargs: {"body": "## Changes\n* Fixture"} if path.endswith("/generate-notes") else (LIVE_REPOSITORY if path == f"repos/{PUBLIC_REPOSITORY}" else None)),
-                patch("release_publish.inspect_digest", return_value=None),
-                patch("release_publish.run", side_effect=lambda *args, **kwargs: events.append(("write", args)) or ""),
-                patch("public_registry.verify_public_tag", side_effect=lambda ref, expected: events.append(("verified", ref))),
-            ):
-                publish_main()
-            first_alias = next(index for index, event in enumerate(events)
-                               if event[0] == "write" and event[1][0] == "docker"
-                               and event[1][-2].endswith(":" + alias))
-            verified = {event[1] for event in events[:first_alias] if event[0] == "verified"}
-            self.assertEqual(verified, {f"{package}:{product_plan['product_version']}" for package in PACKAGES.values()})
-            aliases = {event[1][-2] for event in events if event[0] == "write"
-                       and event[1][0] == "docker" and event[1][-2].endswith(":" + alias)}
-            self.assertEqual(aliases, {f"{package}:{alias}" for package in PACKAGES.values()})
+        product_plan = plan()
+        events = []
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            mock_inline_acceptance(directory),
+            patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY="antgroup/ai-vision"),
+            patch("public_registry.verify_public_images"),
+            patch("release_publish.validate_bundle", return_value=(product_plan, images)),
+            patch("release_publish.require_live_tag"),
+            patch("release_publish.verify_remote_assets", side_effect=lambda *args, **kwargs: events.append(("remote-verified",))),
+            patch("release_publish.api", side_effect=lambda path, **kwargs: {"body": "## Changes\n* Fixture"} if path.endswith("/generate-notes") else (LIVE_REPOSITORY if path == f"repos/{PUBLIC_REPOSITORY}" else None)),
+            patch("release_publish.inspect_digest", return_value=None),
+            patch("release_publish.run", side_effect=lambda *args, **kwargs: events.append(("write", args)) or ""),
+            patch("public_registry.verify_public_tag", side_effect=lambda ref, expected: events.append(("verified", ref))),
+        ):
+            publish_main()
+        first_alias = next(index for index, event in enumerate(events)
+                           if event[0] == "write" and event[1][0] == "docker"
+                           and event[1][-2].endswith(":daily"))
+        verified = {event[1] for event in events[:first_alias] if event[0] == "verified"}
+        self.assertEqual(verified, {f"{package}:{product_plan['product_version']}" for package in PACKAGES.values()})
+        aliases = {event[1][-2] for event in events if event[0] == "write"
+                   and event[1][0] == "docker" and event[1][-2].endswith(":daily")}
+        self.assertEqual(aliases, {f"{package}:daily" for package in PACKAGES.values()})
 
     def test_release_preview_cannot_enter_preflight_or_publication(self):
         preview = {**plan(event="push", ref="refs/tags/v0.0.1"), "release_preview": True}
@@ -497,10 +492,16 @@ class PublicationTests(unittest.TestCase):
                    "assets": [], "body": "## English\nChange\n## 中文\n变更"}
         content = b"frozen release checksum bytes"
         asset = {"id": 12, "name": "SHA256SUMS", "size": len(content), "state": "uploaded"}
+        latest_aliases = {}
 
         def api(path, *, data=None, **kwargs):
             if path == prefix:
                 return LIVE_REPOSITORY
+            if path == f"{prefix}/environments/release":
+                return {"can_admins_bypass": False, "protection_rules": [
+                    {"type": "required_reviewers", "prevent_self_review": True, "reviewers": [{"id": 1}]}]}
+            if path == f"{prefix}/releases/latest":
+                return None if release["draft"] else release.copy()
             if path == f"{prefix}/git/ref/tags/{tag}":
                 return {"object": {"type": "commit", "sha": SHA}}
             if path == f"{prefix}/releases?per_page=100&page=1":
@@ -512,6 +513,7 @@ class PublicationTests(unittest.TestCase):
                     self.assertTrue(release["draft"])
                     self.assertEqual(data, {"draft": False, "prerelease": False, "make_latest": "true"})
                     release.update(data)
+                    release["published_at"] = "2026-11-26T00:00:00Z"
                     events.append("publish")
                 return release.copy()
             if path == f"{prefix}/releases/42/assets?per_page=100&page=1":
@@ -538,6 +540,7 @@ class PublicationTests(unittest.TestCase):
 
         def write(*args, **kwargs):
             if args[0] == "docker":
+                latest_aliases[args[-2]] = args[-1].split("@")[1]
                 events.append("latest")
             else:
                 upload(*args, **kwargs)
@@ -548,16 +551,22 @@ class PublicationTests(unittest.TestCase):
             with (
                 mock_inline_acceptance(root),
                 patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123",
-                           GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY=PUBLIC_REPOSITORY),
+                           GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY=PUBLIC_REPOSITORY,
+                           GITHUB_REF=f"refs/tags/{tag}"),
                 patch("public_registry.verify_public_images"),
                 patch("public_registry.verify_public_tag"),
                 patch("release_publish.validate_bundle", return_value=(product, PUBLIC_IMAGES)),
-                patch("release_publish.preflight"),
+                patch("release_publish.inspect_digest", side_effect=lambda ref, **_: latest_aliases.get(ref)),
                 patch("release_publish.publish_version_tags", side_effect=lambda *a, **k: events.append("version-tags")),
                 patch("release_publish.api", side_effect=api),
                 patch("release_publish.run", side_effect=write),
                 patch("release_publish.subprocess.run", side_effect=download),
             ):
+                journal = Path(sys.argv[sys.argv.index("--acceptance") + 1]).with_name("formal-publication.json")
+                sys.argv.extend(["--formal-journal", str(journal)])
+                sys.argv[1] = "preflight"
+                publish_main()
+                sys.argv[1] = "publish"
                 publish_main()
 
     def test_stable_publisher_keeps_draft_identity_through_upload_and_public_readback(self):
@@ -808,9 +817,6 @@ class GeneratedRollingNotesTests(unittest.TestCase):
             patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2", GITHUB_REPOSITORY="antgroup/ai-vision"),
             patch("public_registry.verify_public_images"),
             patch("release_publish.validate_bundle", return_value=(product_plan, images)),
-            patch("release_publish.preflight"),
-            patch("release_publish.find_release_draft", return_value={"id": 42, "body": "Fixture"}),
-            patch("release_publish.read_draft", return_value={"id": 42, "body": "Fixture"}),
             patch("release_publish.verify_remote_assets", side_effect=lambda directory, value, repository, **kwargs: events.append(("remote-readback", value["release_tag"])) or {}),
             patch("release_publish.check_version_tags"),
             patch("release_publish.publish_version_tags", side_effect=lambda *args, **kwargs: events.append(("version-tags",))),
@@ -819,11 +825,6 @@ class GeneratedRollingNotesTests(unittest.TestCase):
             patch("public_registry.verify_public_tag"),
             patch("release_publish.subprocess.run", side_effect=download),
         ):
-            if product_plan["channel"] in {"stable", "rc"}:
-                (Path(directory) / "SHA256SUMS").write_text("fixture checksums")
-                with patch("release_publish.require_live_tag"):
-                    publish_main()
-                return events
             try:
                 publish_main()
             except Exception as error:
@@ -907,22 +908,6 @@ class GeneratedRollingNotesTests(unittest.TestCase):
                 self.assertFalse(any(e[0] in {"run", "version-tags"} for e in caught.exception.events))
                 self.assertFalse(any(e[0] == "api" and e[1].endswith("/generate-notes")
                                      for e in caught.exception.events))
-
-    def test_stable_and_rc_preserve_reviewed_notes_and_titles(self):
-        for product_plan in (plan(event="push", ref="refs/tags/v0.0.1"),
-                             plan(event="push", version="0.1.0-rc.1", ref="refs/tags/v0.1.0-rc.1")):
-            with self.subTest(channel=product_plan["channel"]):
-                events = self.publish(product_plan)
-                self.assertFalse(any(e[0] == "api" and e[1].endswith("/generate-notes") for e in events))
-                endpoint = f"https://uploads.github.com/repos/{PUBLIC_REPOSITORY}/releases/42/assets?name=SHA256SUMS"
-                self.assertTrue(any(e[0] == "run" and e[1][:3] == ("gh", "api", endpoint) for e in events))
-                for e in events:
-                    if e[0] == "run":
-                        self.assertNotIn("--notes", e[1])
-                        self.assertNotIn("--title", e[1])
-                    if e[0] == "api" and e[2].get("data"):
-                        self.assertNotIn("body", e[2]["data"])
-                        self.assertNotIn("name", e[2]["data"])
 
 
 class AssetTests(unittest.TestCase):
@@ -1229,6 +1214,13 @@ class DailyPublicationFixture(DevPublicationFixture):
 
     def __init__(self, directory, product_plan, previous):
         super().__init__(directory, product_plan)
+        self.default_branch = "main"
+        self.comparison_refs = []
+        self.comparison_results = {}
+        self.fail_daily_edit = False
+        self.releases[product_plan["release_tag"]].update(
+            published_at="2026-11-18T00:00:00Z", body="## What's Changed\n* Frozen candidate notes",
+        )
         tag = previous.plan["release_tag"]
         self.releases.pop("dev")
         self.tags.pop("dev")
@@ -1243,17 +1235,40 @@ class DailyPublicationFixture(DevPublicationFixture):
         self.assets[300] = {path.name: path.read_bytes() for path in previous.directory.iterdir()}
 
     def api(self, path, **kwargs):
+        if path == f"repos/{self.repository}":
+            return {**LIVE_REPOSITORY, "default_branch": self.default_branch}
+        if kwargs.get("data") is not None and path.endswith("/releases/200"):
+            self.events.append(("write", path, copy.deepcopy(kwargs["data"])))
+            self.releases["daily"].update(kwargs["data"])
+            return copy.deepcopy(self.releases["daily"])
         if kwargs.get("data") is not None and path.endswith("/git/refs/tags/daily"):
             self.events.append(("write", path, copy.deepcopy(kwargs["data"])))
             self.tags["daily"] = kwargs["data"]["sha"]
             return None
         if "/compare/" in path:
-            return {"status": self.comparison_status or "ahead"}
+            refs = path.split("/compare/", 1)[1]
+            self.comparison_refs.append(refs)
+            status = self.comparison_results.get(refs, self.comparison_status or "ahead")
+            if status is None:
+                raise RuntimeError("fixture GitHub compare has no common ancestor")
+            return {"status": status}
         return super().api(path, **kwargs)
 
     def run(self, *args, **kwargs):
+        if args[:4] == ("gh", "release", "create", self.plan["release_tag"]):
+            self.events.append(("write", args))
+            tag = args[3]
+            self.tags[tag] = args[args.index("--target") + 1]
+            self.releases[tag] = {"id": 100, "tag_name": tag, "draft": False,
+                                  "published_at": "2026-11-27T00:00:00Z",
+                                  "body": args[args.index("--notes") + 1]}
+            self.assets[100] = {Path(path).name: Path(path).read_bytes()
+                                for path in args[4:args.index("--repo")]}
+            return ""
         if args[:4] == ("gh", "release", "edit", "daily"):
             self.events.append(("write", args))
+            if self.fail_daily_edit:
+                raise RuntimeError("fixture interrupted Daily Release edit")
             self.releases["daily"]["body"] = args[args.index("--notes") + 1]
             return ""
         return super().run(*args, **kwargs)
@@ -1290,18 +1305,87 @@ class DailyPublicationTests(unittest.TestCase):
         self.acceptance = self.bundle_incoming.directory.parent / "candidate-acceptance.json"
         self.acceptance.write_text(json.dumps(frozen_fixture(self.bundle_incoming.directory, self.bundle_incoming.plan)))
 
-    def publish(self):
-        with (patch.object(sys, "argv", ["release_publish.py", "publish", "--directory",
-                                        str(self.bundle_incoming.directory), "--acceptance", str(self.acceptance)]),
-              patch.dict(os.environ, GITHUB_SHA=SHA, GITHUB_RUN_ID="123", GITHUB_RUN_ATTEMPT="2",
+    def publish(self, *, recover=False, verify_tag=None):
+        args = ["release_publish.py", "publish", "--directory", str(self.bundle_incoming.directory)]
+        if recover:
+            args += ["--candidate-acceptance", str(self.acceptance), "--candidate-run-id", "123",
+                     "--candidate-run-attempt", "2", "--recover-daily-publication"]
+        else:
+            args += ["--acceptance", str(self.acceptance)]
+        # The candidate verifier's run and attempt checks have their own tests.
+        verification = {"candidate_source_sha": SHA, "publication_recovery": True}
+        with (patch.object(sys, "argv", args),
+              patch.dict(os.environ, GITHUB_SHA="d" * 40 if recover else SHA,
+                         GITHUB_RUN_ID="456" if recover else "123", GITHUB_RUN_ATTEMPT="2",
                          GITHUB_REPOSITORY=DevPublicationFixture.repository),
+              patch("release_candidate.verify_remote_candidate", return_value=verification),
               patch("public_registry.verify_public_images"),
-              patch("public_registry.verify_public_tag"),
+              patch("public_registry.verify_public_tag", side_effect=verify_tag),
               patch("release_publish.api", side_effect=self.remote.api),
               patch("release_publish.run", side_effect=self.remote.run),
               patch("release_publish.inspect_digest", return_value="sha256:" + "b" * 64),
               patch("release_publish.subprocess.run", side_effect=self.remote.download)):
             publish_main()
+
+    def interrupt_daily_edit(self):
+        self.remote.fail_daily_edit = True
+        body = self.remote.releases["daily"]["body"]
+        with self.assertRaisesRegex(RuntimeError, "interrupted Daily Release edit"):
+            self.publish()
+        self.assertEqual(self.remote.tags["daily"], SHA)
+        self.assertEqual(self.remote.releases["daily"]["body"], body)
+        self.remote.events.clear()
+
+    def test_failed_edit_after_daily_tag_move_is_repaired_with_frozen_assets(self):
+        self.prepare(
+            incoming={"version": "0.6.0", "snapshot_date": "20261127"},
+            previous={"version": "0.6.0", "snapshot_date": "20261123",
+                      "source_sha": "d4f81c376bc4630f51a87090e39afc11afe67135"},
+        )
+        self.remote.default_branch = "develop"
+        self.interrupt_daily_edit()
+        assets = copy.deepcopy(self.remote.assets)
+        tags = dict(self.remote.tags)
+
+        with self.assertRaisesRegex(ValueError, "release tag moved away"):
+            self.publish()
+        self.assert_no_publication_writes()
+
+        self.publish(recover=True)
+
+        writes = [event for event in self.remote.events if event[0] == "write"]
+        self.assertEqual(len(writes), 1, writes)
+        self.assertTrue(writes[0][1].endswith("/releases/200"))
+        self.assertEqual(self.remote.assets, assets)
+        self.assertEqual(self.remote.tags, tags)
+        notes = self.remote.releases["daily"]["body"]
+        self.assertIn("v0.6.0-daily.20261127", notes)
+        self.assertIn("Frozen candidate notes", notes)
+        self.assertIn("<!-- aivision-build: 123.2 -->", notes)
+
+    def test_daily_recovery_rejects_an_incomplete_rolling_image_update(self):
+        self.prepare(incoming={"daily_revision": "3"})
+        self.remote.default_branch = "develop"
+        self.interrupt_daily_edit()
+
+        def wrong_alias(ref, expected):
+            if ref.endswith(":daily"):
+                raise ValueError("rolling image alias differs from candidate")
+
+        with self.assertRaisesRegex(ValueError, "rolling image alias differs"):
+            self.publish(recover=True, verify_tag=wrong_alias)
+        self.assert_no_publication_writes()
+
+    def test_daily_recovery_rejects_changed_versioned_asset_bytes(self):
+        self.prepare(incoming={"daily_revision": "3"})
+        self.remote.default_branch = "develop"
+        self.interrupt_daily_edit()
+        asset = "release-manifest.json"
+        self.remote.assets[100][asset] = b" " + self.remote.assets[100][asset][1:]
+
+        with self.assertRaisesRegex(ValueError, "remote release asset bytes differ"):
+            self.publish(recover=True)
+        self.assert_no_publication_writes()
 
     def assert_no_publication_writes(self):
         self.assertFalse(any(event[0] == "write" for event in self.remote.events), self.remote.events)
@@ -1387,6 +1471,68 @@ class DailyPublicationTests(unittest.TestCase):
                 self.remote.comparison_status = status
                 with self.assertRaisesRegex(ValueError, "rolling commit"):
                     self.publish()
+                self.assert_no_publication_writes()
+
+    def test_public_daily_cuts_over_from_the_known_legacy_source_to_develop(self):
+        self.prepare(
+            incoming={"version": "0.6.0", "snapshot_date": "20261127"},
+            previous={"version": "0.6.0", "snapshot_date": "20261123",
+                      "source_sha": "d4f81c376bc4630f51a87090e39afc11afe67135"},
+        )
+        self.remote.default_branch = "develop"
+        versioned = self.bundle_incoming.plan["release_tag"]
+        del self.remote.releases[versioned], self.remote.tags[versioned]
+        expected = f"0e8cbe356f4001fe44fd3c2d359f06cedd348e4e...{SHA}"
+        self.remote.comparison_results = {f"daily...{SHA}": None, expected: "ahead"}
+
+        self.publish()
+
+        self.assertEqual(self.remote.comparison_refs, [expected])
+        self.assertEqual(self.remote.tags["daily"], SHA)
+        self.assertIn("v0.6.0-daily.20261127", self.remote.releases["daily"]["body"])
+        for tag in (versioned, "daily"):
+            body = self.remote.releases[tag]["body"]
+            self.assertIn("/releases/tag/v0.6.0-daily.20261123.2", body)
+            self.assertNotIn("/compare/", body)
+        self.assertEqual(self.remote.tags["v0.6.0-daily.20261123.2"],
+                         "d4f81c376bc4630f51a87090e39afc11afe67135")
+
+    def test_daily_cutover_does_not_allow_a_candidate_outside_develop_history(self):
+        self.prepare(
+            incoming={"version": "0.6.0", "snapshot_date": "20261127"},
+            previous={"version": "0.6.0", "snapshot_date": "20261123",
+                      "source_sha": "d4f81c376bc4630f51a87090e39afc11afe67135"},
+        )
+        self.remote.default_branch = "develop"
+        expected = f"0e8cbe356f4001fe44fd3c2d359f06cedd348e4e...{SHA}"
+        self.remote.comparison_results = {f"daily...{SHA}": None, expected: "diverged"}
+
+        with self.assertRaisesRegex(ValueError, "rolling commit"):
+            self.publish()
+
+        self.assertEqual(self.remote.comparison_refs, [expected])
+        self.assert_no_publication_writes()
+
+    def test_other_daily_predecessors_or_default_branches_keep_the_ancestry_guard(self):
+        legacy_sha = "d4f81c376bc4630f51a87090e39afc11afe67135"
+        for branch, snapshot, source in (
+            ("develop", "20261124", legacy_sha),
+            ("develop", "20261123", "c" * 40),
+            ("main", "20261123", legacy_sha),
+        ):
+            with self.subTest(branch=branch, snapshot=snapshot, source=source):
+                self.prepare(
+                    incoming={"version": "0.6.0", "snapshot_date": "20261127"},
+                    previous={"version": "0.6.0", "snapshot_date": snapshot, "source_sha": source},
+                )
+                self.remote.default_branch = branch
+                expected = f"daily...{SHA}"
+                self.remote.comparison_results = {expected: "diverged"}
+
+                with self.assertRaisesRegex(ValueError, "rolling commit"):
+                    self.publish()
+
+                self.assertEqual(self.remote.comparison_refs, [expected])
                 self.assert_no_publication_writes()
 
     def test_daily_unknown_or_conflicting_published_provenance_stops_before_writes(self):
@@ -1681,7 +1827,17 @@ def require_publication_gates(jobs):
     if "public-registry" not in ancestors("artifact-smoke"):
         raise ValueError("artifact smoke can start before anonymous image verification")
     for name in publishers:
-        if not {"public-source-checks", "public-registry", "artifact-smoke", "acceptance"} <= ancestors(name):
+        if name == "recover-formal":
+            recovery = jobs[name]
+            steps = [step.get("run", "") for step in recovery["steps"]]
+            verification = next((index for index, command in enumerate(steps)
+                                 if "scripts/ci/release_recovery.py" in command), None)
+            publication = next((index for index, command in enumerate(steps)
+                                if "release_publish.py publish" in command and "--recover-formal" in command), None)
+            if (recovery.get("environment") != "release" or verification is None or publication is None
+                    or verification >= publication):
+                raise ValueError("formal recovery requires protected publication using a verified original attempt")
+        elif not {"public-source-checks", "public-registry", "artifact-smoke", "acceptance"} <= ancestors(name):
             raise ValueError("publication can bypass a source, registry, deployment or acceptance gate")
         if "always(" in jobs[name].get("if", "") or jobs[name].get("continue-on-error"):
             raise ValueError("publication can bypass a failed gate")
@@ -1718,6 +1874,7 @@ class WorkflowTests(unittest.TestCase):
             ("build-services", {"needs": []}),
             ("build-backend", {"needs": []}),
             ("publish-stable", {"environment": "unprotected"}),
+            ("recover-formal", {"environment": "unprotected"}),
             ("publish-development", {"if": "always()"}),
         ):
             changed = copy.deepcopy(jobs)
@@ -1727,7 +1884,8 @@ class WorkflowTests(unittest.TestCase):
                 self.assertRaises(ValueError),
             ):
                 require_publication_gates(changed)
-        self.assertEqual(jobs["prepare"]["if"], f"github.repository == '{PUBLIC_REPOSITORY}'")
+        self.assertIn(f"github.repository == '{PUBLIC_REPOSITORY}'", jobs["prepare"]["if"])
+        self.assertIn("!inputs.recover_formal_run_id && !inputs.recover_formal_run_attempt", jobs["prepare"]["if"])
         source_checks = jobs["public-source-checks"]
         self.assertEqual(source_checks["uses"], "./.github/workflows/ci.yml")
         self.assertIn("public-registry", source_checks["needs"])

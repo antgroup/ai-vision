@@ -40,6 +40,7 @@ export type GuideSection =
 export interface ConfigGuideV2 {
   schema: "v2"
   plugin_key?: string
+  host?: string
   native_relay_onboarding?: {
     enabled: boolean
     hermes_version?: string
@@ -80,8 +81,11 @@ export function isConfigGuideV2(
   return !!guide && "schema" in guide && guide.schema === "v2"
 }
 
-export function detectPlatform(): string {
+export function detectPlatform(platforms: readonly string[] = []): string {
   const userAgent = navigator.userAgent.toLowerCase()
-  if (userAgent.includes("win")) return "Windows"
-  return "macOS/Linux"
+  if (userAgent.includes("windows")) return "Windows"
+  if (userAgent.includes("linux") && platforms.includes("Linux")) return "Linux"
+  if (userAgent.includes("mac") && platforms.includes("macOS")) return "macOS"
+  if (platforms.includes("macOS/Linux")) return "macOS/Linux"
+  return platforms.find((platform) => platform !== "Windows") ?? "macOS/Linux"
 }

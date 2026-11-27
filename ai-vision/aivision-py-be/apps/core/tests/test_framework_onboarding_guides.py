@@ -43,6 +43,25 @@ class FrameworkGuideTests(SimpleTestCase):
             "{baseUrl}/api/public/otel/v1/traces",
         )
 
+    def test_native_plugin_guides_publish_host_cli(self):
+        expected = {
+            "claude-code": "claude",
+            "codex": "codex",
+            "kimi": "kimi",
+            "opencode": "opencode",
+            "openclaw": "openclaw",
+            "pi": "pi",
+            "dsh": "dsh",
+            "minimax-code": "mcode",
+        }
+        found = {}
+        for plugin in plugin_catalog():
+            if plugin.get("source_install") or plugin.get("examples_dir"):
+                continue
+            guide = plugin_config_guide(plugin)
+            found[plugin["key"]] = guide.get("host")
+        self.assertEqual(found, expected)
+
     def test_integration_metadata_is_served_for_catalog_defined_sdks(self):
         with TemporaryDirectory() as directory:
             root = Path(directory)
