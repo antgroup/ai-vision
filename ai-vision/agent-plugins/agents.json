@@ -90,6 +90,17 @@
     "host": "dsh"
   },
   {
+    "key": "minimax-code",
+    "product": "MiniMaxCode",
+    "runtime": "minimax-code",
+    "name": "MiniMax Code CLI (PoC)",
+    "icon": "",
+    "source": "minimax-code",
+    "package": "observ-minimax-code",
+    "host": "mcode",
+    "preview": true
+  },
+  {
     "key": "langfuse",
     "product": "langfuse",
     "runtime": "langfuse-sdk",

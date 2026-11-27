@@ -7,6 +7,7 @@ Python 3.11+ is required. Use --config-dir for an isolated or custom host config
 from __future__ import annotations
 
 import argparse
+from contextlib import contextmanager
 import getpass
 import hashlib
 import importlib.util
@@ -18,6 +19,7 @@ import platform
 import re
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -31,6 +33,8 @@ from uuid import UUID
 DEFAULT_BASE_URL = "__AIVISION_BASE_URL__"
 DEFAULT_AGENT = "__AIVISION_AGENT__"
 NATIVE_BUILD = "__compiled__" in globals()
+MINIMAX_CODE_HOST_VERSION = '0.7.2'
+INSTALLABLE_AGENTS = ('claude-code', 'codex', 'kimi', 'opencode', 'openclaw', 'pi', 'dsh', 'minimax-code')
 
 ALIASES = {"cc": "claude-code", "claude": "claude-code", "cdx": "codex", "km": "kimi", "kimi-cli": "kimi", "ocd": "opencode", "ocw": "openclaw", "ds": "dsh", "deepseek": "dsh"}
 
@@ -165,8 +169,11 @@ def install_authorization(args, base, managed):
     return token, {'space_key': key}
 
 
-def save_installation_authorization(path, data):
+def save_installation_authorization(path, data, atomic_writer=None):
     """Keep redeemed credentials recoverable if a later installation step fails."""
+    if atomic_writer is not None:
+        atomic_writer(path, json.dumps(data).encode(), 0o600)
+        return
     path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary = tempfile.mkstemp(dir=path.parent)
     try:
@@ -175,6 +182,199 @@ def save_installation_authorization(path, data):
         os.replace(temporary, path)
     finally:
         Path(temporary).unlink(missing_ok=True)
+
+
+class WindowsMiniMaxCredentials:
+    """Protect MiniMax installation state before storing any credential bytes."""
+
+    def __init__(self, managed):
+        import ctypes
+        from ctypes import wintypes as win
+
+        self.managed = managed
+        self.ctypes = ctypes
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        security = ctypes.WinDLL('advapi32', use_last_error=True)
+        pointer = ctypes.c_void_p
+        ptr = ctypes.POINTER
+
+        def api(dll, name, result, *args):
+            function = getattr(dll, name)
+            function.restype = result
+            function.argtypes = args
+            return function
+
+        class SecurityAttributes(ctypes.Structure):
+            _fields_ = [('length', win.DWORD), ('descriptor', pointer), ('inherit_handle', win.BOOL)]
+
+        class FileInformation(ctypes.Structure):
+            _fields_ = [('attributes', win.DWORD), ('created', win.FILETIME), ('accessed', win.FILETIME),
+                        ('written', win.FILETIME), ('volume', win.DWORD), ('size_high', win.DWORD),
+                        ('size_low', win.DWORD), ('links', win.DWORD), ('index_high', win.DWORD), ('index_low', win.DWORD)]
+
+        self.attributes = SecurityAttributes
+        self.file_information = FileInformation
+        self.volume_path = api(kernel, 'GetVolumePathNameW', win.BOOL, win.LPCWSTR, win.LPWSTR, win.DWORD)
+        self.volume_info = api(kernel, 'GetVolumeInformationW', win.BOOL, win.LPCWSTR, win.LPWSTR, win.DWORD,
+                               win.PDWORD, win.PDWORD, win.PDWORD, win.LPWSTR, win.DWORD)
+        self.create_directory = api(kernel, 'CreateDirectoryW', win.BOOL, win.LPCWSTR, ptr(SecurityAttributes))
+        self.open_file = api(kernel, 'CreateFileW', win.HANDLE, win.LPCWSTR, win.DWORD, win.DWORD, pointer,
+                             win.DWORD, win.DWORD, win.HANDLE)
+        self.get_attributes = api(kernel, 'GetFileAttributesW', win.DWORD, win.LPCWSTR)
+        self.get_file_info = api(kernel, 'GetFileInformationByHandle', win.BOOL, win.HANDLE, ptr(FileInformation))
+        self.close = api(kernel, 'CloseHandle', win.BOOL, win.HANDLE)
+        self.free = api(kernel, 'LocalFree', win.HLOCAL, win.HLOCAL)
+        # The process token pseudo-handle (GetCurrentProcessToken) is query-only and needs no CloseHandle.
+        token = win.HANDLE(-4)
+        token_info = api(security, 'GetTokenInformation', win.BOOL, win.HANDLE, win.DWORD,
+                         pointer, win.DWORD, win.PDWORD)
+        convert_sid = api(security, 'ConvertSidToStringSidW', win.BOOL, pointer, ptr(win.LPWSTR))
+        self.make_descriptor = api(security, 'ConvertStringSecurityDescriptorToSecurityDescriptorW', win.BOOL,
+                                   win.LPCWSTR, win.DWORD, ptr(pointer), win.PDWORD)
+        self.get_dacl = api(security, 'GetSecurityDescriptorDacl', win.BOOL,
+                            pointer, ptr(win.BOOL), ptr(pointer), ptr(win.BOOL))
+        self.get_owner = api(security, 'GetSecurityDescriptorOwner', win.BOOL, pointer, ptr(pointer), ptr(win.BOOL))
+        self.set_security = api(security, 'SetSecurityInfo', win.DWORD, win.HANDLE, win.DWORD, win.DWORD,
+                                pointer, pointer, pointer, pointer)
+
+        class TokenUser(ctypes.Structure):
+            _fields_ = [('sid', pointer), ('attributes', win.DWORD)]
+
+        required = win.DWORD()
+        token_info(token, 1, None, 0, ctypes.byref(required))  # TokenUser
+        data = ctypes.create_string_buffer(required.value)
+        sid = win.LPWSTR()
+        if (not required.value or not token_info(token, 1, data, required, ctypes.byref(required))
+                or not convert_sid(TokenUser.from_buffer(data).sid, ctypes.byref(sid))):
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            self.user_sid = sid.value
+        finally:
+            self.free(ctypes.cast(sid, pointer))
+
+    @contextmanager
+    def descriptor(self, directory):
+        ctypes = self.ctypes
+        flags = 'OICI' if directory else ''
+        sddl = f'O:{self.user_sid}D:P(A;{flags};FA;;;{self.user_sid})'
+        descriptor = ctypes.c_void_p()
+        if not self.make_descriptor(sddl, 1, ctypes.byref(descriptor), None):
+            raise ctypes.WinError(ctypes.get_last_error())
+        try:
+            yield descriptor
+        finally:
+            self.free(descriptor)
+
+    def require_ntfs(self):
+        ctypes = self.ctypes
+        from ctypes import wintypes as win
+
+        volume = ctypes.create_unicode_buffer(1024)
+        filesystem = ctypes.create_unicode_buffer(32)
+        flags = win.DWORD()
+        if (not self.volume_path(str(self.managed.parent), volume, len(volume))
+                or not self.volume_info(volume, None, 0, None, None, ctypes.byref(flags), filesystem, len(filesystem))
+                or filesystem.value != 'NTFS' or not flags.value & 0x00000008):  # FILE_PERSISTENT_ACLS
+            raise OSError('NTFS with persistent ACLs is required')
+
+    def protect(self, path, *, directory=False):
+        ctypes = self.ctypes
+        from ctypes import wintypes as win
+
+        with self.descriptor(directory) as descriptor:
+            if directory:
+                attributes = self.attributes(ctypes.sizeof(self.attributes), descriptor, False)
+                if self.create_directory(str(path), ctypes.byref(attributes)):
+                    return
+                error = ctypes.get_last_error()
+                if error != 183:  # ERROR_ALREADY_EXISTS
+                    raise ctypes.WinError(error)
+            self.validate(path, directory=directory)
+            # MAXIMUM_ALLOWED prevents SetSecurityInfo from propagating the new ACL to existing children.
+            # For a file, only request security and attribute access alongside the open temporary write handle.
+            access = 0x02000000 if directory else 0x000E0080
+            # OPEN_REPARSE_POINT and BACKUP_SEMANTICS open the directory itself without following a final link.
+            handle = self.open_file(str(path), access, 7, None, 3, 0x02200000, None)
+            if handle == ctypes.c_void_p(-1).value:
+                raise ctypes.WinError(ctypes.get_last_error())
+            try:
+                information = self.file_information()
+                if not self.get_file_info(handle, ctypes.byref(information)):
+                    raise ctypes.WinError(ctypes.get_last_error())
+                check_minimax_windows_attributes(information.attributes, information.links, directory)
+                owner = ctypes.c_void_p()
+                dacl = ctypes.c_void_p()
+                present, defaulted = win.BOOL(), win.BOOL()
+                if (not self.get_owner(descriptor, ctypes.byref(owner), ctypes.byref(defaulted))
+                        or not self.get_dacl(descriptor, ctypes.byref(present), ctypes.byref(dacl), ctypes.byref(defaulted))
+                        or not owner or not present or not dacl):
+                    raise OSError('Could not build the current user ACL')
+                # SE_FILE_OBJECT with OWNER, DACL and PROTECTED_DACL security information.
+                error = self.set_security(handle, 1, 0x80000005, owner, None, dacl, None)
+                if error:
+                    raise ctypes.WinError(error)
+            finally:
+                self.close(handle)
+
+    def validate(self, path, *, directory=False):
+        attributes = self.get_attributes(str(path))
+        if attributes == 0xFFFFFFFF:  # INVALID_FILE_ATTRIBUTES
+            error = self.ctypes.get_last_error()
+            if error in (2, 3):  # ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
+                return False
+            raise self.ctypes.WinError(error)
+        # GetFileAttributes returns the link's own flags. lstat supplies the hard-link count.
+        links = 1 if directory or attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT else path.lstat().st_nlink
+        check_minimax_windows_attributes(attributes, links, directory)
+        return True
+
+    def atomic_write(self, path, content, mode):
+        temporary = None
+        try:
+            if (not self.validate(self.managed.parent, directory=True)
+                    or not self.validate(self.managed, directory=True) or path.parent != self.managed):
+                raise OSError('Managed directory changed')
+            self.validate(path)
+            fd, name = tempfile.mkstemp(dir=self.managed)
+            temporary = Path(name)
+            with os.fdopen(fd, 'wb') as stream:
+                # Keep bytes out of the file until it has its own protected ACL.
+                self.protect(temporary)
+                stream.write(content)
+            os.replace(temporary, path)
+        except OSError:
+            raise ConnectError('MiniMax Code on Windows requires a private NTFS directory for credentials') from None
+        finally:
+            if temporary is not None:
+                temporary.unlink(missing_ok=True)
+
+
+def check_minimax_windows_attributes(attributes, links, directory):
+    if attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT:
+        raise OSError('Managed installation path is a reparse point')
+    if directory != bool(attributes & stat.FILE_ATTRIBUTE_DIRECTORY):
+        raise OSError('Managed installation path has the wrong type')
+    if not directory and (links != 1 or attributes & stat.FILE_ATTRIBUTE_READONLY):
+        raise OSError('Managed credential is not a regular writable file with one link')
+
+
+def prepare_minimax_windows_credentials(managed):
+    try:
+        security = WindowsMiniMaxCredentials(managed)
+        security.validate(managed.parent, directory=True)
+        managed.parent.mkdir(parents=True, exist_ok=True)
+        security.validate(managed.parent, directory=True)
+        security.validate(managed, directory=True)
+        names = ('ingest.json', 'ingest-token.json', 'pending-installation.json')
+        paths = [managed / name for name in (*names, *(name + '.aivision-backup' for name in names))]
+        existing = [path for path in paths if security.validate(path)]
+        security.require_ntfs()
+        security.protect(managed, directory=True)
+        for path in existing:
+            security.protect(path)
+        return security.atomic_write
+    except (OSError, AttributeError, ValueError):
+        raise ConnectError('MiniMax Code on Windows requires a private NTFS directory for credentials') from None
 
 
 def download(item, destination, base_url):
@@ -230,6 +430,9 @@ def host_directory(agent, host_version=None):
         else:
             key, default = 'KIMI_SHARE_DIR', home / '.kimi'
         return Path(os.environ.get(key) or str(default)).expanduser().resolve()
+    if agent == 'minimax-code':
+        directory = os.environ.get('MINIMAX_DATA_DIR') or os.environ.get('MAVIS_DATA_DIR')
+        return Path(directory or home / '.minimax').expanduser().resolve()
     defaults = {
         "codex": ("CODEX_HOME", home / ".codex"),
         "claude-code": ("CLAUDE_CONFIG_DIR", home / ".claude"),
@@ -247,12 +450,15 @@ def host_directory(agent, host_version=None):
 def native_env(agent, directory):
     env = os.environ.copy()
     key = {"codex": "CODEX_HOME", "claude-code": "CLAUDE_CONFIG_DIR", "kimi": "KIMI_SHARE_DIR",
-           "opencode": "OPENCODE_CONFIG_DIR", "openclaw": "OPENCLAW_STATE_DIR", "pi": "PI_CODING_AGENT_DIR", "dsh": "DSH_HOME"}[agent]
+           "opencode": "OPENCODE_CONFIG_DIR", "openclaw": "OPENCLAW_STATE_DIR", "pi": "PI_CODING_AGENT_DIR",
+           "dsh": "DSH_HOME", "minimax-code": "MINIMAX_DATA_DIR"}[agent]
     env[key] = str(directory)
     if agent == 'kimi':
         # Each host generation reads its own variable. Pin both to honor an
         # explicit --config-dir even if the invoking shell carries stale values.
         env['KIMI_CODE_HOME'] = str(directory)
+    if agent == 'minimax-code':
+        env['MAVIS_DATA_DIR'] = str(directory)
     return env
 
 
@@ -265,6 +471,66 @@ def run(command, env):
         # Host tools sometimes print full configuration on failure; don't echo it.
         raise ConnectError(f"{Path(command[0]).name} failed (exit {result.returncode}); configuration will be restored")
     return result.stdout
+
+
+def windows_program_on_path(name):
+    # Only use explicit PATH directories, never implicit Windows cwd lookup.
+    for part in os.get_exec_path():
+        directory = Path(part.strip('"'))
+        candidate = directory / name
+        if directory.is_absolute() and candidate.is_file():
+            return candidate
+    return None
+
+
+def minimax_windows_command(shim):
+    package_entry = ('node_modules', '@minimax-ai', 'code', 'cli.js')
+    native_launch = r'^"([^"\r\n]+)" "%~dp0node_modules\\@minimax-ai\\code\\cli\.js" %\*$'
+
+    def read_launcher(path):
+        with path.open(encoding='utf-8-sig') as stream:
+            return stream.read(4096)
+
+    try:
+        content = read_launcher(shim)
+        prefix = shim.parent
+        if ('set /p mcode_release=<"%~dp0current"' in content.lower()
+                and 'call "%~dp0releases\\%mcode_release%\\.mcode-launcher.cmd"' in content.lower()):
+            release = read_launcher(prefix / 'current').strip()
+            if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', release):
+                raise ConnectError('Invalid MiniMax Code Windows release pointer; reinstall the pinned CLI')
+            active = prefix / 'releases' / release
+            executable = re.search(native_launch, read_launcher(active / '.mcode-launcher.cmd'), re.I | re.M)
+            if not executable:
+                raise ConnectError('Unrecognized official MiniMax Code Windows launcher')
+            node = Path(executable.group(1).replace('%%', '%'))
+            entry = active.joinpath(*package_entry)
+        else:
+            # npm prefixes use either node_modules under the prefix or its
+            # sibling in a node_modules/.bin directory.
+            npm_entry = re.search(
+                r'"%dp0%[\\/](node_modules|\.\.)[\\/]@minimax-ai[\\/]code[\\/]cli\.js"',
+                content, re.I,
+            )
+            if not npm_entry:
+                raise ConnectError('Use the npm or official installer version of MiniMax Code on Windows')
+            entry = prefix.joinpath(npm_entry.group(1), *package_entry[1:])
+            node = prefix / 'node.exe'
+            if not node.is_file():
+                node = windows_program_on_path('node.exe')
+        if node is not None and node.is_absolute() and node.suffix.lower() == '.exe' and node.is_file() and entry.is_file():
+            return str(node.resolve()), str(entry.resolve())
+    except (OSError, UnicodeError):
+        pass
+    raise ConnectError('Cannot resolve a working MiniMax Code Windows entry point and Node runtime')
+
+
+def minimax_launcher_path(managed):
+    return managed / ('run.ps1' if platform.system() == 'Windows' else 'run')
+
+
+def powershell_literal(value):
+    return "'" + str(value).replace("'", "''") + "'"
 
 
 def platform_download(downloads):
@@ -325,7 +591,7 @@ def unpack_package(archive, destination):
 MODE_ENV = {'codex': 'CDXHOOKS_COLLECTION_MODE', 'claude-code': 'CCHOOKS_COLLECTION_MODE',
             'kimi': 'KIMI_COLLECTION_MODE', 'opencode': 'OBSERV_OPENCODE_COLLECTION_MODE',
             'openclaw': 'OBSERV_OPENCLAW_COLLECTION_MODE', 'pi': 'OBSERV_PI_COLLECTION_MODE',
-            'dsh': 'DSH_OBSERV_COLLECTION_MODE'}
+            'dsh': 'DSH_OBSERV_COLLECTION_MODE', 'minimax-code': 'MINIMAX_CODE_COLLECTION_MODE'}
 
 
 def parse_collection_mode(value):
@@ -344,8 +610,9 @@ def saved_collection_mode(agent, root, args):
     if agent == 'openclaw':
         path = Path(os.environ.get('OPENCLAW_CONFIG_PATH', str(root / 'openclaw.json'))).expanduser() if not args.config_dir else root / 'openclaw.json'
         key = 'collectionMode'
+    default = 'privacy' if agent == 'minimax-code' else 'full'
     if not path.exists():
-        return 'full', 'default'
+        return default, 'default'
     try:
         doc = read_json(path)
         if agent == 'openclaw':
@@ -354,7 +621,7 @@ def saved_collection_mode(agent, root, args):
             return parse_collection_mode(doc[key]), 'native_config' if key == 'collectionMode' else 'managed_config'
     except (OSError, ValueError, TypeError, AttributeError):
         raise ConnectError('Cannot read existing collection mode; fix the local configuration before installing') from None
-    return 'full', 'default'
+    return default, 'default'
 
 
 def collection_mode_environment(agent):
@@ -526,6 +793,24 @@ def register_native(args, plugin, root, installed, managed, support, token, tx, 
             run([plugin["host"], "plugin", "--profile", profile, "add", str(installed)], env)
             run(["node", str(support / "register-dsh.mjs"), "--profile", profile,
                  "--config-src", str(settings), "--config-file", str(settings), "--state-dir", str(root)], env)
+    elif agent == 'minimax-code':
+        launcher = minimax_launcher_path(managed)
+        if launcher.is_symlink():
+            raise ConnectError('Remove the symbolic link at the managed MiniMax Code launcher before installing')
+        command = [plugin['node'], str(installed / 'dist/index.js'),
+                   '--ingest-config', str(ingest), '--mcode', plugin['host']]
+        if platform.system() == 'Windows':
+            command += ['--mcode-entry', plugin['host_entry'], '--profile-dir', str(root), '--']
+            invocation = ' '.join(map(powershell_literal, command))
+            content = f'& {invocation} @args\r\nexit $LASTEXITCODE\r\n'
+            script = content.encode('utf-8-sig')
+        else:
+            command += ['--']
+            profile = shlex.quote(str(root))
+            content = f'#!/bin/sh\nexport MINIMAX_DATA_DIR={profile} MAVIS_DATA_DIR={profile}\nexec {shlex.join(command)} "$@"\n'
+            script = content.encode('utf-8')
+        tx.watch(launcher)
+        config.atomic_write(launcher, script, mode=0o700)
 
 
 def preflight(args):
@@ -550,16 +835,36 @@ def preflight(args):
     if mode not in supported or (override and override['mode'] not in supported):
         raise ConnectError('This plugin artifact does not support the requested collection mode; update the deployment image and plugin artifacts')
     args.collection_mode, args.collection_mode_source = mode, source
-    host = shutil.which(plugin['host'])
+    minimax_windows = agent == 'minimax-code' and platform.system() == 'Windows'
+    host = windows_program_on_path('mcode.cmd') if minimax_windows else shutil.which(plugin['host'])
     if not host:
         raise ConnectError(f"Install and configure {plugin['name']} first ({plugin['host']} not found)")
     # Run exactly the executable we checked; PATH lookup may otherwise fall
     # through an invalid launcher to a different installed host version.
     plugin = {**plugin, 'host': host}
-    if not plugin.get('binary') and not shutil.which('node'):
+    if minimax_windows:
+        node, host_entry = minimax_windows_command(host)
+        plugin = {**plugin, 'host': node, 'host_entry': host_entry}
+    else:
+        node = shutil.which('node') if not plugin.get('binary') else None
+    if not plugin.get('binary') and not node:
         raise ConnectError("Node.js is required by this plugin")
     if agent == 'dsh' and any(not re.fullmatch(r'[a-zA-Z0-9_-]+', p) for p in args.profiles.split(',')):
         raise ConnectError('Invalid dsh profile name')
+    if agent == 'minimax-code':
+        system = platform.system()
+        if minimax_windows and (NATIVE_BUILD or platform.machine().lower() not in {'amd64', 'x86_64'}):
+            raise ConnectError('MiniMax Code on Windows requires the x64 source installer')
+        if system not in {'Darwin', 'Linux', 'Windows'} or (system == 'Linux' and (
+                platform.libc_ver()[0] == 'musl' or list(Path('/lib').glob('ld-musl-*.so.1')))):
+            raise ConnectError('MiniMax Code CLI PoC requires macOS, glibc Linux, or Windows x64')
+        command = [plugin['host']]
+        if minimax_windows:
+            command.append(plugin['host_entry'])
+        version = run([*command, '--version'], native_env(agent, root)).strip()
+        if version != MINIMAX_CODE_HOST_VERSION:
+            raise ConnectError(f'MiniMax Code CLI PoC requires mcode {MINIMAX_CODE_HOST_VERSION}')
+        plugin = {**plugin, 'host': os.path.abspath(plugin['host']), 'node': os.path.abspath(node), 'host_version': version}
     return agent, base, catalog, entry, plugin, root, item
 
 
@@ -581,10 +886,13 @@ def install(args):
             print(f"Would install {plugin['name']} {entry['version']} to {root}; collection mode: {args.collection_mode} ({args.collection_mode_source}); no credentials exchanged or files modified")
         return
     env = native_env(agent, root)
-    version = [plugin['host_version']] if agent == 'kimi' else run([plugin['host'], '--version'], env).strip().splitlines()
+    version = ([plugin['host_version']] if agent in ('kimi', 'minimax-code')
+               else run([plugin['host'], '--version'], env).strip().splitlines())
     if not version:
         raise ConnectError("Host version check failed")
     managed = root / 'aivision' / agent
+    windows_acl = agent == 'minimax-code' and platform.system() == 'Windows'
+    atomic_writer = prepare_minimax_windows_credentials(managed) if windows_acl else None
     token, authorization = install_authorization(args, base, managed)
     key = authorization.get('agent_credential') or authorization['space_key']
     if args.space_id and token['space_id'] != args.space_id:
@@ -595,21 +903,27 @@ def install(args):
     if token.get("agent_product") != plugin["product"]:
         raise ConnectError("Agent UUID belongs to a different Agent product")
     token['product'] = token["agent_product"]
-    managed.mkdir(parents=True, exist_ok=True)
+    if not windows_acl:
+        managed.mkdir(parents=True, exist_ok=True)
     ingest_config = {'base_url':base, **authorization, 'space_id':token['space_id'],
                      'agent_uuid':token['agent_uuid'], 'endpoint':token['endpoint'], 'agent':agent,
                      'product':token['agent_product'], 'config_dir':str(root), 'collection_mode': args.collection_mode}
     if authorization.get('agent_credential'):
-        save_installation_authorization(managed / 'pending-installation.json', ingest_config)
+        save_installation_authorization(managed / 'pending-installation.json', ingest_config, atomic_writer)
     version_root = managed / 'versions' / (entry['version'] + '-' + item['sha256'][:12])
     version_dir = version_root / plugin.get('package', 'hooks')
     created = not version_dir.exists()
     native_runtime = None
     native_runtime_created = False
+    confirmed = False
     try:
         with tempfile.TemporaryDirectory(prefix='aivision-install-') as temp:
             support = Path(temp)
-            required = ([] if NATIVE_BUILD else ['native_config.py']) + (([] if NATIVE_BUILD else ['hook_runtime.py']) if plugin.get('binary') else {'opencode':['register-opencode.mjs'], 'pi':['configure-pi.mjs'], 'dsh':['register-dsh.mjs'], 'openclaw':[]}[agent])
+            required = [] if NATIVE_BUILD else ['native_config.py']
+            if plugin.get('binary') and not NATIVE_BUILD:
+                required.append('hook_runtime.py')
+            required += {'opencode': ['register-opencode.mjs'], 'pi': ['configure-pi.mjs'],
+                         'dsh': ['register-dsh.mjs']}.get(agent, [])
             for name in required:
                 info = next((s for s in catalog['support_files'] if s['name'] == name), None)
                 if info is None:
@@ -641,7 +955,8 @@ def install(args):
                 check_binary_runtime(installed)
                 if NATIVE_BUILD:
                     native_runtime, native_runtime_created = persist_native_runtime(native_bundle_root(), managed)
-            with config.ConfigTransaction() as tx:
+            transaction = config.ConfigTransaction(atomic_writer=atomic_writer) if windows_acl else config.ConfigTransaction()
+            with transaction as tx:
                 tx.json(managed / 'ingest.json', ingest_config, private=True)
                 token['valid_until'] = time.time() + token['expires_in']
                 tx.json(managed / 'ingest-token.json', token, private=True)
@@ -659,6 +974,9 @@ def install(args):
                             path = root / 'profiles' / profile / name
                             if path.is_file():
                                 registration_files[str(path)] = hashlib.sha256(path.read_bytes()).hexdigest()
+                elif agent == 'minimax-code':
+                    launcher = minimax_launcher_path(managed)
+                    registration_files[str(launcher)] = hashlib.sha256(launcher.read_bytes()).hexdigest()
                 tx.json(managed / 'installation.json', {'agent':agent, 'version':entry['version'], 'sha256':item['sha256'],
                         'host_version': version[0], 'installed_path': str(installed), 'profiles': getattr(args, 'profiles', 'tui,web'),
                         'registration_files': registration_files,
@@ -673,21 +991,33 @@ def install(args):
                         or confirmation.get('space_id') != token['space_id']
                         or confirmation.get('status') != 1):
                     raise ConnectError("Installation confirmation failed; original configuration was restored")
-    except BaseException:
-        if native_runtime_created and native_runtime is not None:
-            shutil.rmtree(native_runtime.parent, ignore_errors=True)
-        if created and version_root.exists():
-            shutil.rmtree(version_root)
-        raise
+                confirmed = True
+    except BaseException as error:
+        if not confirmed:
+            if native_runtime_created and native_runtime is not None:
+                shutil.rmtree(native_runtime.parent, ignore_errors=True)
+            if created and version_root.exists():
+                shutil.rmtree(version_root)
+            raise
+        if not isinstance(error, (OSError, ConnectError)):
+            raise
+        print('AI Vision installation was confirmed, but post-installation cleanup or backup failed.', file=sys.stderr)
     (managed / 'pending-installation.json').unlink(missing_ok=True)
     print(f"{plugin['name']} telemetry plugin installed. Config directory: {root}")
-    print(f'Saved collection mode: {args.collection_mode}. Restart the host and start a new session to apply it; existing sessions and historical data are unchanged.')
+    if agent == 'minimax-code':
+        print(f'Saved collection mode: {args.collection_mode}.')
+        launcher = minimax_launcher_path(managed)
+        command = f'& {powershell_literal(launcher)}' if platform.system() == 'Windows' else shlex.quote(str(launcher))
+        print(f'Run a monitored mcode exec task with: {command} "Your prompt"')
+    else:
+        print(f'Saved collection mode: {args.collection_mode}. Restart the host and start a new session to apply it; existing sessions and historical data are unchanged.')
     override = collection_mode_environment(agent)
     if override:
         print(f"Current process environment override: {override['mode']} ({override['source']}); the host may have a different environment.")
     if agent == 'codex':
         print('Restart Codex and use /hooks to review and trust the new AI Vision hooks; untrusted hooks will not run.')
-    print(f'Restart the Agent and run a real task, then use aiv agent status {agent} or aiv query trace list to check reported data.')
+    next_step = 'After running a task, use' if agent == 'minimax-code' else 'Restart the Agent and run a real task, then use'
+    print(f'{next_step} aiv agent status {agent} or aiv query trace list to check reported data.')
     print('Enabling or installing the plugin does not confirm that telemetry has been received.')
 
 
@@ -793,12 +1123,21 @@ def native_registered(agent, root, installed, managed, args, installation):
             if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
                 return None
         return True
+    if agent == 'minimax-code':
+        launcher = minimax_launcher_path(managed)
+        if (launcher.is_symlink() or not launcher.is_file()
+                or (platform.system() != 'Windows' and not os.access(launcher, os.X_OK))):
+            return False
+        digest = installation.get('registration_files', {}).get(str(launcher))
+        if hashlib.sha256(launcher.read_bytes()).hexdigest() != digest:
+            return None
+        return True
     return False
 
 
 def installation_status(args):
     agent = ALIASES.get(args.agent, args.agent)
-    if agent not in ('codex', 'claude-code', 'kimi', 'opencode', 'openclaw', 'pi', 'dsh'):
+    if agent not in INSTALLABLE_AGENTS:
         raise ConnectError('Unknown Agent; use --list-agents')
     root = Path(args.config_dir).expanduser().resolve() if args.config_dir else host_directory(agent)
     managed = root / 'aivision' / agent
@@ -906,7 +1245,7 @@ def main():
     parser.add_argument('--list-agents', action='store_true')
     args = parser.parse_args()
     if args.list_agents:
-        print('claude-code, codex, kimi, opencode, openclaw, pi, dsh')
+        print(', '.join(INSTALLABLE_AGENTS))
         return 0
     try:
         if sys.version_info < (3, 11):

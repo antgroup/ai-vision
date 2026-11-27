@@ -33,6 +33,76 @@ groups:
         brief: "Legacy subscription estimate preference retained for telemetry compatibility."
         note: "AI Vision estimates eligible subscription usage automatically and ignores this flag."
 
+  - id: registry.aivision.ingest
+    type: attribute_group
+    display_name: AI Vision authenticated ingest identity
+    brief: "Resource attributes stamped by the AI Vision gateway after verifying an ingest token."
+    note: "Reserved for gateway output. Clients use the OTLP authorization header to establish identity."
+    attributes:
+      - id: aivision.space.id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Authenticated AI Vision space identifier."
+      - id: aivision.org.id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Organization identifier from the verified ingest claims."
+      - id: aivision.user.id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Opaque user identifier from the verified ingest claims."
+      - id: aivision.agent.id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Agent identifier from the verified ingest claims."
+      - id: aivision.agent.product
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Agent product from the verified ingest claims."
+      - id: aivision.ingest.key_id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Non-secret identifier of the credential used for ingestion."
+
+  - id: registry.aivision.otlp
+    type: attribute_group
+    display_name: AI Vision OTLP metadata
+    brief: "Span attributes retained by AI Vision to preserve OTLP instrumentation metadata on readback."
+    attributes:
+      - id: aivision.otlp.scope.name
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Name of the producing OTLP instrumentation scope."
+      - id: aivision.otlp.scope.version
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Version of the producing OTLP instrumentation scope."
+      - id: aivision.otlp.sdk.language
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Language of the producing OpenTelemetry SDK."
+
+  - id: registry.session
+    type: attribute_group
+    display_name: Session compatibility
+    brief: "Legacy session attributes supported by AI Vision trace queries."
+    attributes:
+      - id: session.id
+        type: string
+        stability: experimental
+        requirement_level: opt_in
+        brief: "Compatibility alias for the session identifier."
+        note: "Use gen_ai.conversation.id for the canonical conversation identifier."
+
   # ============================================================
   # Ant Identity Attributes
   # ============================================================
@@ -1040,7 +1110,7 @@ groups:
         type: string
         stability: experimental
         brief: "Agent runtime name."
-        examples: ["claude-code", "codex", "dsh"]
+        examples: ["claude-code", "codex", "dsh", "minimax-code"]
 
       - id: agentic.runtime.version
         type: string

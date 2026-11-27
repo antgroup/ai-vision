@@ -71,6 +71,7 @@ const knownPlugins = [
   ["opencode", "OpenCode", "opencode"],
   ["openclaw", "OpenClaw", "openclaw"],
   ["pi", "Pi", "pi"],
+  ["minimax-code", "MiniMax Code CLI (PoC)", "mcode"],
   ["dsh", "DSH", "dsh"],
 ] as const
 

@@ -9,4 +9,5 @@ export const PLUGIN_HOSTS: Record<string, string> = {
   openclaw: "openclaw",
   pi: "pi",
   dsh: "dsh",
+  "minimax-code": "mcode",
 }

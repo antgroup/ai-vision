@@ -36,7 +36,7 @@ numeric parts without leading zeros, optionally followed by prerelease segments
 separated by dots or hyphens (for example, `0.1.0-rc.1`); `+build` is not accepted.
 Unstamped developer builds report `dev`.
 
-## Windows x64 remote client
+## Windows x64 client
 
 When a version includes `aiv-windows-x64.zip`, download it together with
 `SHA256SUMS` from the same [AI Vision Release](https://github.com/antgroup/ai-vision/releases).
@@ -85,8 +85,15 @@ commands print.
 
 The Windows client supports `auth`, `space`, `key`, and `query` against an
 existing AI Vision server. It saves profiles in the current user's config
-folder without modifying Unix shell configuration. Use a Linux or macOS CLI
-for local deployment and Agent installation.
+folder without modifying Unix shell configuration.
+
+MiniMax Code CLI onboarding uses `aiv connect minimax-code` and
+`aiv agent status minimax-code` on Windows x64. It requires a configured
+`mcode`, compatible Node.js, Python 3.11+ and a deployment serving the
+source-compatible installer and MiniMax Code telemetry artifact. Run the
+PowerShell launcher printed by the installer to collect a trace from a task.
+The build-tagged Windows Codex experiment is separate from the standard client.
+Use Linux or macOS for local server deployment and other supported Agents.
 
 ## Deployment sources, roles and compatibility
 

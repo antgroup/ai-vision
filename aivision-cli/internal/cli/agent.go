@@ -1,4 +1,4 @@
-//go:build !windows || (amd64 && windows_codex_connect && !native_distribution)
+//go:build !windows || (amd64 && !native_distribution)
 
 package cli
 
@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 
@@ -60,7 +59,7 @@ checks and query errors return a nonzero exit status. Missing query keys and
 no_recent_data alone do not fail the command.
 
 Options:
-  <agent>           claude-code|codex|kimi|opencode|openclaw|pi|dsh
+  <agent>           claude-code|codex|kimi|opencode|openclaw|pi|dsh|minimax-code
   --profile NAME    Saved profile (default: $AIVISION_PROFILE or active profile).
   --config-dir DIR  Native config directory (default: saved connection or host default).
   --python PATH     Python 3.11+ for source-development installers (auto-detect).
@@ -78,21 +77,6 @@ Examples:
 After connecting, restart the host Agent, trust hooks if required, and run a real
 task before checking data. For Codex, use /hooks to review and trust the hooks.
 `
-
-func agentHelp() string {
-	if runtime.GOOS == "windows" {
-		return `Check the Windows Codex source installation, credentials, and recent traces.
-
-Usage:
-  aiv agent status codex [--profile NAME] [--config-dir DIR]
-                         [--python PATH] [--format text|json]
-
-Requires the experimental Windows x64 Codex CLI and its source-development deployment.
-A trace lookup uses the current space and an authorized query SpaceKey.
-`
-	}
-	return agentUsage
-}
 
 func cmdAgent(args []string) error {
 	if len(args) == 0 {
@@ -133,8 +117,8 @@ func cmdAgent(args []string) error {
 	if canonical := pluginAliases[plugin]; canonical != "" {
 		plugin = canonical
 	}
-	if runtime.GOOS == "windows" && plugin != "codex" {
-		return fmt.Errorf("experimental Windows source onboarding supports only Codex; use aiv agent status codex")
+	if err := validateOnboardingTarget("agent status", plugin); err != nil {
+		return err
 	}
 	cfg, err := config.Load()
 	if err != nil {
@@ -181,7 +165,11 @@ func cmdAgent(args []string) error {
 		if override := result.CollectionModeEnvironment; override != nil {
 			fmt.Printf("Current process environment override: %s (%s); the host environment may differ\n", override.Mode, override.Source)
 		}
-		fmt.Println("Runtime collection mode: unverified. After changing mode, restart the host and start a new session; inspect that session's trace to verify.")
+		if plugin == "minimax-code" {
+			fmt.Println("Runtime collection mode: unverified. Run a task with the installed MiniMax Code launcher and inspect its trace.")
+		} else {
+			fmt.Println("Runtime collection mode: unverified. After changing mode, restart the host and start a new session; inspect that session's trace to verify.")
+		}
 		for _, issue := range result.Issues {
 			fmt.Printf("Issue: %s\n", issue)
 		}

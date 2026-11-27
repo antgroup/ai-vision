@@ -14,6 +14,7 @@ const BUILTIN_PLUGIN_KEYS = new Set([
   "openclaw",
   "pi",
   "dsh",
+  "minimax-code",
 ])
 
 function installPlatforms(guide: ConfigGuideV2, section: SetupStepsSection) {

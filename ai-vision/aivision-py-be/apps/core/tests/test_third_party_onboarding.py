@@ -1,5 +1,9 @@
+import hashlib
+import json
 from importlib import import_module
 from io import StringIO
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from django.core.management import call_command
@@ -253,6 +257,137 @@ class ThirdPartyOnboardingTests(SpaceKeyTestCase):
             get_trace_datasource(self.space, agent_product="Codex").source_system,
             "signoz",
         )
+
+    @override_settings(AIVISION_INGEST_SECRET="test-signing-secret-at-least-32-characters")
+    @patch.dict("os.environ", {"SIGNOZ_API_KEY": "test-placeholder"})
+    def test_minimax_code_preview_requires_a_served_artifact(self):
+        with TemporaryDirectory() as temp, override_settings(
+            AIVISION_PLUGIN_ARTIFACTS_DIR=temp
+        ):
+            call_command(
+                "configure_third_party_agents", endpoint="http://query.test", stdout=StringIO()
+            )
+            self.assertFalse(
+                AgentTypeConfig.objects.filter(agent_product="MiniMaxCode").exists()
+            )
+
+            plugin = Path(temp) / "minimax-code"
+            version = "0.1.0"
+            filename = f"observ-minimax-code-{version}.tgz"
+            archive = b"preview artifact"
+            (plugin / version).mkdir(parents=True)
+            artifact = plugin / version / filename
+            artifact.write_bytes(archive)
+            (plugin / "latest.json").write_text(
+                json.dumps(
+                    {
+                        "version": version,
+                        "downloads": [
+                            {
+                                "filename": filename,
+                                "sha256": hashlib.sha256(archive).hexdigest(),
+                                "target_filename": "observ-minimax-code.tgz",
+                                "label": "all all",
+                                "platform": "all",
+                                "arch": "all",
+                                "collection_modes": ["full", "privacy"],
+                            }
+                        ],
+                    }
+                )
+            )
+            call_command(
+                "configure_third_party_agents", endpoint="http://query.test", stdout=StringIO()
+            )
+
+            kind = AgentTypeConfig.objects.active_shared_runtime().get(
+                agent_product="MiniMaxCode"
+            )
+            self.assertEqual(
+                (kind.runtime_type, kind.setup_mode), ("minimax-code", "CLI")
+            )
+            guide = kind.config_guide
+            self.assertTrue(guide["preview"])
+            self.assertEqual(guide["host"], "mcode")
+            setup = next(
+                section for section in guide["sections"] if section["type"] == "setup_steps"
+            )
+            self.assertNotIn("Windows", setup["platforms"])
+            verification = next(
+                section for section in guide["sections"] if section["type"] == "verification"
+            )
+            self.assertIn("mcode exec", verification["steps"][0])
+            steps = setup["platforms"]["macOS/Linux"]["modes"]["cli"]["steps"]
+            command = steps[0]["command"]
+            self.assertIn("aiv connect minimax-code", command)
+            self.assertIn("--installation-token '{installationToken}'", command)
+            browser = APIClient()
+            browser.force_authenticate(user=self.user)
+            prefix = f"/api/v1/spaces/{self.space.uuid}/agents"
+            space_catalog = f"/api/v2/spaces/{self.space.uuid}/agents"
+            registration = {"agent_product": "MiniMaxCode", "name": "MiniMax Code"}
+            created = browser.post(prefix + "/create", registration, format="json")
+            self.assertEqual(created.data["code"], 0, created.data)
+            agent = created.data["data"]["agent_uuid"]
+            grant_path = f"{prefix}/{agent}/installation-tokens"
+            grant = browser.post(grant_path, {}, format="json")
+            self.assertEqual(grant.status_code, 200, grant.data)
+            exchanged = APIClient().post(
+                "/openapi/v1/agent-installations/exchange",
+                {"space_id": self.space.uuid, "agent_uuid": agent},
+                format="json",
+                HTTP_AUTHORIZATION=f'Bearer {grant.data["data"]["installation_token"]}',
+            )
+            self.assertEqual(exchanged.status_code, 200, exchanged.data)
+            authorized = exchanged.data["data"]
+            self.assertEqual(
+                tuple(authorized[key] for key in ("space_id", "agent_uuid", "agent_product")),
+                (self.space.uuid, agent, "MiniMaxCode"),
+            )
+            auth = {"HTTP_AUTHORIZATION": f'Bearer {authorized["agent_credential"]}'}
+            confirmed = APIClient().post(
+                f"/openapi/v1/agents/{agent}/installation-complete", {}, format="json", **auth
+            )
+            self.assertEqual(confirmed.data["data"]["status"], 1)
+            route = get_trace_datasource(self.space, agent_product="MiniMaxCode")
+            self.assertEqual(route.source_system, "signoz")
+
+            def market_scope(entries):
+                return next(
+                    entry["display_scope"]
+                    for entry in entries
+                    if entry["agent_product"] == "MiniMaxCode"
+                )
+
+            def market_scope_v1():
+                return market_scope(browser.get("/api/v1/agent-types").data["data"])
+
+            def market_scope_v2():
+                return market_scope(browser.get(space_catalog).data["data"]["agent_types"])
+
+            self.assertEqual(market_scope_v2(), "ALL")
+            self.assertEqual(market_scope_v1(), "ALL")
+
+            artifact.unlink()
+            withdrawn = browser.get(space_catalog).data["data"]
+            self.assertEqual(market_scope(withdrawn["agent_types"]), "HIDDEN")
+            self.assertEqual(market_scope_v1(), "HIDDEN")
+            self.assertTrue(
+                any(row["uuid"] == agent and row["status"] == 1 for row in withdrawn["agents"])
+            )
+            blocked = browser.post(prefix + "/create", registration, format="json")
+            self.assertEqual(blocked.data["code"], 1006)
+            self.assertEqual(browser.post(grant_path, {}, format="json").status_code, 404)
+            refreshed = APIClient().post(
+                "/openapi/v1/ingest-tokens", {"agent_uuid": agent}, format="json", **auth
+            )
+            self.assertEqual(refreshed.data["code"], 0, refreshed.data)
+            self.assertEqual(
+                get_trace_datasource(self.space, agent_product="MiniMaxCode").pk, route.pk
+            )
+
+            artifact.write_bytes(archive)
+            self.assertEqual(market_scope_v2(), "ALL")
 
     @override_settings(AIVISION_PUBLIC_BASE_URL="http://127.0.0.1:8001/")
     @patch.dict("os.environ", {"SIGNOZ_API_KEY": "test-placeholder"})

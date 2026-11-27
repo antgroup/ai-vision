@@ -32,6 +32,7 @@ from ..services.observation_subject_service import require_default_subject
 from ..services.onboarding_demo import DEMO_METADATA_KEY
 from ..services.operation_log_service import log_op
 from ..services.personal_diagnosis import sync_personal_diagnosis_after_commit
+from ..services.plugin_artifacts import market_display_scope, preview_plugin_available
 from ..services.space_key_policy import (
     atomic_space_key_creation,
     key_count_exceeded,
@@ -123,7 +124,17 @@ class AgentTypeListView(APIView):
             ),
         )
         serializer = AgentTypeConfigSerializer(agent_types, many=True)
-        return success_response(serializer.data)
+        return success_response(
+            [
+                {
+                    **agent_type,
+                    "display_scope": market_display_scope(
+                        agent_type["display_scope"], agent_type["config_guide"]
+                    ),
+                }
+                for agent_type in serializer.data
+            ]
+        )
 
 
 class AgentListView(APIView):
@@ -289,7 +300,7 @@ class SpaceAgentsCreateView(APIView):
             )
             .first()
         )
-        if not agent_type_config:
+        if not agent_type_config or not preview_plugin_available(agent_type_config.config_guide):
             return error_response(f"Agent type not found: {agent_product}", 1006)
 
         # SDK/runtime integrations create distinct business projects; installed

@@ -5,9 +5,9 @@ package live_check_advice
 
 import rego.v1
 
-# @weaver.rule.zh: 要求所有 span attributes 必须包含 `user.id`，保证用户维度可关联。
-# @weaver.rule.check.zh: 当任意 span 缺少 `user.id` 时命中。
-# @weaver.rule.fix.zh: 在每个 span 上补充稳定、脱敏后的 `user.id`；不能上传明文账号时使用一致性 hash。
+# @weaver.rule.zh: 要求采集端的 span 提供 `user.id`。AI Vision 入库后的 Trace 可使用网关写入的资源身份。
+# @weaver.rule.check.zh: 当 span 缺少 `user.id`，且资源未同时提供非空的 `aivision.space.id`、`aivision.user.id` 和 `aivision.ingest.key_id` 时命中。
+# @weaver.rule.fix.zh: 采集端填写稳定、脱敏的 `user.id`。校验入库 Trace 时保留网关返回的资源身份字段。
 # @weaver.rule.entity: span:common
 # @weaver.rule.category.zh: 必须属性
 # @weaver.rule.fields: user.id, ant.username, gen_ai.conversation.id, gen_ai.chat.id, gen_ai.operation.name, gen_ai.span.kind
@@ -18,15 +18,16 @@ deny contains make_advice(
     "span_missing_user_id",
     "violation",
     {"span_name": input.sample.span.name},
-    sprintf("Span '%s': Missing required 'user.id' in span attributes. All spans must carry user identity.", [input.sample.span.name])
+    sprintf("Span '%s': Missing 'user.id' and complete AI Vision gateway resource identity.", [input.sample.span.name])
 ) if {
     has_span
     not has_span_attr("user.id")
+    not has_ingested_trace_identity
 }
 
-# @weaver.rule.zh: 要求所有 span attributes 必须包含 `ant.username`，保证用户名维度可关联。
-# @weaver.rule.check.zh: 当任意 span 缺少 `ant.username` 时命中。
-# @weaver.rule.fix.zh: 在每个 span 上补充脱敏后的 `ant.username`；不能上传明文账号时使用一致性 hash 或稳定别名。
+# @weaver.rule.zh: 要求采集端的 span 提供 `ant.username`。AI Vision 入库后的 Trace 可使用网关写入的资源身份。
+# @weaver.rule.check.zh: 当 span 缺少 `ant.username`，且资源未同时提供非空的 `aivision.space.id`、`aivision.user.id` 和 `aivision.ingest.key_id` 时命中。
+# @weaver.rule.fix.zh: 采集端填写脱敏后的 `ant.username` 或稳定别名。校验入库 Trace 时保留网关返回的资源身份字段。
 # @weaver.rule.entity: span:common
 # @weaver.rule.category.zh: 必须属性
 # @weaver.rule.fields: user.id, ant.username, gen_ai.conversation.id, gen_ai.chat.id, gen_ai.operation.name, gen_ai.span.kind
@@ -37,10 +38,11 @@ deny contains make_advice(
     "semconv_all_missing_username",
     "violation",
     {"span_name": input.sample.span.name},
-    sprintf("Span '%s': Missing 'ant.username'. Required on all spans per semconv.", [input.sample.span.name])
+    sprintf("Span '%s': Missing 'ant.username' and complete AI Vision gateway resource identity.", [input.sample.span.name])
 ) if {
     has_span
     not has_span_attr("ant.username")
+    not has_ingested_trace_identity
 }
 
 # @weaver.rule.zh: 要求所有 span attributes 必须包含 `gen_ai.conversation.id`，保证 trace 内 span 可以按会话关联。

@@ -608,6 +608,95 @@ fn test_valid_span_no_violations() {
 }
 
 #[test]
+fn test_gateway_readback_accepts_scoped_identity_and_known_provenance() {
+    let mut attrs = without_span_attr(without_span_attr(base_span_attrs(), "user.id"), "ant.username");
+    attrs.extend([
+        log_attr("aivision.otlp.scope.name", string_value("observ-minimax-code")),
+        log_attr("aivision.otlp.scope.version", string_value("0.1.0")),
+        log_attr("aivision.otlp.sdk.language", string_value("nodejs")),
+        log_attr("session.id", string_value("session-1")),
+    ]);
+    let mut resource = valid_resource();
+    resource["attributes"].as_array_mut().unwrap().extend([
+        log_attr("aivision.space.id", string_value("space-1")),
+        log_attr("aivision.org.id", string_value("org-1")),
+        log_attr("aivision.user.id", string_value("user-1")),
+        log_attr("aivision.agent.id", string_value("agent-1")),
+        log_attr("aivision.agent.product", string_value("MiniMaxCode")),
+        log_attr("aivision.ingest.key_id", string_value("agent-installation:grant-1")),
+    ]);
+
+    let registry = load_semconv_registry(&get_semconv_dir()).unwrap();
+    for name_key in ["key", "name"] {
+        let mut sample = span_sample("custom span", attrs.clone(), resource.clone());
+        if name_key == "name" {
+            for section in ["span", "resource"] {
+                for attr in sample["sample"][section]["attributes"].as_array_mut().unwrap() {
+                    let key = attr["key"].take();
+                    let value = attr["value"]["stringValue"].take();
+                    *attr = json!({ "name": key, "value": value });
+                }
+            }
+        }
+        let findings = engine().validate(&sample).unwrap();
+        assert!(
+            findings.iter().all(|finding| finding.advice_level != "violation"),
+            "Unexpected gateway readback violations for {name_key}: {findings:?}"
+        );
+        assert!(
+            diff_attributes_from_signal_type(&registry, SignalType::Traces, &sample)
+                .iter()
+                .all(|finding| finding.finding_type != SemconvFindingType::UnknownAttribute),
+            "Unexpected unknown gateway attributes for {name_key}"
+        );
+    }
+}
+
+#[test]
+fn test_gateway_identity_requires_scope_and_known_keys_keep_their_placement() {
+    let mut attrs = without_span_attr(without_span_attr(base_span_attrs(), "user.id"), "ant.username");
+    attrs.extend([
+        log_attr("aivision.user.id", string_value("misplaced-user")),
+        log_attr("aivision.otlp.custom", string_value("unknown")),
+    ]);
+    let mut resource = valid_resource();
+    resource["attributes"].as_array_mut().unwrap().extend([
+        log_attr("aivision.space.id", string_value("space-1")),
+        log_attr("aivision.user.id", string_value("user-1")),
+        log_attr("aivision.otlp.scope.name", string_value("misplaced-scope")),
+        log_attr("aivision.ingest.custom", string_value("unknown")),
+    ]);
+    let mut engine = engine();
+    for key_id in [None, Some(string_value(" ")), Some(int_value(123))] {
+        let mut candidate = resource.clone();
+        if let Some(value) = key_id {
+            candidate["attributes"]
+                .as_array_mut()
+                .unwrap()
+                .push(log_attr("aivision.ingest.key_id", value));
+        }
+        let sample = span_sample("custom span", attrs.clone(), candidate);
+        let findings = engine.validate(&sample).unwrap();
+
+        for id in ["span_missing_user_id", "semconv_all_missing_username"] {
+            assert!(has_finding(&findings, id, "violation"), "{findings:?}");
+        }
+        for key in ["aivision.user.id", "aivision.otlp.custom"] {
+            assert!(
+                has_finding_attr(&findings, "disallowed_attr_prefix", key),
+                "{findings:?}"
+            );
+        }
+        for key in ["aivision.otlp.scope.name", "aivision.ingest.custom"] {
+            assert!(
+                has_finding_attr(&findings, "disallowed_resource_attr_prefix", key),
+                "{findings:?}"
+            );
+        }
+    }
+}
+
+#[test]
 fn test_trace_common_required_attrs_are_validated_by_common_rules() {
     let cases = [
         ("custom span", base_span_attrs()),

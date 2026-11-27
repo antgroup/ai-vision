@@ -1,0 +1,237 @@
+name: MiniMax Code candidate
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - '.github/workflows/minimax-code-candidate.yml'
+      - '.github/workflows/minimax-code-oci-candidate.yml'
+      - 'ai-vision/agent-plugins/minimax-code/**'
+      - 'ai-vision/agent-plugins/scripts/connect'
+      - 'ai-vision/agent-plugins/scripts/native_config.py'
+      - 'ai-vision/agent-plugins/scripts/tests/test_minimax_windows.py'
+      - 'ai-vision/agent-plugins/tests/native_agent_e2e/minimax_candidate.py'
+      - 'ai-vision/agent-plugins/tests/native_agent_e2e/minimax_deployed.py'
+      - 'deploy/tests/minimax_oci_acceptance.py'
+      - 'scripts/ci/minimax_oci_candidate.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: minimax-code-candidate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+  PLUGINS_DIR: ai-vision/agent-plugins
+  MCODE_VERSION: '0.7.2'
+  MCODE_SHA256: aa055b696945286cbab62f8b748835de1428e4d08a598bbf5de4c8a5de71f4e4
+
+jobs:
+  artifact:
+    if: github.repository == 'antgroup/ai-vision' && github.event.pull_request.head.repo.full_name == github.repository
+    name: Build and verify the explicit preview artifact
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    outputs:
+      name: ${{ steps.package.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26.10.0'
+      - id: package
+        name: Test and checksum the candidate
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          npm test --prefix "$PLUGINS_DIR/minimax-code"
+          python "$PLUGINS_DIR/scripts/build_plugins.py" --agent minimax-code --output "$RUNNER_TEMP/plugin-dist"
+          python "$PLUGINS_DIR/scripts/verify_plugin_dist.py" --dist "$RUNNER_TEMP/plugin-dist" --agent minimax-code --require-privacy
+          echo "name=minimax-code-preview-$SOURCE_SHA-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.name }}
+          path: ${{ runner.temp }}/plugin-dist/minimax-code
+          if-no-files-found: error
+          retention-days: 7
+
+  native-client:
+    name: Native client fixture (${{ matrix.host }})
+    needs: artifact
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            host: Linux/x86_64
+          - runner: ubuntu-22.04-arm
+            host: Linux/aarch64
+          - runner: macos-15
+            host: Darwin/arm64
+          - runner: macos-15-intel
+            host: Darwin/x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26.10.0'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.artifact.outputs.name }}
+          path: ${{ runner.temp }}/plugin-dist/minimax-code
+      - name: Install the pinned official host and build the matching aiv
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          if [[ "$RUNNER_OS" == Linux ]]; then getconf GNU_LIBC_VERSION; fi
+          archive="$RUNNER_TEMP/minimax-code-$MCODE_VERSION.tar.gz"
+          curl --fail --location --proto '=https' --retry 3 --max-time 120 \
+            "https://github.com/MiniMax-AI/minimax-code/releases/download/v$MCODE_VERSION/minimax-code-$MCODE_VERSION.tar.gz" \
+            --output "$archive"
+          printf '%s  %s\n' "$MCODE_SHA256" "$archive" | shasum -a 256 --check
+          npm install --global --prefix "$RUNNER_TEMP/mcode" --registry=https://registry.npmjs.org/ \
+            --include=optional --ignore-scripts=false --allow-scripts=@minimax-ai/code,better-sqlite3 "$archive"
+          test "$("$RUNNER_TEMP/mcode/bin/mcode" --version)" = "$MCODE_VERSION"
+          make -C aivision-cli build
+          (
+            cd aivision-cli
+            tar -czf "$RUNNER_TEMP/aiv-candidate.tar.gz" aiv LICENSE \
+              deploy/kubernetes/README.md deploy/kubernetes/dependencies/*.LICENSE
+          )
+          mkdir "$RUNNER_TEMP/aiv-client"
+          tar -xzf "$RUNNER_TEMP/aiv-candidate.tar.gz" -C "$RUNNER_TEMP/aiv-client" aiv
+          test "$("$RUNNER_TEMP/aiv-client/aiv" --version)" = "aiv $(cat VERSION)"
+          python -m pip install -r "$PLUGINS_DIR/tests/native_agent_e2e/requirements.txt"
+      - name: Install the candidate and verify captured native traces
+        shell: bash
+        env:
+          EXPECTED_HOST: ${{ matrix.host }}
+        run: |
+          set -euo pipefail
+          python "$PLUGINS_DIR/scripts/verify_plugin_dist.py" --dist "$RUNNER_TEMP/plugin-dist" --agent minimax-code --require-privacy
+          {
+            printf 'Source: %s\n\n' "$SOURCE_SHA"
+            shasum -a 256 "$RUNNER_TEMP/aiv-candidate.tar.gz"
+            python "$PLUGINS_DIR/tests/native_agent_e2e/minimax_candidate.py" --repo . \
+              --dist "$RUNNER_TEMP/plugin-dist" --aiv "$RUNNER_TEMP/aiv-client/aiv" \
+              --mcode "$RUNNER_TEMP/mcode/bin/mcode" --host-platform "$EXPECTED_HOST"
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+  windows-client:
+    name: Windows x64 native client and Ctrl-C fixtures
+    needs: artifact
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26.10.0'
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: aivision-cli/go.mod
+          cache: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.artifact.outputs.name }}
+          path: ${{ runner.temp }}/plugin-dist/minimax-code
+      - name: Verify the stock Windows CLI and source installer
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD) -ne $env:SOURCE_SHA -or
+              [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString() -ne 'X64') {
+            throw 'Native Windows x64 qualification requires the exact candidate SHA.'
+          }
+          Push-Location aivision-cli
+          try { go test -mod=vendor . -run '^TestWindowsMiniMax' } finally { Pop-Location }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m unittest discover -s "$env:PLUGINS_DIR/scripts/tests" -p test_minimax_windows.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Send native Ctrl-C during model streaming and tool execution
+        shell: pwsh
+        run: |
+          npm run build --prefix "$env:PLUGINS_DIR/minimax-code"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python "$env:PLUGINS_DIR/minimax-code/tests/test_windows_minimax_console.py"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Install the pinned official host and qualify the Windows preview artifact
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP "minimax-code-$env:MCODE_VERSION.tar.gz"
+          $prefix = Join-Path $env:RUNNER_TEMP 'mcode'
+          curl.exe --fail --location --proto '=https' --retry 3 --max-time 120 `
+            "https://github.com/MiniMax-AI/minimax-code/releases/download/v$env:MCODE_VERSION/minimax-code-$env:MCODE_VERSION.tar.gz" `
+            --output $archive
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if ((Get-FileHash -Algorithm SHA256 $archive).Hash -ne $env:MCODE_SHA256) {
+            throw 'MiniMax Code release SHA-256 mismatch.'
+          }
+          npm.cmd install --global --prefix $prefix --registry=https://registry.npmjs.org/ `
+            --include=optional --ignore-scripts=false '--allow-scripts=@minimax-ai/code,better-sqlite3' $archive
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $mcode = Join-Path $prefix 'mcode.cmd'
+          if ((& $mcode --version) -ne $env:MCODE_VERSION -or $LASTEXITCODE -ne 0) {
+            throw 'Unexpected native MiniMax Code version.'
+          }
+          $binary = Join-Path $env:RUNNER_TEMP 'aiv.exe'
+          $zip = Join-Path $env:RUNNER_TEMP 'aiv-windows-x64.zip'
+          $client = Join-Path $env:RUNNER_TEMP 'aiv-client'
+          $version = (Get-Content VERSION -Raw).Trim()
+          Push-Location aivision-cli
+          try {
+            $env:CGO_ENABLED = '0'
+            go build -mod=vendor -ldflags "-X github.com/antgroup/ai-vision/aivision-cli/internal/cli.Version=$version" -o $binary .
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            python ../scripts/ci/windows_release_cli.py --binary $binary --license LICENSE --archive $zip
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          } finally { Pop-Location }
+          Expand-Archive -LiteralPath $zip -DestinationPath $client
+          $aiv = Join-Path $client 'aiv.exe'
+          if ((& $aiv --version) -ne "aiv $version" -or $LASTEXITCODE -ne 0) {
+            throw 'Unexpected packaged Windows CLI version.'
+          }
+          $dist = Join-Path $env:RUNNER_TEMP 'plugin-dist'
+          python "$env:PLUGINS_DIR/scripts/verify_plugin_dist.py" --dist $dist --agent minimax-code --require-privacy
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -m pip install -r "$env:PLUGINS_DIR/tests/native_agent_e2e/requirements.txt"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value "Source: $env:SOURCE_SHA`nWindows CLI ZIP SHA-256: $((Get-FileHash -Algorithm SHA256 $zip).Hash)`n"
+          python "$env:PLUGINS_DIR/tests/native_agent_e2e/minimax_candidate.py" --repo . `
+            --dist $dist --aiv $aiv --mcode $mcode --host-platform Windows/AMD64 |
+            Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  oci-platform:
+    name: Linux amd64 OCI candidate
+    needs: artifact
+    uses: ./.github/workflows/minimax-code-oci-candidate.yml
+    with:
+      source_sha: ${{ github.event.pull_request.head.sha }}
+      preview_artifact: ${{ needs.artifact.outputs.name }}

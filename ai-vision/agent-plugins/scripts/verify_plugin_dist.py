@@ -65,6 +65,8 @@ def verify(dist, catalog, required, agents=None, require_privacy=False, max_glib
         if not (plugin.get('binary') or plugin.get('package')):
             continue
         root = dist / plugin['key']
+        if plugin.get('preview') and not agents and not root.exists():
+            continue
         index = json.loads((root / 'latest.json').read_text())
         version = index['version']
         if Path(version).name != version or version in ('.', '..'):

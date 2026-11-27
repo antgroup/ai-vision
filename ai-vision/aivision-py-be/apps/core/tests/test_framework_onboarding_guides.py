@@ -52,6 +52,7 @@ class FrameworkGuideTests(SimpleTestCase):
             "openclaw": "openclaw",
             "pi": "pi",
             "dsh": "dsh",
+            "minimax-code": "mcode",
         }
         found = {}
         for plugin in plugin_catalog():

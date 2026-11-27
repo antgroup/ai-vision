@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import shlex
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -80,6 +81,98 @@ class ConfigTests(unittest.TestCase):
 
 
 class InstallerTests(unittest.TestCase):
+    @unittest.skipIf(os.name == 'nt', 'MiniMax Code CLI PoC uses a POSIX launcher')
+    def test_minimax_code_market_grant_installs_launcher_and_reuses_credential(self):
+        agent_uuid = '5bdb516f-502f-4f76-914a-d8e7e44ced88'
+        base = 'https://vision.test'
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp).resolve() / "profile with 'quotes'"
+            root.mkdir()
+            managed = root / 'aivision/minimax-code'
+            launcher = managed / 'run'
+            managed.mkdir(parents=True)
+            launcher.write_bytes(b'old launcher')
+            model_host = Path(temp) / 'mcode'
+            node = Path(temp) / 'node'
+            model_host.write_text('#!/bin/sh\nprintf "0.7.2\\n"\n')
+            node.write_text('#!/bin/sh\nprintf "%s\\n" "$MINIMAX_DATA_DIR" "$@"\n')
+            model_host.chmod(0o700)
+            node.chmod(0o700)
+            archive = io.BytesIO()
+            with tarfile.open(fileobj=archive, mode='w:gz') as package:
+                for name, payload in {'package/package.json': b'{"name":"observ-minimax-code"}',
+                                      'package/dist/index.js': b'// installed wrapper fixture'}.items():
+                    member = tarfile.TarInfo(name)
+                    member.size = len(payload)
+                    package.addfile(member, io.BytesIO(payload))
+            bodies = {'native_config.py': (SCRIPTS/'native_config.py').read_bytes(),
+                      'wrapper.tgz': archive.getvalue()}
+            def artifact(name):
+                return {'name': name, 'url': base+'/api/'+name, 'sha256': hashlib.sha256(bodies[name]).hexdigest()}
+            catalog = {'agents': [{'key': 'minimax-code', 'version': 'test',
+                'plugin': {'key': 'minimax-code', 'host': 'mcode', 'name': 'MiniMax Code CLI (PoC)',
+                           'package': 'observ-minimax-code', 'product': 'MiniMaxCode'},
+                'downloads': [{**artifact('wrapper.tgz'), 'platform': 'all', 'arch': 'all',
+                               'target_filename': 'observ-minimax-code.tgz', 'collection_modes': ['full', 'privacy']}]}],
+                'support_files': [artifact('native_config.py')]}
+            authorization = 'aiv-agent-test-credential'
+            requests = []
+            confirm_fails = True
+            def request(url, body=None, headers=None):
+                requests.append(url.rsplit('/', 1)[-1])
+                token = {'space_id': 'space', 'agent_uuid': agent_uuid, 'agent_product': 'MiniMaxCode',
+                         'endpoint': base+'/v1/traces', 'token': 'test-token', 'expires_in': 900}
+                if url.endswith('/catalog.json'):
+                    data = catalog
+                elif url.endswith('/exchange'):
+                    self.assertEqual(headers['Authorization'], 'Bearer aiv-install-test-ticket')
+                    self.assertEqual(body, {'space_id': 'space', 'agent_uuid': agent_uuid})
+                    data = {**token, 'agent_credential': authorization}
+                elif url.endswith('/ingest-tokens'):
+                    self.assertEqual(headers['Authorization'], 'Bearer '+authorization)
+                    data = token
+                elif url.endswith('/installation-complete'):
+                    self.assertEqual(headers['Authorization'], 'Bearer '+authorization)
+                    self.assertTrue(os.access(launcher, os.X_OK))
+                    self.assertEqual((managed/'ingest.json').stat().st_mode & 0o777, 0o600)
+                    if confirm_fails:
+                        raise installer.ConnectError('Confirmation unavailable')
+                    data = {'space_id': 'space', 'agent_uuid': agent_uuid, 'status': 1}
+                else:
+                    return bodies[url.rsplit('/', 1)[-1]]
+                return json.dumps({'code': 0, 'data': data}).encode()
+            def which(name):
+                return str({'mcode': model_host, 'node': node}[Path(name).name])
+            args = SimpleNamespace(agent='minimax-code', agent_uuid=agent_uuid, base_url=base,
+                config_dir=str(root), dry_run=False, collection_mode=None, space_key=None,
+                space_key_file=None, space_id='space', installation_token='aiv-install-test-ticket')
+            diagnostics = io.StringIO()
+            with (patch.object(installer, 'request_bytes', side_effect=request),
+                  patch.object(installer.shutil, 'which', side_effect=which),
+                  contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(diagnostics)):
+                with self.assertRaisesRegex(installer.ConnectError, 'Confirmation unavailable'):
+                    installer.install(args)
+                self.assertEqual(launcher.read_bytes(), b'old launcher')
+                self.assertFalse((managed/'ingest.json').exists())
+                self.assertEqual(list((managed/'versions').iterdir()), [])
+                confirm_fails = False
+                launcher.with_name('run.aivision-backup').mkdir()
+                installer.install(args)
+                status = installer.installation_status(args)
+            self.assertEqual(requests.count('exchange'), 1)
+            self.assertEqual(requests.count('installation-complete'), 2)
+            self.assertTrue(status['installed'])
+            self.assertEqual(status['registration'], 'verified')
+            self.assertEqual(status['credential'], 'valid')
+            self.assertEqual(status['collection_mode'], 'privacy')
+            self.assertIn('post-installation cleanup', diagnostics.getvalue())
+            self.assertFalse((managed/'pending-installation.json').exists())
+            arguments = subprocess.check_output([str(launcher), 'a prompt', '--continue'], text=True).splitlines()
+            self.assertEqual(arguments[0], str(root))
+            self.assertTrue(arguments[1].endswith('/dist/index.js'))
+            self.assertEqual(arguments[2:], ['--ingest-config', str(managed/'ingest.json'), '--mcode',
+                                             str(model_host), '--', 'a prompt', '--continue'])
+
     def test_invalid_agent_id_is_rejected_before_network_or_credentials(self):
         for value in (None, '', '{agentUuid}', 'invalid'):
             with self.subTest(value=value), patch.object(installer, 'request_data') as request, patch.object(installer.getpass, 'getpass') as prompt:
