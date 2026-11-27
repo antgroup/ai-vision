@@ -1,0 +1,70 @@
+.github/workflows/release-images.yml
+  s_91e649b5b306e4::t_52714a09eaf935 6,8-9,69,106,121-124,161,170,774,821-822,826-846,891,893-896
+ai-vision/agent-plugins/codex/cdxhooks/tests/async_parent_integration.rs
+  s_91e649b5b306e4::t_52714a09eaf935 991-995,997-998,1092-1094
+ai-vision/agent-plugins/claudecode/cchooks/tests/async_hook_contract.rs
+  s_91e649b5b306e4::t_52714a09eaf935 2023,2025-2026
+scripts/ci/test_formal_release_recovery.py
+  s_91e649b5b306e4::t_52714a09eaf935 191-233
+scripts/ci/release_candidate.py
+  s_91e649b5b306e4::t_52714a09eaf935 9,21,118-133,136,138-139,147-153,160-171,176-195,198,201,204-227,237-238,248-249,255-256,275-277,297-298,300-301
+scripts/ci/test_workflow_contracts.py
+  s_91e649b5b306e4::t_52714a09eaf935 13,179-196,224-257,322,326-328,332,340-357,362-368
+docs/deployment/zh-CN/dev-image-release.md
+  s_91e649b5b306e4::t_52714a09eaf935 5,7,13,21-23,35-36,40-41,43,53,55,60,66,88,139-140,157,161,213,234-235,242-258
+  s_91e649b5b306e4::t_183a2af3819b07 259
+scripts/ci/test_candidate_workflow.py
+  s_91e649b5b306e4::t_52714a09eaf935 126,129
+docs/version-info.md
+  s_91e649b5b306e4::t_52714a09eaf935 3,79
+.github/workflows/promote-release.yml
+  s_91e649b5b306e4::t_52714a09eaf935 3,8,12,20-23,32,52,61,82,87
+docs/rfcs/0002-versioning-and-releases.md
+  s_91e649b5b306e4::t_52714a09eaf935 54
+scripts/ci/test_ci_runtime_budget.py
+  s_91e649b5b306e4::t_52714a09eaf935 38,46-47
+deploy/all-in-one/test_personal_smoke.py
+  s_91e649b5b306e4::t_52714a09eaf935 11,13-14,21-23,35-127
+  s_91e649b5b306e4::t_6937589b03e092 128-129
+scripts/ci/release_publish.py
+  s_91e649b5b306e4::t_52714a09eaf935 35-41,333,335-343,345,348,403-404,436,439,448-452,473,476-480,503-510,654,658-659,663-665,696-751,760-763,772-773,800,803-805,808-813,815-818,883-902,906-907,919,929-937,939,981-982,1011,1106
+scripts/ci/test_release_candidate.py
+  s_91e649b5b306e4::t_52714a09eaf935 250-442
+scripts/ci/test_public_release.py
+  s_91e649b5b306e4::t_52714a09eaf935 15,195-211
+  s_91e649b5b306e4::t_b1aad3753b3aa9 212
+deploy/all-in-one/install-all-in-one.py
+  s_91e649b5b306e4::t_52714a09eaf935 5,12,57-58,438-523,528-529,540,549-551,602-603
+VERSION
+  s_91e649b5b306e4::t_52714a09eaf935 1
+docs/deployment/en/dev-image-release.md
+  s_91e649b5b306e4::t_52714a09eaf935 5,7,13,21-23,35-36,40-41,43,53,55,60,66,93-94,157-162,180,184,241,262-263,268-269,272-284
+  s_91e649b5b306e4::t_98ffdc33cb8b5b 285
+deploy/all-in-one/smoke.py
+  s_91e649b5b306e4::t_52714a09eaf935 14,21,42-44,214-220
+scripts/ci/test_release.py
+  s_91e649b5b306e4::t_52714a09eaf935 1217-1223,1238-1243,1249-1254,1258-1267,1270-1271,1308-1319,1321,1323,1330-1389,1476-1535
+  s_91e649b5b306e4::t_5ac441975055ea 1536-1537
+scripts/ci/README.md
+  s_91e649b5b306e4::t_52714a09eaf935 199-204,214,273-276,280-292,309,317-329,357-359
+deploy/config/release-dependencies.json
+  s_91e649b5b306e4::t_52714a09eaf935 2
+.github/actionlint.yaml
+  s_91e649b5b306e4::t_52714a09eaf935 2,5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "cd030065c0a0c31560aa256afb1bad8a2ca45099",
+  "prompts": {},
+  "sessions": {
+    "s_91e649b5b306e4": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a21276-2e4d-7fa1-90dc-ef05e22c0ab7",
+        "model": "gpt-6.2-sol"
+      },
+      "human_author": "Haili Zhang <haili.zhang@outlook.com>"
+    }
+  }
+}
