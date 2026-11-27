@@ -8,14 +8,19 @@ from io import BytesIO, StringIO
 import json
 from pathlib import Path
 import shutil
+import signal
 import subprocess
+import sys
+import tarfile
 from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import Mock, patch
 from urllib.error import HTTPError
 
 from sample_trace import Platform, main as sample_main, prepare_demo, trace_complete
-from smoke import QualificationError, inspect, memory_request, read_candidate, read_diagnosis, require_archive_parity
+from smoke import (
+    QualificationError, inspect, memory_request, read_candidate, read_diagnosis, require_archive_parity, verify_running,
+)
 
 
 SOURCE = "a" * 40
@@ -25,6 +30,101 @@ INSTALLER_PATH = Path(__file__).with_name("install-all-in-one.py")
 INSTALLER_SPEC = importlib.util.spec_from_file_location("personal_installer", INSTALLER_PATH)
 installer = importlib.util.module_from_spec(INSTALLER_SPEC)
 INSTALLER_SPEC.loader.exec_module(installer)
+
+
+class InstallerImageIdentityTests(unittest.TestCase):
+    target = "linux/arm64"
+    runtime_id = "sha256:" + "d" * 64
+    config = b'{"os":"linux","architecture":"arm64"}'
+    digest = hashlib.sha256(config).hexdigest()
+    config_path = f"blobs/sha256/{digest}"
+    manifest = {"image_tag": "aiv-all-in-one:fixture", "image_id": "sha256:" + digest, "platform": target}
+
+    def docker_save(self, manifest_path=None, content=None):
+        data = BytesIO()
+        layout = json.dumps([{"Config": manifest_path or self.config_path}]).encode()
+        with tarfile.open(fileobj=data, mode="w") as archive:
+            for name, raw in ((self.config_path, content or self.config), ("manifest.json", layout)):
+                entry = tarfile.TarInfo(name)
+                entry.size = len(raw)
+                archive.addfile(entry, BytesIO(raw))
+        data.seek(0)
+        return data
+
+    def test_config_id_uses_classic_fast_path(self):
+        inspected = f"{self.manifest['image_id']} {self.target}"
+        with patch.object(installer, "output", return_value=inspected), patch.object(installer.subprocess, "Popen") as save:
+            self.assertEqual(installer.verified_image(self.manifest), self.manifest["image_id"])
+            save.assert_not_called()
+
+    def test_reload_can_reuse_a_previously_verified_immutable_id(self):
+        inspected = f"{self.runtime_id} {self.target}"
+        with patch.object(installer, "output", return_value=inspected), patch.object(installer.subprocess, "Popen") as save:
+            self.assertEqual(installer.verified_image(self.manifest, known_id=self.runtime_id), self.runtime_id)
+            save.assert_not_called()
+
+    def test_containerd_verifies_the_config_and_uses_the_immutable_engine_id(self):
+        with patch.object(installer, "output", return_value=f"{self.runtime_id} {self.target}"), \
+             patch.object(installer.subprocess, "Popen") as save:
+            process = save.return_value.__enter__.return_value
+            process.stdout = self.docker_save()
+            process.wait.return_value = 0
+            self.assertEqual(installer.verified_image(self.manifest), self.runtime_id)
+            save.assert_called_once_with(["docker", "image", "save", self.runtime_id], stdout=subprocess.PIPE)
+
+    def test_smoke_times_out_and_reaps_a_stalled_image_export(self):
+        candidate = {**self.manifest, "release_tag": TAG}
+        archive = self.docker_save().read().hex()
+        export_program = """
+import os
+import sys
+import time
+
+phase, archive = sys.argv[1:]
+if phase == "read":
+    time.sleep(2)
+sys.stdout.buffer.write(bytes.fromhex(archive))
+sys.stdout.flush()
+if phase == "wait":
+    os.close(sys.stdout.fileno())
+if phase != "read":
+    time.sleep(2)
+"""
+        real_popen = subprocess.Popen
+        for phase in ("read", "drain", "wait"):
+            with self.subTest(phase=phase):
+                exports = []
+
+                def docker_process(args, **kwargs):
+                    if args[:3] == ("docker", "image", "inspect"):
+                        inspected = f"{self.runtime_id} {self.target}"
+                        return real_popen([sys.executable, "-c", "import sys; print(sys.argv[1])", inspected],
+                                          **kwargs)
+                    self.assertEqual(args, ["docker", "image", "save", self.runtime_id])
+                    process = real_popen([sys.executable, "-c", export_program, phase, archive], **kwargs)
+                    exports.append(process)
+                    return process
+
+                with patch("smoke.inspect", side_effect=[
+                    {"Running": True, "Health": {"Status": "healthy"}},
+                    self.runtime_id,
+                    [{"Type": "volume", "Name": "candidate-data", "Destination": "/data"}],
+                    {"io.aivision.all-in-one.instance": "candidate", "io.aivision.all-in-one.release": TAG},
+                    {"5174/tcp": [{"HostIp": "127.0.0.1", "HostPort": "5174"}],
+                     "4318/tcp": [{"HostIp": "127.0.0.1", "HostPort": "4318"}]},
+                    "candidate-container-id",
+                ]), patch("smoke.IMAGE_VERIFICATION_TIMEOUT", 0.75, create=True), \
+                     patch.object(subprocess, "Popen", side_effect=docker_process):
+                    with self.assertRaisesRegex(QualificationError, "image verification timed out"):
+                        verify_running("candidate", candidate, 5174, 4318)
+                self.assertEqual(len(exports), 1)
+                self.assertEqual(exports[0].returncode, -signal.SIGKILL)
+
+    def test_rejects_export_with_wrong_config_reference_or_contents(self):
+        for stream in (self.docker_save(manifest_path="other.json"), self.docker_save(content=b"other config")):
+            with self.subTest(stream=stream):
+                self.assertFalse(installer.saved_image_matches(stream, self.manifest["image_id"], self.target))
+        self.assertFalse(installer.saved_image_matches(self.docker_save(), self.manifest["image_id"], "linux/amd64"))
 
 
 class CandidateTests(unittest.TestCase):

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import re
+from urllib.parse import quote
 
 import windows_release_cli
 
@@ -17,6 +18,7 @@ from release_publish import api, validate_bundle
 BACKENDS = ("oceanbase", "seekdb")
 SMOKE_PLATFORM = "linux/amd64"
 SMOKE_COMPONENTS = {"database", *IMAGE_ROLES.values()}
+PUBLISHER_JOB = "publish verified development artifacts"
 
 
 def asset_inventory(directory, manifest, *, base_only=False):
@@ -113,46 +115,10 @@ def verify_frozen(directory, acceptance, *, repository, source_sha, build_id, ba
         raise ValueError("acceptance differs from frozen source, attempt or asset bytes")
 
 
-def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
-                            candidate_run_id, candidate_run_attempt, api_fn=api,
-                            allow_dev_recovery=False):
-    require_product_repository(repository)
-    if not all(isinstance(value, str) and re.fullmatch(r"[1-9][0-9]*", value)
-               for value in (candidate_run_id, candidate_run_attempt)):
-        raise ValueError("candidate run and attempt must be canonical positive integers")
-    build_id = f"{candidate_run_id}.{candidate_run_attempt}"
-    plan = json.loads((directory / "release-plan.json").read_text())
-    if plan.get("channel") not in {"daily", "dev"} or plan.get("alias") != plan["channel"]:
-        raise ValueError("manual promotion accepts only default-branch Daily/Dev candidates")
-    verify_frozen(directory, acceptance, repository=repository, source_sha=source_sha, build_id=build_id)
-    repo = api_fn(f"repos/{repository}")
-    branch = repo.get("default_branch")
-    if (repo.get("full_name") != repository or repo.get("visibility") != "public"
-            or not isinstance(branch, str) or not branch):
-        raise ValueError("cannot identify the official public repository and current default branch")
-    from urllib.parse import quote
-    if api_fn(f"repos/{repository}/commits/{quote(branch, safe='')}").get("sha") != source_sha:
-        raise ValueError("candidate source is stale against the current default branch head")
-    base = f"repos/{repository}/actions/runs/{candidate_run_id}"
-    # A newer attempt supersedes old artifacts, even when an old attempt passed.
-    latest = api_fn(base)
-    attempt = api_fn(f"{base}/attempts/{candidate_run_attempt}")
-    publication_recovery = (allow_dev_recovery and plan["channel"] == "dev"
-                            and latest.get("conclusion") == attempt.get("conclusion") == "failure")
-    for run in (latest, attempt):
-        if (type(run.get("id")) is not int or run["id"] != int(candidate_run_id)
-                or type(run.get("run_attempt")) is not int or run["run_attempt"] != int(candidate_run_attempt)
-                or run.get("head_sha") != source_sha or run.get("head_branch") != branch
-                or run.get("path") != ".github/workflows/release-images.yml"
-                or run.get("event") != "workflow_dispatch"
-                or run.get("repository", {}).get("full_name") != repository
-                or run.get("head_repository", {}).get("full_name") != repository
-                or run.get("status") != "completed"
-                or run.get("conclusion") != ("failure" if publication_recovery else "success")):
-            raise ValueError("candidate is not the exact successful official workflow attempt")
+def read_attempt_jobs(api_fn, run_path, attempt):
     jobs, page = [], 1
     while True:
-        result = api_fn(f"{base}/attempts/{candidate_run_attempt}/jobs?per_page=100&page={page}")
+        result = api_fn(f"{run_path}/attempts/{attempt}/jobs?per_page=100&page={page}")
         batch = result.get("jobs")
         if not isinstance(batch, list):
             raise ValueError("candidate jobs response is invalid")
@@ -162,6 +128,103 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
                 raise ValueError("candidate job listing is incomplete")
             break
         page += 1
+    return jobs
+
+
+def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
+                            candidate_run_id, candidate_run_attempt, api_fn=api,
+                            allow_dev_recovery=False, allow_daily_recovery=False):
+    require_product_repository(repository)
+    if allow_dev_recovery and allow_daily_recovery:
+        raise ValueError("select one publication recovery mode")
+    if not all(isinstance(value, str) and re.fullmatch(r"[1-9][0-9]*", value)
+               for value in (candidate_run_id, candidate_run_attempt)):
+        raise ValueError("candidate run and attempt must be canonical positive integers")
+    build_id = f"{candidate_run_id}.{candidate_run_attempt}"
+    plan = json.loads((directory / "release-plan.json").read_text())
+    if plan.get("channel") not in {"daily", "dev"} or plan.get("alias") != plan["channel"]:
+        raise ValueError("manual promotion accepts only default-branch Daily/Dev candidates")
+    if allow_daily_recovery:
+        original_source = plan.get("source_sha")
+        if (plan["channel"] != "daily" or not isinstance(original_source, str)
+                or not re.fullmatch(r"[a-f0-9]{40}", original_source)
+                or source_sha not in (None, original_source)):
+            raise ValueError("Daily recovery requires the frozen Daily source commit")
+        source_sha = original_source
+    verify_frozen(directory, acceptance, repository=repository, source_sha=source_sha, build_id=build_id)
+    repo = api_fn(f"repos/{repository}")
+    branch = repo.get("default_branch")
+    if (repo.get("full_name") != repository or repo.get("visibility") != "public"
+            or not isinstance(branch, str) or not branch):
+        raise ValueError("cannot identify the official public repository and current default branch")
+    if allow_daily_recovery and branch != "develop":
+        raise ValueError("Daily recovery requires the current default develop branch")
+    branch_sha = api_fn(f"repos/{repository}/commits/{quote(branch, safe='')}").get("sha")
+    if allow_daily_recovery:
+        if not isinstance(branch_sha, str) or not re.fullmatch(r"[a-f0-9]{40}", branch_sha):
+            raise ValueError("cannot identify the live develop commit for Daily recovery")
+        if branch_sha != source_sha:
+            comparison = api_fn(f"repos/{repository}/compare/{source_sha}...{branch_sha}")
+            merge_base = comparison.get("merge_base_commit") or {}
+            if comparison.get("status") != "ahead" or merge_base.get("sha") != source_sha:
+                raise ValueError("Daily recovery source is outside the current develop history")
+    elif branch_sha != source_sha:
+        raise ValueError("candidate source is stale against the current default branch head")
+    base = f"repos/{repository}/actions/runs/{candidate_run_id}"
+    latest = api_fn(base)
+    attempt = api_fn(f"{base}/attempts/{candidate_run_attempt}")
+    requested_attempt = int(candidate_run_attempt)
+    interrupted_conclusions = {"failure", "cancelled", "timed_out"}
+    publisher_conclusions = {"failure"}
+    events = {"workflow_dispatch"}
+    if allow_daily_recovery:
+        events.add("schedule")
+        if attempt.get("event") == "workflow_dispatch" and attempt.get("conclusion") == "success":
+            # A separate promotion can be interrupted after a candidate-only run ends.
+            publisher_conclusions = {"skipped"}
+        elif attempt.get("conclusion") in interrupted_conclusions:
+            publisher_conclusions = interrupted_conclusions
+        else:
+            raise ValueError("Daily recovery requires an interrupted publisher after successful qualification")
+    publication_recovery = allow_daily_recovery or (
+        allow_dev_recovery and plan["channel"] == "dev"
+        and latest.get("conclusion") == attempt.get("conclusion") == "failure"
+    )
+    expected_conclusion = attempt.get("conclusion") if publication_recovery else "success"
+    description = "interrupted" if allow_daily_recovery else "successful"
+    invalid_attempt = f"candidate is not the exact {description} official workflow attempt"
+    for run in (latest, attempt):
+        if (type(run.get("id")) is not int or run["id"] != int(candidate_run_id)
+                or type(run.get("run_attempt")) is not int
+                or run.get("head_sha") != source_sha or run.get("head_branch") != branch
+                or run.get("path") != ".github/workflows/release-images.yml"
+                or run.get("event") not in events or run.get("event") != attempt.get("event")
+                or run.get("repository", {}).get("full_name") != repository
+                or run.get("head_repository", {}).get("full_name") != repository
+                or run.get("status") != "completed"):
+            raise ValueError(invalid_attempt)
+    latest_matches = (
+        latest["run_attempt"] == requested_attempt and latest.get("conclusion") == expected_conclusion
+    )
+    if attempt["run_attempt"] != requested_attempt or attempt.get("conclusion") != expected_conclusion:
+        raise ValueError(invalid_attempt)
+
+    # Only Daily metadata repair may reuse a superseded frozen attempt.
+    newer_daily_attempt = allow_daily_recovery and latest["run_attempt"] > requested_attempt
+    recover_after_rerun = newer_daily_attempt and latest.get("conclusion") in interrupted_conclusions
+    if newer_daily_attempt and latest["event"] == "workflow_dispatch" and latest.get("conclusion") == "success":
+        later_jobs = read_attempt_jobs(api_fn, base, latest["run_attempt"])
+        publishers = [job for job in later_jobs if job.get("name") == PUBLISHER_JOB]
+        expected_publisher = {
+            "run_id": int(candidate_run_id), "run_attempt": latest["run_attempt"],
+            "head_sha": source_sha, "status": "completed", "conclusion": "skipped",
+        }
+        recover_after_rerun = len(publishers) == 1 and all(
+            publishers[0].get(key) == value for key, value in expected_publisher.items()
+        )
+    if not (latest_matches or recover_after_rerun):
+        raise ValueError(invalid_attempt)
+    jobs = read_attempt_jobs(api_fn, base, candidate_run_attempt)
     required_jobs = [*(f"Linux amd64 candidate deployment ({backend})" for backend in BACKENDS),
                      "freeze qualified candidate acceptance", "verify public candidate indexes anonymously"]
     qualified_smokes = [f"linux/amd64/{backend}" for backend in BACKENDS]
@@ -170,8 +233,9 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
         required_jobs.append("cli / qualify Windows x64")
     if acceptance.get("personal_edition"):
         required_jobs.extend(f"Personal Edition (linux/{arch})" for arch in PERSONAL_ARCHITECTURES)
-        required_jobs.append("freeze qualified Personal Edition acceptance")
         qualified_smokes.extend(f"linux/{arch}/personal" for arch in PERSONAL_ARCHITECTURES)
+    if acceptance.get("personal_edition") or allow_daily_recovery:
+        required_jobs.append("freeze qualified Personal Edition acceptance")
     for name in required_jobs:
         matched = [job for job in jobs if job.get("name") == name]
         if len(matched) != 1 or any(
@@ -181,14 +245,15 @@ def verify_remote_candidate(directory, acceptance, *, repository, source_sha,
         ):
             raise ValueError(f"candidate lacks a successful {name} job in the exact attempt")
     if publication_recovery:
-        publishers = [job for job in jobs if job.get("name") == "publish verified development artifacts"]
-        if (len(publishers) != 1 or publishers[0].get("conclusion") != "failure"
+        publishers = [job for job in jobs if job.get("name") == PUBLISHER_JOB]
+        if (len(publishers) != 1 or publishers[0].get("conclusion") not in publisher_conclusions
                 or any(job.get("run_id") != int(candidate_run_id)
                        or job.get("run_attempt") != int(candidate_run_attempt)
                        or job.get("head_sha") != source_sha or job.get("status") != "completed"
                        or (job.get("conclusion") not in {"success", "skipped"} and job is not publishers[0])
                        for job in jobs)):
-            raise ValueError("Dev recovery requires a publication-only failure after successful qualification")
+            channel = "Daily" if allow_daily_recovery else "Dev"
+            raise ValueError(f"{channel} recovery requires a publication-only failure after successful qualification")
     return {"schema_version": 1, "candidate_build_id": build_id,
             "candidate_source_sha": source_sha, "source_repository": repository,
             "publication_recovery": publication_recovery,
@@ -207,7 +272,9 @@ def main():
     parser.add_argument("--acceptance", type=Path)
     parser.add_argument("--candidate-run-id")
     parser.add_argument("--candidate-run-attempt")
-    parser.add_argument("--recover-dev-publication", action="store_true")
+    recovery = parser.add_mutually_exclusive_group()
+    recovery.add_argument("--recover-dev-publication", action="store_true")
+    recovery.add_argument("--recover-daily-publication", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if args.command == "smoke":
@@ -227,9 +294,11 @@ def main():
                        build_id=f"{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}")
     else:
         value = verify_remote_candidate(args.directory, json.loads(args.acceptance.read_text()),
-                    repository=os.environ["GITHUB_REPOSITORY"], source_sha=os.environ["GITHUB_SHA"],
+                    repository=os.environ["GITHUB_REPOSITORY"],
+                    source_sha=None if args.recover_daily_publication else os.environ["GITHUB_SHA"],
                     candidate_run_id=args.candidate_run_id, candidate_run_attempt=args.candidate_run_attempt,
-                    allow_dev_recovery=args.recover_dev_publication)
+                    allow_dev_recovery=args.recover_dev_publication,
+                    allow_daily_recovery=args.recover_daily_publication)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(value, indent=2) + "\n")

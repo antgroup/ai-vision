@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 from plan import CHECKS, FAMILIES, make_plan
@@ -175,6 +176,24 @@ class WorkflowGateTests(unittest.TestCase):
                     result = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", command], cwd=root,
                                             env=env, capture_output=True, text=True, timeout=10)
                     self.assertNotEqual(result.returncode, 0)
+            runtime = parent / "scheduled"
+            runtime.mkdir()
+            env.update(DEFAULT_BRANCH="develop", GITHUB_EVENT_NAME="schedule", GITHUB_REF="refs/heads/develop",
+                       INPUT_TAG="", INPUT_CANDIDATE_CHANNEL="", INPUT_DAILY_REVISION="", INPUT_PERSONAL_EDITION="true",
+                       RUNNER_TEMP=str(runtime), GITHUB_OUTPUT=str(runtime / "outputs"),
+                       FIXTURE_CREATED_AT="2000-01-01T18:23:00Z")
+            result = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", command], cwd=root,
+                                    env=env, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            daily = json.loads((runtime / "release-plan/release-plan.json").read_text())
+            self.assertEqual(daily["product_version"], "0.0.2-daily.20000102")
+            self.assertEqual(daily["alias"], "daily")
+            self.assertIs(daily["personal_edition"], True)
+            env.update(DEFAULT_BRANCH="main", GITHUB_REF="refs/heads/main")
+            result = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", command], cwd=root,
+                                    env=env, capture_output=True, text=True, timeout=10)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Scheduled Daily requires develop", result.stdout)
 
     def test_formal_release_requires_both_personal_bundles_and_final_receipt(self):
         document = workflow("release-images.yml")
@@ -201,6 +220,40 @@ class WorkflowGateTests(unittest.TestCase):
         pin = next(step for step in prepare["steps"] if step.get("name") == "Pin SigNoz before building any product artifact")
         self.assertIn("deploy/config/release-dependencies.json", pin["run"])
         self.assertIn("AIVISION_SIGNOZ_IMAGE", pin["env"]["DEFAULT_SIGNOZ"])
+
+    def test_scheduled_daily_uses_the_version_matched_signoz_lock(self):
+        lock = json.loads((ROOT / "deploy/config/release-dependencies.json").read_text())
+        pin = next(step for step in workflow("release-images.yml")["jobs"]["prepare"]["steps"]
+                   if step.get("name") == "Pin SigNoz before building any product artifact")
+        with tempfile.TemporaryDirectory() as directory:
+            runtime = Path(directory)
+            (runtime / "release-plan").mkdir()
+            docker = runtime / "docker"
+            docker.write_text(f"#!{sys.executable}\n"
+                              "import json, os, sys\n"
+                              "assert sys.argv[1:4] == ['buildx', 'imagetools', 'inspect']\n"
+                              "assert sys.argv[4] == os.environ['EXPECTED_SIGNOZ']\n"
+                              "print(json.dumps({'digest': sys.argv[4].split('@')[1], 'manifests': [\n"
+                              "    {'platform': {'os': 'linux', 'architecture': a}}\n"
+                              "    for a in ('amd64', 'arm64')]}))\n")
+            docker.chmod(0o700)
+            env = dict(os.environ, PATH=str(runtime) + os.pathsep + os.environ["PATH"],
+                       GITHUB_EVENT_NAME="schedule", RELEASE_CHANNEL="daily", RUNNER_TEMP=directory,
+                       PRODUCT_VERSION=lock["product_version"] + "-daily.20261127", INPUT_SIGNOZ="",
+                       DEFAULT_SIGNOZ="ghcr.io/ob-labs/signoz-ob@sha256:" + "b" * 64,
+                       EXPECTED_SIGNOZ=lock["signoz"]["image"])
+            command = ["bash", "-e", "-o", "pipefail", "-c", pin["run"]]
+            result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            output = runtime / "release-plan/signoz-image.txt"
+            self.assertEqual(output.read_text().strip(), lock["signoz"]["image"])
+            output.unlink()
+
+            env["PRODUCT_VERSION"] = "999.0.0-daily.20261127"
+            result = subprocess.run(command, cwd=ROOT, env=env, capture_output=True, text=True, timeout=10)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Lock the approved SigNoz digest for 999.0.0", result.stdout)
+            self.assertFalse(output.exists())
 
     def test_public_daily_runs_full_source_checks_with_verified_candidate_images(self):
         jobs = workflow("release-images.yml")["jobs"]
@@ -266,15 +319,17 @@ class WorkflowGateTests(unittest.TestCase):
         jobs = document["jobs"]
         normal = jobs["publish-stable"]
         recovery = jobs["recover-formal"]
+        validation = jobs["validate-formal-recovery"]
         self.assertEqual(recovery["environment"], normal["environment"])
         self.assertEqual(recovery["concurrency"], normal["concurrency"])
         self.assertEqual(recovery["permissions"], normal["permissions"])
-        self.assertIn("github.event_name == 'workflow_dispatch'", recovery["if"])
-        self.assertIn("startsWith(github.ref, 'refs/tags/v')", recovery["if"])
+        self.assertEqual(recovery["needs"], "validate-formal-recovery")
+        self.assertNotIn("environment", validation)
+        self.assertIn("github.event_name == 'workflow_dispatch'", validation["if"])
         inputs = triggers(document)["workflow_dispatch"]["inputs"]
         for name in ("recover_formal_run_id", "recover_formal_run_attempt"):
             self.assertIs(inputs[name]["required"], False)
-            self.assertIn(f"inputs.{name}", recovery["if"])
+            self.assertIn(f"inputs.{name}", validation["if"])
         journal = next(step for step in normal["steps"] if step.get("uses") == "actions/upload-artifact@v4")
         self.assertEqual(journal["with"]["name"], "formal-publication-${{ github.run_attempt }}")
         self.assertEqual(journal["with"]["retention-days"], 14)
@@ -282,13 +337,35 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertIn("--formal-journal formal-publication.json", normal["steps"][-1]["run"])
         self.assertIn("--recover-formal", recovery["steps"][-1]["run"])
 
+    def test_formal_recovery_validates_ref_and_inputs_before_approval(self):
+        step = workflow("release-images.yml")["jobs"]["validate-formal-recovery"]["steps"][0]
+        for ref, run_id, attempt, error in (
+            ("refs/heads/develop", "12", "1", "original version tag"),
+            ("refs/tags/v0.6.1", "12", "", "both the original run ID and attempt"),
+            ("refs/tags/v0.6.1", "", "1", "both the original run ID and attempt"),
+            ("refs/tags/v0.6.1", "12", "01", "both the original run ID and attempt"),
+            ("refs/tags/v0.6.1-rc.1", "12", "1", None),
+        ):
+            with self.subTest(ref=ref, run_id=run_id, attempt=attempt), patch.dict(os.environ, GITHUB_REF=ref):
+                result, _ = run_step(step, inputs={"recover_formal_run_id": run_id,
+                                                   "recover_formal_run_attempt": attempt})
+                if error:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(error, result.stdout)
+                else:
+                    self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_public_release_candidates_cannot_write_aliases_without_publication(self):
         document = workflow("release-images.yml")
         jobs = document["jobs"]
         self.assertIs(triggers(document)["workflow_dispatch"]["inputs"]["publish"]["default"], False)
-        self.assertEqual(jobs["publish-development"]["if"],
-                         "inputs.publish == true && (needs.prepare.outputs.channel == 'dev' || "
-                         "needs.prepare.outputs.channel == 'daily')")
+        self.assertEqual(jobs["publish-development"]["if"].strip(),
+                         "(github.event_name == 'schedule' && needs.prepare.outputs.channel == 'daily') || "
+                         "(github.event_name == 'workflow_dispatch' && inputs.publish == true &&\n"
+                         "  (needs.prepare.outputs.channel == 'dev' || needs.prepare.outputs.channel == 'daily'))")
+        plan = next(step for step in jobs["prepare"]["steps"] if step.get("id") == "plan")
+        self.assertEqual(plan["env"]["INPUT_PERSONAL_EDITION"],
+                         "${{ github.event_name == 'schedule' || inputs.personal_edition == true }}")
         stable_gate = (
             "(needs.prepare.outputs.channel == 'stable' || needs.prepare.outputs.channel == 'rc') && "
             "!inputs.release_preview && (github.event_name == 'push' || inputs.publish == true)"

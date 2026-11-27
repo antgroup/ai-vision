@@ -188,6 +188,49 @@ class FormalPublicationTests(unittest.TestCase):
         for name, package in self.package.items():
             self.assertEqual(self.tags[f"{package}:latest"], PUBLIC_IMAGES[name].split("@")[1])
 
+    def test_formal_publication_keeps_draft_when_an_authenticated_attachment_is_replaced(self):
+        self.run_publisher("preflight")
+        original_download = self.download
+        attachment = (42, "aiv-linux-amd64.tar.gz")
+
+        def replace_after_download(command, *, stdout, **kwargs):
+            result = original_download(command, stdout=stdout, **kwargs)
+            asset_id = int(command[2].rsplit("/", 1)[1])
+            if self.uploaded_assets.get(attachment) == asset_id:
+                self.uploaded_assets[attachment] = max(self.uploaded_assets.values()) + 1
+                self.attachments[42][attachment[1]] = b"x" * len(self.files[attachment[1]])
+            return result
+
+        with patch.object(self, "download", side_effect=replace_after_download):
+            with self.assertRaisesRegex(ValueError, "draft asset inventory changed"):
+                self.run_publisher("publish")
+
+        self.assertTrue(self.releases[42]["draft"])
+        self.assertEqual(self.latest, 41)
+        self.assertNotIn(("publish", 42), self.writes)
+        self.assertFalse(any(action == "image" and name.endswith(":latest") for action, name in self.writes))
+
+    def test_recovery_identifies_empty_starter_and_resumes_after_its_removal(self):
+        self.run_publisher("preflight")
+        name = "aiv-linux-amd64.tar.gz"
+        self.attachments[42].update({"SHA256SUMS": self.files["SHA256SUMS"], name: b""})
+        self.starter_assets.add((42, name))
+        asset_id = next(asset["id"] for asset in self.assets(42) if asset["name"] == name)
+
+        with self.assertRaisesRegex(ValueError, rf"zero-byte starter asset {name} \(ID {asset_id}\)"):
+            self.run_publisher("publish", recover=True)
+        self.assertFalse(self.writes)
+        self.assertTrue(self.releases[42]["draft"])
+
+        del self.attachments[42][name]
+        self.starter_assets.remove((42, name))
+        del self.uploaded_assets[(42, name)]
+        self.run_publisher("publish", recover=True)
+
+        self.assertEqual(self.attachments[42], self.files)
+        self.assertEqual([asset for action, asset in self.writes if action == "upload"], [name])
+        self.assertEqual(self.latest, 42)
+
     def test_recovery_rejects_unknown_starter_and_mismatched_draft_assets(self):
         self.run_publisher("preflight")
         for attachments, starter_assets, error in (

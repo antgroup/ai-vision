@@ -1,6 +1,6 @@
 # Versions and Updates
 
-Open `/about` from the global help menu to see **the current version, available updates, and release notes**. The root [VERSION](../VERSION) is the product version source, currently set to the release target `0.6.0`. Publication happens separately.
+Open `/about` from the global help menu to see **the current version, available updates, and release notes**. The root [VERSION](../VERSION) is the product version source, currently set to the release target `0.6.1`. Publication happens separately.
 
 ## Page Behavior and Update Checks
 
@@ -76,7 +76,7 @@ The first snapshot uses revision `1` without a suffix. If another snapshot for t
 
 For a formal release candidate, set VERSION to `0.6.0-rc.1` on the release commit and use the matching Git tag `v0.6.0-rc.1`. RC builds use the release test tier. Branch trials use the Daily or Dev version and stage images under `candidate-<run_id>-<attempt>`.
 
-The nightly schedule is paused. Manual candidates default to `publish=false`, so even a successful candidate does not establish a published Daily or update rolling entries. Daily/Dev promotion requires the exact successful default-branch candidate, frozen asset hashes and both database smoke receipts. Existing rolling `dev` artifacts do not prove a successful Daily run. The version examples above describe the format, not available downloads.
+The release workflow schedules Daily at 02:23 Asia/Shanghai on the default `develop` branch. Successful publication creates a versioned prerelease and advances the rolling `daily` entry after asset readback. Manual candidates default to `publish=false` and retain their frozen assets for review. Manual Daily/Dev promotion requires the exact successful default-branch candidate, frozen asset hashes and both database smoke receipts. See the [release guide](deployment/en/dev-image-release.md) for download and validation details.
 
 Direct Docker builds without this argument keep the identity unknown. Local Vite builds in a complete checkout read root VERSION and Git state. The current source-deployment blueprint mounts only the frontend subdirectory, without root VERSION or Git metadata, and does not generate the backend build file; both build identities may therefore be unknown. Without a valid installed release record, the product release is also unknown. Historical internal image-build entry points also lack this injection. The page never guesses a version from image tags or deployment parameters.
 
