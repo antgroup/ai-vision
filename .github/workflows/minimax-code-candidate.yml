@@ -5,11 +5,15 @@ on:
     branches: [develop]
     paths:
       - '.github/workflows/minimax-code-candidate.yml'
+      - '.github/workflows/minimax-code-oci-candidate.yml'
       - 'ai-vision/agent-plugins/minimax-code/**'
       - 'ai-vision/agent-plugins/scripts/connect'
       - 'ai-vision/agent-plugins/scripts/native_config.py'
       - 'ai-vision/agent-plugins/scripts/tests/test_minimax_windows.py'
       - 'ai-vision/agent-plugins/tests/native_agent_e2e/minimax_candidate.py'
+      - 'ai-vision/agent-plugins/tests/native_agent_e2e/minimax_deployed.py'
+      - 'deploy/tests/minimax_oci_acceptance.py'
+      - 'scripts/ci/minimax_oci_candidate.py'
 
 permissions:
   contents: read
@@ -30,6 +34,8 @@ jobs:
     name: Build and verify the explicit preview artifact
     runs-on: ubuntu-22.04
     timeout-minutes: 10
+    outputs:
+      name: ${{ steps.package.outputs.name }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,16 +47,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '26.10.0'
-      - name: Test and checksum the candidate
+      - id: package
+        name: Test and checksum the candidate
         run: |
           set -euo pipefail
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           npm test --prefix "$PLUGINS_DIR/minimax-code"
           python "$PLUGINS_DIR/scripts/build_plugins.py" --agent minimax-code --output "$RUNNER_TEMP/plugin-dist"
           python "$PLUGINS_DIR/scripts/verify_plugin_dist.py" --dist "$RUNNER_TEMP/plugin-dist" --agent minimax-code --require-privacy
+          echo "name=minimax-code-preview-$SOURCE_SHA-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         with:
-          name: minimax-code-preview-${{ env.SOURCE_SHA }}-${{ github.run_attempt }}
+          name: ${{ steps.package.outputs.name }}
           path: ${{ runner.temp }}/plugin-dist/minimax-code
           if-no-files-found: error
           retention-days: 7
@@ -89,7 +97,7 @@ jobs:
           cache: false
       - uses: actions/download-artifact@v4
         with:
-          name: minimax-code-preview-${{ env.SOURCE_SHA }}-${{ github.run_attempt }}
+          name: ${{ needs.artifact.outputs.name }}
           path: ${{ runner.temp }}/plugin-dist/minimax-code
       - name: Install the pinned official host and build the matching aiv
         shell: bash
@@ -152,7 +160,7 @@ jobs:
           cache: false
       - uses: actions/download-artifact@v4
         with:
-          name: minimax-code-preview-${{ env.SOURCE_SHA }}-${{ github.run_attempt }}
+          name: ${{ needs.artifact.outputs.name }}
           path: ${{ runner.temp }}/plugin-dist/minimax-code
       - name: Verify the stock Windows CLI and source installer
         shell: pwsh
@@ -219,3 +227,11 @@ jobs:
             --dist $dist --aiv $aiv --mcode $mcode --host-platform Windows/AMD64 |
             Tee-Object -FilePath $env:GITHUB_STEP_SUMMARY -Append
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+  oci-platform:
+    name: Linux amd64 OCI candidate
+    needs: artifact
+    uses: ./.github/workflows/minimax-code-oci-candidate.yml
+    with:
+      source_sha: ${{ github.event.pull_request.head.sha }}
+      preview_artifact: ${{ needs.artifact.outputs.name }}

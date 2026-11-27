@@ -119,6 +119,13 @@ class FakeProvider:
         self.lock = threading.Lock()
         self.stop = threading.Event()
 
+    def reply(self, body, number, *, truncate=False, continuation=False):
+        return reply_for(body, self.path, self.scenario, number, truncate=truncate, continuation=continuation)
+
+    def usage(self, row):
+        scenario = "tool-loop" if self.scenario == "cancel" and row["purpose"] == "auxiliary" else self.scenario
+        return usage_for(scenario)
+
     def __enter__(self):
         owner = self
 
@@ -171,16 +178,14 @@ class FakeProvider:
                             owner.length_sent = owner.length_pending = True
                         elif continuation:
                             owner.length_pending = False
-                    message = reply_for(body, owner.path, owner.scenario, number,
-                                        truncate=truncate, continuation=continuation)
+                    message = owner.reply(body, number, truncate=truncate, continuation=continuation)
                 except ValueError as error:
                     self.send_error(422, str(error))
                     row["error"] = str(error)
                     return
                 # Auxiliary title/summary requests should finish normally while
                 # the real agent request remains active for native cancellation.
-                usage = usage_for("tool-loop" if owner.scenario == "cancel" and
-                                  row["purpose"] == "auxiliary" else owner.scenario)
+                usage = owner.usage(row)
                 if owner.request_sized_usage and usage is not None:
                     # A compression fixture needs usage to reflect the actual
                     # long request before compaction and the short one after.

@@ -274,7 +274,7 @@ class Smoke:
             raise AssertionError('database is not using the original named volume')
         return {'organization_id': org, 'database_mounts': persistent}
 
-    def images(self, label, *, require_pinned=False):
+    def images(self, label, *, require_pinned=False, expected_local_ids=None):
         names = [self.values[key] for key in CONTAINER_VARS]
         deployed = self.run(label, ['docker', 'inspect', '--format',
                             '{{.Image}} {{.Config.Image}}', *names]).stdout.splitlines()
@@ -285,17 +285,19 @@ class Smoke:
                              '{{.Os}}/{{.Architecture}} {{.Id}}', *image_ids]).stdout.splitlines()
         if len(platforms) != len(COMPONENTS):
             raise AssertionError('missing deployed image platform')
-        if require_pinned:
+        if require_pinned or expected_local_ids is not None:
             for component, image_id, measured in zip(COMPONENTS, image_ids, platforms):
                 if measured.split() != [CANDIDATE_PLATFORM, image_id]:
                     raise AssertionError('candidate image platform or identity differs for ' + component)
             expected = [self.values[key] for key in ('OB_IMAGE', *IMAGE_VARS.values())]
             if list(refs) != expected:
-                raise AssertionError('deployed image reference differs from the release candidate')
+                raise AssertionError('deployed image reference differs from the candidate')
             resolved = self.run(label + '-expected', ['docker', 'image', 'inspect', '--format',
                                 '{{.Id}}', *expected]).stdout.splitlines()
             if list(image_ids) != resolved:
-                raise AssertionError('running image content differs from the pinned candidate')
+                raise AssertionError('running image content differs from the selected references')
+            if expected_local_ids is not None and dict(zip(COMPONENTS, image_ids)) != expected_local_ids:
+                raise AssertionError('running image content differs from the prepared local candidate')
             mounts = self.run(label + '-mounts', ['docker', 'inspect', '--format',
                               '{{json .Mounts}}', *names]).stdout.splitlines()
             if len(mounts) != len(COMPONENTS):
@@ -303,9 +305,12 @@ class Smoke:
             for line in mounts:
                 for mount in json.loads(line):
                     if mount['Type'] == 'bind' and not Path(mount['Source']).resolve().is_relative_to(self.runtime):
-                        raise AssertionError('release smoke found a bind mount outside its private runtime')
-        return {'platforms': dict(zip(COMPONENTS, platforms)),
-                'references': dict(zip(COMPONENTS, refs)), 'pinned_content_verified': require_pinned}
+                        raise AssertionError('candidate smoke found a bind mount outside its private runtime')
+        result = {'platforms': dict(zip(COMPONENTS, platforms)),
+                  'references': dict(zip(COMPONENTS, refs)), 'pinned_content_verified': require_pinned}
+        if expected_local_ids is not None:
+            result['local_content_verified'] = True
+        return result
 
     def cleanup(self, command, names, volumes, networks):
         errors = []
@@ -853,7 +858,7 @@ def source_baseline_blueprint(smoke, cli):
     return blueprint
 
 
-def main():
+def main(argv=None, *, local_images=None, live_check=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--out', type=Path, required=True, help='new or empty directory for sanitized evidence')
     parser.add_argument('--runtime-base', type=Path, default=Path(tempfile.gettempdir()))
@@ -869,7 +874,7 @@ def main():
                         help='read back one OTLP native memory operation after initial cast and recast')
     parser.add_argument('--source-baseline-legacy-health', action='store_true',
                         help='source CI only: private legacy HTTP/custom lifecycle fixture; strict product shutdown is not validated')
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.source_baseline_legacy_health and args.require_pinned_images:
         parser.error('--source-baseline-legacy-health cannot be combined with --require-pinned-images')
     if args.source_baseline_legacy_health and args.require_native_memory:
@@ -878,6 +883,10 @@ def main():
         parser.error('--baseline-aiv cannot be combined with --require-pinned-images')
     if args.require_pinned_images and (not args.aiv or not args.aiv.is_file() or not os.access(args.aiv, os.X_OK)):
         parser.error('--require-pinned-images requires --aiv pointing to an executable release candidate')
+    if local_images is not None and (args.require_pinned_images or args.baseline_aiv
+                                    or args.source_baseline_legacy_health or not args.aiv
+                                    or not args.aiv.is_file() or not os.access(args.aiv, os.X_OK)):
+        parser.error('local candidate requires a packaged CLI and the product deployment path')
     def interrupted(signum, _frame):
         raise InterruptedError(f'interrupted by signal {signum}')
     signal.signal(signal.SIGTERM, interrupted)
@@ -888,10 +897,17 @@ def main():
         parser.error('--out must be empty')
     namespace = 'aiv-' + args.backend + '-smoke-' + uuid.uuid4().hex[:12]
     database, volumes = database_config(args.backend, namespace)
+    expected_local_ids = None
     try:
-        raw_images = image_overrides(os.environ.get('AIVISION_SEEKDB_SMOKE_IMAGES_JSON', '{}'),
-                                    database['OB_IMAGE'], require_pinned=args.require_pinned_images)
-        metadata_values = release_metadata_vars()
+        if local_images is None:
+            raw_images = image_overrides(os.environ.get('AIVISION_SEEKDB_SMOKE_IMAGES_JSON', '{}'),
+                                        database['OB_IMAGE'], require_pinned=args.require_pinned_images)
+            metadata_values = release_metadata_vars()
+        else:
+            refs, expected_local_ids = local_images
+            database['OB_IMAGE'] = refs['database']
+            raw_images = {key: refs[key] for key in IMAGE_VARS}
+            metadata_values = {}
         if openshell_catalog(metadata_values) is not None and not args.aiv:
             parser.error('OpenShell artifact acceptance requires --aiv pointing to the supplied packaged CLI')
     except ValueError as error:
@@ -908,6 +924,8 @@ def main():
     runtime = Path(tempfile.mkdtemp(prefix=namespace + '-', dir=args.runtime_base)).resolve()
     runtime.chmod(0o700)
     smoke = Smoke(out, runtime, values)
+    if local_images is not None:
+        smoke.env['DOCKER_DEFAULT_PLATFORM'] = CANDIDATE_PLATFORM
     cli = args.aiv.resolve() if args.aiv else runtime / 'aiv'
     variables = runtime / 'vars.yaml'
     private_vars(variables, values)
@@ -925,13 +943,14 @@ def main():
     volume_directory = None
     summary = {'status': 'failed', 'namespace': namespace, 'backend': args.backend,
                'database_image': values['OB_IMAGE'], 'image_overrides': raw_images,
-               'image_tag': None if args.require_pinned_images else 'dev',
+               'image_tag': None if args.require_pinned_images or local_images is not None else 'dev',
                'cli_source': 'supplied binary' if args.aiv else 'local checkout',
                'health_probe_mode': 'legacy-source-baseline-http' if args.source_baseline_legacy_health else 'native',
                'lifecycle_mode': 'legacy-source-fixture' if args.source_baseline_legacy_health else 'product',
                'strict_product_shutdown_checked': not args.source_baseline_legacy_health,
                'history_start': values['AIVISION_NATIVE_TRACE_HISTORY_START'],
-               'scope': 'CLI deployment, database authentication, one OTLP trace and v1 readback, recast persistence; full Agent/framework acceptance not run'}
+               'scope': ('CLI deployment, database authentication, one OTLP trace and v1 readback, recast persistence'
+                         + ('; deployed MiniMax checks' if live_check else '; full Agent/framework acceptance not run'))}
     if args.backend == 'seekdb':
         summary['seekdb_image'] = values['OB_IMAGE']
     try:
@@ -965,10 +984,11 @@ def main():
             (runtime / 'work' / namespace / path).mkdir(parents=True, exist_ok=True)
         initial_cli = args.baseline_aiv.resolve() if args.baseline_aiv else cli
         cast = [str(initial_cli), 'cast', *managed]
-        if not args.require_pinned_images:
+        if not args.require_pinned_images and local_images is None:
             cast.extend(['--var', 'IMAGE_TAG=dev'])
         smoke.run('cast', cast, timeout=1200)
-        summary['initial_images'] = smoke.images('deployed-images', require_pinned=args.require_pinned_images)
+        summary['initial_images'] = smoke.images('deployed-images', require_pinned=args.require_pinned_images,
+                                                 expected_local_ids=expected_local_ids)
         summary['deployed_images'] = summary['initial_images']['platforms']
         summary['initial_health'] = smoke.healthy([str(cli), 'status', *common], 'status')
         summary['initial_database'] = smoke.sql('database-canary', write=True)
@@ -988,6 +1008,8 @@ def main():
                                         agent_product='langfuse', agent_uuid=trace.agent_uuid)
             memory.ingest('http://127.0.0.1:' + values['GATEWAY_HTTP_PORT'], trace.ingest_token)
             summary['initial_memory'] = memory.read()
+        if live_check is not None:
+            summary['initial_minimax'] = live_check('initial', smoke, trace, cli)
         # Recast uses persisted overrides, exercising real restart semantics.
         recast = [str(cli), 'cast', *common]
         persisted = runtime / 'work' / namespace / 'state/vars.json'
@@ -1022,7 +1044,8 @@ def main():
                 (out / 'legacy-stop-events.stderr.log').write_text(smoke.sanitize(event_errors), encoding='utf-8')
                 if stopped_early:
                     raise AssertionError('Docker event collector exited before recast completed')
-        summary['recast_images'] = smoke.images('recast-images', require_pinned=args.require_pinned_images)
+        summary['recast_images'] = smoke.images('recast-images', require_pinned=args.require_pinned_images,
+                                                expected_local_ids=expected_local_ids)
         summary['recast_health'] = smoke.healthy([str(cli), 'status', *common], 'recast-status')
         summary['recast_database'] = smoke.sql('recast-database')
         if metadata_values:
@@ -1033,6 +1056,8 @@ def main():
         summary['recast_identity'] = smoke.database_identity('recast')
         if summary['recast_identity'] != initial_identity:
             raise AssertionError('CLI upgrade changed organization identity or database mounts')
+        if live_check is not None:
+            summary['recast_minimax'] = live_check('recast', smoke, trace, cli)
         if openshell_catalog(smoke.values) is not None:
             openshell = OpenShellCanary(smoke, trace, cli, summary['docker_server_platform'])
             summary['openshell'] = openshell.run()
