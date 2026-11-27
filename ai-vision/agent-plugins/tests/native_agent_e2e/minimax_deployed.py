@@ -52,7 +52,8 @@ class ToolFixture(FakeProvider):
         if self.scenario == "cancel" or len(results) != 1 or not _receipt(results):
             if self.scenario == "cancel-tool" and len(results) > 1:
                 raise ValueError("The shell request completed before native cancellation")
-            if len(results) == 2 and self.scenario != "cancel" and not re.fullmatch(r"\s*1\s+receipt\.txt\s*", _content(results[1])):
+            if (len(results) == 2 and self.scenario != "cancel"
+                    and _content(results[1]).split(maxsplit=2) != ["1", "receipt.txt"]):
                 raise ValueError("The native shell did not return the expected file line count")
             return super().reply(body, number, **options)
         tool = next((item.get("function", item) for item in body.get("tools", [])
