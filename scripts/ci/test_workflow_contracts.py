@@ -401,6 +401,85 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertEqual(tagged["channel"], "stable")
         self.assertEqual(tagged["candidate_tag"], "candidate-111-2")
 
+    def test_candidate_manifest_readback_retries_missing_digest_and_fails_closed(self):
+        step = next(step for step in workflow("release-image-build.yml")["jobs"]["build"]["steps"]
+                    if step.get("id") == "native")
+        push_digest = "sha256:" + "a" * 64
+        native_digest = "sha256:" + "b" * 64
+        repository = "ghcr.io/antgroup/ai-vision/backend"
+        for failures, descriptor_digest, identity_status, expected_delays, outcome in (
+            ("missing,unknown", push_digest, 0, ["2", "4"], "success"),
+            ("missing,missing,missing,missing,missing,missing", push_digest, 0,
+             ["2", "4", "8", "16", "32"], "not found"),
+            ("denied", push_digest, 0, [], "unauthorized"),
+            ("", native_digest, 0, [], "differs from the registry descriptor"),
+            ("", push_digest, 42, [], "identity mismatch"),
+        ):
+            with self.subTest(failures=failures, outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                work = Path(directory)
+                manifest = {"digest": descriptor_digest, "manifests": [{
+                    "digest": native_digest,
+                    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                    "platform": {"os": "linux", "architecture": "amd64"},
+                }]}
+                (work / "manifest.json").write_text(json.dumps(manifest))
+                commands = {
+                    "docker": '''#!/bin/bash
+set -eu
+[[ "$1 $2 $3" == 'buildx imagetools inspect' ]]
+printf '%s\\n' "$4" >> "$RUNNER_TEMP/references"
+IFS=, read -r -a failures <<< "$FIXTURE_FAILURES"
+attempt=$(wc -l < "$RUNNER_TEMP/references")
+case ${failures[attempt-1]:-} in
+  missing) echo "ERROR: $4: not found" >&2; exit 1 ;;
+  unknown) echo "ERROR: $4: manifest unknown" >&2; exit 1 ;;
+  denied) echo "ERROR: $4: unauthorized" >&2; exit 1 ;;
+esac
+cat "$RUNNER_TEMP/manifest.json"
+''',
+                    "python3": '''#!/bin/bash
+if [[ "$1" == scripts/ci/release_image.py ]]; then
+  printf '%s\\n' "${@:2}" > "$RUNNER_TEMP/identity-args"
+  if [[ "$FIXTURE_IDENTITY_STATUS" != 0 ]]; then echo 'identity mismatch' >&2; fi
+  exit "$FIXTURE_IDENTITY_STATUS"
+fi
+exec "$FIXTURE_PYTHON" "$@"
+''',
+                    "sleep": '#!/bin/sh\nprintf "%s\\n" "$@" >> "$RUNNER_TEMP/delays"\n',
+                }
+                for name, contents in commands.items():
+                    script = work / name
+                    script.write_text(contents)
+                    script.chmod(0o700)
+                env = dict(os.environ, PATH=str(work) + os.pathsep + os.environ["PATH"],
+                           RUNNER_TEMP=directory, GITHUB_OUTPUT=str(work / "output"),
+                           IMAGE_REPOSITORY=repository, PUSH_DIGEST=push_digest, ARCH="amd64",
+                           IDENTITY="fixture-identity", FIXTURE_FAILURES=failures,
+                           FIXTURE_IDENTITY_STATUS=str(identity_status), FIXTURE_PYTHON=sys.executable)
+                result = subprocess.run(["bash", "-e", "-o", "pipefail", "-c", step["run"]],
+                                        env=env, cwd=ROOT, capture_output=True, text=True, timeout=10)
+                delays = work / "delays"
+                self.assertEqual(delays.read_text().splitlines() if delays.exists() else [],
+                                 expected_delays, result.stderr)
+                self.assertEqual((work / "references").read_text().splitlines(),
+                                 [f"{repository}@{push_digest}"] * (1 + len(expected_delays)))
+                output = work / "output"
+                identity = work / "identity-args"
+                if outcome == "success":
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(output.read_text(), f"digest={native_digest}\n")
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn(outcome, result.stderr)
+                    self.assertFalse(output.exists())
+                if outcome in {"success", "identity mismatch"}:
+                    self.assertEqual(identity.read_text().splitlines(), [
+                        "--ref", f"{repository}@{native_digest}", "--arch", "amd64",
+                        "--identity", "fixture-identity",
+                    ])
+                else:
+                    self.assertFalse(identity.exists())
+
     def test_public_release_prepare_stops_private_sources_before_candidate_writes(self):
         prepare = workflow("release-images.yml")["jobs"]["prepare"]
         command = next(step["run"] for step in prepare["steps"] if step.get("id") == "plan")

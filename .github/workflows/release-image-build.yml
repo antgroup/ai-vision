@@ -102,8 +102,25 @@ jobs:
         run: |
           set -euo pipefail
           [[ "$PUSH_DIGEST" =~ ^sha256:[a-f0-9]{64}$ ]]
-          docker buildx imagetools inspect "$IMAGE_REPOSITORY@$PUSH_DIGEST" --format '{{json .Manifest}}' > "$RUNNER_TEMP/pushed-manifest.json"
-          digest=$(python3 scripts/ci/release_plan.py native-digest --file "$RUNNER_TEMP/pushed-manifest.json" --digest "$PUSH_DIGEST" --arch "$ARCH")
+          reference="$IMAGE_REPOSITORY@$PUSH_DIGEST"
+          manifest="$RUNNER_TEMP/pushed-manifest.json"
+          errors="$RUNNER_TEMP/pushed-manifest.stderr"
+          # GHCR can briefly return a missing manifest after a successful push.
+          for attempt in {1..6}; do
+            if docker buildx imagetools inspect "$reference" --format '{{json .Manifest}}' > "$manifest" 2> "$errors"; then
+              cat "$errors" >&2
+              break
+            fi
+            error=$(cat "$errors")
+            printf '%s\n' "$error" >&2
+            if (( attempt == 6 )) || [[ "$error" != *"$reference: not found" && "$error" != *"manifest unknown"* ]]; then
+              exit 1
+            fi
+            delay=$((2 ** attempt))
+            echo "Pushed manifest is not yet readable. Retrying in ${delay}s." >&2
+            sleep "$delay"
+          done
+          digest=$(python3 scripts/ci/release_plan.py native-digest --file "$manifest" --digest "$PUSH_DIGEST" --arch "$ARCH")
           python3 scripts/ci/release_image.py --ref "$IMAGE_REPOSITORY@$digest" --arch "$ARCH" --identity "$IDENTITY"
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
       - name: Export pushed digest, verified native digest and actual build identity
